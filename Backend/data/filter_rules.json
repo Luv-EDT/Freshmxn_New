@@ -1,0 +1,89 @@
+{
+  "version": "1.4",
+  "note": "Shipping thresholds live HERE, in one place, not baked into profession records. Professions that fail are flagged ship:false, never deleted — a flag can be rendered as a delete, a delete cannot be rendered as a flag. Change a number here and re-run tools/export_csv.py to re-derive every shipping block.",
+  "compensation_filter": {
+    "mid_career_floor_lpa": 4.5,
+    "ai_penalty_clause": {
+      "mid_career_below_lpa": 6.0,
+      "when_ai_exposure": "high"
+    },
+    "rule": "CUT if mid_career_midpoint < 4.5 LPA, OR (mid_career_midpoint < 6.0 AND ai_exposure.band == 'high'). EXEMPT from BOTH where economics.distribution == 'power_law'. EXEMPT from THE FLOOR ONLY where self_employment.likelihood == 'common' AND admin_review.required — the AI clause still fires through that exemption.",
+    "exemptions": {
+      "power_law": "The midpoint is arithmetic over a distribution with no middle. Filtering on it deletes a profession on the strength of a number the record itself calls meaningless. 6 records.",
+      "owner_income_unsourced": "self_employment.likelihood == 'common' AND admin_review.required. mid_career EXCLUDES business ownership by design — see known_limitations — so on these records the midpoint is a floor someone LEAVES, not a ceiling they hit, and the open admin_review is the record saying so in its own words. Automobile Mechanic is what PROVED the gap and is deliberately NOT exempted by it: cut at 4.25 while its own self_employment ceiling is 6-18 lakh — but that ceiling is SOURCED, so the record owes nothing and carries no admin_review. It stays cut, and the honest fix for it is to raise the floor or use the ceiling, not to widen this exemption. The exemption covers only records where the owner figure is MISSING. BOTH conditions are required. 'common' alone would spare records whose figure is simply low; admin_review alone would spare employees whose income has no ownership path at all. 12 records. Each is a cut that reverses the moment somebody sources an owner figure — which is the correct direction for a filter to fail in. IT EXEMPTS THE PAY FLOOR ONLY, never the AI clause. Ownership answers 'is this figure the whole income'; it does not answer 'is this work disappearing'. Website & Online Store Builder is self-employed, owes an owner figure AND scores 72 - the AI clause was written for that exact record, and a first draft of this exemption rescued it, which would have cancelled the clause by the back door. It stays cut.",
+      "why_this_is_not_a_loophole": "Neither exemption invents a number. Both are the same rule: DO NOT FILTER ON A FIGURE THE RECORD HAS ALREADY DECLARED INCOMPLETE. Both are also self-closing — a power_law record that gains a real distribution, or an owner figure that gets sourced and closes the admin_review, re-enters the filter automatically on the next run."
+    },
+    "rationale": [
+      "Why an absolute ceiling and not the payback ratio: payback does not discriminate. Every profession except Commercial Pilot repays in under 2.5 years, and the TRADES have the best ratios in the dataset — Mason repays in 0.09 years and shows 3.0 LPA employed, which is NOT a life ceiling — self_employment.route records the contractor path above it. Ranking by payback would put masons first. Payback is kept as a capital-risk FLAG, not a filter.",
+      "Why 4.5 and not 5.0: at 5.0 the cut takes Welder, which has AI exposure 7 — the most future-proof career in the dataset. Also HVAC and Solar Technician, both growing. Deleting the safest careers over 50,000 rupees a year is the wrong trade.",
+      "Why 4.5 and not 4.0: 4.0 at 5-8 years of experience is barely above an IT fresher salary. A career still paying that after 8 years is a trap.",
+      "Why the AI clause exists: a pure pay filter keeps Website & Online Store Builder at exactly 4.5 despite exposure 77 — low pay in a job that is actively disappearing. The clause also correctly SPARES Software Tester (7.5) and Data Analyst (9.0), which are high-exposure but pay enough that entering via the automation track is rational."
+    ]
+  },
+  "regional_note": "4.5 LPA is calibrated for urban and metro India. In tier-3 and rural districts the same figure supports a materially different standard of living. This is the main reason failing professions are retained rather than deleted — a regional threshold can be applied later only if the data still exists.",
+  "known_limitations": [
+    "Wage figures come from commercial salary aggregators (Indeed, Glassdoor, salary sites), not government data. India has no authoritative free source for occupational earnings.",
+    "Automobile Mechanic fails at 4.2 but EV servicing is genuinely lifting demand. Flagged for revisit.",
+    "mid_career EXCLUDES business ownership by design, so it understates every profession where going independent is normal. self_employment.ceiling_lpa now carries that number where it could be sourced — 3 of 45 so far. The rest are openly owed and carry an admin_review."
+  ],
+  "preference_filters": {
+    "note": "DERIVED AT QUERY TIME from existing fields. Nothing here is stored on a profession record and NO field ranks a profession's social worth. These express what a STUDENT wants, not what is good. A student who wants a desk-and-degree career is a real student with a real preference, and the application should serve it — but the preference is theirs to hold, not ours to encode.",
+    "blocks": {
+      "credentialed": "degree_dependency in ('undergrad', 'professional')",
+      "manual": "ai_exposure.work_composition.skill_physical > 50",
+      "own_account": "self_employment.likelihood == 'common'",
+      "government_entry": "'EXT-GOVT' in industrial_sectors AND entrance_exams.public_routes is non-empty",
+      "engineering_gated": "professional_sector_id == 2 OR (class12_prerequisite includes physics AND maths) OR an ENGINEERING route in path_to_entry: B.Tech, B.E., polytechnic, or an ITI in an engineering trade (fitter, turner, electrician, mechanic, welder, machinist, draughtsman, instrumentation, refrigeration, plumbing, carpentry, electronics). WHAT THIS RULE DELIBERATELY DOES NOT USE: industrial_sectors tags. A first version admitted any profession carrying two or more manufacturing-side councils and let in Firefighter, Cybersecurity Specialist and Laboratory Technician - because a fire officer works at a refinery and a security specialist has manufacturing clients. That is the cross-cutting rule in DECISIONS.md 2.2 broken by its own author: a tag names an EMPLOYER, and 'engineers hire this person' is not 'this person does engineering'. Bare 'ITI' and bare 'diploma' went the same way, having matched Tailor & Garment Maker."
+    },
+    "presets": {
+      "formal_workplace_track": {
+        "intent": "For a student who wants a credentialed, non-manual career in an organised workplace. Removes the manual building trades without removing technician, clinical, field or office work.",
+        "rule": "KEEP if credentialed OR NOT manual OR government_entry",
+        "keeps": 103,
+        "removes": [
+          "Mason & Construction Technician",
+          "Welder",
+          "Plumber",
+          "Heavy Equipment Operator",
+          "Electrician",
+          "Carpenter & Furniture Maker",
+          "AC & Refrigeration Technician",
+          "Fitter & Machine Operator",
+          "Automobile Mechanic",
+          "Logistics & Warehouse Operator"
+        ],
+        "deliberately_kept": {
+          "Emergency Medical Technician": "physical, but a uniformed salaried hospital and ambulance job",
+          "Laboratory Technician": "on your feet all day, in a lab, for an employer",
+          "Precision Manufacturing Technician": "cleanroom work — physical but unambiguously organised-sector",
+          "IT Support & Network Technician": "an office job; the low pay is not a manual-work signal",
+          "Drone Pilot & Operator": "outdoors and licensed, not a trade",
+          "Land Surveyor": "field work with instruments, professional in character",
+          "Firefighter": "The government_entry block exists for this record. A firefighter scores 60 on skill_physical and was being removed as manual work — but it is a uniformed government job with a national entrance examination, a pay matrix, a pension and, in Indian social terms, standing. Removing it from a filter meant to surface formal respectable work was exactly backwards."
+        },
+        "THE COST — SHOW THIS TO THE STUDENT": "This filter removes the NINE MOST AI-PROOF CAREERS IN THE DATASET. Mean AI exposure of what it keeps is 28.7; of what it removes, 9.1 — three times safer. Mason scores 5, Welder 7, Plumber 7; Software Tester, which survives the filter, scores 75. It also removes three of the only professions with a sourced self-employment ceiling: Electrician 6-18 lakh, Automobile Mechanic 6-18 lakh, AC Technician up to 18 lakh. The application should apply this filter when asked and SAY WHAT IT COST — not apply it silently, and never as a default."
+      },
+      "trades_and_ownership": {
+        "intent": "The inverse. For a student who wants short training, low entry cost and a path to running their own thing. Surfaces exactly what the filter above hides.",
+        "rule": "KEEP if NOT credentialed AND own_account",
+        "why_it_matters": "Lowest cost_of_entry_lakh and best payback_years in the dataset, and the self_employment.route on each record is the answer to 'is this a dead end'."
+      },
+      "core_engineering_track": {
+        "intent": "For a student who wants CORE ENGINEERING and the fields that surround it, including supply chain. Rendered by tools/track_view.py as a three-tier view - professional sector, profession, job roles - with each profession's industry domains expanded from its industrial_sectors codes.",
+        "rule": "KEEP if engineering_gated OR in also_include",
+        "also_include": {
+          "Patent Agent": "The Patents Act REQUIRES a science or engineering degree to sit the Patent Agent Examination. One of the very few professions in this taxonomy closed to non-engineers by statute, and the strongest engineering-gated record outside Sector 2.",
+          "Supply Chain & Logistics Manager": "Asked for explicitly. The industrial-operations destination for engineers, and the sheet's 'Supply Chain & Logistics (Support)' discipline.",
+          "Logistics & Warehouse Operator": "The non-degree half of the same work, kept so the track does not show only the graduate route into logistics.",
+          "Project Manager": "The sheet's 'Project & Program Management (Support)' discipline. A management profession rather than an engineering one, which is precisely why it needs naming here rather than being caught by a rule.",
+          "Product Manager": "Where engineers go when they stop building the thing and start deciding what it should be.",
+          "Operations & Administration Manager": "Plant and operations management, the commonest non-technical destination for a working engineer.",
+          "Vocational & Skill Trainer": "ITI instructor - one of the few stable government paths open to a DIPLOMA engineer, which no other record in the track offers.",
+          "College & University Teacher": "Engineering faculty. An ordinary B.Tech destination that the rule cannot see because the record's own gate is a doctorate, not PCM."
+        },
+        "why_a_named_list": "Six of these eight fail the rule and belong anyway. The same visible-exception pattern as sweep.py's EXEMPT dict: a judgment call that is written down can be argued with, and one buried inside a regex cannot. Anything added here must carry its reason.",
+        "THE COST - SHOW THIS TO THE STUDENT": "This track is a FILTER and hides most of the taxonomy. It keeps the ITI trades deliberately - Welder scores 7 on AI exposure and Mason 5, the two safest careers in the dataset - because filter_rules.json already records what happened the last time a preset quietly dropped them. A student who asks for core engineering should still be told that 180-odd professions were removed to build this view."
+      }
+    }
+  }
+}

@@ -1,0 +1,561 @@
+{
+  "version": "1.1",
+  "note": "Competition and seat data for the examinations that gate entry to a profession. Gates are SHARED — sixteen professions sit behind JEE Main, five behind NEET, five behind CAT — so the numbers live here once and professions reference them by key, the same fetch-once-reuse pattern as verified_facts.json. Sourcing per profession would mean dozens of copies that drift apart.",
+  "why_this_exists": "The opportunity cost of PREPARATION is the largest risk the schema could not express. A candidate can spend three to six years on a government examination and hold no credential at the end. That is not the same as gaining nothing — see if_unsuccessful, which separates the credential (often none) from the knowledge and the adjacent routes it opens (often substantial). Failed preparation is partly sunk and partly carried forward; it is NOT waste at full weight.",
+  "the_money_for_odds_trade": "A private_reputed gate is usually winnable at odds a public gate is not, for a much larger fee. Reporting the odds without the cost tells a rich student the truth and a poor one a lie, so typical_total_cost_lakh is mandatory on every private gate. MEDICINE IS THE EXCEPTION: NEET governs government, private and deemed colleges alike, so there money cannot buy the door open.",
+  "mechanisms": {
+    "seat_limited": "A fixed number of places. Competition is applicants per seat.",
+    "attrition_limited": "No quota — anyone who clears the standard passes. The filter is the pass rate, and the risk is repeated attempts rather than rejection.",
+    "distributed": "One common test feeding MANY independent admissions with no national seat pool. A national applicants-per-seat ratio would be meaningless — competition is per programme and per university, and varies enormously between them. applicants_per_seat stays null on purpose."
+  },
+  "gates": {
+    "upsc-cse": {
+      "name": "UPSC Civil Services Examination",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 1050000,
+      "seats_or_posts": 958,
+      "applicants_per_seat": 1096.0,
+      "pass_rate_percent": null,
+      "preparation_years": "2-4",
+      "preparation_is_full_time": true,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "State Public Service Commission",
+          "SSC CGL",
+          "IBPS PO / RBI Grade B",
+          "teaching",
+          "policy research",
+          "journalism",
+          "civil services coaching"
+        ],
+        "non_credential_gain": "Working knowledge of Indian polity, economy, history, geography and current affairs, and the discipline of multi-year self-directed study. Genuinely valued in policy, journalism, teaching and coaching, and it transfers directly to every other government examination. What it is not is a qualification anyone can verify on paper."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://testbook.com/news/upsc-cse-final-result-2025-stats/",
+        "checked_on": "2026-08-11"
+      },
+      "note": "1,087 vacancies were notified for CSE 2025 and 958 candidates were finally recommended, against roughly 10 to 11 lakh applicants — a selection rate near 0.1 percent. Seats here are the candidates actually recommended, not the vacancies notified."
+    },
+    "neet-ug": {
+      "name": "NEET UG",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 2209318,
+      "seats_or_posts": 118190,
+      "applicants_per_seat": 18.7,
+      "pass_rate_percent": null,
+      "preparation_years": "1-3",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "BDS",
+          "BAMS / BHMS",
+          "BVSc",
+          "B.Sc Nursing",
+          "allied health degrees",
+          "B.Sc life sciences"
+        ],
+        "non_credential_gain": "The Physics, Chemistry and Biology preparation is a full class 11-12 syllabus mastered to a high standard, and it carries directly into every other health-science degree the same score admits you to. Unlike a government-examination attempt, the years are spent inside school, so a candidate still leaves with a class 12 certificate."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://news.careers360.com/mcc-neet-ug-counselling-2025-begins-tomorrow-registration-colleges-fees-link-12-36-lakh-compete-for-1-18-lakh-mbbs-seats/amp",
+        "checked_on": "2026-08-11"
+      },
+      "note": "22,09,318 candidates appeared in 2025 against 1,18,190 MBBS seats across 766 colleges. Of those, 12,36,531 qualified, so roughly 1 in 10 QUALIFIED candidates gets an MBBS seat. NO PRIVATE BYPASS EXISTS — see verified_facts.json#neet-ug-eligibility. NEET governs government, private and deemed colleges alike, so this is the one gate in the registry where money cannot convert a competition problem into a cost problem. PREPARATION IS BIMODAL and the single boolean cannot say so: most candidates prepare inside class 11 and 12, but the DROP YEAR is a large and normal part of this gate — a full-time year, sometimes two, spent repeating with no schooling attached. For a dropper preparation_is_full_time is effectively true and the year counts as sunk in the same way a government-examination year does."
+    },
+    "cat": {
+      "name": "CAT (Common Admission Test)",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 350000,
+      "seats_or_posts": 8425,
+      "applicants_per_seat": 41.5,
+      "pass_rate_percent": null,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "any other MBA programme",
+          "the same job continued",
+          "CAT reattempt with no age or attempt limit"
+        ],
+        "non_credential_gain": "Quantitative aptitude, data interpretation and verbal reasoning, which transfer to every other management entrance and to the aptitude rounds most employers run. Most CAT candidates prepare while working or studying rather than full time, so the year is rarely lost outright."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.iquanta.in/blog/cat-2025-registrations-3-5-lakh-aspirants-vs-only-8425-seats/",
+        "checked_on": "2026-08-11"
+      },
+      "note": "About 3.5 lakh registrations against 8,425 seats across the IIMs, IITs and top non-IIM schools. That ratio is for the TOP TIER ONLY — several hundred business schools accept CAT, so entry to SOME MBA is far easier than this number suggests. There is no age limit and no attempt cap.",
+      "eligibility": "A bachelor's degree of at least three years in ANY subject at 50% aggregate (45% for SC/ST/PwD); CA, CS, ICWA and FIAI are accepted in place of a degree. NO age limit, NO attempt limit, and final-year students may apply provisionally. This is the most OPEN gate in the registry - the high applicants_per_seat is competition for seats, not a restriction on who may sit. Source: data/verified_facts.json#cat-mba-eligibility."
+    },
+    "clat": {
+      "name": "CLAT (Common Law Admission Test)",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 92344,
+      "seats_or_posts": 3711,
+      "applicants_per_seat": 24.9,
+      "pass_rate_percent": null,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "private law school five-year LLB",
+          "any bachelor's then a three-year LLB",
+          "CLAT reattempt"
+        ],
+        "non_credential_gain": "Legal reasoning, comprehension and current affairs. The five-year LLB is not the only route into law — a three-year LLB after any degree reaches the same Bar Council enrolment — so missing CLAT delays the profession rather than closing it."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.collegesearch.in/news/clat-2025-seat-matrix-total-number-of-seats-offered-by-nlus",
+        "checked_on": "2026-08-11"
+      },
+      "note": "Roughly 92,344 registrations against 3,711 five-year LLB seats across the National Law Universities. Private law schools take a large additional intake outside CLAT."
+    },
+    "ca-foundation": {
+      "name": "CA Foundation (ICAI)",
+      "type": "professional_body",
+      "mechanism": "attrition_limited",
+      "applicants_per_year": null,
+      "seats_or_posts": null,
+      "applicants_per_seat": null,
+      "pass_rate_percent": 20.09,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "B.Com and other commerce degrees taken in parallel",
+          "CMA or CS",
+          "accounting and audit roles"
+        ],
+        "non_credential_gain": "Accounting, law, economics and quantitative aptitude at a standard well above a commerce degree. Most candidates take CA Foundation ALONGSIDE a B.Com rather than instead of one, so an unsuccessful attempt usually leaves the degree intact."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.pw.live/ca/exams/ca-foundation-pass-percentage",
+        "checked_on": "2026-08-11"
+      },
+      "note": "NOT SEAT-LIMITED — there is no quota and nobody is competing for a place. The filter is the pass mark: 90,217 appeared in May 2026 and 18,124 passed, a rate of 20.09 percent, and Intermediate is harder still at about 9.4 percent. Attrition, not competition, is what removes people."
+    },
+    "bitsat": {
+      "name": "BITSAT",
+      "type": "private_reputed",
+      "mechanism": "seat_limited",
+      "applicants_per_year": null,
+      "seats_or_posts": 4000,
+      "applicants_per_seat": null,
+      "pass_rate_percent": null,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": 23.5,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "any other private engineering college",
+          "JEE Main counselling",
+          "state engineering entrance"
+        ],
+        "non_credential_gain": "The same Physics, Chemistry and Maths preparation as JEE, which transfers to every other engineering entrance in the country."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.vedantu.com/university/bits-pilani-birla-institute-of-technology-and-science-fees",
+        "checked_on": "2026-08-11"
+      },
+      "note": "About 4,000 seats across the BITS campuses, roughly 1,040 of them at Pilani. THE APPLICANT COUNT IS NOT RECORDED because it was not found in a source — it is left null rather than estimated. Total cost for the four-year B.Tech is roughly 22 to 25 lakh, which is the point: this route trades money for odds. POSITIONED AS AN ALTERNATIVE, not a primary. BITSAT was added to this registry before JEE Main was, which was incoherent — it is the private alternative to a public gate that had been deferred, so twenty professions briefly showed a private route as their only quantified door. A private gate may no longer be recorded without its public primary.",
+      "alternative_to": "jee-main"
+    },
+    "jee-main": {
+      "name": "JEE Main",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 1475103,
+      "seats_or_posts": 62853,
+      "applicants_per_seat": 23.5,
+      "pass_rate_percent": null,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "state engineering entrance",
+          "private engineering college",
+          "B.Sc then lateral entry",
+          "diploma then lateral entry into B.Tech year 2"
+        ],
+        "non_credential_gain": "Physics, Chemistry and Mathematics mastered to a standard well beyond the school syllabus, which transfers to every other engineering entrance in the country and to the aptitude rounds employers run years later. Preparation happens alongside class 11 and 12, so a candidate still leaves with a class 12 certificate — unlike a government-examination attempt taken after a degree."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://news.careers360.com/josaa-counselling-2025-begins-for-62853-engineering-seats-in-india-iit-nit-iiit-gftis-colleges-list-jeeadv-opening-closing-rank/amp",
+        "checked_on": "2026-08-11"
+      },
+      "note": "14,75,103 candidates in 2025 against 62,853 JoSAA seats across 128 institutes — 23 IITs, 31 NITs, IIEST, 26 IIITs and 47 other government-funded institutes. JEE Main is also the qualifying stage for JEE Advanced: the top 2.5 lakh rank holders become eligible. Admits roughly a three-year window of class 12 cohorts, which is what entry_window records.",
+      "next_stage": "jee-advanced",
+      "eligibility_window": "Open only to candidates who passed class 12 in the current year or the two preceding years; a 2023 or earlier pass is NOT eligible. The EXAM expires about three years after class 12 - the PROFESSION does not, because diploma and B.Sc lateral entry remain open. This is exactly why entry_window attaches to ROUTES and not to professions. Source: data/verified_facts.json#jee-main-attempt-window."
+    },
+    "jee-advanced": {
+      "name": "JEE Advanced",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 250000,
+      "seats_or_posts": 18160,
+      "applicants_per_seat": 13.8,
+      "pass_rate_percent": null,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "state engineering entrance",
+          "private engineering college",
+          "B.Sc then lateral entry",
+          "diploma then lateral entry into B.Tech year 2"
+        ],
+        "non_credential_gain": "Physics, Chemistry and Mathematics mastered to a standard well beyond the school syllabus, which transfers to every other engineering entrance in the country and to the aptitude rounds employers run years later. Preparation happens alongside class 11 and 12, so a candidate still leaves with a class 12 certificate — unlike a government-examination attempt taken after a degree."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://news.careers360.com/jee-advanced-2025-only-1-in-10-secure-seat-iit-nit-cut-off-josaa-counselling-how-many-qualify-75-pc-criteria-jeeadv-ac-in/amp",
+        "checked_on": "2026-08-11"
+      },
+      "note": "Only the top 2.5 lakh JEE Main rank holders may sit it; 54,378 qualified in 2025 for 18,160 IIT seats. Measured against the full JEE Main pool an IIT seat is closer to 81:1 — the 13.8:1 here is measured from the 2.5 lakh who are permitted to appear, which is the honest denominator for someone who has already cleared JEE Main."
+    },
+    "cuet-ug": {
+      "name": "CUET UG",
+      "type": "national_public",
+      "mechanism": "distributed",
+      "applicants_per_year": 1071735,
+      "seats_or_posts": null,
+      "applicants_per_seat": null,
+      "pass_rate_percent": null,
+      "preparation_years": "0-1",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "state university admission",
+          "private university admission",
+          "any other degree programme"
+        ],
+        "non_credential_gain": "The class 12 syllabus itself, revised to examination standard. Because CUET feeds ordinary degree programmes rather than a scarce professional seat, an unsuccessful candidate almost always still starts a degree somewhere in the same year."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.pw.live/cuet/exams/how-many-students-registered-for-cuet",
+        "checked_on": "2026-08-11"
+      },
+      "note": "13,54,699 registered and 10,71,735 appeared in 2025 — the largest gate in this registry by candidate count, and the one most professions reference. NO NATIONAL SEAT POOL EXISTS: CUET feeds 45-plus central universities plus state, deemed and private ones across 37 subjects, each admitting independently. A national ratio would be a fiction, so applicants_per_seat is null by design. Real competition is per programme — Delhi University English Honours and a small central university B.Sc are not the same contest."
+    },
+    "gate": {
+      "name": "GATE",
+      "type": "national_public",
+      "mechanism": "attrition_limited",
+      "applicants_per_year": 747000,
+      "seats_or_posts": null,
+      "applicants_per_seat": null,
+      "pass_rate_percent": 18.7,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "M.Tech admission at a lower-ranked institute",
+          "PSU recruitment in a later cycle",
+          "direct employment on the bachelor's degree",
+          "GATE reattempt — no age or attempt limit"
+        ],
+        "non_credential_gain": "The entire undergraduate engineering syllabus consolidated to a depth most degrees never require. It transfers to PSU written tests, to campus placement aptitude rounds, and to any later postgraduate attempt."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.shiksha.com/engineering/articles/how-many-students-qualified-in-the-gate-exam-blogId-192944",
+        "checked_on": "2026-08-11"
+      },
+      "note": "About 9.37 lakh registered and 7.47 lakh appeared in 2025, with roughly 1.4 lakh qualifying — near 18.7 percent. ATTRITION-LIMITED at the qualifying threshold, but the score then competes for scarce things: M.Tech seats, PSU recruitment, and ISRO Scientist/Engineer entry. Qualifying is not the same as getting a place."
+    },
+    "csir-ugc-net": {
+      "name": "CSIR-UGC NET",
+      "type": "national_public",
+      "mechanism": "attrition_limited",
+      "applicants_per_year": 147732,
+      "seats_or_posts": null,
+      "applicants_per_seat": null,
+      "pass_rate_percent": 14.42,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "PhD admission through a university or institute entrance",
+          "M.Sc-level industry roles",
+          "state eligibility tests for lecturing",
+          "reattempt — held twice a year"
+        ],
+        "non_credential_gain": "Deep subject mastery at postgraduate level, which is the same preparation any PhD interview or institute entrance tests. Candidates hold an M.Sc already, so unlike a school-level gate there is a real degree underneath."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.pw.live/csir-net/exams/how-many-candidates-appeared-in-csir-net-july-2025",
+        "checked_on": "2026-08-11"
+      },
+      "note": "1,95,241 registered and 1,47,732 appeared in July 2025, with 21,295 qualifying for JRF, assistant professorship and PhD admission — 14.42 percent. Qualifying with JRF also carries the stipend recorded in verified_facts.json#csir-jrf-srf-stipend, which is why this gate decides whether a research career is financially survivable."
+    },
+    "iit-jam": {
+      "name": "IIT JAM",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": null,
+      "seats_or_posts": 3007,
+      "applicants_per_seat": null,
+      "pass_rate_percent": null,
+      "preparation_years": "1",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "M.Sc at a state or central university",
+          "CSIR-UGC NET route to a PhD",
+          "integrated PhD programmes at IISc and the IISERs"
+        ],
+        "non_credential_gain": "Undergraduate science consolidated to honours depth, which transfers to every other M.Sc entrance and to CSIR-UGC NET a year later."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.pw.live/iit-jam/exams/iit-jam-seat-matrix-2025",
+        "checked_on": "2026-08-11"
+      },
+      "note": "3,007 postgraduate seats at the IITs for 2025-26, with more than 2,000 further seats at IISc, the NITs, IIEST and others through CCMN. THE APPLICANT COUNT WAS NOT FOUND in a source and is left null rather than estimated, so no ratio is shown."
+    },
+    "ibps-po": {
+      "name": "IBPS PO",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": null,
+      "seats_or_posts": 5208,
+      "applicants_per_seat": null,
+      "pass_rate_percent": null,
+      "preparation_years": "1-2",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "IBPS Clerk and RRB cadres",
+          "SBI PO",
+          "SSC CGL",
+          "private bank recruitment",
+          "state cooperative bank recruitment"
+        ],
+        "non_credential_gain": "Quantitative aptitude, reasoning and English at a standard shared across every Indian banking and staff-selection examination, so preparation for one is preparation for all of them. This is the most transferable preparation of any gate in the registry."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.bankersadda.com/ibps-po-notification-2025/",
+        "checked_on": "2026-08-11"
+      },
+      "note": "5,208 Probationary Officer vacancies notified for 2025 across participating public sector banks. THE APPLICANT COUNT WAS NOT FOUND in a source and is left null. Recruitment runs in annual cycles, so a missed year is a delay rather than a closed door."
+    },
+    "uceed": {
+      "name": "UCEED",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 15408,
+      "seats_or_posts": 245,
+      "applicants_per_seat": 62.9,
+      "pass_rate_percent": null,
+      "preparation_years": "1",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "NID DAT",
+          "NIFT entrance",
+          "private design colleges, which admit on their own tests",
+          "any B.Des or BFA programme",
+          "a portfolio-led entry with no degree at all"
+        ],
+        "non_credential_gain": "Visual reasoning, observational drawing, design aptitude and a habit of sketching daily. Unlike an engineering entrance this preparation IS the work - a UCEED portfolio is the same artefact every design school and most studios ask to see, so it converts directly into an application elsewhere."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://news.careers360.com/uceed-result-2025-toppers-shreyansh-agarwal-secures-top-rank-5703-candidates-qualify-bdes-entrance-exam",
+        "checked_on": "2026-08-11"
+      },
+      "note": "15,408 candidates appeared for UCEED 2025 and 5,703 qualified Part A, but only 245 B.Des seats exist across the seven participating institutes - IIT Bombay, Delhi, Guwahati, Hyderabad, Roorkee, Indore and IIITDM Jabalpur. QUALIFYING IS NOT ADMISSION: the 37 percent qualification rate describes a shortlist, and the real ratio against seats is 62.9 to 1. Seat count from https://www.pw.live/design-architecture/exams/uceed-revised-seat-matrix-2025."
+    },
+    "nift-entrance": {
+      "name": "NIFT Entrance Examination",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": 17974,
+      "seats_or_posts": 4837,
+      "applicants_per_seat": 3.7,
+      "pass_rate_percent": null,
+      "preparation_years": "0-1",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "state and private fashion design colleges",
+          "NID DAT",
+          "UCEED",
+          "a diploma in fashion or apparel with no entrance at all"
+        ],
+        "non_credential_gain": "Drawing, colour, material sense and a made portfolio, plus the general-ability paper. The Creative Ability Test is the only part that is specific to NIFT; everything it trains transfers to every other design entrance and to a studio interview."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.toprankers.com/how-many-students-appeared-for-nift",
+        "checked_on": "2026-08-11"
+      },
+      "note": "17,974 unique candidates registered for NIFT 2025 Stage 1 against roughly 4,837 seats - 3.7 to 1, BY FAR THE MOST OPEN NATIONAL DESIGN GATE. That ratio is the argument against treating design as uniformly hard to enter: NIFT is 17 times easier to get into than UCEED. NIFT is a statutory degree-granting institute under the NIFT Act 2006, so the route is public despite substantial fees."
+    },
+    "nsd-entrance": {
+      "name": "National School of Drama entrance",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": null,
+      "seats_or_posts": 26,
+      "applicants_per_seat": null,
+      "pass_rate_percent": null,
+      "preparation_years": "1-3",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "state and university drama departments",
+          "private acting schools",
+          "repertory and theatre-group apprenticeship, which needs no admission at all",
+          "FTII acting course"
+        ],
+        "non_credential_gain": "The six theatre productions NSD requires BEFORE you may even apply. That is the real preparation, it is done in amateur and college theatre, and it is stage experience nobody can take away - the single clearest case in this registry of preparation that is intrinsically worth doing whether or not the gate opens."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://www.kollegeapply.com/college/national-school-of-drama-delhi",
+        "checked_on": "2026-08-11"
+      },
+      "note": "Only 26 seats a year in the three-year Diploma in Dramatic Arts, which makes this one of the smallest gates in the registry. NSD DOES NOT PUBLISH APPLICANT NUMBERS and none was found, so applicants_per_seat is null rather than estimated. Eligibility is unusual and worth reading: a bachelor's degree in ANY discipline plus participation in at least six theatre productions, then an entrance examination, a five-day workshop and recommendations from theatre professionals. Tuition is nominal and students receive a monthly stipend, but SOURCES DISAGREE on its size (figures from Rs 3,000 to Rs 9,500 were seen) so no amount is recorded here."
+    },
+    "upsc-ifos": {
+      "name": "UPSC Indian Forest Service Examination",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": null,
+      "seats_or_posts": 150,
+      "applicants_per_seat": null,
+      "pass_rate_percent": null,
+      "preparation_years": "2-4",
+      "preparation_is_full_time": true,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "UPSC Civil Services, which shares the same preliminary examination",
+          "State Forest Service examinations",
+          "State Forest Range Officer recruitment",
+          "wildlife research and conservation NGOs",
+          "environmental consultancy"
+        ],
+        "non_credential_gain": "The IFS preliminary examination IS the Civil Services preliminary examination, so the preparation is completely shared with UPSC CSE - the largest transferable body of preparation in this registry. Beyond it, the IFS Main requires two optional science subjects at degree level, which is real subject mastery in forestry, botany, zoology, geology or an engineering discipline."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://pwonlyias.com/upsc-ifs-vacancy-2025/",
+        "checked_on": "2026-08-11"
+      },
+      "note": "150 vacancies notified for 2025 and 80 for 2026 - among the smallest cadres in the All-India Services. THE APPLICANT COUNT IS NOT SEPARATELY RECORDABLE and is left null rather than estimated: IFS candidates sit the Civil Services preliminary examination alongside roughly a million CSE aspirants, and no source splits out how many of those opted for forestry. Eligibility differs from CSE in one decisive way - the degree must include at least one of animal husbandry, botany, chemistry, geology, mathematics, physics, statistics, zoology, or be in agriculture, forestry or engineering."
+    },
+    "nchmct-jee": {
+      "name": "NCHMCT JEE",
+      "type": "national_public",
+      "mechanism": "seat_limited",
+      "applicants_per_year": null,
+      "seats_or_posts": 12000,
+      "applicants_per_seat": null,
+      "pass_rate_percent": null,
+      "preparation_years": "0-1",
+      "preparation_is_full_time": false,
+      "typical_total_cost_lakh": null,
+      "if_unsuccessful": {
+        "credential_gained": null,
+        "transfers_to": [
+          "state and private hotel management institutes, which admit on marks",
+          "a hotel management diploma or craft course with no entrance at all",
+          "direct entry to a hotel as a trainee, which the industry still accepts",
+          "any other degree - hospitality recruits graduates of anything"
+        ],
+        "non_credential_gain": "The general aptitude, reasoning, English and service-aptitude preparation is ordinary school-level material and transfers to every other undergraduate entrance a student might sit in the same year. Nothing about it is specific enough to be lost."
+      },
+      "verification": {
+        "status": "verified",
+        "source": "https://hospitality.careers360.com/articles/nchmct-jee-2025",
+        "checked_on": "2026-08-11"
+      },
+      "note": "More than 12,000 B.Sc Hospitality and Hotel Administration seats across roughly 80 participating institutes - central and state Institutes of Hotel Management plus private ones. THE APPLICANT COUNT WAS NOT FOUND and is left null rather than estimated. The seat count is the useful number here and it points the opposite way to most gates in this registry: 12,000 seats is a large intake, and hospitality is one of the more OPEN national routes rather than one of the closed ones. UNREFERENCED BY ANY PROFESSION, deliberately. It was recorded as primary_gate for Chef and for Hotel & Restaurant Manager and removed from both on review - a gate offering 12,000 seats to any graduate is not what determines who reaches either profession. It is kept in the registry rather than deleted BECAUSE the number is the finding: hospitality is one of the most open national routes in India, and a gate can be worth recording for what it proves about a sector even when no record should point at it."
+    }
+  },
+  "pending_gates": [
+    "VITEEE, COMEDK, SRMJEEE — BLOCKED BY THEIR OWN RULE, correctly. Applicant counts and four-year costs were searched and not found at the precision the schema needs, and a private_reputed gate without typical_total_cost_lakh is rejected by audit.py. Adding them with a guessed cost is the exact failure the pairing rule was written to stop.",
+    "COMEDK carries a finding worth acting on when it is added: of 26,827 engineering seats at the start of 2025 counselling, only 9,637 were filled after four rounds — more than 17,000 vacant. Private engineering in Karnataka is not a competition gate at all; it is a COST gate. That inverts how private entrances should be presented, and it should be checked for VITEEE and SRMJEEE before either is recorded.",
+    "NDA and CDS — applicants and vacancies not yet fetched.",
+    "ACET (Institute of Actuaries of India) — applicant count not published prominently.",
+    "State Judicial Services — conducted state by state, no single national figure exists.",
+    "NMAT, SNAP, IIFT — private management entrances, cost and applicants not yet fetched.",
+    "NATA and B.Arch entrances — not yet fetched.",
+    "IMU CET, DGCA examinations, BARC OCES/DGFS — small specialist gates, not yet fetched.",
+    "COACHING COST is not recorded on any public gate. typical_total_cost_lakh is null on UPSC, NEET, CAT, CLAT, JEE and CUET, but Indian coaching is a real and often decisive family expense.",
+    "NID DAT - the National Institute of Design admission test. Seat counts are published (roughly 425 B.Des and 347 M.Des) but NID DOES NOT PUBLISH APPLICANT NUMBERS, and no source carrying them was found. A ratio would have to be estimated, so the gate is deferred rather than guessed. It is referenced by six Sector 8 professions in entrance_exams, which is allowed - naming an exam is not the same as quantifying it.",
+    "CEED - the postgraduate design entrance for M.Des at the IITs and IISc. Applicant count not fetched.",
+    "MICAT - MICA Ahmedabad's test, the main private gate into advertising and strategic communication. Applicants and total cost not fetched; a private_reputed gate without a cost is rejected by audit.py.",
+    "FDDI AIST - the Footwear Design and Development Institute's entrance. FDDI is an Institute of National Importance under the FDDI Act 2017, but applicant and seat numbers were not fetched.",
+    "FTII JET (Film and Television Institute of India, and SRFTI Kolkata, which share the test) - the most competitive film-school entrance in India and by reputation one of the hardest gates of any kind. NEITHER APPLICANT NOR SEAT NUMBERS WERE FOUND in a source. Recording it with an estimated ratio would be the exact failure the registry exists to prevent, so it is deferred. It is still named in entrance_exams on three Sector 9 professions.",
+    "IIMC entrance (Indian Institute of Mass Communication) - the main public postgraduate route into journalism. Applicant and seat numbers not published in any source found.",
+    "Kalakshetra, Rabindra Bharati and the university dance and music departments - the main public routes into classical performing arts degrees. Seat and applicant numbers not fetched.",
+    "Sports quota recruitment (Railways, police, banks, PSUs and the armed forces) - not a conventional entrance exam and so an awkward fit for this registry, but it is the decisive gate for most Indian athletes. Vacancies are notified per zone and per year with no national total published, and the qualifying condition is a sporting placing rather than a test score. Deferred until it is clear whether the registry should model a gate whose currency is achievement rather than rank.",
+    "NSNIS Patiala diploma and certificate courses in sports coaching - the main public coaching qualification in India. Applicant and seat numbers not fetched.",
+    "CTET and the state Teacher Eligibility Tests - a statutory eligibility gate sat by very large numbers, and the pass rate is the figure that matters because TET is attrition-limited rather than seat-limited. Candidate and pass-rate numbers not fetched.",
+    "UGC NET - the eligibility gate for Assistant Professor posts and, with JRF, for funded PhD study. CSIR-UGC NET is already in the registry for the sciences; the UGC NET covering humanities, social sciences and commerce is a separate examination and has not been fetched.",
+    "M.Phil in Clinical Psychology (RCI-recognised) - the decisive gate in this sector by a wide margin. Places are extremely few nationally and the qualification is what converts a psychology master's into a lawful clinical practice. Applicant and seat numbers not fetched, and they are the numbers a psychology student most needs.",
+    "TISS and central university MSW admissions - the main route into professional social work. Now largely through CUET PG, which is already in the registry as a distributed gate, but programme-level competition figures were not fetched.",
+    "State Forest Range Officer and Forest Guard recruitment - the volume employer in forestry by a wide margin, run state by state with no national figure.",
+    "NABET/QCI accreditation for EIA Coordinators and Functional Area Experts - the credential that decides who may sign an Environmental Impact Assessment report. It is an accreditation scheme rather than an examination, and its numbers were not fetched.",
+    "CUET (ICAR-UG), formerly ICAR AIEEA - deliberately NOT recorded as a gate for these professions even though it exists and is national, because it fills only 15 percent of bachelor's seats at participating agricultural universities. Recording it as the gate would misdescribe entry to agricultural education, where the ordinary route is state counselling. Applicant numbers were also not found. Both reasons point the same way.",
+    "State agricultural university admissions - the route for roughly 85 percent of B.Sc Agriculture seats, run state by state with no national figure.",
+    "Agricultural Research Service (ARS) examination conducted by ASRB - the gate into ICAR scientist posts, and the decisive one for an agricultural research career. Applicant and vacancy numbers not fetched.",
+    "IMU CET and DG Shipping approved pre-sea training admissions - the entrance to the Diploma in Nautical Science and B.Tech Marine Engineering. Applicant and seat numbers not fetched. The binding constraint in merchant navy entry is not this examination but COMPANY SPONSORSHIP for the 18 months of shipboard training, which no registry field currently models.",
+    "Cabin crew recruitment by airlines - not an examination at all. Selection is by airline assessment day against height, reach, medical and language criteria, run per airline per intake with no published figures.",
+    "UGC NET in History, Sociology, Anthropology, Archaeology, Philosophy and the classical languages - the eligibility gate for Assistant Professor posts, which are the main destination for most of this sector. Already noted as pending from Sector 12; it matters more here, because in the humanities the academic post IS the profession for a large share of graduates.",
+    "ASI recruitment for Assistant Archaeologist and Deputy Superintending Archaeologist posts, and state archaeology department recruitment. Vacancy and applicant numbers not fetched, and these are the numbers that decide whether archaeology is a career or a degree.",
+    "YCB level examinations (Ministry of AYUSH) - the only structured credential in this sector and a laddered one, but a certification scheme rather than an entrance. Candidate numbers and pass rates were not fetched, and a pass rate is the figure that would matter because it is attrition-limited rather than seat-limited.",
+    "AAI JUNIOR EXECUTIVE (AIR TRAFFIC CONTROL) - the seats are published in each advertisement but the APPLICANT count is not, and a gate cannot report odds without both. Advertisement 02/2025/CHQ is cited on the profession record for pay; add the gate when an applicant figure is sourced.",
+    "RRB ASSISTANT LOCO PILOT - CEN 01/2026 gives 11,127 vacancies, which is half a gate. Applicant numbers for RRB notifications run into the millions and are widely reported but were not found in the Railway Board's own documents; adding a ratio from a news estimate would be exactly the invented number the money rules forbid."
+  ],
+  "gate_pairing_rule": "A gate named as an ALTERNATIVE must sit beside a primary — showing only the fallback route hides the main one. But A PRIVATE GATE MAY ITSELF BE THE PRIMARY, and in several fields it is the only real way in: animation, game design, culinary arts, sound engineering and much of fashion have no public entrance examination at all. In that case the gate is the primary, it does NOT claim alternative_to, and its cost is still mandatory — because when the private route is the only route, the fee IS the entry barrier and hiding it would be the worst version of this error.\n\nThe rule was originally written as 'a private gate may not be recorded without its public primary'. That was too strong. It came from a real failure — BITSAT was added while JEE Main was deferred, so twenty engineering professions showed a 23.5 lakh private route as their only quantified door — but the fix over-corrected into forbidding a case that is legitimate and common. What was actually wrong there was that JEE Main EXISTED and had been skipped, not that a private gate was present.\n\nEnforced in audit.py: alternative_gates require a primary_gate; a gate claiming alternative_to must point at a gate in this registry; every private_reputed gate states its cost.",
+  "primary_gate_rule": "primary_gate is the gate that most DETERMINES whether someone reaches the profession — NOT the first one they sit. For every Sector 3 research profession the first gate is CUET, but CUET feeds ordinary B.Sc programmes with no national seat pool and is the easiest gate they face. The decisive one is CSIR-UGC NET, because the JRF stipend decides whether a research career is financially survivable at all, or IIT JAM for the M.Sc seat. Naming CUET as primary told a student the hard part was getting into a B.Sc. Precedence when several apply: CSIR-UGC NET, then IIT JAM, then GATE, then IBPS PO, then CUET. A private gate may hold this slot. Type does not decide precedence — DECISIVENESS does."
+}
