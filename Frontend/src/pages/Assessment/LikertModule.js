@@ -56,13 +56,13 @@ function LikertModule({ title, intro, stem, items, scale, answers, onChange, onD
                 const options = item.options || scale
 
                 return (
-                    <div key={item.id}>
-                        <p><strong>{item.text}</strong></p>
-                        <div>
+                    <div key={item.id} className={`question-card${answers[item.id] ? " is-answered" : ""}`}>
+                        <p className="question-text"><strong>{item.text}</strong></p>
+                        <div className="choices">
                             {options.map((option) => (
                                 <label
                                     key={option.value}
-                                    style={{ display: "block", padding: "10px 0", cursor: "pointer" }}
+                                    className={`choice${answers[item.id] === option.value ? " is-checked" : ""}`}
                                 >
                                     <input
                                         type="radio"
@@ -81,14 +81,14 @@ function LikertModule({ title, intro, stem, items, scale, answers, onChange, onD
 
             <hr />
 
-            <div>
+            <div className="module-nav">
                 {page > 0 && (
-                    <button type="button" onClick={() => { setPage(page - 1); window.scrollTo(0, 0) }}>
+                    <button type="button" className="btn btn-ghost" onClick={() => { setPage(page - 1); window.scrollTo(0, 0) }}>
                         Back
                     </button>
                 )}
                 {" "}
-                <button type="button" onClick={handleNext} disabled={!pageComplete}>
+                <button type="button" className="btn btn-primary" onClick={handleNext} disabled={!pageComplete}>
                     {isLastPage ? "Finish this section" : "Next"}
                 </button>
                 {!pageComplete && <p><em>Answer all {pageItems.length} on this page to continue.</em></p>}

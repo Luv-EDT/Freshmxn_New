@@ -1,0 +1,536 @@
+/* The logged-in product: report, assessment, interest form, paywall, profile. */
+
+/* ── report ───────────────────────────────────────────────────────────────────────────────────── */
+
+/* the report reads best in a narrower column than the rest of the app */
+.report-page .app-header ~ :is(div, h1, h2, h3, h4, p, section, form, ul, ol, details, blockquote):not(.page) {
+    max-width: 840px;
+}
+
+.report-page details {
+    width: 100%;
+    max-width: 840px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.report-details {
+    margin: var(--space-4) auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0 var(--space-4) var(--space-2);
+}
+
+.report-page .app-header ~ details.report-details {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+}
+
+.report-summary {
+    cursor: pointer;
+    min-height: 44px;                 /* a tap target, kept from the original inline style */
+    padding: 12px 0;
+    font-weight: 700;
+    font-size: 1rem;
+    list-style-position: inside;
+}
+
+.report-summary.small {
+    font-size: 0.95rem;
+}
+
+.report-small {
+    font-size: 0.92rem;
+}
+
+.report-small li {
+    margin: 6px 0;
+}
+
+.report-group-title {
+    font-size: 1.1rem;
+    margin: var(--space-5) 0 2px;
+}
+
+.report-group-why {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0 0 10px;
+}
+
+.aspiration-card {
+    border-left: 4px solid var(--pink);
+    background: var(--surface);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+.aspiration-title {
+    margin-top: 0;
+    font-size: 1.05rem;
+}
+
+/* profession cards (ProfessionCard.js) */
+.profession-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin: var(--space-2) 0;
+    max-width: 800px;
+    box-shadow: var(--shadow-sm);
+    transition: opacity 0.2s ease, border-color 0.15s ease;
+}
+
+.profession-card:hover {
+    border-color: var(--teal);
+}
+
+.profession-card.is-open {
+    border-color: var(--teal);
+}
+
+/* a filter FADES a row, never removes it (05_Day4_Handover §2b) */
+.profession-card.is-dimmed {
+    opacity: 0.45;
+}
+
+button.pc-toggle {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 14px 16px;
+    min-height: 48px;                 /* a tap target, kept from the original inline style */
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius);
+    color: var(--navy);
+    font-weight: 400;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+button.pc-toggle:hover:not(:disabled) {
+    color: var(--navy);
+}
+
+.pc-name {
+    font-weight: 900;
+    font-size: 1.08rem;
+}
+
+.pc-sign {
+    float: right;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.pc-meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.pc-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: var(--space-2);
+}
+
+.pc-dim-note {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.pc-body {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--line);
+}
+
+.pc-section {
+    margin: var(--space-4) 0;
+}
+
+.pc-section-title {
+    margin: 0 0 6px;
+    font-weight: 900;
+    color: var(--teal-dark);
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.pc-oneliner {
+    font-size: 1.02rem;
+    margin-top: var(--space-4);
+}
+
+.pc-tier-reason,
+.pc-nuance {
+    font-size: 0.88rem;
+    color: var(--navy-soft);
+    margin: 8px 0;
+}
+
+.pc-line {
+    margin: 4px 0;
+}
+
+.pc-small {
+    margin: 4px 0;
+    font-size: 0.9rem;
+}
+
+.pc-small.tight {
+    margin: 2px 0;
+}
+
+.pc-group {
+    margin: 8px 0;
+}
+
+.pc-path {
+    padding-left: 20px;
+    margin: 0;
+}
+
+.pc-path li {
+    margin: 8px 0;
+}
+
+.pc-path li.is-past {
+    opacity: 0.55;
+}
+
+.pc-path li.is-next {
+    font-weight: 700;
+}
+
+.pc-stage,
+.pc-next {
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.pc-path li.is-next .pc-next {
+    color: var(--teal);
+}
+
+/* the filter bar (ReportFilterBar.js) */
+.filter-bar {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
+    max-width: 800px;
+}
+
+.filter-group {
+    margin: 0 0 var(--space-3);
+}
+
+.filter-title {
+    margin: 0 0 6px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.filter-hint {
+    margin: 0 0 6px;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.filter-options.spaced {
+    margin-bottom: 6px;
+}
+
+button.filter-option {
+    padding: 8px 14px;
+    min-height: 44px;                 /* a tap target, kept from the original inline style */
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--navy);
+}
+
+button.filter-option.is-on {
+    border: 2px solid var(--teal);
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+button.filter-option.is-dead {
+    opacity: 0.4;
+    cursor: default;
+}
+
+button.filter-clear {
+    margin-left: 10px;
+}
+
+.filter-summary {
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.filter-summary.end {
+    margin: 8px 0 0;
+}
+
+/* ── paywall (Paywall.js) ─────────────────────────────────────────────────────────────────────── */
+
+.plan-grid {
+    display: grid;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+@media (min-width: 720px) {
+    .plan-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.plan-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+.plan-card.is-selected {
+    border: 2px solid var(--teal);
+    box-shadow: var(--shadow);
+}
+
+.plan-card h3 {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.plan-card .price {
+    margin: 0;
+}
+
+.plan-card .btn {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.coupon-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.coupon-row label {
+    width: 100%;
+}
+
+.coupon-row br {
+    display: none;
+}
+
+.coupon-row input {
+    flex: 1 1 180px;
+    max-width: 320px;
+}
+
+.coupon-row p {
+    width: 100%;
+}
+
+.quote-card,
+.aid-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin: var(--space-4) 0;
+}
+
+.quote-card {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.aid-card h3 {
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+}
+
+/* ── assessment intro (AssessmentIntro.js) ────────────────────────────────────────────────────── */
+
+.module-row {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    box-shadow: var(--shadow-sm);
+}
+
+.module-row.is-done {
+    background: #f6f4ee;
+}
+
+.module-row p {
+    margin-bottom: var(--space-2);
+}
+
+.module-row .module-title {
+    margin-bottom: var(--space-2);
+}
+
+.module-row .btn {
+    margin-top: var(--space-1);
+}
+
+/* ── question screens (LikertModule and the other modules) ────────────────────────────────────── */
+
+.question-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    box-shadow: var(--shadow-sm);
+}
+
+.question-card.is-answered {
+    border-color: var(--teal-tint);
+}
+
+.question-text {
+    margin-bottom: var(--space-3);
+}
+
+.choices {
+    display: grid;
+    gap: 6px;
+}
+
+/* every answer is a full-width row — a big, forgiving tap target on a phone */
+label.choice,
+:is(.page, .app-header ~ *) label:has(> input[type="radio"]),
+:is(.page, .app-header ~ *) label:has(> input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-weight: 400;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+label.choice:hover,
+:is(.page, .app-header ~ *) label:has(> input[type="radio"]):hover,
+:is(.page, .app-header ~ *) label:has(> input[type="checkbox"]):hover {
+    border-color: var(--teal);
+}
+
+label.choice.is-checked,
+:is(.page, .app-header ~ *) label:has(> input:checked) {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+    font-weight: 700;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+    accent-color: var(--teal);
+    width: 18px;
+    height: 18px;
+    flex: none;
+    margin: 0;
+}
+
+/* labels that hold a choice sit as a stacked list with a little air */
+:is(.page, .app-header ~ *) label:has(> input[type="radio"]) + label,
+:is(.page, .app-header ~ *) label:has(> input[type="checkbox"]) + label {
+    margin-top: 6px;
+}
+
+.module-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    margin: var(--space-4) 0 var(--space-6);
+}
+
+.module-nav p {
+    width: 100%;
+    margin: 0;
+    color: var(--muted);
+}
+
+/* "one attempt only" — a warm caution, not an error: pink rule, cream ground, navy text */
+.caution-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--pink);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-5);
+    margin: var(--space-4) 0;
+}
+
+.caution-card h3 {
+    margin-top: 0;
+    font-size: 1.2rem;
+}
+
+.caution-card p:last-child {
+    margin-bottom: 0;
+}
+
+/* plain text fields on every app page fill the column (capped for a readable line on a laptop) —
+   the interest form's inputs had no width at all and cut their own placeholders off at 180 px */
+.app-header ~ * :where(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select, textarea):not([class*="ant-"]) {
+    width: 100%;
+    max-width: 480px;
+}
+
+/* stacked plain buttons in the long forms get a little air between them */
+.app-header ~ * :where(button:not([class*="ant-"])) {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}

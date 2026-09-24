@@ -392,7 +392,7 @@ function AssessmentShell() {
 
             {!SELF_SAVING.includes(moduleKey) && (
                 <p>
-                    <button type="button" style={{ padding: "12px 18px", minHeight: "44px", fontSize: "16px" }} onClick={handleSaveAndLeave} disabled={isSaving}>
+                    <button type="button" className="btn btn-ghost" style={{ padding: "12px 18px", minHeight: "44px", fontSize: "16px" }} onClick={handleSaveAndLeave} disabled={isSaving}>
                         {isSaving ? "Saving…" : "Save and come back later"}
                     </button>
                 </p>

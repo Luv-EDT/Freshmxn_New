@@ -215,33 +215,36 @@ function Paywall() {
             {/* Offerings */}
             {!isOnTierTwo && !pendingRequest && (
                 <div>
-                    <div>
+                    <div className="plan-grid">
+                    <div className={`plan-card${selectedTier === 1 ? " is-selected" : ""}`}>
                         <h3>Tier 1 — {pricing.tiers[1].name}</h3>
-                        <p>₹{pricing.tiers[1].amountInr}</p>
+                        <p className="price">₹{pricing.tiers[1].amountInr}</p>
                         <p>Full assessment, your psychometric profile, a journey-shaped profession report, readiness layer and values profile.</p>
                         {user.paid && user.currentTier === 1 ? (
                             <p><em>Your current plan</em></p>
                         ) : (
-                            <button type="button" onClick={() => handleSelectTier(1, coupon)}>
+                            <button type="button" className={selectedTier === 1 ? "btn btn-ghost" : "btn btn-primary"} onClick={() => handleSelectTier(1, coupon)}>
                                 {selectedTier === 1 ? "Selected" : "Choose Tier 1"}
                             </button>
                         )}
                     </div>
 
-                    <div>
+                    <div className={`plan-card${selectedTier === 2 ? " is-selected" : ""}`}>
                         <h3>Tier 2 — {pricing.tiers[2].name}</h3>
-                        <p>
+                        <p className="price">
                             ₹{pricing.tiers[2].amountInr}
                             {user.paid && user.currentTier === 1 && ` — upgrade for ₹${pricing.upgradeAmountInr}`}
                         </p>
                         <p>Everything in Tier 1, plus a mentor matched to your chosen profession: a 1-hour clarity session and a 20-minute follow-up.</p>
-                        <button type="button" onClick={() => handleSelectTier(2, coupon)}>
+                        <button type="button" className={selectedTier === 2 ? "btn btn-ghost" : "btn btn-primary"} onClick={() => handleSelectTier(2, coupon)}>
                             {selectedTier === 2 ? "Selected" : user.paid && user.currentTier === 1 ? "Upgrade to Tier 2" : "Choose Tier 2"}
                         </button>
                     </div>
 
+                    </div>
+
                     {/* Coupon */}
-                    <div>
+                    <div className="coupon-row">
                         <label>Coupon code (optional)</label>
                         <br />
                         <input value={coupon} onChange={(e) => setCoupon(e.target.value)} />
@@ -251,7 +254,7 @@ function Paywall() {
 
                     {/* Final amount */}
                     {quote && (
-                        <div>
+                        <div className="quote-card">
                             <p>
                                 {quote.isUpgrade ? "Upgrade amount" : "Amount"}: ₹{quote.baseAmountInr}
                                 {quote.isFinancialAid && " — financial aid rate"}
@@ -261,9 +264,9 @@ function Paywall() {
                             </p>
 
                             {pricing.paymentMode === "razorpay" ? (
-                                <button type="button" onClick={handlePayNow}>Pay ₹{quote.finalAmountInr}</button>
+                                <button type="button" className="btn btn-primary" onClick={handlePayNow}>Pay ₹{quote.finalAmountInr}</button>
                             ) : (
-                                <button type="button" onClick={() => setShowForm(true)}>Request access</button>
+                                <button type="button" className="btn btn-primary" onClick={() => setShowForm(true)}>Request access</button>
                             )}
                         </div>
                     )}
@@ -278,7 +281,7 @@ function Paywall() {
                     ) : pendingAid ? (
                         <p>💙 <strong>Your financial aid request is pending.</strong> We'll call you soon.</p>
                     ) : (
-                        <div>
+                        <div className="aid-card">
                             <h3>💙 FINANCIAL AID AVAILABLE</h3>
                             <p>
                                 Can't afford it? Tell us on a quick call. If the need is genuine, we'll offer you a

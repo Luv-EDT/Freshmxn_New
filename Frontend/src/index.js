@@ -15,6 +15,7 @@ import "./styles/tokens.css"
 import "./styles/base.css"
 import "./styles/components.css"
 import "./styles/public.css"
+import "./styles/app.css"
 
 const root = ReactDOM.createRoot(document.getElementById("root"))
 

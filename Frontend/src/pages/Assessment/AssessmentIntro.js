@@ -84,14 +84,14 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
         if (isDone && (module.external || module.key === "sartRaw")) label = "See what was saved"
 
         return (
-            <div key={module.key}>
-                <p>
+            <div key={module.key} className={`module-row${isDone ? " is-done" : ""}`}>
+                <p className="module-title">
                     <strong>{module.title}</strong> · about {module.minutes} minutes
                     {isDone && <span> · done</span>}
                     {isStarted && <span> · in progress</span>}
                 </p>
                 {note && <p><em>{note}</em></p>}
-                <button type="button" style={{ padding: "10px 16px", minHeight: "44px", fontSize: "16px" }} onClick={() => onOpen(module.key)}>{label}</button>
+                <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
             </div>
         )
     }
@@ -155,7 +155,7 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 <>
                     <button
                         type="button"
-                        style={{ padding: "12px 20px", minHeight: "48px", fontSize: "16px" }}
+                        className="btn btn-primary btn-next"
                         onClick={onReadReport}
                     >
                         Read my report
@@ -171,7 +171,7 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 <>
                     <button
                         type="button"
-                        style={{ padding: "12px 20px", minHeight: "48px", fontSize: "16px" }}
+                        className="btn btn-primary btn-next"
                         onClick={onSubmit}
                         disabled={!canSubmit || isSubmitting}
                     >

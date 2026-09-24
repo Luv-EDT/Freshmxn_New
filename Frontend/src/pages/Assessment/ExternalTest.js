@@ -144,7 +144,7 @@ function ExternalTest({ moduleKey, onDone }) {
 
                 <p>
                     <a href={config.url} target="_blank" rel="noopener noreferrer">
-                        <button type="button" style={button}>Open the test on {config.siteName}</button>
+                        <button type="button" className="btn btn-primary" style={button}>Open the test on {config.siteName}</button>
                     </a>
                 </p>
 
@@ -153,7 +153,7 @@ function ExternalTest({ moduleKey, onDone }) {
                 </p>
 
                 <p>
-                    <button type="button" style={button} onClick={() => setPhase("upload")}>
+                    <button type="button" className="btn btn-primary" style={button} onClick={() => setPhase("upload")}>
                         I have finished it — upload my screenshot
                     </button>
                 </p>
@@ -243,7 +243,7 @@ function ExternalTest({ moduleKey, onDone }) {
                 </p>
 
                 <p>
-                    <button type="button" style={button} onClick={() => setPhase("warn")} disabled={busy}>
+                    <button type="button" className="btn btn-primary" style={button} onClick={() => setPhase("warn")} disabled={busy}>
                         Back
                     </button>
                 </p>
@@ -279,7 +279,7 @@ function ExternalTest({ moduleKey, onDone }) {
                 ))}
 
                 <p>
-                    <button type="button" style={{ ...button, marginRight: "8px" }} onClick={() => handleConfirm(true)} disabled={busy}>
+                    <button type="button" className="btn btn-primary" style={{ ...button, marginRight: "8px" }} onClick={() => handleConfirm(true)} disabled={busy}>
                         Yes, that is right
                     </button>
                 </p>

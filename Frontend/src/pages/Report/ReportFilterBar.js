@@ -9,11 +9,11 @@ import { AI_BANDS, DEMAND_LEVELS, PAY_BANDS, PAY_BASIS, EMPTY_FILTERS, SORTS } f
 // before pressing — and it teaches them something true about their list.
 
 const Group = ({ title, options, selected, counts, onToggle, hint }) => (
-    <div style={{ margin: "0 0 12px" }}>
-        <p style={{ margin: "0 0 6px", fontSize: "13px", fontWeight: "bold" }}>{title}</p>
-        {hint && <p style={{ margin: "0 0 6px", fontSize: "12px" }}><em>{hint}</em></p>}
+    <div className="filter-group">
+        <p className="filter-title">{title}</p>
+        {hint && <p className="filter-hint"><em>{hint}</em></p>}
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+        <div className="filter-options">
             {options.map((option) => {
                 const count = counts ? counts[option.value] : null
                 const isOn = selected.includes(option.value)
@@ -26,15 +26,7 @@ const Group = ({ title, options, selected, counts, onToggle, hint }) => (
                         onClick={() => !dead && onToggle(option.value)}
                         disabled={dead}
                         title={dead ? "Nothing in your list matches this" : ""}
-                        style={{
-                            padding: "8px 12px",
-                            minHeight: "44px",
-                            fontSize: "14px",
-                            border: isOn ? "2px solid #0b62d6" : "1px solid #ccc",
-                            background: "transparent",
-                            opacity: dead ? 0.4 : 1,
-                            cursor: dead ? "default" : "pointer",
-                        }}
+                        className={`filter-option${isOn ? " is-on" : ""}${dead ? " is-dead" : ""}`}
                     >
                         {option.label}
                         {count !== null && count !== undefined && <span> ({count})</span>}
@@ -57,25 +49,18 @@ function ReportFilterBar({ filters, counts, onChange, sort, onSort, activeCount,
     const anyActive = filters.ai.length > 0 || filters.demand.length > 0 || filters.payBands.length > 0 || sort !== "best"
 
     return (
-        <div style={{ border: "1px solid #ccc", padding: "14px", margin: "16px 0", maxWidth: "760px" }}>
+        <div className="filter-bar">
             {/* SORT FIRST. It is the control most students actually want — "show me the quickest
                 ones" is a more natural question than any filter, and it never hides anything. */}
-            <div style={{ margin: "0 0 14px" }}>
-                <p style={{ margin: "0 0 6px", fontSize: "13px", fontWeight: "bold" }}>Order by</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+            <div className="filter-group">
+                <p className="filter-title">Order by</p>
+                <div className="filter-options">
                     {SORTS.map((option) => (
                         <button
                             type="button"
                             key={option.value}
                             onClick={() => onSort(option.value)}
-                            style={{
-                                padding: "8px 12px",
-                                minHeight: "44px",
-                                fontSize: "14px",
-                                border: sort === option.value ? "2px solid #0b62d6" : "1px solid #ccc",
-                                background: "transparent",
-                                cursor: "pointer",
-                            }}
+                            className={`filter-option${sort === option.value ? " is-on" : ""}`}
                         >
                             {option.label}
                         </button>
@@ -83,7 +68,7 @@ function ReportFilterBar({ filters, counts, onChange, sort, onSort, activeCount,
                 </div>
             </div>
 
-            <p style={{ margin: "0 0 10px", fontSize: "13px" }}>
+            <p className="filter-summary">
                 <strong>Narrow it down</strong> — nothing is removed. What does not match fades, so
                 you can always see what you filtered out.
             </p>
@@ -112,23 +97,16 @@ function ReportFilterBar({ filters, counts, onChange, sort, onSort, activeCount,
             )}
 
             {available.pay && (
-                <div style={{ margin: "0 0 12px" }}>
-                    <p style={{ margin: "0 0 6px", fontSize: "13px", fontWeight: "bold" }}>Pay</p>
+                <div className="filter-group">
+                    <p className="filter-title">Pay</p>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "6px" }}>
+                    <div className="filter-options spaced">
                         {PAY_BASIS.map((basis) => (
                             <button
                                 type="button"
                                 key={basis.value}
                                 onClick={() => onChange({ ...filters, payBasis: basis.value })}
-                                style={{
-                                    padding: "8px 12px",
-                                    minHeight: "44px",
-                                    fontSize: "14px",
-                                    border: filters.payBasis === basis.value ? "2px solid #0b62d6" : "1px solid #ccc",
-                                    background: "transparent",
-                                    cursor: "pointer",
-                                }}
+                                className={`filter-option${filters.payBasis === basis.value ? " is-on" : ""}`}
                             >
                                 {basis.label}
                             </button>
@@ -146,7 +124,7 @@ function ReportFilterBar({ filters, counts, onChange, sort, onSort, activeCount,
                 </div>
             )}
 
-            <p style={{ margin: "8px 0 0", fontSize: "13px" }}>
+            <p className="filter-summary end">
                 {anyActive
                     ? <span><strong>{activeCount}</strong> of {total} match — the rest are faded, not gone.</span>
                     : <span>Showing all {total}.</span>}
@@ -154,7 +132,7 @@ function ReportFilterBar({ filters, counts, onChange, sort, onSort, activeCount,
                     <button
                         type="button"
                         onClick={() => { onChange(EMPTY_FILTERS); onSort("best") }}
-                        style={{ marginLeft: "10px", padding: "8px 12px", minHeight: "44px", fontSize: "13px" }}
+                        className="filter-option filter-clear"
                     >
                         Reset
                     </button>

@@ -394,7 +394,7 @@ function ReportPage() {
     })()
 
     return (
-        <div style={{ maxWidth: "800px" }}>
+        <div className="report-page">
             <Navbar />
             <JourneyProgress user={user} current="report" />
 
@@ -413,7 +413,7 @@ function ReportPage() {
             )}
 
             {myTags.length > 0 && (
-                <p style={{ fontSize: "14px" }}>
+                <p className="report-small">
                     What seems to drive you: <strong>{listOf(myTags)}</strong>. You will see this
                     alongside the careers below that are pursued for the same reason.
                 </p>
@@ -424,7 +424,7 @@ function ReportPage() {
             <h2>Reachable from here</h2>
             {framing.runwayNote && <p><em>{framing.runwayNote}</em></p>}
 
-            <p style={{ fontSize: "14px" }}><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
+            <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
 
             <ReportFilterBar
                 filters={filters}
@@ -439,28 +439,28 @@ function ReportPage() {
 
             {/* THE RANKING EXPLAINS ITSELF. A student who cannot see why one career sits above
                 another has been handed an opinion with a number on it. */}
-            <details style={{ margin: "12px 0" }}>
-                <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "15px" }}>
+            <details className="report-details">
+                <summary className="report-summary small">
                     <strong>How this list is ordered</strong>
                 </summary>
-                <p style={{ fontSize: "14px" }}>Three things decide where a career sits, in this order:</p>
-                <ol style={{ fontSize: "14px", paddingLeft: "20px" }}>
-                    <li style={{ margin: "6px 0" }}>
+                <p className="report-small">Three things decide where a career sits, in this order:</p>
+                <ol className="report-small">
+                    <li>
                         <strong>What you have actually done.</strong> Something you have stuck with for
                         years counts for more than something you picked up recently, and both count for
                         more than a career that reached you on your profile alone.
                     </li>
-                    <li style={{ margin: "6px 0" }}>
+                    <li>
                         <strong>Whether it fits how you think and work.</strong> Measured from the
                         assessment against what the work actually demands.
                     </li>
-                    <li style={{ margin: "6px 0" }}>
+                    <li>
                         <strong>How strongly you feel about it.</strong> Loving something outranks having
                         won at it, which outranks saying you are confident about it — what you told us
                         about yourself is the softest of the three, so it counts least.
                     </li>
                 </ol>
-                <p style={{ fontSize: "14px" }}>
+                <p className="report-small">
                     <em>
                         Nothing here is a verdict on what you are capable of. It is a reading of the
                         evidence you gave us, and it moves when you give us more.
@@ -470,8 +470,8 @@ function ReportPage() {
 
             {grouped.map((group) => (
                 <div key={group.label}>
-                    <h3 style={{ fontSize: "15px", marginBottom: "2px" }}>{group.label}</h3>
-                    <p style={{ fontSize: "13px", margin: "0 0 10px" }}><em>{group.why}</em></p>
+                    <h3 className="report-group-title">{group.label}</h3>
+                    <p className="report-group-why"><em>{group.why}</em></p>
                     {group.entries.map((entry) => {
                         const missed = missedBy(entry, filters, details[entry.professionId])
 
@@ -537,8 +537,8 @@ function ReportPage() {
                 stated wish is still answered in full — including the ones that did not work out —
                 but a student who is happy with their list does not have to scroll past all of it. */}
             {aspirationSignals.length > 0 && (
-                <details style={{ margin: "20px 0" }}>
-                    <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+                <details className="report-details">
+                    <summary className="report-summary">
                         <strong>What you said you wanted</strong> — what happened to {aspirationSignals.length === 1 ? "it" : "all of them"}
                     </summary>
 
@@ -548,8 +548,8 @@ function ReportPage() {
                     </p>
 
                     {aspirationSignals.map((signal) => (
-                        <div key={signal.professionText} style={{ borderLeft: "3px solid #ccc", paddingLeft: "12px", margin: "16px 0" }}>
-                            <p style={{ marginTop: 0, fontSize: "17px" }}>
+                        <div key={signal.professionText} className="aspiration-card">
+                            <p className="aspiration-title">
                                 <strong>{signal.professionText}</strong>
                             </p>
 
@@ -665,8 +665,8 @@ function ReportPage() {
             )}
 
             {filtered.length > 0 && (
-                <details style={{ margin: "20px 0" }}>
-                    <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+                <details className="report-details">
+                    <summary className="report-summary">
                         <strong>Ruled out</strong> — {filtered.length} that are not open from here
                     </summary>
                     <ul>
@@ -696,25 +696,25 @@ function ReportPage() {
                 generic-ish actions; the concrete ones can be derived — the actual next step on the
                 actual top matches, the exams those need, and the sections still unfinished. A
                 student who opens this should find things with names in them, not advice. */}
-            <details style={{ margin: "16px 0" }} open>
-                <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+            <details className="report-details" open>
+                <summary className="report-summary">
                     <strong>What to do next</strong>
                 </summary>
 
                 {sections.nextSteps && <p>{sections.nextSteps}</p>}
 
                 {nextActions.length > 0 && (
-                    <ul style={{ paddingLeft: "20px" }}>
+                    <ul>
                         {nextActions.map((action, index) => (
-                            <li key={index} style={{ margin: "8px 0" }}>{action}</li>
+                            <li key={index}>{action}</li>
                         ))}
                     </ul>
                 )}
             </details>
 
             {sections.readiness && (
-                <details style={{ margin: "16px 0" }}>
-                    <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+                <details className="report-details">
+                    <summary className="report-summary">
                         <strong>Where you are right now</strong>
                     </summary>
                     <p>{sections.readiness}</p>

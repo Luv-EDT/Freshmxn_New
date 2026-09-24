@@ -113,7 +113,7 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
                 {localFormData.map((row, idx) => (
                     <div key={`aspiration${idx}`}>
                         <AutoComplete
-                            style={{ width: 360 }}
+                            style={{ width: "100%", maxWidth: 360 }}
                             value={row.professionText}
                             options={suggestions[idx] || []}
                             onSearch={(text) => handleSearch(idx, text)}

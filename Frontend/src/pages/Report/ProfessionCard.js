@@ -73,8 +73,8 @@ const AI_WORDS = {
 }
 
 const Section = ({ title, children }) => (
-    <div style={{ margin: "16px 0" }}>
-        <p style={{ margin: "0 0 6px", fontWeight: "bold" }}>{title}</p>
+    <div className="pc-section">
+        <p className="pc-section-title">{title}</p>
         {children}
     </div>
 )
@@ -103,37 +103,22 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
         const rows = (detail && detail.nuances ? detail.nuances : []).filter((nuance) => nuance.section === section)
         if (rows.length === 0) return null
         return rows.map((nuance, index) => (
-            <p key={index} style={{ margin: "6px 0", fontSize: "14px" }}><em>{nuance.statement}</em></p>
+            <p key={index} className="pc-nuance"><em>{nuance.statement}</em></p>
         ))
     }
 
     return (
-        <div
-            style={{
-                border: "1px solid #ccc",
-                margin: "8px 0",
-                opacity: dimmed ? 0.45 : 1,
-                maxWidth: "760px",
-            }}
-        >
+        <div className={`profession-card${dimmed ? " is-dimmed" : ""}${open ? " is-open" : ""}`}>
             <button
                 type="button"
                 onClick={toggle}
-                style={{
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "14px",
-                    minHeight: "48px",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: "16px",
-                }}
+                className="pc-toggle"
+                aria-expanded={open}
             >
-                <span style={{ fontSize: "17px", fontWeight: "bold" }}>{entry.profession}</span>
-                <span style={{ float: "right" }}>{open ? "−" : "+"}</span>
+                <span className="pc-name">{entry.profession}</span>
+                <span className="pc-sign" aria-hidden="true">{open ? "−" : "+"}</span>
                 <br />
-                <span style={{ fontSize: "13px" }}>
+                <span className="pc-meta">
                     {entry.professional_sector}
                     {typeof entry.display.yearsToQualify === "number" && (
                         <span> · {entry.display.yearsToQualify} yrs to qualify</span>
@@ -143,35 +128,23 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                 {/* The chips answer "why is this here?" in the student's own terms. Built from
                     joins the engine already made — see reportTags.js. */}
                 {chips.length > 0 && (
-                    <span style={{ display: "block", marginTop: "8px" }}>
+                    <span className="pc-chips">
                         {chips.map((chip) => (
-                            <span
-                                key={chip}
-                                style={{
-                                    display: "inline-block",
-                                    border: "1px solid #999",
-                                    borderRadius: "12px",
-                                    padding: "2px 10px",
-                                    margin: "0 6px 6px 0",
-                                    fontSize: "12px",
-                                }}
-                            >
-                                {chip}
-                            </span>
+                            <span key={chip} className="chip">{chip}</span>
                         ))}
                     </span>
                 )}
 
                 {/* Says which control faded it, rather than leaving a grey row unexplained. */}
                 {dimmed && missed.length > 0 && (
-                    <span style={{ display: "block", marginTop: "6px", fontSize: "12px" }}>
+                    <span className="pc-dim-note">
                         <em>Outside your {missed.join(" and ")} filter — still here because it matched you.</em>
                     </span>
                 )}
             </button>
 
             {open && (
-                <div style={{ padding: "0 14px 14px" }}>
+                <div className="pc-body">
                     {/* "Loading…" only while something is actually in flight. Once the fetch has
                         answered and this profession still has no record, saying "loading" implies
                         something is on its way that never is — and the student sits waiting. */}
@@ -185,16 +158,16 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                         the card rather than on the row so the list stays scannable — but shown,
                         because a position with no stated reason is just an assertion. */}
                     {tierReason && (
-                        <p style={{ fontSize: "13px", margin: "10px 0" }}><em>{tierReason}</em></p>
+                        <p className="pc-tier-reason"><em>{tierReason}</em></p>
                     )}
 
                     {detail && (
                         <>
-                            {detail.oneLiner && <p style={{ fontSize: "16px" }}>{detail.oneLiner}</p>}
+                            {detail.oneLiner && <p className="pc-oneliner">{detail.oneLiner}</p>}
 
                             {steps.length > 0 && (
                                 <Section title="How you get there">
-                                    <ol style={{ paddingLeft: "20px", margin: 0 }}>
+                                    <ol className="pc-path">
                                         {steps.map((step, index) => {
                                             const isNext = index === nextIndex
                                             const isPast = studentLevel !== undefined && step.level < studentLevel
@@ -202,14 +175,10 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                                             return (
                                                 <li
                                                     key={step.step}
-                                                    style={{
-                                                        margin: "8px 0",
-                                                        opacity: isPast ? 0.55 : 1,
-                                                        fontWeight: isNext ? "bold" : "normal",
-                                                    }}
+                                                    className={`${isPast ? "is-past" : ""}${isNext ? " is-next" : ""}`.trim() || undefined}
                                                 >
-                                                    <span style={{ fontSize: "13px" }}>{stageLabel(step.stage)}</span>
-                                                    {isNext && <span style={{ fontSize: "13px" }}> · your next step</span>}
+                                                    <span className="pc-stage">{stageLabel(step.stage)}</span>
+                                                    {isNext && <span className="pc-next"> · your next step</span>}
                                                     <br />
                                                     {step.requirement}
                                                 </li>
@@ -223,16 +192,16 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                             {detail.entranceExams && (detail.entranceExams.publicRoutes.length > 0 || detail.entranceExams.note) && (
                                 <Section title="Exams">
                                     {detail.entranceExams.publicRoutes.length > 0 && (
-                                        <p style={{ margin: "4px 0" }}>{detail.entranceExams.publicRoutes.join(" · ")}</p>
+                                        <p className="pc-line">{detail.entranceExams.publicRoutes.join(" · ")}</p>
                                     )}
                                     {detail.entranceExams.privateEntrances.length > 0 && (
-                                        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+                                        <p className="pc-small">
                                             Private: {detail.entranceExams.privateEntrances.join(" · ")}
                                         </p>
                                     )}
-                                    {detail.entranceExams.note && <p style={{ margin: "4px 0", fontSize: "14px" }}><em>{detail.entranceExams.note}</em></p>}
+                                    {detail.entranceExams.note && <p className="pc-small"><em>{detail.entranceExams.note}</em></p>}
                                     {detail.entryGate && typeof detail.entryGate.applicantsPerSeat === "number" && (
-                                        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+                                        <p className="pc-small">
                                             {detail.entryGate.name}: about <strong>{Math.round(detail.entryGate.applicantsPerSeat)} people per seat</strong>
                                             {detail.entryGate.preparationYears && <span>, usually {detail.entryGate.preparationYears} years of preparation</span>}.
                                         </p>
@@ -243,9 +212,9 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
 
                             {detail.industries.length > 0 && (
                                 <Section title="Where this work happens">
-                                    <p style={{ margin: "4px 0" }}>{detail.industries.join(" · ")}</p>
+                                    <p className="pc-line">{detail.industries.join(" · ")}</p>
                                     {detail.jobRoles.length > 0 && (
-                                        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+                                        <p className="pc-small">
                                             Roles: {detail.jobRoles.slice(0, 8).join(" · ")}
                                             {detail.jobRoles.length > 8 && <span> and {detail.jobRoles.length - 8} more</span>}
                                         </p>
@@ -256,12 +225,12 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
 
                             {detail.economics && (
                                 <Section title="What it pays">
-                                    <p style={{ margin: "4px 0" }}>
+                                    <p className="pc-line">
                                         Starting <strong>₹{detail.economics.earlyEarningsLpa}L</strong>
                                         {detail.economics.midCareerLpa && <span> · mid-career <strong>₹{detail.economics.midCareerLpa}L</strong></span>}
                                     </p>
                                     {typeof detail.economics.costOfEntryLakh === "number" && (
-                                        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+                                        <p className="pc-small">
                                             Typical cost of qualifying: about ₹{detail.economics.costOfEntryLakh}L
                                         </p>
                                     )}
@@ -269,7 +238,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                                         left behind. For these nine the midpoint describes almost
                                         nobody, and a figure without that caveat is misleading. */}
                                     {(detail.economics.distribution === "power_law" || detail.economics.distribution === "bimodal") && (
-                                        <p style={{ margin: "4px 0", fontSize: "14px" }}>
+                                        <p className="pc-small">
                                             <em>
                                                 {detail.economics.distribution === "power_law"
                                                     ? "Earnings here are very uneven — a few earn enormously and most earn little. An average figure describes almost nobody."
@@ -283,16 +252,16 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
 
                             {detail.demand && (
                                 <Section title="Demand">
-                                    <p style={{ margin: "4px 0" }}>{DEMAND_WORDS[detail.demand.india] || detail.demand.india}</p>
-                                    {detail.demand.note && <p style={{ margin: "4px 0", fontSize: "14px" }}><em>{detail.demand.note}</em></p>}
+                                    <p className="pc-line">{DEMAND_WORDS[detail.demand.india] || detail.demand.india}</p>
+                                    {detail.demand.note && <p className="pc-small"><em>{detail.demand.note}</em></p>}
                                     <Nuances section="demand" />
                                 </Section>
                             )}
 
                             {detail.aiExposure && (
                                 <Section title="How AI affects this">
-                                    <p style={{ margin: "4px 0" }}>{AI_WORDS[detail.aiExposure.band] || detail.aiExposure.band}</p>
-                                    {detail.aiExposure.reason && <p style={{ margin: "4px 0", fontSize: "14px" }}>{detail.aiExposure.reason}</p>}
+                                    <p className="pc-line">{AI_WORDS[detail.aiExposure.band] || detail.aiExposure.band}</p>
+                                    {detail.aiExposure.reason && <p className="pc-small">{detail.aiExposure.reason}</p>}
                                     <Nuances section="ai" />
                                 </Section>
                             )}
@@ -302,13 +271,13 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                             {detail.roleSpread && detail.roleSpread.deviatingRoles.length > 0 && (
                                 <Section title="Not all of it is the same job">
                                     {detail.roleSpread.deviatingRoles.map((group, index) => (
-                                        <div key={index} style={{ margin: "8px 0" }}>
-                                            <p style={{ margin: "2px 0", fontSize: "14px" }}>
+                                        <div key={index} className="pc-group">
+                                            <p className="pc-small tight">
                                                 <strong>{group.roles.join(", ")}</strong> lean on{" "}
                                                 {group.higher.join(", ")}
                                                 {group.lower.length > 0 && <span>, and less on {group.lower.join(", ")}</span>}.
                                             </p>
-                                            <p style={{ margin: "2px 0", fontSize: "14px" }}><em>{group.why}</em></p>
+                                            <p className="pc-small tight"><em>{group.why}</em></p>
                                         </div>
                                     ))}
                                     <Nuances section="roles" />
@@ -316,7 +285,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                             )}
 
                             {detail.licensingBody && (
-                                <p style={{ fontSize: "14px" }}>Licensed by {detail.licensingBody}.</p>
+                                <p className="pc-small">Licensed by {detail.licensingBody}.</p>
                             )}
                         </>
                     )}
