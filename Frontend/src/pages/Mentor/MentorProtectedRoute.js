@@ -25,7 +25,7 @@ function MentorProtectedRoute({ children }) {
 
                 // logged in, but as a student or admin — send them to their own home
                 if (currentUserResponse?.data?.message === "Permission Not Granted for this request") {
-                    navigate("/")
+                    navigate("/dashboard")
                     return
                 }
 

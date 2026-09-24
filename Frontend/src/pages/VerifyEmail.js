@@ -57,7 +57,7 @@ function VerifyEmail() {
             <p>Thanks — your email address is confirmed. You can now buy a plan.</p>
             <button type="button" onClick={() => navigate("/paywall")}>See plans</button>
             {" "}
-            <button type="button" onClick={() => navigate("/")}>Go to home</button>
+            <button type="button" onClick={() => navigate("/dashboard")}>Go to home</button>
         </div>
     )
 }

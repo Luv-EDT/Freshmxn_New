@@ -40,7 +40,7 @@ function MentorLogin() {
         // a student or admin who came in through the wrong door still gets in — to their own home
         if (userData.role !== "mentor") {
             alert("This is the mentor login — taking you to your own account.")
-            navigate(userData.role === "admin" ? "/admin" : "/")
+            navigate(userData.role === "admin" ? "/admin" : "/dashboard")
             return
         }
 

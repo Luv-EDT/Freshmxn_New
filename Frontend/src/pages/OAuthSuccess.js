@@ -50,7 +50,7 @@ function OAuthSuccess() {
             if (!userData.age || !userData.journey) { navigate("/complete-profile"); return }
             if (!userData.paid) { navigate("/paywall"); return }
 
-            navigate("/")
+            navigate("/dashboard")
         }
 
         checkAuth()

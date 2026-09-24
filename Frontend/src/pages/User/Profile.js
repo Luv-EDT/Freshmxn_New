@@ -8,6 +8,7 @@ import { setUser } from "../../store/userSlice"
 import RequestRefundForm from "./RequestRefundForm"
 import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
+import PsychometricScores from "./PsychometricScores"
 import { JOURNEY_OPTIONS } from "../journeyOptions"
 
 const TIER_NAMES = {
@@ -136,6 +137,8 @@ function Profile() {
 
     const panels = [
         { key: "account", label: "Account information", children: accountPanel },
+        // rendered only when opened (antd Collapse), so the scores are fetched on demand
+        { key: "scores", label: "Your psychometric profile", children: <PsychometricScores /> },
         {
             key: "payments",
             label: "Payment history",
@@ -160,16 +163,38 @@ function Profile() {
         })
     }
 
+    // last, so it's always in the same place — same numbers as the public site's footer
+    panels.push({
+        key: "contact",
+        label: "Contact us",
+        children: (
+            <>
+                <p>Questions about your journey, your report or a payment? We're a message away.</p>
+                <p>
+                    <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer" className="tap">Chat on WhatsApp</a>
+                </p>
+                <p>
+                    Call: <a href="tel:8882756287">8882756287</a>
+                    {" · "}
+                    Email: <a href="mailto:luvgoel@freshmxn.com">luvgoel@freshmxn.com</a>
+                </p>
+            </>
+        ),
+    })
+
     return (
         <div>
             <Navbar />
-            <h2>Your profile</h2>
+            <main className="page">
+                <h2>Your profile</h2>
 
-            <Collapse items={panels} defaultActiveKey={["account"]} />
+                {/* every section folds; Account starts open */}
+                <Collapse items={panels} defaultActiveKey={["account"]} />
 
-            <p>
-                <LogoutButton />
-            </p>
+                <p>
+                    <LogoutButton />
+                </p>
+            </main>
 
             <RequestRefundForm
                 visible={showForm}

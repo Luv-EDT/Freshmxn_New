@@ -5,7 +5,8 @@ import ForgotPassword from "./pages/ForgotPassword.js"
 import ResetPassword from "./pages/ResetPassword.js"
 import OAuthSuccess from "./pages/OAuthSuccess.js"
 import VerifyEmail from "./pages/VerifyEmail.js"
-import RootRoute from "./pages/RootRoute.js"
+import Home from "./pages/User/Home.js"
+import Landing from "./pages/Public/Landing.js"
 import ProtectedRoute from "./pages/User/ProtectedRoute.js"
 import CompleteProfile from "./pages/User/CompleteProfile.js"
 import Paywall from "./pages/User/Paywall.js"
@@ -38,8 +39,15 @@ function App() {
                 <Route path="/success-stories" element={<SuccessStories />} />
                 <Route path="/mentor-waitlist" element={<MentorWaitlistPublic />} />
 
-                {/* Landing page for visitors, the dashboard for anyone logged in */}
-                <Route path="/" element={<RootRoute />} />
+                {/* The company's landing page — for everyone, logged in or not. The logo always
+                    leads here; a logged-in student's own space is /dashboard. */}
+                <Route path="/" element={<Landing />} />
+
+                <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                        <Home />
+                    </ProtectedRoute>
+                } />
 
                 {/* Mentors — their own login and pages (API lives under /mentors, not /mentor) */}
                 <Route path="/mentor/register" element={<MentorRegister />} />

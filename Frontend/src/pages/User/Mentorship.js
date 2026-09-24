@@ -111,7 +111,7 @@ function Mentorship() {
                         {ranked.length === 0 ? (
                             <p>
                                 Finish your assessment first — your matches appear here once your report is ready.{" "}
-                                <button type="button" className="tap" onClick={() => navigate("/")}>Go to my journey</button>
+                                <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Go to my journey</button>
                             </p>
                         ) : (
                             <>
@@ -199,7 +199,7 @@ function Mentorship() {
                     become your mentor for the long run.
                 </p>
 
-                <button type="button" className="tap" onClick={() => navigate("/")}>Back to home</button>
+                <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Back to home</button>
             </main>
         </div>
     )

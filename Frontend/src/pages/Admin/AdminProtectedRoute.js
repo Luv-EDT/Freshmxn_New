@@ -24,7 +24,7 @@ function AdminProtectedRoute({ children }) {
 
                 if (currentUserResponse.data.message === "Permission Not Granted for this request") {
                     alert("Not allowed to access Admin pages.")
-                    navigate("/")
+                    navigate("/dashboard")
                     return
                 }
 

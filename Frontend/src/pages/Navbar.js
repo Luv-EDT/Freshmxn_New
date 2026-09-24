@@ -12,9 +12,14 @@ function Navbar() {
             {user && user.role === "admin" && <Link to="/admin">Admin</Link>}
             {user && user.role !== "admin" && (
                 <>
-                    <Link to="/">Home</Link>
-                    {" | "}
-                    {user.paid ? <Link to="/interest">Interest Form</Link> : <Link to="/paywall">Get Access</Link>}
+                    <Link to="/dashboard">Home</Link>
+                    {/* the interest form is reached from the dashboard's journey, not from here */}
+                    {!user.paid && (
+                        <>
+                            {" | "}
+                            <Link to="/paywall">Get Access</Link>
+                        </>
+                    )}
                     {/* Mentorship is what Tier 2 buys, so the waitlist page only exists for them */}
                     {user.currentTier === 2 && (
                         <>

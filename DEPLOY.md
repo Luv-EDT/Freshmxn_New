@@ -151,13 +151,23 @@ At the time of the check, `www` still pointed at the old site (Cloudflare-proxie
    `GOOGLE_CALLBACK_URL=https://www.freshmxn.com/auth/google/callback` (and that URI in Google
    Cloud) — if they aren't set that way already.
 
+### Status 2026-09-24
+`www` ✅ points at Render. **The bare `freshmxn.com` has no record yet** — Cloudflare → DNS → Add
+record: `CNAME` · `@` · `freshmxn.onrender.com` · DNS only; then Render → Custom Domains → add
+`freshmxn.com` → Verify.
+
 ### Replace the old site in Google search
 
 The site is now open to search engines (the preview `noindex` tag was removed on 2026-09-24;
 `/robots.txt` allows crawling and `/sitemap.xml` lists the public pages). Once step 6 works:
 
-1. **search.google.com/search-console** → Add property → **Domain** → `freshmxn.com`. Google gives
-   a TXT record — add it in **Cloudflare** DNS (not Hostinger), then Verify.
+1. **search.google.com/search-console** → Add property → **Domain** (left box) → `freshmxn.com` →
+   Continue. Google shows a value like `google-site-verification=abc123…` — **Copy** it.
+   - The domain **already has** `google-site-verification=3yYaqToU8Mw82v0pIRoFkng_QZ_FwNCgioIZ0UqgpGw`.
+     If Google shows exactly that value, just click **Verify**.
+   - Otherwise: Cloudflare → freshmxn.com → DNS → Records → **Add record** → Type `TXT` · Name `@`
+     · Content = the pasted value · TTL Auto → Save. Keep the existing `v=spf1 …hostinger…` TXT
+     (email). Back in Search Console → **Verify** (retry after 10 minutes if it fails).
 2. **Sitemaps** → submit `https://www.freshmxn.com/sitemap.xml`.
 3. **URL Inspection** → `https://www.freshmxn.com/` → **Request indexing**.
 4. Old-site pages still showing in results? **Removals** → New request → paste each old URL. That

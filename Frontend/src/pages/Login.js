@@ -18,7 +18,7 @@ function Login() {
     useEffect(() => {
         const token = localStorage.getItem("token")
         if (token) {
-            navigate("/")
+            navigate("/dashboard")
             return
         }
 
@@ -87,7 +87,7 @@ function Login() {
         if (!userData.age || !userData.journey) { navigate("/complete-profile"); return }
         if (!userData.paid) { navigate("/paywall"); return }
 
-        navigate("/")
+        navigate("/dashboard")
     }
 
     return (

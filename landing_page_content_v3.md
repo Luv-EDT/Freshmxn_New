@@ -18,8 +18,8 @@ highlight only.** All statistics verified to a citable source — cite inline on
 ## 1. HERO
 
 **Eyebrow:** FRESHMXN'S LAB
-**Headline (Orelega One):** Careers that fit *you*. And the future.
-**Sub-headline:** Explore. Get clarity. Take action.
+**Headline (Orelega One):** Explore. Get clarity. Take action.  *(the company tagline — owner, 2026-09-24)*
+**Closing statement (end of the page, before About):** Careers that fit *you*. And the future.
 **Body:** Everybody is different — so why does everyone get similar career advice? Stuck between what
 you love, what you're studying, and what the market wants? Scared AI will take your job? Freshmxn's
 Lab matches your story and strengths to careers that are **in demand and AI-resilient** — then helps

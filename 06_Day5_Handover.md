@@ -213,7 +213,39 @@ and real money; the site stays in `PAYMENT_MODE=manual`.
 Verified: API 38/38 (due date exactly 20 weekdays after the choice), browser 36/36 at 360 px,
 fixtures 22/51/99, the production bundle contains only "20 business days".
 
+### Owner changes round 3 ✅
+| Change | Where |
+|---|---|
+| **`/` is the company landing page for everyone; the student dashboard moved to `/dashboard`** — the logo always leads to the landing page | `App.js` (`RootRoute.js` deleted); every "go to my dashboard" redirect now targets `/dashboard` (Login, Register, OAuthSuccess, Paywall, VerifyEmail, InterestForm, Mentorship, MentorLogin, Admin/MentorProtectedRoute); `Navbar` Home → `/dashboard`; `PublicNav` shows **My dashboard + Profile** to a logged-in visitor instead of Log in. The `*` catch-all still goes to `/` (landing) |
+| **No "Interest Form" link in the navbar** — reached from the dashboard | `Navbar.js` (unpaid users still see "Get Access") |
+| **Tagline "Explore. Get clarity. Take action."** is the hero `<h1>`, `<title>` and the start of the meta description; "Careers that fit *you*. And the future." is now a closing statement band before About | `Public/Landing.js`, `public/index.html`, and `landing_page_content_v3.md` §1 updated to match |
+| **Profile: every section a collapsible panel + "Your psychometric profile"** | `User/Profile.js` (Account open by default; Scores; Payment history; Financial aid when relevant; Contact us), new `User/PsychometricScores.js` |
+| **Contact us** on the Profile page — WhatsApp button, call, email (same numbers as the public footer) | `User/Profile.js` |
+
+**`GET /reports/getMyScores` — the rules it enforces (owner chose "High / Medium / Low words"):**
+raw 0–10 → **High ≥ 6.7 · Medium ≥ 3.4 · Low** on the server; **no number ever leaves the server**;
+**`confidence` excluded** (PRD §B.4 — never shown as "your confidence score"); **uncertainty
+tolerance returned as a position** ("prefers a clear plan" / "somewhere in between" / "comfortable
+not knowing" — Master Plan rule 4, a position not a level); `data_quality`, flags, banks, components
+never sent; labels from `FACTOR_LABELS` so the Profile names factors exactly as the report does;
+`null` → "not measured yet" (e.g. a SART the device refused); behind `requirePaid`; `data: null`
+before the assessment is scored. 29 factors in 4 groups + the uncertainty position = all 31.
+⚠ The thresholds are un-normed thirds of the raw scale — revisit when V2 norms exist.
+
+Verified: new suite 31/31 (API: levels right, no raw numbers anywhere in the JSON, no confidence,
+no data_quality, position not level, unpaid refused, no-profile null; browser at 360 px: real
+password login → `/dashboard`, no Interest Form link, logo → landing while logged in, tagline +
+closing statement, My dashboard link, all Profile panels fold, scores in words with no digits,
+WhatsApp link, no sideways scroll, no JS errors). Regression: browser 36/36, API 38/38, fixtures
+22/51/99. Build warnings unchanged.
+
+**DNS re-checked:** `www.freshmxn.com` → CNAME `freshmxn.onrender.com` → Render ✅. The bare
+`freshmxn.com` still has **no record** — owner adds `CNAME @ → freshmxn.onrender.com` (DNS only) in
+Cloudflare and `freshmxn.com` in Render → Custom Domains. A `google-site-verification` TXT is
+already on the domain.
+
 ## 4. Open items carried forward
+- **Bare domain** `freshmxn.com` has no DNS record yet (see round 3).
 - **DNS move in Cloudflare** (owner) — then ask Claude to re-check that www and the bare domain
   resolve to Render (`216.24.57.x`).
 - **About section** — the owner's own 2–3 lines (why Freshmxn exists) still to be written.

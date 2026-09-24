@@ -153,7 +153,7 @@ function Paywall() {
             if (userData && userData.paid && userData.currentTier >= quote.tier) {
                 dispatch(setUser({ user: userData }))
                 message.success("Access unlocked")
-                navigate("/")
+                navigate("/dashboard")
                 return
             }
         }
@@ -198,7 +198,7 @@ function Paywall() {
             )}
 
             {isOnTierTwo && (
-                <p>You already have the Mentor Connection plan — the highest tier. <button type="button" onClick={() => navigate("/")}>Go home</button></p>
+                <p>You already have the Mentor Connection plan — the highest tier. <button type="button" onClick={() => navigate("/dashboard")}>Go home</button></p>
             )}
 
             {/* Pending request */}

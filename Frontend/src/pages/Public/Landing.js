@@ -18,8 +18,8 @@ function Landing() {
                 {/* 1. HERO */}
                 <section>
                     <p><strong>FRESHMXN'S LAB</strong></p>
-                    <h1>Careers that fit <em>you</em>. And the future.</h1>
-                    <h2>Explore. Get clarity. Take action.</h2>
+                    {/* the company tagline leads; "Careers that fit you" closes the page (owner, 2026-09-24) */}
+                    <h1>Explore. Get clarity. Take action.</h1>
                     <p>
                         Everybody is different — so why does everyone get similar career advice? Stuck between what
                         you love, what you're studying, and what the market wants? Scared AI will take your job?
@@ -189,6 +189,12 @@ function Landing() {
                             <strong>{formatInr(upgrade)} more</strong> after you see your matches — no paying twice.
                         </em>
                     </p>
+                </section>
+
+                {/* CLOSING STATEMENT — moved here from the hero when the tagline took the headline */}
+                <section>
+                    <h2>Careers that fit <em>you</em>. And the future.</h2>
+                    <p><Link to="/register" className="tap">Let's figure out your career →</Link></p>
                 </section>
 
                 {/* 8. ABOUT — the owner adds their own 2–3 lines later; nothing is written in their voice */}
