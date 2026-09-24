@@ -97,3 +97,32 @@ app.get("/{*splat}", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)
 })
+
+// ── the workers, hosted in this process on the free tier ────────────────────────────────────────
+//
+// Render's free plan runs web services only; a background worker is a paid service each. So when
+// RUN_WORKERS_IN_WEB is "true" the two BullMQ workers run here, inside the web process, instead of
+// as their own processes. Nothing about them changes — same queue, same retries, same code; start()
+// is exactly what `npm run worker:score` / `worker:report` call. Leave the flag unset locally and
+// keep running the workers in their own terminals; flip it off in production once the workers
+// move to their own paid services, with no code change.
+//
+// Started after listen() so a slow Redis can never hold up the site itself.
+const workers = []
+
+if (process.env.RUN_WORKERS_IN_WEB === "true") {
+    Promise.all([
+        require("./workers/scoreProfileWorker").start(),
+        require("./workers/generateReportWorker").start(),
+    ])
+        .then((started) => workers.push(...started))
+        .catch((error) => console.log("Workers failed to start inside the web process:", error.message))
+}
+
+// Render sends SIGTERM on every redeploy and gives ~30 s before killing the process. close() lets
+// an in-flight job finish rather than orphaning it. A job that outlives the grace period is not
+// lost: its lock expires and the next instance's stalled-job sweep puts it back on the queue.
+process.on("SIGTERM", async () => {
+    await Promise.all(workers.map((worker) => worker.close().catch(() => null)))
+    process.exit(0)
+})

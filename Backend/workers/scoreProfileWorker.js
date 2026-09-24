@@ -23,7 +23,7 @@ const path = require("path")
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
 const { Queue, Worker } = require("bullmq")
-const { addOnce, attachConnectionLogging, withDnsWorkaround } = require("./queueHelpers")
+const { addOnce, attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
 const mongoose = require("mongoose")
 
 const scoreProfile = require("../scoring/scoreProfile")
@@ -159,7 +159,7 @@ const start = async () => {
             scoring_version: profile.scoring_version,
             completeness: profile.completeness,
         }
-    }, { connection: connectionOptions(), concurrency: 4 })
+    }, { connection: connectionOptions(), concurrency: 4, ...idleTimings() })
 
     // Summarises ioredis's reconnect churn instead of letting it bury the job output. See
     // queueHelpers.js — a successful job once vanished inside forty ENOTFOUND stack traces.
@@ -176,6 +176,9 @@ const start = async () => {
     })
 
     console.log(`${QUEUE_NAME} worker listening`)
+
+    // handed back so server.js can close it cleanly on shutdown when it hosts the workers itself
+    return worker
 }
 
 if (require.main === module) {

@@ -21,7 +21,7 @@ const path = require("path")
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
 const { Queue, Worker } = require("bullmq")
-const { addOnce, attachConnectionLogging, withDnsWorkaround } = require("./queueHelpers")
+const { addOnce, attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
 const mongoose = require("mongoose")
 
 const scoreProfile = require("../scoring/scoreProfile")
@@ -209,6 +209,7 @@ const start = async () => {
         // Deliberately low. Each job holds the whole profession set in memory and makes model
         // calls; four of these at once is plenty and keeps us inside the API's rate limits.
         concurrency: 2,
+        ...idleTimings(),
     })
 
     // See queueHelpers.js: ioredis retries a dropped connection forever and stack-traces every
@@ -224,6 +225,9 @@ const start = async () => {
     })
 
     console.log(`${QUEUE_NAME} worker listening`)
+
+    // handed back so server.js can close it cleanly on shutdown when it hosts the workers itself
+    return worker
 }
 
 if (require.main === module) {
