@@ -1,10 +1,17 @@
+import { useState } from "react"
 import { Link } from "react-router-dom"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
 
 // About us (owner, Round 5, 2026-09-24). The founder's story is the owner's own words, edited only
 // for spelling and flow and kept in the first person — nothing here is invented in their voice.
+// The founder's photo is served from Frontend/public/founder.jpg. Until that file is added the
+// portrait simply is not drawn — no broken-image icon on a public page.
+const FOUNDER_PHOTO = "/founder.jpg"
+
 function About() {
+    const [photoOk, setPhotoOk] = useState(true)
+
     return (
         <div>
             <PublicNav />
@@ -20,7 +27,19 @@ function About() {
 
                 <section className="section">
                     <div className="page founder">
-                        <h2>My story</h2>
+                        <div className="founder-head">
+                            {photoOk && (
+                                <img
+                                    src={FOUNDER_PHOTO}
+                                    alt="Luv Goel, founder of Freshmxn's Lab"
+                                    className="founder-photo"
+                                    width="200"
+                                    height="200"
+                                    onError={() => setPhotoOk(false)}
+                                />
+                            )}
+                            <h2>My story</h2>
+                        </div>
                         <p>
                             My own journey has been quite unconventional. Nothing was planned from the start. My parents
                             didn't have the educational background to guide me through these choices, and I was an

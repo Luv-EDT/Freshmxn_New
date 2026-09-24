@@ -306,10 +306,45 @@ Register links Terms/Privacy, no "illustrative" on stories, "via WhatsApp"), `ro
 `round5` 16/16 (report rows are name-only, coloured, no chips, years inside, no tier reason, no
 "Open now", 360 + 1280), no sideways scroll at 360 on every new page.
 
+### Round 6 — owner feedback after STOP 3 ✅ built · ⏸ STOP 4 (owner review)
+
+| Area | What changed |
+|---|---|
+| **Report — one list** | The "Reachable from here" heading, the five band headings and the separate "Worth the switch" section are gone. The student sees ONE list under "Your matches". The five bands (`TIER_GROUPS`, unchanged) are explained inside the collapsed "How this list is ordered", plus a line on switching cost |
+| **Report — sort, no filters** | New `Report/ReportSortMenu.js` replaces `ReportFilterBar.js` (deleted): a **☰ Sort your list** button, collapsed, with the current order as a marker. Two highlighted primaries: **Best match** (engine: 16 tiers + switching cost) and **Best fit, ignoring switching cost** (not offered to class 9–10 — `switchIsDistinct` — where the lists are identical). Optional **Then order by**: AI exposure / quickest / mid-career pay / demand. **Filters removed** (owner). List logic is a pure `buildList()` in `reportFilters.js`: ignoring-cost = ranking ∪ worth-the-switch extras ordered on raw fit (`comfortScore`); a secondary sort ties on the primary position; nothing is ever removed. In ignoring-cost mode the card shows the "years left behind" line |
+| **Report — top 3** | The engine's top three are always coloured (teal / navy / pink-tint, "Top match" badge) and keep the colour under any sort. Next steps always use the engine's top three |
+| **Report — card text** | Section titles are real subheadings (Orelega One, navy, sentence case); body 1rem navy, secondary text navy-soft — no pale grey micro-text. Unlabelled stages are sentence-cased ("Portfolio") |
+| **Copy** | "Here's what they should actually ask." · "Who is it for" · "4 steps. 0 gyaan." · invite paragraph drops "Your story goes first; your marks never get a veto." · "walked that path" (no "exact"). Copy docs updated to match |
+| **Footer / CTAs** | Root cause: React Router kept the scroll position, so a footer link or "Join the waitlist →" opened the next page still scrolled to the bottom. New `src/ScrollToTop.js` in `App.js`: every page change starts at the top; a `#hash` scrolls to its section (legal contents links) |
+| **About photo** | Slot built (`/founder.jpg`, circular, beside "My story"; hidden until the file exists — no broken image). **Needs the photo as a file** — it arrived only as an inline image |
+| **Success stories** | Three realistic journeys (Class 12 PCM → Industrial & Product Designer, B.Com → Sustainability & ESG, IT support → Cybersecurity), real taxonomy names, plausible timelines, one quiet note "Names and details changed; stories are representative of real student journeys." `success_stories_page.md` rewritten to match |
+
+⚠ **Two page-level fixtures rewritten, on the owner's decision to remove filters and the second list**
+(module-level filter fixtures untouched and still running):
+- "sort and filter govern worth-the-switch too" → **"one list: ignoring switching cost surfaces every
+  worth-the-switch career"** — drives `buildList`: Best match = engine order; ignoring-cost ⊇ ranking ∪
+  switch list, raw-fit order, nulls last; a secondary sort is a permutation that ties on the primary;
+  the page uses `buildList` and gates the option on `switchIsDistinct`.
+- "nothing is pinned; the controls apply uniformly" → **"no control hides or fades a career"** — no
+  `missedBy(`/`dimmed=` on the page, and the rendered list is the full ordered list.
+Still 99/99. `missedBy`/`optionCounts`/`hasData` remain in `reportFilters.js` (tested, unused by the page) —
+delete them together with their fixtures if filters are never coming back.
+
+Verified: build (same 8 pre-existing warnings), fixtures 22/51/99, API 38/38, `uiFlow` **63/63** (new: copy,
+three stories + note, footer links and plan CTAs land at scrollY 0, privacy contents still jumps, no broken
+image on About), `round3` 39/39, `round5` **34/34** (one list, no filter text, menu collapsed → opens,
+3 distinct top colours that follow their careers, secondary sort is a permutation, ignoring-cost adds the
+switch career, marker text, class 9–10 gets no ignoring-cost option — at 360 and 1280).
+
+**Backend review (item 5):** run as a read-only subagent; findings relayed to the owner in chat, nothing
+changed from it without their go.
+
 ## 4. Open items carried forward
 - **Bare domain** `freshmxn.com` has no DNS record yet (see round 3).
 - **DNS move in Cloudflare** (owner) — then ask Claude to re-check that www and the bare domain
   resolve to Render (`216.24.57.x`).
+- **Founder photo** — add `Frontend/public/founder.jpg` (the About page shows it automatically).
+- **Server waker** — recommended before sharing with students (UptimeRobot, 10 min, `/robots.txt`); see chat.
 - **Legal pages** — lawyer review (DPDP) before go-live; confirm the Grievance Officer name/email;
   the verified parental consent step (V2) must land before the pages' "coming" promise gets old.
 - `User/Mentorship.js` "How it works" promises in-app session booking; V1 has none — reword or keep.

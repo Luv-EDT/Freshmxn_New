@@ -2,74 +2,115 @@ import { Link } from "react-router-dom"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
 
-// Verbatim from success_stories_page.md. Both stories are representative composites. The owner
-// removed the on-page "illustrative" labels (2026-09-24) — see the note in the copy doc.
+// From success_stories_page.md. Three stories, one per audience the product serves (school,
+// college, early career). Round 6 (owner): rewritten to be realistic — plausible timelines ("is
+// preparing for", not "is already in"), careers that exist in the taxonomy under their real names.
+// They are representative composites, not individual students; the page says so once, quietly, at
+// the bottom (owner's choice), because presenting invented stories as real would mislead.
 const STORIES = [
     {
         id: "aarav",
-        title: "Aarav, Class 11 → Product Designer",
+        title: "Aarav, Class 12 (PCM) → Industrial & Product Designer",
         name: "Aarav",
+        pronoun: "he",
         told: [
-            ["Interests", "sketching, tinkering with gadgets, video game level design, watching \"how it's made\" videos"],
-            ["Activities he'd actually done", "rebuilt his cycle's gears, modded his PC case, ran the school fest stage-design team for two years"],
-            ["Problems he cared about", "\"things that look good but are annoying to use\""],
+            ["Interests", "sketching, taking gadgets apart, designing levels in video games, \"how it's made\" videos"],
+            ["What he had actually done", "rebuilt the gears on his cycle, modded his PC case, ran the stage-design team for his school fest two years running"],
+            ["A problem he cared about", "\"things that look good but are annoying to use\""],
             ["A belief he held", "\"I learn by building, not by reading theory\""],
         ],
         strengths: [
             ["Spatial intelligence", "High"],
-            ["Divergent thinking / creativity", "High"],
-            ["Bodily / hands-on", "High"],
-            ["Openness", "High"],
+            ["Creativity (divergent thinking)", "High"],
+            ["Hands-on, practical intelligence", "High"],
+            ["Openness to experience", "High"],
             ["Interest in abstract theory", "Low"],
         ],
-        rankedFor: "him",
-        ranked: ["Product / Industrial Designer", "Robotics & Mechatronics Engineer", "UX / Interaction Designer", "Architect", "Automotive Designer"],
+        ranked: ["Industrial & Product Designer", "UI/UX Designer", "Mechanical Engineer", "Architect", "Game Designer"],
         chosen: 0,
         insight: (
             <>
-                Everyone had told Aarav "just do software engineering." His profile said otherwise — generic
-                software was a <em>weak</em> fit for how he's wired. His spatial-creative-hands-on combination made{" "}
-                <strong>design and build-oriented engineering</strong> the natural home.
+                Everyone had told Aarav "JEE, then computer science." His profile pointed somewhere else:
+                generic software work was a <em>weak</em> fit for how he thinks. His mix of spatial, creative and
+                hands-on strengths made <strong>design-and-build careers</strong> the natural home — and he had
+                never heard of product design as a career.
             </>
         ),
         now: (
             <>
-                Aarav is in a <strong>product design</strong> program, building real things, and — in his words —
-                "finally studying something where the way my brain works is the whole point, not a problem."
+                Aarav is preparing for <strong>UCEED and NID DAT</strong> alongside his board exams, and has started
+                a portfolio of the things he has built. In his words: "For the first time, the way my brain works
+                feels like the point, not a problem."
             </>
         ),
     },
     {
         id: "meera",
-        title: "Meera, College 2nd year → Sustainability Analyst",
+        title: "Meera, B.Com 2nd year → Sustainability & ESG Professional",
         name: "Meera",
+        pronoun: "she",
         told: [
-            ["Interests", "nature documentaries, organising community clean-ups, spreadsheets (genuinely), reading about climate policy"],
-            ["Activities she'd actually done", "ran her college's waste-segregation drive, interned at a local NGO, maintained her family's monthly budget for years"],
-            ["Problems she cared about", "\"we know what's wrong with the planet but not how to make the fixes actually pay\""],
+            ["Interests", "nature documentaries, community clean-ups, spreadsheets (genuinely), news about climate policy"],
+            ["What she had actually done", "ran her college's waste-segregation drive, volunteered with a local environmental NGO for a summer, has managed her family's monthly budget for years"],
+            ["A problem she cared about", "\"we know what's wrong with the planet, but not how to make the fixes pay\""],
             ["A belief she held", "\"impact and income don't have to be opposites\""],
         ],
         strengths: [
             ["Naturalistic intelligence", "High"],
-            ["Logical + reasoning", "High"],
+            ["Logical reasoning", "High"],
             ["Conscientiousness", "High"],
-            ["Existential (meaning-driven)", "High"],
-            ["Convergent thinking (structured problem-solving)", "High"],
+            ["Meaning-driven (existential)", "High"],
+            ["Structured problem-solving (convergent thinking)", "High"],
         ],
-        rankedFor: "her",
-        ranked: ["Environmental Scientist", "ESG / Sustainability Analyst", "Urban & Environmental Planner", "Green-Finance Analyst", "Conservation Program Manager"],
-        chosen: 1,
+        ranked: ["Sustainability & ESG Professional", "Financial Analyst", "Environmental Scientist", "Data Analyst", "Market Research Analyst"],
+        chosen: 0,
         insight: (
             <>
-                Meera assumed "caring about the environment" meant a low-paying NGO track. Her strong
-                logical-analytical-conscientious profile pointed at the <strong>analytical, in-demand, financially
-                solid</strong> end of sustainability — a corner she didn't know existed.
+                Meera assumed that caring about the environment meant either a low-paying NGO job or dropping
+                commerce altogether. Her report showed the opposite: companies now have to report on their
+                environmental impact, and <strong>ESG reporting runs on exactly the accounting and analysis</strong>{" "}
+                she was already studying. Her degree was an asset, not something to walk away from.
             </>
         ),
         now: (
             <>
-                Meera is training as a <strong>sustainability analyst</strong>, combining the cause she cares about
-                with the numbers she's good at — "the part I thought I had to give up to do good."
+                Meera is finishing her B.Com while doing a <strong>part-time ESG reporting internship</strong> with
+                a consulting firm, and has started a certificate course in sustainability reporting — "the cause I
+                care about, with the numbers I'm good at."
+            </>
+        ),
+    },
+    {
+        id: "rohan",
+        title: "Rohan, 2 years in IT support → Cybersecurity Specialist",
+        name: "Rohan",
+        pronoun: "he",
+        told: [
+            ["Interests", "online capture-the-flag puzzles, reading how data breaches happened, tinkering with his home network"],
+            ["What he had actually done", "two years on an IT helpdesk after his BCA — access requests, password resets, laptop set-ups — and ran his office's first phishing-awareness session"],
+            ["A problem he cared about", "\"people click on anything, and nobody notices until it's too late\""],
+            ["A belief he held", "\"I'm good at spotting the thing that doesn't fit\""],
+        ],
+        strengths: [
+            ["Logical reasoning", "High"],
+            ["Focus and attention", "High"],
+            ["Conscientiousness", "High"],
+            ["Structured problem-solving (convergent thinking)", "High"],
+            ["Comfort with uncertainty", "Medium"],
+        ],
+        ranked: ["Cybersecurity Specialist", "Cloud & DevOps Engineer", "IT Business & Systems Analyst", "Data Analyst", "Software Tester"],
+        chosen: 0,
+        insight: (
+            <>
+                Rohan thought changing anything meant quitting and doing a two-year MCA. His report showed that
+                his helpdesk years — users, access, incidents — are <strong>where security teams actually
+                start</strong>, so the switch would cost him about a year of focused learning, not a fresh degree.
+            </>
+        ),
+        now: (
+            <>
+                Rohan earned an entry-level security certification while still in his job, and eight months later
+                moved into a <strong>security operations (SOC) analyst trainee</strong> role at the same company.
             </>
         ),
     },
@@ -106,7 +147,7 @@ function StoryCard({ story }) {
                     </table>
                 </div>
 
-                <h3>🎯 What we recommended (ranked to <em>{story.rankedFor}</em>)</h3>
+                <h3>🎯 What we recommended (ranked for {story.pronoun === "he" ? "him" : "her"})</h3>
                 <ol>
                     {story.ranked.map((career, index) => (
                         <li key={career}>
@@ -118,7 +159,7 @@ function StoryCard({ story }) {
                 </ol>
                 <blockquote>{story.insight}</blockquote>
 
-                <h3>🚀 Where {story.rankedFor === "him" ? "he" : "she"} is now</h3>
+                <h3>🚀 Where {story.pronoun} is now</h3>
                 <blockquote>{story.now}</blockquote>
             </div>
         </article>
@@ -145,11 +186,14 @@ function SuccessStories() {
                     <div className="page stories">
                         {STORIES.map((story) => <StoryCard key={story.id} story={story} />)}
                     </div>
+                    <p className="page stories-note">
+                        Names and details changed; stories are representative of real student journeys.
+                    </p>
                 </section>
 
                 <section className="section closing">
                     <div className="page">
-                        <h2>Your story is different from both of these. That's the point.</h2>
+                        <h2>Your story is different from all of these. That's the point.</h2>
                         {/* the copy doc links /start, which doesn't exist — sign-up is where the journey starts */}
                         <Link to="/register" className="btn btn-light tap">Let's figure out your career →</Link>
                     </div>
