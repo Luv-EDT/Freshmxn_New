@@ -244,6 +244,34 @@ WhatsApp link, no sideways scroll, no JS errors). Regression: browser 36/36, API
 Cloudflare and `freshmxn.com` in Render → Custom Domains. A `google-site-verification` TXT is
 already on the domain.
 
+### Round 4 bugs ✅
+Logo on Login / Register / Mentor Login / Mentor Register was a bare image → now links to `/`;
+Forgot/Reset Password and Verify Email got the same linked logo. Profile panels all start collapsed.
+
+### Stage 2 — the design pass ✅ built · ⏸ STOP 2 (owner review)
+
+**Purely presentational** — no route, schema, scoring, matching, worker or payment change. Copy
+unchanged. Fixtures 22/51/99 after every edit in `Report/` and `Assessment/`; browser suites
+36/36 + 39/39 and API 38/38 green at the end.
+
+| Layer | What |
+|---|---|
+| Fonts | **Self-hosted** `@fontsource/orelega-one` + `@fontsource/lato` (400/700/900), imported in `index.js` — deliberate change from the local plan's Google Fonts `<link>`: no third-party request on a site for minors, no remote-stylesheet layout jump |
+| Tokens | `styles/tokens.css` — navy ink, teal star (+ dark / tint), pink highlighter, cream/page, fluid type scale, spacing, radii, shadows |
+| antd | `src/theme.js` + `ConfigProvider` in `index.js` (teal primary, Lato, 44px controls, Collapse/Tabs/Table tokens) |
+| Styles | `base.css` (extended: typography; element defaults wrapped in **`:where()` so any class or antd wins**), `components.css` (buttons, highlighter, cards, chips, app header, journey bar, upgrade card, AuthCard, antd refinements), `public.css` (hero, sections, steps, pricing, closing band, footer, stories, waitlist), `app.css` (report, paywall, assessment, question cards, choice rows, caution card, forms) |
+| Public site | Landing restyled in **3 critique rounds** vs `Frontendref1.png` (tagline hero as three beats, illustrative matches preview, strikethrough beat, 4 step cards with inline-SVG icons, navy promise band, pricing cards, teal closing band, dark footer with `logo-light.png`). Pink used once per section max. Phone header = logo + "Get started" in one row |
+| App | Sticky app header (active link, avatar → Profile, one row on a phone); content after the header inherits the page column via `.app-header ~ …` so pages didn't need rewrapping; dashboard; journey bar; upgrade card |
+| Auth | `pages/AuthCard.js` — one centred card for Login, Register, Forgot/Reset, Verify Email, Mentor Login/Register |
+| Report | `ProfessionCard`, `ReportPage`, `ReportFilterBar`: **0 inline styles left** (were 35/25/17) — classes for cards, pill filters, section labels; `is-dimmed` still a fade; 44/48px targets moved into CSS; every fixture-checked string (`dimmed={missed.length > 0}`, `orderedSwitch`, `levelPath`, …) untouched |
+| Assessment | intro section cards; `LikertModule` question cards; full-width answer rows (`label.choice`, plus a `:has()` rule for other forms); primary forward buttons; `OneAttemptWarning` → warm caution card. **SART stimulus (Sart.js 346–411), `FONT_SIZES`, `sartTask.js` untouched**; the `button` 44px objects kept, class added beside them |
+| Paywall / interest / mentor | plan cards; full-width interest inputs; `AspirationalProfessions` fixed `width: 360` → `100%` / max 360 (overflowed a phone); Mentorship + Mentor onboarding use choice rows |
+| Tooling | `Frontend/scripts/shoot.js` (puppeteer-core devDependency, `CHROME_PATH`, `TOKEN`, `WIDTHS`); `/Frontend/shots/` gitignored |
+
+Not restyled beyond tokens (Tier 2 per plan): the admin dashboard. Remaining inline styles are the
+functional ones (SART, DigitSpan's big digit display and answer box, ExternalTest/StoryRecall input
+widths) — safe to class up later, but they measure things, so each needs its own careful pass.
+
 ## 4. Open items carried forward
 - **Bare domain** `freshmxn.com` has no DNS record yet (see round 3).
 - **DNS move in Cloudflare** (owner) — then ask Claude to re-check that www and the bare domain

@@ -86,7 +86,7 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
             <fieldset>
                 <legend>10. How did you approach going from high school to college?</legend>
                 {ACADEMIC_OPTIONS.map((option) => (
-                    <label key={option.value} className="tap" style={{ display: "flex", justifyContent: "flex-start", gap: 8 }}>
+                    <label key={option.value} className="choice">
                         <input
                             type="radio"
                             name="transitionCategory"
@@ -113,7 +113,7 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
             </div>
 
             <p>
-                <button type="submit" className="tap" disabled={saving}>{saving ? "Saving…" : submitLabel}</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "Saving…" : submitLabel}</button>
                 {onCancel && (
                     <>
                         {" "}

@@ -116,7 +116,7 @@ function Mentorship() {
                         ) : (
                             <>
                                 {ranked.map((entry, index) => (
-                                    <label key={entry.professionId} className="tap" style={{ display: "flex", justifyContent: "flex-start", gap: 8 }}>
+                                    <label key={entry.professionId} className="choice">
                                         <input
                                             type="radio"
                                             name="profession"
@@ -128,7 +128,7 @@ function Mentorship() {
                                     </label>
                                 ))}
                                 <p>
-                                    <button type="button" className="tap" disabled={!selectedId} onClick={confirmChoice}>
+                                    <button type="button" className="btn btn-primary" disabled={!selectedId} onClick={confirmChoice}>
                                         Send my choice
                                     </button>
                                 </p>
