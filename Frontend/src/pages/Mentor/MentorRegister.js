@@ -38,7 +38,7 @@ function MentorRegister() {
 
     return (
         <div className="page">
-            <img src={logo} alt="Freshmxn" height="40" />
+            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Mentor with Freshmxn</h2>
             <p>
                 Students are matched with working professionals in the field they've chosen — someone who was once

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useParams, Link } from "react-router-dom"
 import { resetPassword } from "../apiCall/userApi"
+import logo from "../assets/brand/logo.png"
 import { Input } from "antd"
 
 function ResetPassword() {
@@ -42,6 +43,7 @@ function ResetPassword() {
 
     return (
         <div>
+            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Set a new password</h2>
 
             <form onSubmit={handleSubmit}>

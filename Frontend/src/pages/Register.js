@@ -99,7 +99,7 @@ function Register() {
 
     return (
         <div>
-            <img src={logo} alt="Freshmxn" height="40" />
+            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Create your account</h2>
 
             <form onSubmit={handleRegister}>

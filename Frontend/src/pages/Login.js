@@ -92,7 +92,7 @@ function Login() {
 
     return (
         <div>
-            <img src={logo} alt="Freshmxn" height="40" />
+            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Login</h2>
 
             <form onSubmit={handleLogin}>

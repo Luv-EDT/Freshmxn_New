@@ -188,8 +188,8 @@ function Profile() {
             <main className="page">
                 <h2>Your profile</h2>
 
-                {/* every section folds; Account starts open */}
-                <Collapse items={panels} defaultActiveKey={["account"]} />
+                {/* every section starts folded — the student opens what they came for */}
+                <Collapse items={panels} />
 
                 <p>
                     <LogoutButton />

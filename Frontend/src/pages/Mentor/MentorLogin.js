@@ -49,7 +49,7 @@ function MentorLogin() {
 
     return (
         <div className="page">
-            <img src={logo} alt="Freshmxn" height="40" />
+            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Mentor login</h2>
 
             <form onSubmit={handleLogin}>

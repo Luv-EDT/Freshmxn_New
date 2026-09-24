@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams, Link } from "react-router-dom"
 import { verifyEmail } from "../apiCall/userApi"
+import logo from "../assets/brand/logo.png"
 
 // the link from the signup email lands here. React StrictMode runs effects twice in development,
 // and the token is single-use, so the second run would always report failure without this guard.
@@ -43,6 +44,7 @@ function VerifyEmail() {
     if (status === "failed") {
         return (
             <div>
+                <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
                 <h2>That link didn't work</h2>
                 <p>{errorMessage}</p>
                 <p>Log in and use "Resend confirmation email" on your profile to get a fresh link.</p>
@@ -53,6 +55,7 @@ function VerifyEmail() {
 
     return (
         <div>
+            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Email confirmed</h2>
             <p>Thanks — your email address is confirmed. You can now buy a plan.</p>
             <button type="button" onClick={() => navigate("/paywall")}>See plans</button>
