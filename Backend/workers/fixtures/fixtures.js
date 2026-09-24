@@ -1867,29 +1867,43 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT PAGE — sort and filter govern worth-the-switch too, not only the ranking",
-        // A control that reorders one list on the page and ignores another is a control that half
-        // works, and the student cannot tell which half.
+        name: "REPORT PAGE — one list: ignoring switching cost surfaces every worth-the-switch career",
+        // REPLACES "sort and filter govern worth-the-switch too" (owner, Round 6). The page no longer
+        // has a separate switch list or any filter: it is ONE list with two primary orders. What
+        // DECISIONS.md §5 needs is that the hard change the cost-weighting hides is never lost — so
+        // this pins that "Best fit, ignoring switching cost" contains every ranked career AND every
+        // worth-the-switch career, ordered on raw fit, and that no order ever drops anything.
         run: () => {
+            const { buildList } = loadReportFilters()
             const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
 
             const problems = []
+            const ranked = [
+                { professionId: "a", tier: 1, comfortScore: 0.71, rankedPosition: 1, display: { yearsToQualify: 6, aiExposure: { band: "low", raw: 20 } } },
+                { professionId: "b", tier: 2, comfortScore: 0.93, rankedPosition: 2, display: { yearsToQualify: 3, aiExposure: { band: "low", raw: 20 } } },
+                { professionId: "c", tier: 5, comfortScore: 0.80, rankedPosition: 3, display: { yearsToQualify: 3, aiExposure: { band: "medium", raw: 50 } } },
+            ]
+            const switchList = [
+                { professionId: "b", comfortScore: 0.93, wastedYears: 0, yearsToQualify: 3, alreadyRanked: true },
+                { professionId: "x", comfortScore: 0.97, wastedYears: 2, yearsToQualify: 5, alreadyRanked: false },
+                { professionId: "y", comfortScore: null, wastedYears: 1, yearsToQualify: 4, alreadyRanked: false },
+            ]
+            const ids = (list) => list.map((entry) => entry.professionId).join(",")
 
-            if (!/const orderedSwitch/.test(source)) problems.push("worth-the-switch is not sorted")
-            if (!/sortRanked\(switchList/.test(source)) problems.push("worth-the-switch does not use the same sort as the ranking")
+            if (ids(buildList(ranked, switchList, "best", null)) !== "a,b,c") problems.push("Best match is not the engine's ranking")
 
-            // The switch list must be rendered from the SORTED array, not the raw one.
-            if (/\{worthTheSwitch\.map\(/.test(source)) problems.push("worth-the-switch still renders the unsorted array")
-            if (!/\{orderedSwitch\.map\(/.test(source)) problems.push("the sorted switch list is never rendered")
+            const noCost = buildList(ranked, switchList, "noCost", null)
+            if (ids(noCost) !== "x,b,c,a,y") problems.push(`ignoring switching cost should order on raw fit with nulls last, got ${ids(noCost)}`)
+            if (!noCost.every((entry) => entry.display && "yearsToQualify" in entry.display)) problems.push("switch entries reach the card without display fields")
 
-            // Filtering must reach it as well.
-            const block = (source.split("{orderedSwitch.map(")[1] || "").split("</>")[0]
-            if (!/missedBy\(entry, filters/.test(block)) problems.push("worth-the-switch rows are never filtered")
-            if (!/dimmed=\{missed\.length > 0/.test(block)) problems.push("worth-the-switch rows never dim")
+            // A secondary sort is a permutation, and a tie keeps the PRIMARY order.
+            const thenQuick = buildList(ranked, switchList, "noCost", "fastest")
+            if (ids(thenQuick).split(",").sort().join(",") !== ids(noCost).split(",").sort().join(",")) problems.push("a secondary sort changed which careers are shown")
+            if (ids(thenQuick) !== "b,c,y,x,a") problems.push(`secondary ties should keep the primary order, got ${ids(thenQuick)}`)
 
-            // And the counts must describe both lists, or they lie about what the page will show.
-            if (!/const countable/.test(source)) problems.push("option counts still cover only the ranking")
-            if (!/optionCounts\(countable/.test(source)) problems.push("counts are not computed over both lists")
+            // The page must actually use it, and offer the no-cost order only where it differs.
+            if (!/buildList\(ranked, switchList, primary, secondary/.test(source)) problems.push("the page does not build its list with buildList")
+            if (!/framing\.switchIsDistinct \? framing\.switchIntro : null/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -1961,18 +1975,11 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "FILTERS — nothing is pinned; the controls apply uniformly",
-        // PINNING WAS REMOVED, and the reason it existed is worth recording. The top three were
-        // exempt from fading because `reportComposer` wrote `yourMatches` against the top eight BY
-        // NAME, so dimming one made the prose describe something the student could not see.
-        //
-        // That prompt was later rewritten to forbid naming professions at all — and the pin was not
-        // revisited, which left three rows stubbornly bright under a filter for a reason that no
-        // longer existed and which no student could have inferred. Uniform behaviour is both
-        // simpler and now correct.
-        //
-        // Aspirations are not pinned either: the aspiration section answers every stated wish in
-        // full regardless of what the list is doing, so nothing is lost by letting the row fade.
+        name: "REPORT PAGE — no control hides or fades a career",
+        // REPLACES "nothing is pinned; the controls apply uniformly" (owner, Round 6). Filters were
+        // removed from the page because they crowded the screen and confused students; the filter
+        // module stays (its own fixtures still run) but nothing on the page may hide, fade or pin a
+        // row. Every order shows every career.
         run: () => {
             const filters = loadReportFilters()
             const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
@@ -1980,15 +1987,10 @@ const fixtures = [
             const problems = []
 
             if (filters.isPinned) problems.push("isPinned is back in the filter module")
-            if (/isPinned|const pinned/.test(page)) problems.push("the page still exempts rows from fading")
-            if (/&& !pinned/.test(page)) problems.push("dimming is still conditional on a pin")
-
-            // Both lists must dim on the same rule, with nothing special-cased.
-            const dimCalls = [...page.matchAll(/dimmed=\{([^}]*)\}/g)].map((match) => match[1].trim())
-            if (dimCalls.length < 2) problems.push(`expected both lists to compute dimming, found ${dimCalls.length}`)
-            dimCalls.forEach((call) => {
-                if (call !== "missed.length > 0") problems.push(`a list dims on "${call}" rather than the shared rule`)
-            })
+            if (/isPinned|const pinned/.test(page)) problems.push("the page exempts rows again")
+            if (/missedBy\(|dimmed=\{/.test(page)) problems.push("the page fades rows again")
+            const listBlock = page.split('<div className="match-list">')[1] || ""
+            if (!/^\s*\{ordered\.map\(/.test(listBlock)) problems.push("the rendered list is not the full ordered list")
 
             return problems.length > 0 ? problems.join("; ") : null
         },

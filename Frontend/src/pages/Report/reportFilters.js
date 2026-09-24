@@ -239,3 +239,51 @@ export const sortRanked = (ranked, sort, details = {}) => {
 
 // Kept as its own export because a pipeline fixture drives it against the engine's comparator.
 export const sortByAiExposure = (ranked) => sortRanked(ranked, "ai")
+
+// ── ONE LIST (owner, Round 6) ─────────────────────────────────────────────────────────────────────
+//
+// The page used to show the ranking and a separate "Worth the switch" list, with filters on top.
+// Students could not tell the headings apart and the controls took over the screen, so the owner
+// made it ONE list with two primary orders and an optional secondary sort — no filters.
+//
+//   best     the engine's ranking: sixteen tiers, then fit × switching cost inside each tier
+//   noCost   the strongest fits IGNORING switching cost — the ranking plus every worth-the-switch
+//            career it did not already contain, ordered on raw fit (comfortScore). This is how the
+//            DECISIONS §5 guard stays one tap away: the hard change the cost-weighting hides is
+//            never removed, only moved into its own order.
+//
+// The secondary sort reuses sortRanked's comparators, but its tiebreak is the position in the
+// PRIMARY order, so equal rows keep the order the student chose. Nothing is ever removed.
+export const PRIMARY_SORTS = [
+    { value: "best", label: "Best match", hint: "Our ranking: what you have done, how well it fits you, and what changing course would cost you now." },
+    { value: "noCost", label: "Best fit, ignoring switching cost", hint: null },
+]
+
+export const SECONDARY_SORTS = SORTS.filter((option) => option.value !== "best")
+
+// A worth-the-switch entry carries seven keys; the card and the sorts read `display`.
+const asListEntry = (entry) => (entry.display ? entry : { ...entry, display: { yearsToQualify: entry.yearsToQualify } })
+
+const byRawFit = (left, right) => (
+    (right.comfortScore ?? -1) - (left.comfortScore ?? -1)
+    || String(left.professionId).localeCompare(String(right.professionId))
+)
+
+export const buildList = (ranked, switchList, primary, secondary, details = {}) => {
+    const base = ranked || []
+    let list
+
+    if (primary === "noCost") {
+        const seen = new Set(base.map((entry) => String(entry.professionId)))
+        const extras = (switchList || []).filter((entry) => !seen.has(String(entry.professionId)))
+        list = [...base, ...extras].map(asListEntry).sort(byRawFit)
+    } else {
+        list = base.map(asListEntry)
+    }
+
+    if (!secondary) return list
+
+    // Decorated copies: the position is the PRIMARY order, so a secondary tie keeps it.
+    const positioned = list.map((entry, index) => ({ ...entry, rankedPosition: index + 1 }))
+    return sortRanked(positioned, secondary, details)
+}

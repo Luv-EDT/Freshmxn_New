@@ -57,7 +57,12 @@ const STAGE_LABELS = {
     work: "Work", employment: "Work", practice: "Practice",
 }
 
-const stageLabel = (stage) => STAGE_LABELS[stage] || String(stage || "").replace(/_/g, " ")
+// The long tail of taxonomy stages has no label; show it in sentence case ("Portfolio", not "portfolio").
+const stageLabel = (stage) => {
+    if (STAGE_LABELS[stage]) return STAGE_LABELS[stage]
+    const words = String(stage || "").replace(/_/g, " ")
+    return words.charAt(0).toUpperCase() + words.slice(1)
+}
 
 const DEMAND_WORDS = {
     high: "High — employers are hiring",
@@ -79,7 +84,7 @@ const Section = ({ title, children }) => (
     </div>
 )
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, dimmed, missed, onOpen, switchCost }) {
+function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank }) {
     const [open, setOpen] = useState(false)
 
     const toggle = () => {
@@ -108,17 +113,20 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, dimmed, missed,
     }
 
     return (
-        <div className={`profession-card${dimmed ? " is-dimmed" : ""}${open ? " is-open" : ""}`}>
+        <div className={`profession-card${topRank ? ` is-top is-top-${topRank}` : ""}${open ? " is-open" : ""}`}>
             <button
                 type="button"
                 onClick={toggle}
                 className="pc-toggle"
                 aria-expanded={open}
             >
-                {/* THE NAME, AND NOTHING ELSE (owner, 2026-09-24). Sector, years, tags and the
-                    filter note all live inside the card — a list of bare names is the fastest
+                {/* THE NAME, AND NOTHING ELSE (owner, 2026-09-24). Sector, years and tags all
+                    live inside the card — a list of bare names is the fastest
                     thing to scan. */}
-                <span className="pc-name">{entry.profession}</span>
+                <span className="pc-name">
+                    {topRank > 0 && <span className="pc-top">Top match</span>}
+                    {entry.profession}
+                </span>
                 <span className="pc-sign" aria-hidden="true">{open ? "−" : "+"}</span>
             </button>
 
@@ -141,13 +149,6 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, dimmed, missed,
                         inside the card now, not a tag on the row. */}
                     {switchCost > 0 && (
                         <p className="pc-small">About {switchCost} years of what you've done so far would be left behind.</p>
-                    )}
-
-                    {/* Says which control faded it, rather than leaving a grey row unexplained. */}
-                    {dimmed && missed.length > 0 && (
-                        <p className="pc-dim-note">
-                            <em>Outside your {missed.join(" and ")} filter — still here because it matched you.</em>
-                        </p>
                     )}
 
                     {detail && (
