@@ -200,7 +200,22 @@ Stage 1 (public site + mentor tier).
 
 ---
 
+### Owner changes after STOP 1 ✅
+| Change | Where |
+|---|---|
+| **Mentor match time is now 20 BUSINESS days** (owner's choice — Mon–Fri, still counted from the student's choice, not payment) | `MATCH_BUSINESS_DAYS = 20` in `mentorWaitlistRouter.js`; every student-facing mention (`Mentorship.js`, `MentorWaitlistPublic.js`, `MentorRolloverPolicy.js`); comments; and the source docs `mentor_waitlist_page.md` + `06_V2_and_Beyond.md` so copy and site can't drift. The PRD/Master Plan still say 15 — historical, superseded by this decision |
+| **Site is open to Google** (owner's choice) | `noindex` removed from `public/index.html`; added a meta description and a descriptive `<title>`; new `public/robots.txt` (allow all + sitemap) and `public/sitemap.xml` (the 5 public URLs on www). Express serves both as static files (verified `text/plain` / `application/xml`, not the page fallback) |
+| **Old site still on freshmxn.com — diagnosed, owner action** | The domain's nameservers are **Cloudflare** (`zahir`/`connie.ns.cloudflare.com`), so Hostinger DNS edits were ignored. `www` was still Cloudflare-proxied to the old site; the bare domain had no A record; MX is Hostinger (keep). Step-by-step fix + Google Search Console steps in `DEPLOY.md` → "freshmxn.com's DNS is on CLOUDFLARE" |
+
+⚠ Going indexable is **not** go-live: DPDP legal sign-off and Razorpay KYC still gate real students
+and real money; the site stays in `PAYMENT_MODE=manual`.
+
+Verified: API 38/38 (due date exactly 20 weekdays after the choice), browser 36/36 at 360 px,
+fixtures 22/51/99, the production bundle contains only "20 business days".
+
 ## 4. Open items carried forward
+- **DNS move in Cloudflare** (owner) — then ask Claude to re-check that www and the bare domain
+  resolve to Render (`216.24.57.x`).
 - **About section** — the owner's own 2–3 lines (why Freshmxn exists) still to be written.
 - `User/Mentorship.js` "How it works" promises in-app session booking; V1 has none — reword or keep.
 - Everything in Day 4 §5 (owner gates) still stands.

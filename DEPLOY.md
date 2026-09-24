@@ -109,7 +109,63 @@ From here on, **every push to the branch redeploys automatically** — refresh t
 
 ---
 
-## Custom domain — www.freshmxn.com (Hostinger)
+## ⚠ freshmxn.com's DNS is on CLOUDFLARE, not Hostinger
+
+Checked 2026-09-24: the domain's nameservers are `zahir.ns.cloudflare.com` and
+`connie.ns.cloudflare.com`. **Hostinger is only the registrar and the email host** (MX
+`mx1/mx2.hostinger.com`). Any record changed in Hostinger's DNS editor is ignored — which is why the
+old site kept showing. Every DNS step below happens in **Cloudflare** instead.
+
+At the time of the check, `www` still pointed at the old site (Cloudflare-proxied) and the bare
+`freshmxn.com` had no address record at all.
+
+### Point freshmxn.com at Render (in Cloudflare)
+
+1. Log in at **dash.cloudflare.com** with the account that holds `freshmxn.com`. If nobody knows
+   which account, whoever built the old site added it — ask them. *(Fallback if the account can't be
+   recovered: in Hostinger → Domains → freshmxn.com → Nameservers, switch back to Hostinger's own
+   nameservers — but first copy every MX and TXT record from Cloudflare into Hostinger's DNS, or
+   email breaks.)*
+2. **Render** → `freshmxn` → Settings → **Custom Domains**: make sure both `www.freshmxn.com` and
+   `freshmxn.com` are listed. Note the target Render shows (`<name>.onrender.com`, and an IP for
+   the bare domain if it offers one).
+3. **Cloudflare → freshmxn.com → DNS → Records:**
+   - **Delete** the existing `www` record(s) and any `A` / `AAAA` / `CNAME` record for `@`
+     (`freshmxn.com`) that points at the old site.
+   - **Add** `CNAME` · Name `www` · Target `<name>.onrender.com` · **Proxy status: DNS only (grey
+     cloud)**.
+   - **Add** `CNAME` · Name `@` · Target `<name>.onrender.com` · **DNS only**. (Cloudflare allows a
+     CNAME on the bare domain. If Render gave you an A-record IP for it, use `A` · `@` · that IP.)
+   - **Do not touch** `MX` or `TXT` records — they carry your Hostinger email, SPF and DKIM.
+   - Grey cloud matters: Render issues the HTTPS certificate itself, and Cloudflare's proxy in front
+     can block that. You can switch the proxy on later if you want Cloudflare's features.
+4. **Cloudflare → Rules** (Page Rules, Redirect Rules) and **Workers Routes**: delete anything that
+   forwards or redirects `freshmxn.com` to the old site. Then **Caching → Configuration → Purge
+   Everything**.
+5. **Render** → Custom Domains → **Verify** both. Wait for "Certificate issued" (minutes, sometimes
+   up to an hour).
+6. Open `https://www.freshmxn.com` and `https://freshmxn.com` in a **private window**. Tell Claude
+   — it can re-check the DNS from its side (the records should resolve to Render's `216.24.57.x`,
+   not Cloudflare's `104.21.x` / `172.67.x`).
+7. Render → Environment: `FRONTEND_URL=https://www.freshmxn.com`,
+   `GOOGLE_CALLBACK_URL=https://www.freshmxn.com/auth/google/callback` (and that URI in Google
+   Cloud) — if they aren't set that way already.
+
+### Replace the old site in Google search
+
+The site is now open to search engines (the preview `noindex` tag was removed on 2026-09-24;
+`/robots.txt` allows crawling and `/sitemap.xml` lists the public pages). Once step 6 works:
+
+1. **search.google.com/search-console** → Add property → **Domain** → `freshmxn.com`. Google gives
+   a TXT record — add it in **Cloudflare** DNS (not Hostinger), then Verify.
+2. **Sitemaps** → submit `https://www.freshmxn.com/sitemap.xml`.
+3. **URL Inspection** → `https://www.freshmxn.com/` → **Request indexing**.
+4. Old-site pages still showing in results? **Removals** → New request → paste each old URL. That
+   hides it for about 6 months; meanwhile Google recrawls and finds the new site at those
+   addresses (every old path now opens the new landing page).
+5. Expect the results to change over a few days to two weeks — Google's timing, not ours.
+
+## Custom domain — www.freshmxn.com (original plan — superseded by the Cloudflare section above)
 
 ### Phase A — now: `beta.freshmxn.com` (your current site is untouched)
 
@@ -141,7 +197,7 @@ moving it to `old.freshmxn.com` first.
    hPanel (Websites) first.
 4. Render → Environment: `FRONTEND_URL=https://www.freshmxn.com`,
    `GOOGLE_CALLBACK_URL=https://www.freshmxn.com/auth/google/callback`; add that URI in Google Cloud.
-5. Tell Claude to remove the `noindex` tag from `Frontend/public/index.html` so Google can list the
+5. ~~Remove the `noindex` tag~~ — done 2026-09-24 (owner chose to let Google list the site). The
    site.
 6. Optional: resend.com → **Domains** → add `freshmxn.com` → paste the TXT/MX records it gives you
    into Hostinger, then set `EMAIL_FROM` to e.g. `Freshmxn <hello@freshmxn.com>`.

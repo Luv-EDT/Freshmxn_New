@@ -10,19 +10,19 @@ const router = express.Router()
 
 // The Tier-2 mentor waitlist, after payment. Flow (mentor_waitlist_page.md):
 //   pay → place held (grantAccess, untouched) → student completes Step 1 and CHOOSES a career from
-//   their own matches → we match a mentor within 15 BUSINESS DAYS OF THAT CHOICE → admin matches.
+//   their own matches → we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE → admin matches.
 //
 // The row is created lazily on the student's first visit rather than at payment, so no payment
 // code changes: holding Tier 2 is what entitles you to a row, and the row only records the choice.
 
-const MATCH_BUSINESS_DAYS = 15
+const MATCH_BUSINESS_DAYS = 20
 
 
 // ========================
 // Helpers
 // ========================
 
-// Mon–Fri only, no holiday calendar. Promised to the student as "within 15 business days".
+// Mon–Fri only, no holiday calendar. Promised to the student as "within 20 business days".
 const addBusinessDays = (start, days) => {
     const date = new Date(start)
     let added = 0
@@ -97,7 +97,7 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
 // Choose A Profession
 // ========================
 
-// ONE-TIME. Sending the choice starts the 15-business-day clock and the search; a student who
+// ONE-TIME. Sending the choice starts the 20-business-day clock and the search; a student who
 // wants to change it asks us, and an admin resets it (resetChoiceForAdmin below).
 router.post("/chooseProfession", authMiddleware, async (req, res) => {
     try {
@@ -148,7 +148,7 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Choice sent — your 15-business-day match has started",
+            message: "Choice sent — your 20-business-day match has started",
             data: {
                 matchStatus: row.matchStatus,
                 chosenProfessionId: row.chosenProfessionId,
@@ -261,7 +261,7 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
 // Resolve For Admin
 // ========================
 
-// When no mentor can be found in 15 business days: rollover first, refund on request
+// When no mentor can be found in 20 business days: rollover first, refund on request
 // (mentor_waitlist_page.md). This RECORDS the outcome — an actual refund still goes through the
 // Refund Requests tab, so the money trail stays in one place.
 router.put("/resolveForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
@@ -310,7 +310,7 @@ router.put("/resolveForAdmin/:id", authMiddleware, adminAuthMiddleware, async (r
 // ========================
 
 // the student asked (over WhatsApp) to change their career choice. Clears the choice, the clock and
-// any match, back to awaiting_choice — the next choice starts a fresh 15 business days.
+// any match, back to awaiting_choice — the next choice starts a fresh 20 business days.
 router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const { id } = req.params   // :id is the STUDENT's user id

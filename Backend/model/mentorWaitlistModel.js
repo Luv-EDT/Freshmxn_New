@@ -5,7 +5,7 @@ const mongoose = require("mongoose")
 // The PAYMENT is not recorded here — grantAccess already writes it and flips progress.mentor to
 // "waitlisted". This row records what happens after: the career they choose, and the match.
 //
-// THE 15-BUSINESS-DAY CLOCK STARTS AT choiceSentAt, NEVER AT PAYMENT. Both the PRD and the public
+// THE 20-BUSINESS-DAY CLOCK STARTS AT choiceSentAt, NEVER AT PAYMENT. Both the PRD and the public
 // waitlist page promise that; a student who pays today and chooses in a month must not find their
 // match "overdue" the day they choose.
 

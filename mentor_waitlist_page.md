@@ -29,9 +29,9 @@ know which direction you're exploring — so this comes first.
 **2. Choose a career and send it to us.**
 Pick the profession from your matches that you'd genuinely like to move toward, and let us know.
 
-**3. We find your best-fit mentor — within 15 business days.**
+**3. We find your best-fit mentor — within 20 business days.**
 Once we have your chosen direction, we work to match you with a mentor actually inside that field.
-We'll confirm your mentor and schedule your two sessions within **15 business days** of your
+We'll confirm your mentor and schedule your two sessions within **20 business days** of your
 choice.
 
 > **Why the wait?** We don't hand you a random name from a list. We match on your specific chosen
@@ -56,13 +56,13 @@ choice.
 - **Already bought the ₹3,500 Career Discovery profile?** Upgrade here for just **₹3,000 more** —
   you won't pay the full ₹6,500 again.
 - Your place is held the moment payment clears.
-- Complete Step 1 and send us your chosen career whenever you're ready — the 15-business-day match
+- Complete Step 1 and send us your chosen career whenever you're ready — the 20-business-day match
   clock starts from *that* point, not from payment.
 
 **CTA button:** Pay & join the waitlist →
 
 **If we can't match you — rollover first, refund on request.** If we cannot find a suitable
-mentor in your chosen field within 15 business days, your payment **rolls over**: we keep
+mentor in your chosen field within 20 business days, your payment **rolls over**: we keep
 searching, or you can redirect it to a mentor for a *different* career from your matches, or apply
 it toward your Career Discovery profile if you haven't bought that yet. Prefer your money back
 instead? **Ask us and we'll refund you in full, no questions.** You're never stuck and never out

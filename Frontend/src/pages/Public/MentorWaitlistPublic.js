@@ -40,11 +40,11 @@ function MentorWaitlistPublic() {
                             <p>Pick the profession from your matches that you'd genuinely like to move toward, and let us know.</p>
                         </div>
                         <div>
-                            <h3>3. We find your best-fit mentor — within 15 business days.</h3>
+                            <h3>3. We find your best-fit mentor — within 20 business days.</h3>
                             <p>
                                 Once we have your chosen direction, we work to match you with a mentor actually inside that
                                 field. We'll confirm your mentor and schedule your two sessions within{" "}
-                                <strong>15 business days</strong> of your choice.
+                                <strong>20 business days</strong> of your choice.
                             </p>
                         </div>
                     </div>
@@ -79,7 +79,7 @@ function MentorWaitlistPublic() {
                         </li>
                         <li>Your place is held the moment payment clears.</li>
                         <li>
-                            Complete Step 1 and send us your chosen career whenever you're ready — the 15-business-day
+                            Complete Step 1 and send us your chosen career whenever you're ready — the 20-business-day
                             match clock starts from <em>that</em> point, not from payment.
                         </li>
                     </ul>

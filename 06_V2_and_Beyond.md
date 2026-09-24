@@ -141,7 +141,7 @@ deferred on the *product/platform* side (auth, payments, mentor tier, public sit
 isn't re-litigated or lost.
 
 ## Mentor tier — full automation (V2)
-V1 ships mentor **onboarding + a paid waitlist + manual admin matching within 15 business days**.
+V1 ships mentor **onboarding + a paid waitlist + manual admin matching within 20 business days**.
 Deferred to V2:
 - Automated mentor↔student matching (keyed on the student's chosen profession)
 - In-app scheduling / calendar for the two sessions (1-hr clarity + 20-min follow-up)

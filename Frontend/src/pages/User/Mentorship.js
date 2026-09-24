@@ -10,7 +10,7 @@ import { getMyReport } from "../../apiCall/reportsApi"
 
 // Tier 2's mentor waitlist, after payment (mentor_waitlist_page.md):
 //   1. complete Step 1 → 2. choose a career FROM YOUR OWN MATCHES and send it →
-//   3. we match a mentor within 15 BUSINESS DAYS OF THAT CHOICE (not of payment).
+//   3. we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE (not of payment).
 // The choice is sent once: it starts the clock and our search. Changing it goes through WhatsApp,
 // and an admin resets it (Admin → Mentor Matches).
 
@@ -69,7 +69,7 @@ function Mentorship() {
 
         Modal.confirm({
             title: `Send "${chosen.profession}" as your choice?`,
-            content: "This starts your 15-business-day mentor match. You can't change it here afterwards — if you need to, message us on WhatsApp.",
+            content: "This starts your 20-business-day mentor match. You can't change it here afterwards — if you need to, message us on WhatsApp.",
             okText: "Send my choice",
             cancelText: "Not yet",
             onOk: sendChoice,
@@ -105,7 +105,7 @@ function Mentorship() {
                         <h3>Choose the career you'd like a mentor in</h3>
                         <p>
                             Pick the profession from your matches that you'd genuinely like to move toward. We'll confirm
-                            your mentor and schedule your two sessions within <strong>15 business days</strong> of your choice.
+                            your mentor and schedule your two sessions within <strong>20 business days</strong> of your choice.
                         </p>
 
                         {ranked.length === 0 ? (
@@ -142,7 +142,7 @@ function Mentorship() {
                         <h3>We're finding your mentor</h3>
                         <p>
                             You chose <strong>{waitlist.chosenProfessionName}</strong> on {formatDate(waitlist.choiceSentAt)}.
-                            We'll confirm your mentor by <strong>{formatDate(waitlist.dueBy)}</strong> — 15 business days
+                            We'll confirm your mentor by <strong>{formatDate(waitlist.dueBy)}</strong> — 20 business days
                             from your choice.
                         </p>
                         <p>

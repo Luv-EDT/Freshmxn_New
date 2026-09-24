@@ -4,7 +4,7 @@ import dayjs from "dayjs"
 import { getWaitlistForAdmin, matchForAdmin, resolveForAdmin, resetChoiceForAdmin } from "../../apiCall/mentorWaitlistApi"
 import { getAllMentorsForAdmin } from "../../apiCall/mentorsApi"
 
-// Every Tier-2 student and where their mentor match stands. The 15-business-day clock runs from the
+// Every Tier-2 student and where their mentor match stands. The 20-business-day clock runs from the
 // student's CHOICE, not their payment. Actions are keyed on the student's user id.
 //   Match   — pick an approved mentor (manual in V1)
 //   Resolve — no mentor found: rollover first, refund on request. Recording only: the money itself
