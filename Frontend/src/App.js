@@ -5,7 +5,7 @@ import ForgotPassword from "./pages/ForgotPassword.js"
 import ResetPassword from "./pages/ResetPassword.js"
 import OAuthSuccess from "./pages/OAuthSuccess.js"
 import VerifyEmail from "./pages/VerifyEmail.js"
-import Home from "./pages/User/Home.js"
+import RootRoute from "./pages/RootRoute.js"
 import ProtectedRoute from "./pages/User/ProtectedRoute.js"
 import CompleteProfile from "./pages/User/CompleteProfile.js"
 import Paywall from "./pages/User/Paywall.js"
@@ -16,6 +16,12 @@ import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
 import InterestForm from "./pages/Interest/InterestForm.js"
 import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
 import ReportPage from "./pages/Report/ReportPage.js"
+import SuccessStories from "./pages/Public/SuccessStories.js"
+import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
+import MentorRegister from "./pages/Mentor/MentorRegister.js"
+import MentorLogin from "./pages/Mentor/MentorLogin.js"
+import MentorHome from "./pages/Mentor/MentorHome.js"
+import MentorProtectedRoute from "./pages/Mentor/MentorProtectedRoute.js"
 
 function App() {
     return (
@@ -28,10 +34,20 @@ function App() {
                 <Route path="/oauth-success" element={<OAuthSuccess />} />
                 <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-                <Route path="/" element={
-                    <ProtectedRoute>
-                        <Home />
-                    </ProtectedRoute>
+                {/* Public site — no login */}
+                <Route path="/success-stories" element={<SuccessStories />} />
+                <Route path="/mentor-waitlist" element={<MentorWaitlistPublic />} />
+
+                {/* Landing page for visitors, the dashboard for anyone logged in */}
+                <Route path="/" element={<RootRoute />} />
+
+                {/* Mentors — their own login and pages (API lives under /mentors, not /mentor) */}
+                <Route path="/mentor/register" element={<MentorRegister />} />
+                <Route path="/mentor/login" element={<MentorLogin />} />
+                <Route path="/mentor" element={
+                    <MentorProtectedRoute>
+                        <MentorHome />
+                    </MentorProtectedRoute>
                 } />
 
                 <Route path="/complete-profile" element={

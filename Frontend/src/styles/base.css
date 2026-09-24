@@ -1,0 +1,127 @@
+/* STRUCTURE ONLY — the rules that keep every page usable on a 360 px phone.
+   No colours, fonts or decoration here: that is Stage 2's job, and Stage 2 extends this file
+   rather than replacing it. Most students are on cheap Android phones; nothing may scroll sideways. */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    overflow-wrap: break-word;
+}
+
+img,
+svg,
+video {
+    max-width: 100%;
+}
+
+/* keep proportions when an image shrinks — but only where no height was set on purpose
+   (the logo's height="32" must win, or it renders at its full 487 px width) */
+img:not([height]),
+video:not([height]) {
+    height: auto;
+}
+
+/* the page body: readable width on desktop, 16 px gutters on a phone */
+.page {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 16px 32px;
+}
+
+/* forms: full width on a phone, capped so a desktop line stays readable */
+.page input:not([type="checkbox"]):not([type="radio"]),
+.page select,
+.page textarea {
+    width: 100%;
+    max-width: 480px;
+}
+
+.page textarea {
+    min-height: 96px;
+}
+
+/* the antd password box renders its own wrapper — size the wrapper, not the inner input */
+.page .ant-input-password {
+    width: 100%;
+    max-width: 480px;
+}
+
+.page .ant-input-password input {
+    max-width: none;
+}
+
+/* every wide table scrolls inside its own box instead of pushing the page sideways */
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* nav rows wrap onto a second line rather than overflowing */
+.nav-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 12px 16px;
+}
+
+/* primary actions are comfortably tappable (≥44 px) */
+.tap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 16px;
+}
+
+/* simple responsive grids for card rows: 1 column on a phone, more when there is room */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+@media (min-width: 640px) {
+    .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* antd tabs (admin) scroll their tab strip instead of widening the page */
+.ant-tabs-nav {
+    max-width: 100%;
+}
+
+/* antd tables (the admin tabs) scroll inside their own box. Without this the pre-existing admin
+   tables pushed /admin to ~700 px wide on a phone. */
+.ant-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* the admin filter pills wrap instead of running off the screen */
+.ant-segmented {
+    max-width: 100%;
+    overflow-x: auto;
+}
