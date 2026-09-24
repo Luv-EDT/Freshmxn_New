@@ -1,7 +1,7 @@
 {
-  "version": "1.0",
-  "note": "The 19 factors the psychometric pipeline scores. This file is the controlled vocabulary ONLY — no scores live here and none live on profession records. Its single job in this dataset is to constrain role_spread.deviating_roles, so that variance between job roles inside one profession is expressed in the same language the pipeline already speaks. NEUROTICISM WAS REPLACED BY ITS INVERSE, EMOTIONAL STABILITY, on 2026-08-16. It was the only factor pointing the opposite way from the other eighteen: no profession requires high neuroticism, so a student scoring high on it would have had to be matched to LOW-scoring professions while every other factor matched high to high. A matching engine treating all nineteen alike would have handed anxious students air traffic control. Inverted, every factor now means the same thing - more is more.",
-  "usage": "role_spread.deviating_roles[].higher / .lower may name ONLY these slugs, and always RELATIVE to the profession's own baseline — never as absolute scores. The validator rejects unknown slugs.",
+  "version": "2.0",
+  "note": "The 27-factor matching vector, plus Confidence. This file is the controlled vocabulary ONLY — no scores live here and none live on profession records. Two jobs: it constrains role_spread.deviating_roles so variance between job roles inside one profession is expressed in the pipeline's language, and it names the factors baseline_rating.json rates every profession on. MIGRATED FROM 19 FACTORS on 2026-09-20: nine slugs renamed to match the scoring engine (verbal->verbal_intelligence, spatial->spatial_intelligence, musical->musical_intelligence, bodily->bodily_intelligence, naturalistic->naturalistic_intelligence, existential->existential_intelligence, logical->logical_intelligence, attention_span->focus, dogmatism->firmness) and nine added (processing_speed, uncertainty_tolerance, intrapersonal_intelligence, practical_intelligence, divergent_thinking, convergent_thinking, collaboration, interpersonal_intelligence, propensity_to_go_deep). NEUROTICISM WAS REPLACED BY ITS INVERSE, EMOTIONAL STABILITY, on 2026-08-16 - every factor now means the same thing, more is more, and nothing in the model inverts it.",
+  "usage": "role_spread.deviating_roles[].higher / .lower may name ONLY these slugs, and always RELATIVE to the profession's own baseline — never as absolute scores. The validator rejects unknown slugs. The matching vector is the 27 excluding `confidence`; the authoritative lists live in Backend/scoring/scoreProfile.js (MAJOR_FACTORS / MINOR_FACTORS / UNIVERSAL_FACTORS / MATCHING_FACTORS) and this file is generated from them.",
   "groups": [
     {
       "group": "Personality",
@@ -42,45 +42,54 @@
         {
           "slug": "long_term_memory",
           "name": "Long term memory"
+        },
+        {
+          "slug": "processing_speed",
+          "name": "Processing speed"
         }
       ]
     },
     {
       "group": "Intelligence Application",
-      "note": "Combinations of the personality and cognitive factors above.",
+      "note": "Combinations of the personality and cognitive factors above. Self-report: these measure affinity, not measured ability.",
       "factors": [
         {
-          "slug": "verbal",
+          "slug": "verbal_intelligence",
           "name": "Verbal"
         },
         {
-          "slug": "spatial",
+          "slug": "spatial_intelligence",
           "name": "Spatial"
         },
         {
-          "slug": "musical",
+          "slug": "musical_intelligence",
           "name": "Musical"
         },
         {
-          "slug": "bodily",
+          "slug": "bodily_intelligence",
           "name": "Bodily"
         },
         {
-          "slug": "naturalistic",
+          "slug": "naturalistic_intelligence",
           "name": "Naturalistic"
         },
         {
-          "slug": "existential",
+          "slug": "existential_intelligence",
           "name": "Existential"
         },
         {
-          "slug": "logical",
+          "slug": "logical_intelligence",
           "name": "Logical"
+        },
+        {
+          "slug": "intrapersonal_intelligence",
+          "name": "Intrapersonal"
         }
       ]
     },
     {
       "group": "Confidence",
+      "note": "UNIVERSAL — scored for the readiness layer and available to role_spread, but excluded from the matching vector. A factor every profession needs cannot tell you which profession to choose.",
       "factors": [
         {
           "slug": "confidence",
@@ -96,12 +105,46 @@
           "name": "Emotional intelligence / quotient"
         },
         {
-          "slug": "attention_span",
-          "name": "Attention span / ability to concentrate / focus"
+          "slug": "focus",
+          "name": "Focus / attention span / ability to concentrate"
         },
         {
-          "slug": "dogmatism",
-          "name": "Dogmatism / firm belief system"
+          "slug": "firmness",
+          "name": "Firmness of belief"
+        },
+        {
+          "slug": "uncertainty_tolerance",
+          "name": "Uncertainty tolerance"
+        }
+      ]
+    },
+    {
+      "group": "Differentiating minors",
+      "note": "Derived from the factors above. They discriminate between professions, so they stay in the matching vector — but they are re-mixes of majors already in it, which is why the matching engine gives the group a lower weight than the majors.",
+      "factors": [
+        {
+          "slug": "practical_intelligence",
+          "name": "Practical intelligence"
+        },
+        {
+          "slug": "divergent_thinking",
+          "name": "Divergent thinking / creativity"
+        },
+        {
+          "slug": "convergent_thinking",
+          "name": "Convergent thinking"
+        },
+        {
+          "slug": "collaboration",
+          "name": "Collaboration"
+        },
+        {
+          "slug": "interpersonal_intelligence",
+          "name": "Interpersonal"
+        },
+        {
+          "slug": "propensity_to_go_deep",
+          "name": "Propensity to go deep"
         }
       ]
     }

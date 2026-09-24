@@ -1,8 +1,8 @@
 {
-  "schema_version": "1.0",
-  "generated_on": "2026-08-16",
-  "generated_by": "scratchpad/anchors.py — GENERATED, and NOT YET REVIEWED",
-  "review_status": "reviewed",
+  "schema_version": "2.0",
+  "generated_on": "2026-09-20",
+  "generated_by": "Day 3 factor migration — 19 anchors carried/renamed, 9 written new. NOT YET REVIEWED.",
+  "review_status": "unreviewed",
   "purpose": "Fixed reference points for the Baseline_Rating scoring pass. A profession's score on a factor is chosen against these bands, so the scale means the same thing on run 1 and run 3 and for profession 1 and profession 223. Without them a model invents a private scale each time and the same profession drifts.",
   "how_to_read": "Every band answers the factor's `asks` question about THE WORK, never about a person. Conscientiousness 9-10 is 'one missed detail kills someone', not 'very careful people'. Each band names real professions from data/professions/*.json, validated on generation.",
   "construction_rules": [
@@ -11,10 +11,14 @@
     "Extremes written first, then the middle, then 3-4 and 7-8 filled between — writing top-down produces escalating adjectives with no real distance between bands.",
     "One short line per band, naming a recognisable referent."
   ],
+  "migration_note": "Migrated from the 19-factor set on 2026-09-20. Nine slugs renamed to match the scoring engine (verbal->verbal_intelligence, spatial->spatial_intelligence, musical->musical_intelligence, bodily->bodily_intelligence, naturalistic->naturalistic_intelligence, existential->existential_intelligence, logical->logical_intelligence, attention_span->focus, dogmatism->firmness) - slug and name only, the anchor text and `asks` of those nine are unchanged and still reviewed. Nine anchor sets are NEW and unreviewed: processing_speed, uncertainty_tolerance, intrapersonal_intelligence, practical_intelligence, divergent_thinking, convergent_thinking, collaboration, interpersonal_intelligence, propensity_to_go_deep. `confidence` keeps its anchor: it is a universal excluded from the matching vector, but professions still deviate on it in role_spread.",
   "open_questions_for_review": [
     "RESOLVED, and kept here because it is the reason the factor list changed: NEUROTICISM was replaced by its inverse EMOTIONAL STABILITY. It was the only factor of the nineteen pointing the opposite way - no profession requires high neuroticism, so a student scoring high would have needed matching to LOW-scoring professions while every other factor matched high to high. A matching engine treating all nineteen alike would have handed anxious students air traffic control. Forty role_spread references were inverted with it. Nothing detects this class of bug except writing the rubric out and reading it.",
     "DOGMATISM was re-anchored to the definition the user gave: strength of PRIOR CONVICTION held before attempting a task, not 'how rule-bound the work is'. Those two diverge and the first version was wrong in a way worth keeping on record - it put Judicial Services Officer at 7-8 because a judge is bound by a written code, when a judge must in fact stay OPEN on the facts, and it missed Lawyer entirely, whose whole job is to advance a position decided before the evidence is heard. High is still not better: confirm the matching engine treats this as fit, not quality.",
-    "MUSICAL and NATURALISTIC are near-zero for most of the 223. That is correct and is exactly what the weights are for — an irrelevant factor should drop out of matching with weight 0 rather than dilute it at score 1."
+    "MUSICAL and NATURALISTIC are near-zero for most of the 223. That is correct and is exactly what the weights are for — an irrelevant factor should drop out of matching with weight 0 rather than dilute it at score 1.",
+    "NEW, needs a decision: interpersonal_intelligence and emotional_intelligence are adjacent. They are separated here by asking EI about reading and regulating emotion one person at a time, and Interpersonal about reading a GROUP's alliances and moving it. If a rater cannot hold that line apart in practice, they are one factor and one of them should go.",
+    "NEW: uncertainty_tolerance is a FIT dimension like firmness, not a quality. A profession scoring 0-2 is not worse than one scoring 9-10. Confirm the matching engine treats it as fit.",
+    "NEW: practical_intelligence, divergent_thinking, convergent_thinking, collaboration, interpersonal_intelligence and propensity_to_go_deep are DERIVED minors - each is a re-mix of majors already in the matching vector. They are rated here as demands in their own right, which is correct for the rubric, but the matching engine gives the group a lower weight to avoid double-counting."
   ],
   "bands": [
     "0-2",
@@ -129,7 +133,20 @@
       }
     },
     {
-      "slug": "verbal",
+      "slug": "processing_speed",
+      "name": "Processing speed",
+      "group": "Cognitive Skills (processing and memory)",
+      "asks": "How fast must a response be produced — at what point does being right but slow count as being wrong?",
+      "anchors": {
+        "0-2": "Paced entirely by the worker, where taking another week costs nothing — Art Conservator & Restorer, Classical Language & Manuscript Scholar.",
+        "3-4": "Deadlines measured in days; a slow hour is invisible — Content Writer & Editor, Architect.",
+        "5-6": "Steady real-time pace with room to think between items — School Teacher, Banking Professional.",
+        "7-8": "Continuous decisions at the speed events arrive, with no pause available — Emergency Medical Technician, Live Sound & Stage Technician.",
+        "9-10": "Seconds decide the outcome and hesitation is itself the error — Air Traffic Controller, Commercial Pilot."
+      }
+    },
+    {
+      "slug": "verbal_intelligence",
       "name": "Verbal",
       "group": "Intelligence Application",
       "asks": "How much does this work turn on precise use of language?",
@@ -142,7 +159,7 @@
       }
     },
     {
-      "slug": "spatial",
+      "slug": "spatial_intelligence",
       "name": "Spatial",
       "group": "Intelligence Application",
       "asks": "How much does this work require seeing and manipulating shape, volume and position in the mind?",
@@ -155,7 +172,7 @@
       }
     },
     {
-      "slug": "musical",
+      "slug": "musical_intelligence",
       "name": "Musical",
       "group": "Intelligence Application",
       "asks": "How much does this work require hearing pitch, rhythm, timbre and structure in sound?",
@@ -168,7 +185,7 @@
       }
     },
     {
-      "slug": "bodily",
+      "slug": "bodily_intelligence",
       "name": "Bodily",
       "group": "Intelligence Application",
       "asks": "How much does this work require physical control, stamina and trained movement?",
@@ -181,7 +198,7 @@
       }
     },
     {
-      "slug": "naturalistic",
+      "slug": "naturalistic_intelligence",
       "name": "Naturalistic",
       "group": "Intelligence Application",
       "asks": "How much does this work require reading living systems, land, weather and seasons?",
@@ -194,7 +211,7 @@
       }
     },
     {
-      "slug": "existential",
+      "slug": "existential_intelligence",
       "name": "Existential",
       "group": "Intelligence Application",
       "asks": "How much does this work engage meaning, mortality, belief and what a life is for?",
@@ -207,7 +224,7 @@
       }
     },
     {
-      "slug": "logical",
+      "slug": "logical_intelligence",
       "name": "Logical",
       "group": "Intelligence Application",
       "asks": "How much does this work require formal, rule-governed, quantitative reasoning?",
@@ -217,6 +234,19 @@
         "5-6": "Structured quantitative work with set methods — Accounts & Bookkeeping Executive, Market Research Analyst.",
         "7-8": "Formal systems built and debugged daily — Software Developer, Statistician, Electronics & Communication Engineer.",
         "9-10": "Proof, formal derivation and mathematical modelling as the core output — Mathematician, Actuary, Artificial Intelligence & Machine Learning Engineer."
+      }
+    },
+    {
+      "slug": "intrapersonal_intelligence",
+      "name": "Intrapersonal",
+      "group": "Intelligence Application",
+      "asks": "How much does the work require knowing your own reactions, limits and motives — and acting on what you notice?",
+      "anchors": {
+        "0-2": "Externally paced work where self-reflection changes nothing about the output — Logistics & Warehouse Operator, Fitter & Machine Operator.",
+        "3-4": "Managing your own workload and attention, nothing deeper — Data Analyst, Accounts & Bookkeeping Executive.",
+        "5-6": "Long solo stretches where you must notice your own drift and correct it — Content Writer & Editor, Statistician.",
+        "7-8": "Your own reactions are the instrument you work with — Counsellor & Psychotherapist, Actor & Performer.",
+        "9-10": "Misreading yourself does direct harm to the person in front of you — Clinical Psychologist, Religious & Ritual Professional."
       }
     },
     {
@@ -246,8 +276,8 @@
       }
     },
     {
-      "slug": "attention_span",
-      "name": "Attention span / ability to concentrate / focus",
+      "slug": "focus",
+      "name": "Focus / attention span / ability to concentrate",
       "group": "Perspective (crystallised-intelligence based)",
       "asks": "How long must concentration be held unbroken, and what does breaking it cost?",
       "anchors": {
@@ -259,8 +289,8 @@
       }
     },
     {
-      "slug": "dogmatism",
-      "name": "Dogmatism / firm belief system",
+      "slug": "firmness",
+      "name": "Firmness of belief",
       "group": "Perspective (crystallised-intelligence based)",
       "asks": "How much does this work require acting from FIRM PRIOR CONVICTION - a settled belief system or theory held BEFORE the task begins - as against starting from doubt and letting the evidence decide? NOTE: high is not better. This measures how strongly held a position the work demands you begin from, and it is a FIT dimension, never a quality one.",
       "anchors": {
@@ -270,8 +300,97 @@
         "7-8": "Advances a position you are committed to before you begin, and holds it under attack - Lawyer, Political & Electoral Professional.",
         "9-10": "Acts from a received body of belief that is transmitted rather than questioned - Religious & Ritual Professional, Classical Language & Manuscript Scholar."
       }
+    },
+    {
+      "slug": "uncertainty_tolerance",
+      "name": "Uncertainty tolerance",
+      "group": "Perspective (crystallised-intelligence based)",
+      "asks": "How much of this work is done without knowing whether it will work, with no way to find out in advance? FIT, not quality — low is correct for work that must be certain.",
+      "anchors": {
+        "0-2": "The outcome is known before starting and the method guarantees it — Accounts & Bookkeeping Executive, Laboratory Technician.",
+        "3-4": "Occasional surprises inside a mostly predictable routine — Banking Professional, Pharmacist.",
+        "5-6": "Every case is unpredictable but the odds are broadly known — Lawyer, Civil Engineer.",
+        "7-8": "Years of work with no guarantee any of it lands — Drug Discovery Scientist, Filmmaker & Director.",
+        "9-10": "The whole undertaking may return nothing, and that is the normal case, not the bad case — Entrepreneur & Small Business Owner, Fine Artist."
+      }
+    },
+    {
+      "slug": "practical_intelligence",
+      "name": "Practical intelligence",
+      "group": "Differentiating minors",
+      "asks": "How much does the work depend on reading a messy real situation and making it work with whatever is actually available?",
+      "anchors": {
+        "0-2": "Conditions are supplied and fixed; the task never changes shape — Software Tester, Accounts & Bookkeeping Executive.",
+        "3-4": "Standard conditions with the occasional workaround — Laboratory Technician, Retail & Store Operations.",
+        "5-6": "Every site differs and the plan meets reality on arrival — Civil Engineer, Event Manager.",
+        "7-8": "The official method routinely fails and you are expected to make it work anyway — Automobile Mechanic, Agricultural Extension & Agri-Business Professional.",
+        "9-10": "No two situations repeat, the resources are whatever is to hand, and improvising IS the skill — Farmer, Community Development Worker."
+      }
+    },
+    {
+      "slug": "divergent_thinking",
+      "name": "Divergent thinking / creativity",
+      "group": "Differentiating minors",
+      "asks": "How much does the work require generating many genuinely different options — where the first workable answer is not good enough?",
+      "anchors": {
+        "0-2": "One correct answer exists and producing an alternative is an error — Accounts & Bookkeeping Executive, Software Tester.",
+        "3-4": "A small set of known options to choose between — Banking Professional, Radiology & Imaging Technologist.",
+        "5-6": "Several viable approaches, judged on which fits the brief — Marketing Specialist, UI/UX Designer.",
+        "7-8": "A volume of distinct ideas is the raw material of the job — Advertising Creative & Copywriter, Game Designer.",
+        "9-10": "The work is judged on having produced what nobody else would have — Fine Artist, Music Producer & Composer."
+      }
+    },
+    {
+      "slug": "convergent_thinking",
+      "name": "Convergent thinking",
+      "group": "Differentiating minors",
+      "asks": "How much does the work require narrowing many inputs down to the single defensible answer?",
+      "anchors": {
+        "0-2": "Nothing to converge on; the output is deliberately open-ended — Fine Artist, Digital Content Creator.",
+        "3-4": "Straightforward selection among given options — Retail & Store Operations, Travel & Tourism Professional.",
+        "5-6": "Evidence weighed into a recommendation someone else will act on — Market Research Analyst, Financial Analyst.",
+        "7-8": "Many conflicting signals reduced to one call that must hold up afterwards — Doctor, Forensic Scientist.",
+        "9-10": "One answer, provably right, where being wrong is final — Actuary, Judicial Services Officer."
+      }
+    },
+    {
+      "slug": "collaboration",
+      "name": "Collaboration",
+      "group": "Differentiating minors",
+      "asks": "How much of the output is produced jointly — to what extent is one person's work unusable without the others'?",
+      "anchors": {
+        "0-2": "Finished alone and handed over complete — Fine Artist, Tailor & Garment Maker.",
+        "3-4": "Mostly solo, with coordination only at the edges — Content Writer & Editor, Land Surveyor.",
+        "5-6": "A team with clearly separable individual pieces — Software Developer, Civil Engineer.",
+        "7-8": "Continuous interdependence; your part means nothing on its own — Filmmaker & Director, Production Crew & Studio Technician.",
+        "9-10": "Simultaneous joint execution where one person failing ends the attempt — Operation Theatre & Anaesthesia Technologist, Armed Forces Officer."
+      }
+    },
+    {
+      "slug": "interpersonal_intelligence",
+      "name": "Interpersonal",
+      "group": "Differentiating minors",
+      "asks": "How much does the work require reading a GROUP — its alliances, politics and unspoken positions — and moving it somewhere? Distinct from emotional intelligence, which is reading and regulating emotion one person at a time.",
+      "anchors": {
+        "0-2": "Work done without needing to move anyone — Fitter & Machine Operator, Data Engineer.",
+        "3-4": "One-to-one dealings on defined terms — Banking Professional, Pharmacist.",
+        "5-6": "Leading a known group toward an already agreed goal — Project Manager, School Teacher.",
+        "7-8": "Competing interests that have to be brought to an agreement — Management Consultant, Human Resources Professional.",
+        "9-10": "Rooms of opposed parties where reading the alliances IS the work — Political & Electoral Professional, Civil Services Officer."
+      }
+    },
+    {
+      "slug": "propensity_to_go_deep",
+      "name": "Propensity to go deep",
+      "group": "Differentiating minors",
+      "asks": "How far into one narrow subject must a person go, and for how long, before the work is any good?",
+      "anchors": {
+        "0-2": "Breadth over depth; today's task is unrelated to tomorrow's — Retail & Store Operations, General Duty Assistant.",
+        "3-4": "A working competence reached in months — Fitness Trainer & Instructor, IT Support & Network Technician.",
+        "5-6": "A discipline learned over years and then applied broadly — School Teacher, Marketing Specialist.",
+        "7-8": "A narrow specialism where the depth itself is the value — Chip Design Engineer, Patent Agent.",
+        "9-10": "A lifetime inside one narrow subject, because the frontier is not reachable any other way — Mathematician, Classical Language & Manuscript Scholar."
+      }
     }
-  ],
-  "reviewed_on": "2026-08-17",
-  "review_note": "TWO PASSES. The first wrote the 19 factors; the second re-read every band and changed six. The one that mattered: AGREEABLENESS 0-2 said 'the work IS opposition', which describes a litigator and describes nothing at all about a data engineer who simply has no one to accommodate - most solitary technical work had no home on the scale and would have drifted upward by default. It now names both cases explicitly. The other five were referents that pointed at a job role through its parent profession and read as riddles, a band resting on a single example, and a musical anchor that named yoga, which requires no ear. The user delegated the sign-off after ruling on the two open questions - neuroticism, now inverted to emotional_stability, and dogmatism, re-anchored to strength of prior conviction."
+  ]
 }

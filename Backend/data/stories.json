@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "generated_from": "05_Story_Bank.md",
+  "note": "SERVER-SIDE ONLY. The facts must never be sent to a browser — they are the answers. Only the story text is served, and only within the 60-minute reading window.",
+  "count": 8,
+  "stories": [
+    {
+      "id": "s1",
+      "title": "THE LIGHTHOUSE",
+      "text": "In 1923, a lighthouse on the east coast stopped working for 12 nights. The keeper, Devraj Menon, said he had lit all 47 lamps every evening, just as he always did.\n\nThe shipping company sent an engineer named Ilyas Qureshi to find the problem. He checked the lamps, the oil, and the machine. Everything worked when he tested it.\n\nA young schoolteacher from the village nearby, Saraswati Bhat, had an idea the engineer had brushed aside. She had an unusual skill. She could name birds just by hearing them, without seeing them at all. She had noticed a new sound at the lighthouse that season.\n\nA large group of birds had settled on the rocks below. Every night they rose together and flew in circles around the tower. Their bodies blocked the light from the sea for hours.\n\nDevraj had lit the lamps. The light had simply never reached the water.\n\nThe company built a second light lower down on the rocks, below where the birds flew. The problem never came back, and Devraj kept his job.",
+      "facts": {
+        "year": 1923,
+        "personA": "Devraj Menon",
+        "personB": "Ilyas Qureshi",
+        "personC": "Saraswati Bhat",
+        "profession1": "engineer",
+        "profession2": "schoolteacher",
+        "number1": 47,
+        "number2": 12,
+        "ability": "Naming birds by their sound",
+        "problem": "The lighthouse gave no light for 12 nights",
+        "cause": "Birds circling the tower blocked the light",
+        "resolution": "A second light was built below where the birds flew"
+      }
+    },
+    {
+      "id": "s2",
+      "title": "THE GRAIN STORE",
+      "text": "In 1961, a grain store began losing stock. Over one season, 340 sacks went missing from a building that served 9 villages.\n\nThe storekeeper, Bhanumati Rao, kept careful records and could not explain it. The locks were fine and the register matched every evening.\n\nAn accountant named Prithvi Sengupta was sent from the state office. He checked three months of entries and found no mistake in the numbers. The sacks had truly gone.\n\nA retired railway guard, Faizal Ahmad, lived next to the store. He had an unusual habit. He remembered the exact time of every train that passed, going back years. He mentioned that a goods train had started stopping behind the store, at a time when no train was meant to run.\n\nThe stops were on no timetable. A crew had been loading sacks through the back wall during the halt and selling them two districts away.\n\nThe stopping place was closed and the back wall was sealed. Bhanumati's records, it turned out, had been right all along.",
+      "facts": {
+        "year": 1961,
+        "personA": "Bhanumati Rao",
+        "personB": "Prithvi Sengupta",
+        "personC": "Faizal Ahmad",
+        "profession1": "accountant",
+        "profession2": "railway guard",
+        "number1": 340,
+        "number2": 9,
+        "ability": "Remembering the exact time of every train",
+        "problem": "Grain sacks disappearing from a locked store",
+        "cause": "An unscheduled train halt; crew loading through the back wall",
+        "resolution": "Stopping place closed, back wall sealed"
+      }
+    },
+    {
+      "id": "s3",
+      "title": "THE BRIDGE",
+      "text": "In 1978, a footbridge 62 metres long began sinking at one end. It had stood through 4 monsoons without any trouble.\n\nThe village head, Chandrika Pillai, closed the bridge until the reason was found.\n\nA geologist named Tejinder Sodhi studied the riverbank. He said the soil was firm and could find no reason for the movement.\n\nAn old potter, Zubeida Khan, dug clay from the riverbank every week for her work. She had an unusual sense. She could tell how deep the water was under the ground from the weight of the clay she pulled up. She said the ground on the sinking side had been getting lighter for months.\n\nA new tube well upstream had been pulling water all year. The water under the north end of the bridge had dropped, and the soil above it had shrunk as it dried.\n\nThe tube well's hours were cut and the bridge end was given new support. The bridge stopped moving within a year. Zubeida was asked to check the clay every season after that.",
+      "facts": {
+        "year": 1978,
+        "personA": "Chandrika Pillai",
+        "personB": "Tejinder Sodhi",
+        "personC": "Zubeida Khan",
+        "profession1": "geologist",
+        "profession2": "potter",
+        "number1": 62,
+        "number2": 4,
+        "ability": "Telling water depth from the weight of clay",
+        "problem": "A footbridge sinking at one end",
+        "cause": "A new tube well lowered the water; soil shrank",
+        "resolution": "Tube well hours cut, bridge end given new support"
+      }
+    },
+    {
+      "id": "s4",
+      "title": "THE CLOCK TOWER",
+      "text": "In 1889, the clock in a market town's tower began running 7 minutes fast every day. There were 96 steps up to the machine at the top.\n\nThe town's clock keeper, Ratanlal Vyas, set it right every morning. By evening it had gained the time again.\n\nA watchmaker named Oorja Kalita was brought from the city. She took the machine apart and rebuilt it twice. In her workshop it kept perfect time. In the tower it did not.\n\nA stone worker repairing the tower wall, Hemraj Barua, had an unusual skill. He could tell how warm a stone was just by touching it, almost exactly. He said the south wall of the clock room was much warmer in the afternoon than the north wall.\n\nA row of trees that had shaded the south wall for years had been cut down the winter before. The afternoon sun now heated the room. The metal rod inside the clock grew slightly longer in the heat, and the clock ran fast.\n\nA cover was fitted over the south window. The clock kept time again, and Ratanlal was no longer blamed.",
+      "facts": {
+        "year": 1889,
+        "personA": "Ratanlal Vyas",
+        "personB": "Oorja Kalita",
+        "personC": "Hemraj Barua",
+        "profession1": "watchmaker",
+        "profession2": "stone worker",
+        "number1": 96,
+        "number2": 7,
+        "ability": "Telling how warm a stone is by touch",
+        "problem": "The tower clock ran fast every day",
+        "cause": "Trees were cut down; sun heated the room and the metal rod grew longer",
+        "resolution": "A cover was fitted over the south window"
+      }
+    },
+    {
+      "id": "s5",
+      "title": "THE SEED STORE",
+      "text": "In 2004, a seed store holding 1200 samples from 3 districts found that its seeds were no longer growing.\n\nThe woman who started it, Malathi Iyer, had collected every sample herself over 11 years. She had stored them exactly as the manual said.\n\nA plant scientist named Kunal Dhariwal tested the seeds and the store room. The temperature, the air and the containers all met the standard. The seeds should have been fine.\n\nA night watchman at the building, Girish Tamang, had an unusual ability. He could feel a change in the air before any instrument showed it, and had used this to guess coming storms for years. He said the store room felt different every night at about the same hour.\n\nA new cooling machine switched itself off between 2 and 5 each morning to save power. The room warmed and cooled every single night. Three years of these small changes had killed the seeds.\n\nThe machine was set to run without stopping. New samples were collected, and the room temperature is now written down every 15 minutes.",
+      "facts": {
+        "year": 2004,
+        "personA": "Malathi Iyer",
+        "personB": "Kunal Dhariwal",
+        "personC": "Girish Tamang",
+        "profession1": "plant scientist",
+        "profession2": "night watchman",
+        "number1": 1200,
+        "number2": 3,
+        "ability": "Feeling changes in the air before instruments do",
+        "problem": "Stored seeds stopped growing",
+        "cause": "Cooling machine switched off nightly; room warmed and cooled",
+        "resolution": "Machine set to run without stopping; temperature recorded every 15 minutes"
+      }
+    },
+    {
+      "id": "s6",
+      "title": "THE RADIO STATION",
+      "text": "In 1947, a small radio station received 85 letters in one week. Listeners said the evening programme disappeared for 6 hours at a time.\n\nThe announcer, Yashodhara Naik, was sure the programmes had gone out. The station records agreed with her.\n\nA radio technician named Ashwin Rebello tested the transmitter for three nights. Its power never dropped once.\n\nA fisherman called Nurul Haque listened while mending his nets on the shore. He had an unusual talent. He could find his way at night by the sound of waves hitting different parts of the coast, with no light at all. He noticed that the programme only vanished on nights when the sea was very still.\n\nOn calm nights, a layer of warm air formed above the cool sea. The signal bent upward into this layer and passed right over the towns, coming down far inland where nobody was listening.\n\nThe station lowered its aerial and changed the angle it sent from. The letters stopped, and Yashodhara read three of them out on air.",
+      "facts": {
+        "year": 1947,
+        "personA": "Yashodhara Naik",
+        "personB": "Ashwin Rebello",
+        "personC": "Nurul Haque",
+        "profession1": "radio technician",
+        "profession2": "fisherman",
+        "number1": 85,
+        "number2": 6,
+        "ability": "Finding the way at night by the sound of waves",
+        "problem": "The evening programme disappeared for hours",
+        "cause": "Warm air over a calm sea bent the signal over the towns",
+        "resolution": "Aerial lowered and the sending angle changed"
+      }
+    },
+    {
+      "id": "s7",
+      "title": "THE WATER TANK",
+      "text": "In 1995, a roof tank supplying 11 houses began running dry every afternoon, even though 400 litres were filled into it every morning.\n\nThe caretaker, Sushila Kaur, checked every tap and pipe she could reach and found no leak.\n\nA plumber named Vikramaditya Ghosh tested the whole system over two days. The pipes were sound and no water was escaping under the ground.\n\nA tailor who worked on the top floor, Ramabai Solanki, had an unusual skill. She could hear the difference between water moving and water standing still through a wall. She had learned this from years of listening to her machine. She said she heard water running inside the roof at midday, when nobody was home.\n\nA small valve fitted the year before was sticking open in the afternoon heat. The tank was overflowing into a drain on the far side of the roof, where nobody could see it from the stairs.\n\nThe valve was changed for one that could take the heat, and an alarm was added. The tank has stayed full since.",
+      "facts": {
+        "year": 1995,
+        "personA": "Sushila Kaur",
+        "personB": "Vikramaditya Ghosh",
+        "personC": "Ramabai Solanki",
+        "profession1": "plumber",
+        "profession2": "tailor",
+        "number1": 400,
+        "number2": 11,
+        "ability": "Hearing moving water through a wall",
+        "problem": "The roof tank ran dry every afternoon",
+        "cause": "A valve stuck open in the heat; the tank overflowed into a drain",
+        "resolution": "Heat-proof valve fitted and an alarm added"
+      }
+    },
+    {
+      "id": "s8",
+      "title": "THE PRINT SHOP",
+      "text": "In 1936, a print shop with 5 workers found that 250 copies of every run came out faint and blurred, while the rest were perfect.\n\nThe owner, Kamalesh Barot, had used the same press and the same ink for 9 years without this happening.\n\nA press mechanic named Anisha Grewal took the rollers apart and set the pressure again twice. The machine was in good order and printed cleanly when she tested it.\n\nA book binder working in the back room, Sohrab Mistry, had an unusual ability. He could tell which mill a sheet of paper came from by the sound it made when he bent it. He pointed out that the latest delivery held two different papers stacked in the same bundle.\n\nThe supplier had run short and filled the order with a cheaper paper that soaked up ink. Those sheets blurred, and they sat together in the middle of each stack.\n\nThe shop began testing every delivery before use, and Sohrab checked the bundles himself.",
+      "facts": {
+        "year": 1936,
+        "personA": "Kamalesh Barot",
+        "personB": "Anisha Grewal",
+        "personC": "Sohrab Mistry",
+        "profession1": "press mechanic",
+        "profession2": "book binder",
+        "number1": 250,
+        "number2": 5,
+        "ability": "Telling which mill paper came from by its sound",
+        "problem": "Some copies printed faint and blurred",
+        "cause": "Supplier mixed in a cheaper paper that soaked up ink",
+        "resolution": "Every delivery tested before use"
+      }
+    }
+  ]
+}

@@ -1,20 +1,8 @@
-import { useNavigate, Link } from "react-router-dom"
-import { useDispatch, useSelector } from "react-redux"
-import { Popconfirm } from "antd"
-import { setUser } from "../store/userSlice"
+import { Link } from "react-router-dom"
+import { useSelector } from "react-redux"
 
 function Navbar() {
-    const navigate = useNavigate()
-    const dispatch = useDispatch()
     const { user } = useSelector((state) => state.user)
-
-    const handleLogout = () => {
-        dispatch(setUser({
-            user: null,
-        }))
-        localStorage.removeItem("token")
-        navigate("/login")
-    }
 
     return (
         <div>
@@ -35,19 +23,15 @@ function Navbar() {
                     )}
                 </>
             )}
+            {/* LOG OUT LIVES ON THE PROFILE PAGE, NOT HERE. It was in both places, and a nav bar is
+                the wrong one: it sits next to Home and Interest Form on every screen, including
+                mid-assessment, where the most destructive action available is one mis-tap from the
+                thing beside it. Profile.js already has it, behind the same confirm, next to the
+                account it belongs to. */}
             {user && (
                 <>
                     {" | "}
                     <Link to="/profile">{user.name}</Link>
-                    {" "}
-                    <Popconfirm
-                        title="Log out of Freshmxn?"
-                        okText="Log out"
-                        cancelText="Stay"
-                        onConfirm={handleLogout}
-                    >
-                        <button type="button">Logout</button>
-                    </Popconfirm>
                 </>
             )}
             <hr />

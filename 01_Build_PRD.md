@@ -94,7 +94,7 @@ only on an unrelated axis):
 |---|---|---|
 | `scoring_version` | the formulas turning raw answers → the 22+9 profile | a scoring formula/DAG changes |
 | `norm_set_id` | the population norms for percentiles | **null in V1** (no norms until 500+/age band) |
-| `taxonomy_version` | which version of the 218-profession list | a profession is added/removed/merged |
+| `taxonomy_version` | which version of the 223-profession list | a profession is added/removed/merged |
 | `baseline_version` | the profession factor scores/weights | the Baseline_Rating pipeline is re-run |
 | `matching_version` | the matching algorithm itself | Program 1–3 logic / 80% floor / tier rules change |
 
@@ -184,7 +184,7 @@ only on an unrelated axis):
   sample_variance: {}
 }
 ```
-Taxonomy (the 218-profession file) stays its own collection `professions`; joined by `professionId`.
+Taxonomy (the 223-profession file) stays its own collection `professions`; joined by `professionId`.
 
 ### B.6 `activity_factor_cache`
 ```js
@@ -196,7 +196,7 @@ Taxonomy (the 218-profession file) stays its own collection `professions`; joine
 ```js
 {
   _id, userId, requestedTier: 1|2,        // 2 from an upgrade request too
-  isUpgrade: bool,                          // true → amount is the ₹3,500 difference, not the full 7,000
+  isUpgrade: bool,                          // true → amount is the ₹3,000 difference (6,500 − 3,500), not the full 6,500
   coupon?, discountPct?, finalAmountInr,   // captured from the user's request form
   name, phone, callbackTime,
   status: "pending"|"granted"|"declined",
@@ -306,8 +306,8 @@ toggles) — `currentTier` is just "where they are now."
 
 **The upgrade moment (Tier 1 → Tier 2):** when a Tier-1 user completes the service, the report page
 shows **their filled profile + recommended professions + a "Choose Tier 2 (Mentorship)" option** for
-those recommendations. Choosing it submits a **new access-request for the ₹3,500 difference** (not
-the full ₹7,000). Admin grants → toggles `currentTier: 2` → drops them into the mentor waitlist flow.
+those recommendations. Choosing it submits a **new access-request for the ₹3,000 difference** (not
+the full ₹6,500). Admin grants → toggles `currentTier: 2` → drops them into the mentor waitlist flow.
 
 **Downgrade / refund (Tier 2 → Tier 1):** **admin-only.** The user requests it; the admin toggles
 `currentTier` back to 1 and records the refund/rollover on `payments` (per the rollover-first policy).
@@ -349,7 +349,7 @@ granted access).
   scoring. Student text is delimited data, never instructions.
 - Voyage: **model = `voyage-4-large` (LOCKED — the professions were already embedded with it, and
   all vectors MUST use the same model to be comparable; the API key can differ, the model cannot).**
-  One-time 218-profession index (`document`); runtime activity embeds (`query`); cache
+  One-time 223-profession index (`document`); runtime activity embeds (`query`); cache
   dedup ≥0.9. Stored in Atlas Vector Search.
 
 ### C.6 The queue (BullMQ)
@@ -401,7 +401,7 @@ the one remaining gate is called out on Day 5.
 ### DAY 0 (a few hours the night before) — accounts & keys 🟧
 Do these first so Day 1 isn't blocked. All are dashboard sign-ups.
 1. 🟧 MongoDB Atlas — create an **M0 (free)** cluster, get the connection string. M0 supports Atlas
-   Vector Search at your scale (218 professions + a small activity cache) — **no paid tier needed**;
+   Vector Search at your scale (223 professions + a small activity cache) — **no paid tier needed**;
    the Day-3 vector index is created on this same free cluster. Upgrade only if real traffic later
    demands it (a one-click tier bump, no migration).
 2. 🟧 Upstash — create Redis, get URL/token.
@@ -451,91 +451,164 @@ Do these first so Day 1 isn't blocked. All are dashboard sign-ups.
 ---
 
 ### DAY 2 — The scoring engine + golden fixtures (the spine)
-- 🟦 Port `perspective_scoring_final.js` and `sart_scoring.js` into the repo unchanged.
+**Attach for this day:** `00_Research_Summary_FROZEN.md`, `perspective_scoring_final.js`,
+`sart_scoring.js`, `llm_scoring_prompts.md`, `04_Item_Bank.md`, `05_Story_Bank.md`, plus the
+Day 1 handover (`02_Day1_Handover.md`) so it knows the house style and the `Submission` model.
+
+- 🟦 Port `perspective_scoring_final.js` and `sart_scoring.js` into `Backend/` **unchanged** (they're
+  tested). Follow CODING_STYLE.md for anything new around them.
 - 🟦 Write the missing sub-scorers: IPIP-50, MI (35×7), reasoning, digit-span, story-recall — to
   their specs in the frozen research.
-- 🟦 Assemble the single pure module: inputs → 22 majors + 9 minors + `data_quality` + `flags`,
-  in strict DAG order, validity gates first, nulls never imputed.
-- 🟦 Write **20 golden fixtures** and wire them into CI. This is the non-negotiable safety net.
-- 🟩 **Here:** draft/adjust the LLM scoring prompts (the 4 open items) and any anchor rubric you
-  still need; debug any DAG-order or null-propagation question.
-- ✅ **End-of-day check:** feed a known submission → correct profile out; all 20 fixtures green.
+- 🟦 Assemble the single **pure module** (no network calls): inputs → 22 majors + 9 minors +
+  `data_quality` + `flags`, strict DAG order, validity gates first, **nulls never imputed**. Reads
+  its inputs from `Submission.psychometric` (Mixed field — write with `findOneAndUpdate`+`$set`).
+- 🟦 Write **~20 golden fixtures** (known input → known output) and wire them into the test suite,
+  matching the Day-1 testing discipline (automated checks against real Atlas, test data deleted
+  after). This is the non-negotiable safety net.
+- 🟩 **Here:** draft/adjust the 4 LLM open-item scoring prompts (P7/P22/P13/P33) at temperature 0;
+  debug any DAG-order or null-propagation question.
+- ⚠️ **Note the dependency:** the scoring engine consumes `Submission.psychometric`, but the
+  **psychometric assessment UI that produces it doesn't exist yet** (it's Day 4). So Day 2 tests the
+  engine against hand-built fixture submissions, not live form data — that's expected and fine.
+- ✅ **End-of-day check:** feed a known fixture submission → correct 22+9 profile out; all fixtures
+  green; invalid-session fixtures correctly null their factors rather than imputing.
 
 ---
 
-### DAY 3 — Baseline_Rating + embeddings + the matching engine
-- 🟦 Run the **Baseline_Rating pipeline** (from the earlier Claude Code prompt) to attach the
-  **27-factor** `factors/weights/drivingReasons` to all 218 professions — multi-sample, variance
-  flags, `review_status: unreviewed`. (This is the 22→matching-vector regeneration; nothing to
-  migrate since no scores exist yet.)
-- 🟦 Run the **Voyage embedding** pass with **`voyage-4-large`** (runtime activity embeds; the 218
-  professions were already embedded with voyage-4-large in the professions work — reuse those stored
-  vectors, only re-embed a profession if its text changed), store in Atlas Vector Search.
-- 🟦 Build the **matching engine** (pure module): Programs 1–3, ≥80% floor, null-renormalisation,
-  `match_confidence` stored, 16-tier sort, `ai_exposure` as sort.
-- 🟦 Build the **activity-factor cache** + Voyage runtime `query` path + LLM rerank node.
-- 🟩 **Here:** review the anchor rubric before the scoring run; sanity-check a few
-  activity→profession matches against intuition to calibrate the 80% floor.
-- ✅ **End-of-day check:** a scored profile + an interest submission → a 16-tier ranked list with
-  stored `match_confidence`.
+### DAY 3 — Factor migration + Baseline_Rating + matching engine
+**Attach for this day:** the `Backend/data/` files (`ALL-professions.json`/professions,
+`baseline_rating.json`, `psychometric_factors.json`, `factor_anchors.json`, `DECISIONS.md`,
+`entrance_gates.json`, `verified_facts.json`), plus the Day 1 handover.
+
+- ⚠️ **FIRST, the migration checkpoint (§9.2 of the handover — user-requested STOP):**
+  `baseline_rating.json` is currently the **OLD 19-factor** set. Before any scoring:
+  1. Update `psychometric_factors.json` 19 → **27** (the matching vector).
+  2. Add `factor_anchors.json` anchors for the **8 new factors**.
+  3. **STOP and have the user review those 8 anchors before running the scoring pass.** This is an
+     explicit checkpoint he asked for — do not auto-proceed.
+- 🟦 After anchor sign-off: run the **Baseline_Rating pipeline** to regenerate `factors/weights/
+  drivingReasons` for all **223 professions** (handover §9.1 — it's 223, not 218) against the
+  27-factor vector — multi-sample, variance flags, `review_status: unreviewed`, routed through the
+  admin-review discipline.
+- 🟦 **Voyage embeddings: reuse the existing 223 × 1024 `voyage-4-large` vectors** — regenerating the
+  factors does NOT invalidate them (they embed profession *text*, not factors). Only build the
+  runtime activity-embed path (`input_type: "query"`) + the activity-factor cache + LLM rerank node.
+  Store/query via Atlas Vector Search.
+- 🟦 Build the **matching engine** (pure module): Programs 1–3, journey-aware (waste/τ, AI-weight,
+  `class12_prerequisite` filter, `preAdmission`), ≥80% floor, null-renormalisation, `match_confidence`
+  stored-never-shown-never-an-input, 16-tier sort, `ai_exposure` as sort.
+- 🟦 **Consume the aspiration bias signal (handover §9.4):** the interest form already stores each
+  aspirational profession as a `persistentInterests` row (`confidence: "Medium"`,
+  `source: "aspiration"`), separate from evidenced activities. Program 1 must read stated career
+  preference *separately* from evidenced activities. Keep unmatched aspirations (`professionId: null`)
+  — don't discard.
+- 🟩 **Here:** review the 8 new-factor anchors (the checkpoint above); sanity-check a few
+  activity→profession matches to calibrate the 80% floor.
+- ✅ **End-of-day check:** a fixture profile + a real interest submission → a 16-tier ranked list,
+  journey-shaped, with stored `match_confidence`.
 
 ---
 
-### DAY 4 — Frontend staged flow, report, mentor onboarding, queue
-- 🟦 Extend the existing React app into the **staged horizontal progress bar**: Interest → Assessment
-  → Report → Mentor(waitlist), resumable per stage.
-- 🟦 Build the **psychometric assessment UI** (fresh — replaces Google Forms): each module + the
-  SART/story two-clock flows.
-- 🟦 Wire the **BullMQ jobs** (score → embed → match → report) so submission triggers the pipeline.
-- 🟦 Build **report generation** (Claude) + the report page; readiness layer + values profile;
-  never show `match_confidence`/`data_quality`. **On the report page for Tier-1 users, show the
-  "Choose Tier 2 (Mentorship)" option** for their recommended professions (submits a ₹3,500 upgrade
-  access-request in manual mode).
-- 🟦 Build the **admin dashboard**: view `access_requests` (pending/granted), the **Grant access**
-  action (`grantAccess()`), the **downgrade/refund toggle** (Tier 2→1, admin-only), and an
-  admin-triggered report-retake action.
-- 🟦 Build the **public marketing site** (no auth): Landing, Success Stories (two illustrative
-  result cards), Mentor Waitlist pages — content is ready in the landing/stories/waitlist docs;
-  verified stats only.
-- 🟦 Build **mentor sign-in + onboarding form** (§B.9) and the **paid mentor waitlist** (§B.10):
-  pay → hold place → student completes Step 1 + chooses career → admin matches within 15 business
-  days (manual in V1).
-- 🟦 Build the **follow-up cron** + email template (writes `follow_ups` at report time).
-- 🟩 **Here:** draft the report-generation prompt; draft the follow-up email copy.
-- ✅ **End-of-day check:** full click-through — signup → pay(test) → both stages → report renders;
-  mentor can onboard; waitlist works.
+### DAY 4 — Psychometric assessment UI + pipeline + report
+**Already built in Day 1 (do NOT rebuild):** the staged progress bar exists via `progress{}`, the
+admin dashboard (5 tabs), mentor-adjacent flows, and the interest form (Stage 1). Day 4 adds the
+*missing* stages and the pipeline that connects everything.
+
+- 🟦 Build the **psychometric assessment UI** (Stage 2 — the big new frontend piece, replaces Google
+  Forms): each module (IPIP-50, MI, reasoning, digit-span, story-recall two-clock flow, SART, the
+  perspective block, Rosenberg), writing answers to `Submission.psychometric` via
+  `findOneAndUpdate`+`$set`. `progress.psychometric` goes not_started→in_progress→done.
+- 🟦 Wire the **BullMQ jobs** (score → embed activities → match → generate report) so completing
+  Stage 2 triggers the pipeline. Each job retryable/resumable (a report-gen failure never re-runs
+  scoring). Uses `REDIS_URL`.
+- 🟦 Build **report generation** (Claude) + the report page (Stage 3): journey-shaped output,
+  readiness layer, values profile; **never show `match_confidence`/`data_quality`**; Uncertainty
+  Tolerance framed as a position not a level. The Tier-1 upgrade CTA on the report page already has
+  its payment plumbing from Day 1 — just surface it here for their recommended professions.
+- 🟦 Build the **follow-up cron** (6/12-month): scheduled job + email (Resend) writing `follow_ups`
+  at report time. **Ships now** — it produces nothing for 6 months, which is exactly why it can't be
+  postponed.
+- 🟩 **Here:** draft the report-generation prompt (safety-sensitive — minors); draft the follow-up
+  email copy; help shape the assessment UI's module-by-module flow if needed.
+- ✅ **End-of-day check:** full click-through — signup → pay(manual/test) → interest form → **new**
+  psychometric assessment → pipeline runs → report renders correctly per journey; Tier-1 upgrade CTA
+  shows on the report.
 
 ---
 
-### DAY 5 — Integration test, deploy, and the two go-live gates
-- 🟦 Deploy all 3 services to Render; move env vars over; smoke-test in the cloud.
-- 🟦 End-to-end test with 3–5 seeded student profiles across the 4 journeys; verify tiers, nulls,
-  version stamps, the under-18 aggregate-counter split, the readiness layer.
-- 🟦 Fix whatever the integration test surfaces.
+### DAY 5 — Public site + mentor onboarding + integrate + deploy
+**Still to build (not done in Day 1):** the public marketing site and the mentor-facing UI. Plus
+integration testing and deploy.
+
+- 🟦 Build the **public marketing site** (no auth): Landing, Success Stories (two illustrative result
+  cards), Mentor Waitlist pages — content ready in `landing_page_content_v3.md` (the finalised copy),
+  `success_stories_page.md`, `mentor_waitlist_page.md`; verified stats only; WhatsApp/call/email
+  wired.
+- 🟦 **Apply the finalised visual design (PRD §E.1):** Kira-style light-mode layout, Orelega One +
+  Lato, teal-navy palette with pink as a rare highlight only. This is the one visual pass — the rest
+  of the app (staged flow, assessment, report, admin) also gets styled to these tokens now that
+  functionality is proven.
+- 🟦 Build **mentor sign-in + onboarding form** (12 fields, currency/residence admin-only) and the
+  **student-facing paid mentor waitlist**: request/pay → hold place → student completes Tier 1 +
+  chooses a career → admin matches within 15 business days (manual in V1). Uses the existing
+  `mentorAuthMiddleware`.
+- 🟦 Deploy the **3 Render processes** (web + worker + cron); move env vars over; add the Render URL
+  to Google OAuth's authorized redirect URIs and the Razorpay/Resend configs; smoke-test in cloud.
+- 🟦 End-to-end test across the **4 journeys** with seeded profiles; verify tiers, nulls, version
+  stamps, the under-18 aggregate-counter split, the readiness layer, the manual grant flow.
 - 🟩 **Here:** work through any failing behaviour; final logic review.
-- 🟥 **Before real students / real money — this gates go-live, not the build:**
-  - Lawyer's hour on **DPDP parental consent + minor behavioural-tracking**.
-  - **Launch runs in `manual` payment mode** (no Razorpay KYC needed) — real users request access,
-    admin collects offline + grants. Complete Razorpay **KYC** (needs the Pvt Ltd bank account) and
-    flip `PAYMENT_MODE=razorpay` with live keys whenever it clears — zero rework (same `grantAccess`
-    seam).
+- 🟥 **Before real students / real money — gates go-live, not the build:**
+  - Lawyer's hour on **DPDP parental consent + minor behavioural-tracking** (V1 is a self-declared
+    checkbox — handover §10.5; verified-OTP flow is V2).
+  - **Launch in `manual` payment mode** (no KYC needed). Complete Razorpay KYC (needs the Pvt Ltd
+    bank account) → flip `PAYMENT_MODE=razorpay` + live keys whenever it clears — zero rework.
+  - `problemPrompts.js` human read-through (handover §10.1 — 132 prompts, some sensitive).
+  - Resolve pre-verification legacy accounts (handover §10.2).
   *(Citation verification already done — not a gate.)*
-- ✅ **End-of-state:** a deployed, self-tested product on test data, with the two human gates clearly
-  pending before public launch.
+- ✅ **End-of-state:** deployed, self-tested on manual-mode test data, public site live, mentor
+  onboarding open — legal sign-off + KYC the only remaining go-live gates.
 
 ---
 
 ## E. WHAT'S EXPLICITLY NOT IN THESE 5 DAYS (V2)
-Mentor booking/scheduling/matching/payouts · the mentor-override → Baseline_Rating refresh loop ·
-Hindi · norms/percentiles · `match_confidence` display · RIASEC · adaptive items · fitted weights.
-All are documented in `06_V2_and_Beyond.md`; none block the V1 build.
+- **Mentor tier automation:** booking, scheduling, session delivery, payouts, mentor↔student
+  matching (V1 is manual admin matching within 15 business days).
+- **The mentor-override → Baseline_Rating refresh loop** (needs mentor session data that only exists
+  once the mentor tier is live).
+- **Verified parental-consent OTP flow** — V1 is a self-declared checkbox with parent name + mobile,
+  and `Consent.isTemporary: true` on every row so V2 can find everyone to re-consent (handover §4).
+- **`match_confidence` display** (computed + stored in V1, shown only after Stage-4b validation).
+- **Norms / percentiles** (needs 500+ responses per age band), **RIASEC interests**, **adaptive item
+  selection**, **fitted weights** (need outcome data), **Hindi**, **mental-rotation** real spatial
+  ability. All detailed in `06_V2_and_Beyond.md`.
+- **Redis-backed rate limiting** (only needed once running >1 server instance).
+- **The final visual design pass** (Orelega One + Lato + colour tokens + inspiration site) — applied
+  after all functionality, per §E.1.
+None of these block the V1 build.
 
-## E.1 DESIGN TOKENS (final visual pass — applied last, after functionality)
-Design is deliberately done last (an inspiration site will be provided then). Tokens on record:
-- **Typography:** Orelega One (H1/H2/H3), Lato (H4/H5/H6, body, links).
-- **Colours:** Primary #[TBD] · Secondary #BEBEBE · Text #D1D1D1 · Accent #007D79 · Teal #007582.
-Build functionality first with minimal/neutral styling; apply these + the inspiration reference in
-the final design pass.
+## E.1 DESIGN DIRECTION (finalised — applied in the Day 5 visual pass)
+Build functionality first with minimal styling; apply this in the Day 5 design pass.
+
+**Reference & feel:** structure and energy of the **Kira** education site (bright, playful,
+product-forward, the strikethrough "you don't need X, you need a system" beat, 4-card how-it-works),
+borrowing only *warmth* (soft edges, gentle gradients) from the Cofounder pixel-art reference — NOT
+its atmospheric/muted style. Playful but trustworthy: students AND parents read this.
+
+**Base = LIGHT mode.** Off-white/near-white page background, navy ink, teal accents. Navy is the
+ink, not the canvas.
+
+**Typography:** Orelega One (H1/H2/H3 — display personality), Lato (H4–H6, body, links — readability).
+
+**Colours (from TypographyAndColor.docx):**
+- Primary `#1E2A38` (deep navy) — headings/text on the light background, NOT the page background
+- Accent `#007582` (teal) — THE star colour: every CTA, link, highlight
+- Secondary `#BEBEBE`, Text `#D1D1D1` — muted text / text on any dark section only
+- **Pink `#FFB3C7`** (soft pastel) — a single Kira-style highlighter accent, ~5% usage, ONE key
+  phrase per section max; used as a swipe/underline BEHIND navy text (never as text colour — too
+  low-contrast on white); never a structural or co-lead colour. Teal stays the star.
+
+**Content:** use `landing_page_content_v3.md` (the finalised copy) for the public landing page —
+Kira-style section rhythm, verified stats only, the "your marks never get a veto" framing.
 
 ## F. THE FIVE THINGS THAT MUST NOT DRIFT (carried into every file)
 1. Universals excluded from matching. 2. Interests lead, fundamentals follow. 3. Nulls shrink the

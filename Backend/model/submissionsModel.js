@@ -48,7 +48,13 @@ const submissionSchema = new mongoose.Schema(
             type: Date, // stamped on every section change — the frontend compares it with its local draft
         },
         submittedAt: {
+            type: Date, // the interest form
+        },
+        psychometricSubmittedAt: {
             type: Date,
+            // Stamped on every assessment submit, and compared against the report's generatedAt.
+            // A report older than this is being rebuilt, which is what lets the report page say
+            // "we are preparing this" instead of showing a stale one as if it were current.
         },
     },
     {

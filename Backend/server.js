@@ -21,6 +21,9 @@ const paymentsRouter = require("./Routers/paymentsRouter")
 const couponsRouter = require("./Routers/couponsRouter")
 const submissionsRouter = require("./Routers/submissionsRouter")
 const professionsRouter = require("./Routers/professionsRouter")
+const reportsRouter = require("./Routers/reportsRouter")
+const storyRouter = require("./Routers/storyRouter")
+const externalTestsRouter = require("./Routers/externalTestsRouter")
 
 const cors = require("cors")
 const path = require("path")
@@ -58,12 +61,21 @@ const PORT = process.env.PORT
 // every other route in this router adds express.json() itself.
 app.use("/payments", paymentsRouter)
 
+// Screenshots of external test results arrive as base64 inside a JSON body, and base64 is a third
+// larger than the bytes it carries. The default 100 kB limit rejects every real phone screenshot
+// with a bare 413, so this one route gets its own parser BEFORE the default one is mounted. The
+// limit is not global on purpose: every other endpoint takes answers, and a 6 MB body anywhere else
+// is a mistake or an attack, not a student.
+app.use("/external", express.json({ limit: "8mb" }), externalTestsRouter)
+
 app.use(express.json())
 app.use("/user", userRouter)
 app.use("/auth", authRouter)
 app.use("/coupons", couponsRouter)
 app.use("/submissions", submissionsRouter)
 app.use("/professions", professionsRouter)
+app.use("/reports", reportsRouter)
+app.use("/story", storyRouter)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")

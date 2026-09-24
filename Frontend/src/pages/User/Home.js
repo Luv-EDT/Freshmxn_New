@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
 import Navbar from "../Navbar"
+import JourneyProgress, { journeyStages } from "../JourneyProgress"
+import UpgradeToMentorship from "../UpgradeToMentorship"
 
 const TIER_NAMES = {
     0: "No plan yet",
@@ -21,6 +23,22 @@ function Home() {
         done: "Review / edit your interest form",
     }
 
+    const assessmentLabel = {
+        not_started: "Start the assessment",
+        in_progress: "Continue the assessment",
+        done: "Review your answers",
+    }
+
+    // The assessment opens only once the interest form is done: Program 2 matches professions
+    // against the activities that form collects, so an assessment taken first would score a
+    // profile with nothing to match it to.
+    const assessmentOpen = user.progress?.interestForm === "done"
+
+    // The first stage that is open and not finished — what "carry on" means for this student right
+    // now. Read from the same function the bar uses, so the button and the bar can never disagree
+    // about where they are.
+    const nextStage = journeyStages(user).find((stage) => stage.open && stage.state !== "done")
+
     return (
         <div>
             <Navbar />
@@ -36,23 +54,31 @@ function Home() {
 
             {user.paid && (
                 <div>
-                    {/* Staged flow — only Stage 1 exists on Day 1 */}
-                    <h3>Your journey</h3>
-                    <ol>
-                        <li>
-                            Interest Form — {user.progress?.interestForm}{" "}
-                            <button type="button" onClick={() => navigate("/interest")}>
-                                {interestFormLabel[user.progress?.interestForm] || "Open"}
-                            </button>
-                        </li>
-                        <li>Psychometric Assessment — coming soon</li>
-                        <li>Report — coming soon</li>
-                        <li>Mentor — {user.currentTier === 2 ? "waitlisted" : "available with Tier 2"}</li>
-                    </ol>
+                    <JourneyProgress user={user} />
 
-                    {user.currentTier === 1 && (
-                        <button type="button" onClick={() => navigate("/paywall")}>Upgrade to Mentorship</button>
+                    {/* ONE OBVIOUS NEXT ACTION, above the list. The bar shows the whole journey; this
+                        says which part of it to do now. A student who lands here after a week away
+                        should not have to work that out by reading four statuses. */}
+                    {nextStage && (
+                        <p>
+                            <button
+                                type="button"
+                                style={{ padding: "12px 20px", minHeight: "48px", fontSize: "16px" }}
+                                onClick={() => navigate(nextStage.path)}
+                            >
+                                {nextStage.key === "interest" && (interestFormLabel[user.progress?.interestForm] || "Open the interest form")}
+                                {nextStage.key === "assessment" && (assessmentLabel[user.progress?.psychometric] || "Open the assessment")}
+                                {nextStage.key === "report" && (user.progress?.report === "ready" ? "Read your report" : "See how your report is coming")}
+                                {nextStage.key === "mentor" && "See your mentor status"}
+                            </button>
+                        </p>
                     )}
+
+                    {!assessmentOpen && (
+                        <p><em>The assessment opens once the interest form is finished — it needs what you tell us there to match against.</em></p>
+                    )}
+
+                    <UpgradeToMentorship user={user} />
                 </div>
             )}
         </div>

@@ -231,10 +231,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.5-8.0",
         "mid_career_lpa": "8.0-20.0",
-        "mid_career_midpoint": 14.0,
+        "mid_career_midpoint": 14,
         "payback_years": 1.04,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -427,8 +427,8 @@
               "Simulation Developer"
             ],
             "higher": [
-              "spatial",
-              "logical",
+              "spatial_intelligence",
+              "logical_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -475,10 +475,10 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-12.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.44,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -608,7 +608,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "6.0-14.0",
         "mid_career_lpa": "15.0-30.0",
         "mid_career_midpoint": 22.5,
@@ -735,7 +735,7 @@
         "cost_of_entry_lakh": 0.5,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-12.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.11,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -859,10 +859,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "5.0-10.0",
         "mid_career_lpa": "12.0-22.0",
-        "mid_career_midpoint": 17.0,
+        "mid_career_midpoint": 17,
         "payback_years": 0.8,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -942,7 +942,7 @@
             ],
             "lower": [
               "agreeableness",
-              "dogmatism"
+              "firmness"
             ],
             "why": "Breaking in rewards lateral, rule-bending curiosity. The GRC and compliance side of the same profession rewards the opposite: procedure, documentation and firm adherence to a standard."
           }
@@ -987,7 +987,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "9.0-18.0",
         "mid_career_midpoint": 13.5,
@@ -1105,10 +1105,10 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "4.0-9.0",
         "mid_career_lpa": "10.0-20.0",
-        "mid_career_midpoint": 15.0,
+        "mid_career_midpoint": 15,
         "payback_years": 0.15,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -1182,11 +1182,11 @@
               "Accessibility Tester"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
-              "logical",
+              "logical_intelligence",
               "openness"
             ],
             "why": "Manual QA is sustained, patient, detail-holding work. SDET and performance testing are programming jobs and want the abstraction and problem-decomposition the manual side does not."
@@ -1317,8 +1317,8 @@
               "agreeableness"
             ],
             "lower": [
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "why": "Helpdesk is a people job wearing a technical coat — the daily skill is calming someone and hearing what they actually mean. Network and NOC engineering on the same ladder is solitary and systems-shaped."
           }
@@ -1365,7 +1365,7 @@
         "cost_of_entry_lakh": 0.5,
         "early_earnings_lpa": "2.0-4.0",
         "mid_career_lpa": "4.0-8.0",
-        "mid_career_midpoint": 6.0,
+        "mid_career_midpoint": 6,
         "payback_years": 0.17,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -1509,11 +1509,11 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "8.0-16.0",
-        "mid_career_midpoint": 12.0,
-        "payback_years": 1.0,
+        "mid_career_midpoint": 12,
+        "payback_years": 1,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
         "verification": {
@@ -1594,12 +1594,12 @@
               "Salesforce Administrator"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "emotional_intelligence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Functional consulting is sitting with a client's finance team and drawing out how they really work. The developer roles beside it — ABAP, Apex — are solitary technical build work."
           }
@@ -1649,7 +1649,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "9.0-18.0",
         "mid_career_midpoint": 13.5,
@@ -1768,7 +1768,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "9.0-18.0",
         "mid_career_midpoint": 13.5,
@@ -1848,12 +1848,12 @@
               "Technical Artist"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "openness",
-              "musical"
+              "musical_intelligence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Technical artists sit between art and code and are judged on whether a shot looks right. Pipeline and tools developers on the same team are judged on whether the system holds under load."
           }
@@ -1902,7 +1902,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "8.0-15.0",
         "mid_career_midpoint": 11.5,
@@ -1980,13 +1980,13 @@
               "Construction Planning Engineer"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "confidence",
               "extraversion"
             ],
             "lower": [
-              "spatial",
-              "attention_span"
+              "spatial_intelligence",
+              "focus"
             ],
             "why": "Site work is outdoors, physical, and mostly about getting people and materials to move under time pressure. Structural and geotechnical design in the same profession is desk-bound, spatial and unhurried."
           }
@@ -2060,10 +2060,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "8.0-14.0",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 1.33,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -2162,12 +2162,12 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "bodily"
+              "focus",
+              "bodily_intelligence"
             ],
             "lower": [
               "openness",
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Plant-floor work rewards routine discipline, physical presence and consistency. The design and R&D side of the same profession rewards abstraction, spatial reasoning and tolerance for ambiguity."
           }
@@ -2244,7 +2244,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.0-6.5",
         "mid_career_lpa": "5.0-12.0",
         "mid_career_midpoint": 8.5,
@@ -2337,7 +2337,7 @@
               "Substation Engineer"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "confidence",
               "conscientiousness"
             ],
@@ -2417,10 +2417,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-12.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 1.33,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -2561,7 +2561,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.5-7.0",
         "mid_career_lpa": "7.0-14.0",
         "mid_career_midpoint": 10.5,
@@ -2699,7 +2699,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "8.0-16.0",
         "mid_career_lpa": "18.0-35.0",
         "mid_career_midpoint": 26.5,
@@ -2779,13 +2779,13 @@
               "Plant Operations Engineer"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "confidence",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "openness",
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Running a plant means shift work, alarms and decisions in minutes. Process design in the same profession is modelling and simulation with time to think."
           }
@@ -2860,7 +2860,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.5-7.0",
         "mid_career_lpa": "7.0-14.0",
         "mid_career_midpoint": 10.5,
@@ -2999,11 +2999,11 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "8.0-16.0",
-        "mid_career_midpoint": 12.0,
-        "payback_years": 1.0,
+        "mid_career_midpoint": 12,
+        "payback_years": 1,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
         "verification": {
@@ -3075,11 +3075,11 @@
             ],
             "higher": [
               "emotional_intelligence",
-              "verbal",
-              "dogmatism"
+              "verbal_intelligence",
+              "firmness"
             ],
             "lower": [
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Safety work is persuading crews and enforcing a standard against production pressure. Mine planning in the same profession is a spatial and computational job."
           }
@@ -3152,10 +3152,10 @@
       "licensing_body": "Directorate General of Mines Safety (DGMS)",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "5.0-9.0",
         "mid_career_lpa": "10.0-18.0",
-        "mid_career_midpoint": 14.0,
+        "mid_career_midpoint": 14,
         "payback_years": 0.86,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -3299,10 +3299,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.5-7.0",
         "mid_career_lpa": "7.0-13.0",
-        "mid_career_midpoint": 10.0,
+        "mid_career_midpoint": 10,
         "payback_years": 1.14,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -3378,12 +3378,12 @@
               "Port & Dock Engineer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
               "emotional_stability"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Shore roles are inspection, documentation and report-writing on a normal schedule. Sailing as an engine-room officer means months away, confined machinery spaces and emotional steadiness under isolation."
           }
@@ -3441,7 +3441,7 @@
       "licensing_body": "Directorate General of Shipping (DG Shipping)",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 12.0,
+        "cost_of_entry_lakh": 12,
         "early_earnings_lpa": "6.0-12.0",
         "mid_career_lpa": "15.0-30.0",
         "mid_career_midpoint": 22.5,
@@ -3598,7 +3598,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "5.0-10.0",
         "mid_career_lpa": "12.0-25.0",
         "mid_career_midpoint": 18.5,
@@ -3743,11 +3743,11 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "8.0-16.0",
-        "mid_career_midpoint": 12.0,
-        "payback_years": 1.0,
+        "mid_career_midpoint": 12,
+        "payback_years": 1,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
         "verification": {
@@ -3819,8 +3819,8 @@
               "Architectural Conservationist"
             ],
             "higher": [
-              "attention_span",
-              "logical",
+              "focus",
+              "logical_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -3881,10 +3881,10 @@
       "licensing_body": "Council of Architecture (CoA)",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 10.0,
+        "cost_of_entry_lakh": 10,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-12.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 2.22,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -3971,7 +3971,7 @@
               "Flight Instructor"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "agreeableness",
               "emotional_intelligence"
             ],
@@ -4032,10 +4032,10 @@
       "licensing_body": "Directorate General of Civil Aviation (DGCA)",
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 57.0,
+        "cost_of_entry_lakh": 57,
         "early_earnings_lpa": "10.0-18.0",
         "mid_career_lpa": "25.0-45.0",
-        "mid_career_midpoint": 35.0,
+        "mid_career_midpoint": 35,
         "payback_years": 4.07,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -4170,7 +4170,7 @@
         "cost_of_entry_lakh": 6.5,
         "early_earnings_lpa": "3.0-7.0",
         "mid_career_lpa": "6.0-12.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 1.3,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -4301,7 +4301,7 @@
         "cost_of_entry_lakh": 0.4,
         "early_earnings_lpa": "1.8-4.0",
         "mid_career_lpa": "3.5-6.5",
-        "mid_career_midpoint": 5.0,
+        "mid_career_midpoint": 5,
         "payback_years": 0.14,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -4385,12 +4385,12 @@
               "Welding Inspector"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Inspection is judgement, documentation and saying no to work someone has already done. Welding itself is sustained physical skill."
           }
@@ -4534,12 +4534,12 @@
               "Tool & Die Maker"
             ],
             "higher": [
-              "logical",
-              "spatial",
-              "attention_span"
+              "logical_intelligence",
+              "spatial_intelligence",
+              "focus"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "CNC programming and die making are abstract and geometric — you think the cut before it happens. Fitting and turning are hands-on machine work."
           }
@@ -4599,7 +4599,7 @@
         "cost_of_entry_lakh": 0.4,
         "early_earnings_lpa": "1.8-4.0",
         "mid_career_lpa": "4.0-8.0",
-        "mid_career_midpoint": 6.0,
+        "mid_career_midpoint": 6,
         "payback_years": 0.14,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -4973,7 +4973,7 @@
         "cost_of_entry_lakh": 0.2,
         "early_earnings_lpa": "1.5-3.0",
         "mid_career_lpa": "2.0-4.0",
-        "mid_career_midpoint": 3.0,
+        "mid_career_midpoint": 3,
         "payback_years": 0.09,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -5744,10 +5744,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3-5.5",
         "mid_career_lpa": "6-12",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 1.41,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -5840,7 +5840,7 @@
               "agreeableness"
             ],
             "lower": [
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Hospital clinical engineering is done beside clinicians and patients, under their pressure and vocabulary. Device design in the same profession is a solitary, spatial engineering job."
           },
@@ -5853,12 +5853,12 @@
               "Equipment Installation Specialist"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
-              "spatial",
+              "spatial_intelligence",
               "openness"
             ],
             "why": "The service and calibration roles are hands-on physical work on a machine that is down and must be fixed today - the reward is care and steadiness, not invention. Device design at the other end of the same profession is solitary, spatial and open-ended. This is the widest internal split in Sector 2 and it is also a split in ENTRY: the service roles are reachable on a diploma, the design roles are not."
@@ -5932,10 +5932,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "2.5-4.5",
         "mid_career_lpa": "5-9",
-        "mid_career_midpoint": 7.0,
+        "mid_career_midpoint": 7,
         "payback_years": 1.71,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded. The band spans both ends of the profession - diploma-route service work starts lower than the degree route and converges by mid-career, which is why the two merged.",
@@ -6024,12 +6024,12 @@
               "Loss Prevention Engineer"
             ],
             "higher": [
-              "dogmatism",
+              "firmness",
               "conscientiousness",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
-              "bodily",
+              "bodily_intelligence",
               "extraversion"
             ],
             "why": "Auditing is desk and documentation work where holding a line against pressure is the skill. Field HSE in the same profession is walking a live site and reading what is about to go wrong."
@@ -6105,10 +6105,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3-5",
         "mid_career_lpa": "6-12",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 1.5,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded — that is Sector 5 economics, not this profession's.",
@@ -6243,7 +6243,7 @@
         "cost_of_entry_lakh": 0.8,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-9",
-        "mid_career_midpoint": 7.0,
+        "mid_career_midpoint": 7,
         "payback_years": 0.21,
         "distribution": "range",
         "basis": "mid_career is 5-8 years, EMPLOYED only. Business ownership excluded.",
@@ -6370,7 +6370,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-10",
         "mid_career_midpoint": 7.5,
@@ -6524,7 +6524,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "8-12",
         "mid_career_lpa": "14-25",
         "mid_career_midpoint": 19.5,
@@ -6615,8 +6615,8 @@
               "GIS Planning Analyst"
             ],
             "higher": [
-              "logical",
-              "spatial",
+              "logical_intelligence",
+              "spatial_intelligence",
               "reasoning"
             ],
             "lower": [
@@ -6632,7 +6632,7 @@
             "higher": [
               "conscientiousness",
               "confidence",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "openness"
@@ -6644,12 +6644,12 @@
               "Urban Design Associate"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "openness",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Urban design works at the scale of a street or a precinct - how a place feels to walk through. It sits between planning and architecture and is the most visual role here."
           }
@@ -6705,7 +6705,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "7.0-16.0",
         "mid_career_midpoint": 11.5,
@@ -6792,10 +6792,10 @@
               "Flight Information Officer"
             ],
             "higher": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Flight information is an advisory desk - it answers and briefs. Radar control is continuous live separation of aircraft, which is where the concentration load sits."
           }
@@ -6851,10 +6851,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "11.0-13.0",
         "mid_career_lpa": "16.0-24.0",
-        "mid_career_midpoint": 20.0,
+        "mid_career_midpoint": 20,
         "payback_years": 0.33,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -6942,11 +6942,11 @@
               "Section Controller"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "confidence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Station and section control is coordination by voice and record under pressure - authorising movements, sequencing trains, handling failures. Driving is a solitary, physical, intensely procedural job in a cab."
           },
@@ -6956,8 +6956,8 @@
               "Train Examiner (Rolling Stock)"
             ],
             "higher": [
-              "spatial",
-              "logical"
+              "spatial_intelligence",
+              "logical_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -7112,8 +7112,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical",
-              "verbal",
+              "logical_intelligence",
+              "verbal_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -7125,7 +7125,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "confidence",
@@ -7189,7 +7189,7 @@
       "licensing_body": "Directorate General of Shipping",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 8.0,
+        "cost_of_entry_lakh": 8,
         "early_earnings_lpa": "6.0-12.0",
         "mid_career_lpa": "13.0-32.0",
         "mid_career_midpoint": 22.5,
@@ -7291,12 +7291,12 @@
               "Design Researcher"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "emotional_intelligence",
               "reasoning"
             ],
             "lower": [
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Research is fieldwork and interviews - watching how people actually use a stove or a wheelchair. It sets the brief rather than answering it."
           },
@@ -7305,11 +7305,11 @@
               "Model Maker & Prototyper"
             ],
             "higher": [
-              "bodily",
-              "attention_span"
+              "bodily_intelligence",
+              "focus"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Prototyping is workshop craft - foam, wood, 3D printing and finishing. It is the hands-on trade inside a profession that is otherwise screen-based."
           }
@@ -7363,10 +7363,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 8.0,
+        "cost_of_entry_lakh": 8,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "8-18",
-        "mid_career_midpoint": 13.0,
+        "mid_career_midpoint": 13,
         "payback_years": 1.33,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and studio ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -7449,12 +7449,12 @@
               "Theoretical Physicist"
             ],
             "higher": [
-              "logical",
-              "existential",
+              "logical_intelligence",
+              "existential_intelligence",
               "openness"
             ],
             "lower": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness"
             ],
             "why": "Theory is abstraction sustained over years with no apparatus. Experimental physics in the same profession is building, aligning and babysitting equipment that mostly does not work yet."
@@ -7519,10 +7519,10 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "8-14",
         "mid_career_lpa": "14-24",
-        "mid_career_midpoint": 19.0,
+        "mid_career_midpoint": 19,
         "payback_years": 0.27,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -7665,10 +7665,10 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "7-12",
         "mid_career_lpa": "12-22",
-        "mid_career_midpoint": 17.0,
+        "mid_career_midpoint": 17,
         "payback_years": 0.32,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -7808,7 +7808,7 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "6-11",
         "mid_career_lpa": "11-20",
         "mid_career_midpoint": 15.5,
@@ -8067,10 +8067,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "5-10",
         "mid_career_lpa": "10-18",
-        "mid_career_midpoint": 14.0,
+        "mid_career_midpoint": 14,
         "payback_years": 0.53,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -8187,10 +8187,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "12-22",
-        "mid_career_midpoint": 17.0,
+        "mid_career_midpoint": 17,
         "payback_years": 0.44,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -8265,12 +8265,12 @@
               "Engineering Geologist"
             ],
             "higher": [
-              "bodily",
-              "naturalistic",
+              "bodily_intelligence",
+              "naturalistic_intelligence",
               "confidence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Field geology is remote, physical and weather-bound. Modelling and interpretation roles in the same profession are desk-based and computational."
           }
@@ -8329,10 +8329,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "12-22",
-        "mid_career_midpoint": 17.0,
+        "mid_career_midpoint": 17,
         "payback_years": 0.33,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -8463,10 +8463,10 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "6-11",
         "mid_career_lpa": "11-19",
-        "mid_career_midpoint": 15.0,
+        "mid_career_midpoint": 15,
         "payback_years": 0.35,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -8608,7 +8608,7 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "8-14",
         "mid_career_lpa": "14-25",
         "mid_career_midpoint": 19.5,
@@ -8763,7 +8763,7 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "7-13",
         "mid_career_lpa": "13-24",
         "mid_career_midpoint": 18.5,
@@ -8904,7 +8904,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "12-25",
         "mid_career_midpoint": 18.5,
@@ -9029,7 +9029,7 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "5-9",
         "mid_career_lpa": "9-16",
         "mid_career_midpoint": 12.5,
@@ -9119,12 +9119,12 @@
               "Crime Scene Analyst"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "confidence",
               "emotional_intelligence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Scene work is physical, unpredictable and emotionally heavy, often at night. Laboratory analysis in the same profession is controlled, repetitive and precision-bound."
           }
@@ -9179,10 +9179,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "8-14",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.5,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -9269,10 +9269,10 @@
             "higher": [
               "extraversion",
               "emotional_intelligence",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Site monitoring means constant travel and managing hospital staff who did not ask for you. Data management and pharmacovigilance in the same profession are sedentary and detail-bound."
           }
@@ -9326,10 +9326,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "8-16",
-        "mid_career_midpoint": 12.0,
+        "mid_career_midpoint": 12,
         "payback_years": 0.5,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -9454,10 +9454,10 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "12-22",
-        "mid_career_midpoint": 17.0,
+        "mid_career_midpoint": 17,
         "payback_years": 0.44,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -9589,7 +9589,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "2-4",
         "mid_career_lpa": "4-7",
         "mid_career_midpoint": 5.5,
@@ -9719,7 +9719,7 @@
         "cost_of_entry_lakh": 2.5,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-9",
-        "mid_career_midpoint": 7.0,
+        "mid_career_midpoint": 7,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12. For PhD-track research the runway to that point is roughly nine years.",
@@ -9843,7 +9843,7 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "10-18",
         "mid_career_lpa": "18-35",
         "mid_career_midpoint": 26.5,
@@ -9980,10 +9980,10 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "12-24",
-        "mid_career_midpoint": 18.0,
+        "mid_career_midpoint": 18,
         "payback_years": 0.33,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after qualifying, not 5-8 years after class 12.",
@@ -10070,12 +10070,12 @@
             ],
             "higher": [
               "emotional_intelligence",
-              "verbal",
+              "verbal_intelligence",
               "agreeableness"
             ],
             "lower": [
-              "spatial",
-              "bodily"
+              "spatial_intelligence",
+              "bodily_intelligence"
             ],
             "why": "Psychiatry and general practice are conversation-led and depend on reading a person over time. Surgery and radiology in the same profession are spatial, procedural and largely wordless."
           }
@@ -10141,7 +10141,7 @@
       "licensing_body": "National Medical Commission (NMC)",
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 25.0,
+        "cost_of_entry_lakh": 25,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "18-45",
         "mid_career_midpoint": 31.5,
@@ -10290,7 +10290,7 @@
       "licensing_body": "Dental Council of India (DCI)",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 15.0,
+        "cost_of_entry_lakh": 15,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "6-15",
         "mid_career_midpoint": 10.5,
@@ -10413,10 +10413,10 @@
       "licensing_body": "National Commission for Indian System of Medicine (NCISM)",
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 10.0,
+        "cost_of_entry_lakh": 10,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "6-14",
-        "mid_career_midpoint": 10.0,
+        "mid_career_midpoint": 10,
         "payback_years": 2.22,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after full registration, EMPLOYED only. Private practice income is excluded — that depends on business skill, not the clinical qualification.",
@@ -10527,7 +10527,7 @@
       "licensing_body": "National Commission for Homoeopathy (NCH)",
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 8.0,
+        "cost_of_entry_lakh": 8,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-12",
         "mid_career_midpoint": 8.5,
@@ -10646,10 +10646,10 @@
       "licensing_body": "Veterinary Council of India (VCI)",
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 5.0,
+        "cost_of_entry_lakh": 5,
         "early_earnings_lpa": "4-7",
         "mid_career_lpa": "8-16",
-        "mid_career_midpoint": 12.0,
+        "mid_career_midpoint": 12,
         "payback_years": 0.91,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after full registration, EMPLOYED only. Private practice income is excluded — that depends on business skill, not the clinical qualification.",
@@ -10773,7 +10773,7 @@
       "licensing_body": "Indian Nursing Council (INC)",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-10",
         "mid_career_midpoint": 7.5,
@@ -10904,10 +10904,10 @@
       "licensing_body": "Pharmacy Council of India (PCI)",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-11",
-        "mid_career_midpoint": 8.0,
+        "mid_career_midpoint": 8,
         "payback_years": 0.8,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after full registration, EMPLOYED only. Private practice income is excluded — that depends on business skill, not the clinical qualification.",
@@ -11035,7 +11035,7 @@
       "licensing_body": "Physiotherapy Professional Council (NCAHP)",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 5.0,
+        "cost_of_entry_lakh": 5,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-12",
         "mid_career_midpoint": 8.5,
@@ -11166,7 +11166,7 @@
       "licensing_body": "Ophthalmic Sciences Professional Council (NCAHP)",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-10",
         "mid_career_midpoint": 7.5,
@@ -11293,7 +11293,7 @@
       "licensing_body": "Rehabilitation Council of India (RCI)",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "6-13",
         "mid_career_midpoint": 9.5,
@@ -11411,7 +11411,7 @@
       "licensing_body": "Occupational Therapy Professional Council (NCAHP)",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3-5.5",
         "mid_career_lpa": "5.5-11",
         "mid_career_midpoint": 8.25,
@@ -11542,7 +11542,7 @@
       "licensing_body": "Nutrition Science Professional Council (NCAHP)",
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-12",
         "mid_career_midpoint": 8.5,
@@ -11667,7 +11667,7 @@
         "cost_of_entry_lakh": 1.5,
         "early_earnings_lpa": "2-4",
         "mid_career_lpa": "4-8",
-        "mid_career_midpoint": 6.0,
+        "mid_career_midpoint": 6,
         "payback_years": 0.5,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after full registration, EMPLOYED only. Private practice income is excluded — that depends on business skill, not the clinical qualification.",
@@ -11791,7 +11791,7 @@
       "licensing_body": "Medical Radiology, Imaging and Therapeutic Technology Professional Council (NCAHP)",
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-10",
         "mid_career_midpoint": 7.5,
@@ -11912,10 +11912,10 @@
       "licensing_body": "Trauma, Burn Care and Surgical/Anaesthesia Related Technology Professional Council (NCAHP)",
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-9",
-        "mid_career_midpoint": 7.0,
+        "mid_career_midpoint": 7,
         "payback_years": 0.53,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after full registration, EMPLOYED only. Private practice income is excluded — that depends on business skill, not the clinical qualification.",
@@ -12032,7 +12032,7 @@
       "licensing_body": "Medical Technologists and Physician Associate Professional Council (NCAHP)",
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.5-4.5",
         "mid_career_lpa": "4.5-8",
         "mid_career_midpoint": 6.25,
@@ -12153,7 +12153,7 @@
       "licensing_body": "Trauma, Burn Care and Surgical/Anaesthesia Related Technology Professional Council (NCAHP)",
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "2-4",
         "mid_career_lpa": "4-7",
         "mid_career_midpoint": 5.5,
@@ -12235,9 +12235,9 @@
               "Biostatistician (public health)"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion",
@@ -12294,10 +12294,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "8-18",
-        "mid_career_midpoint": 13.0,
+        "mid_career_midpoint": 13,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. This profession has no statutory registration, so there is no registration date to count from. Self-employed and consulting income is excluded.",
@@ -12375,12 +12375,12 @@
               "Care Coordinator (Home Health Agency)"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
               "extraversion"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Coordinators match attendants to families, handle rosters, complaints and billing for an agency. It is the step off physical care work and the only visible progression in this profession."
           },
@@ -12545,11 +12545,11 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "logical"
+              "focus",
+              "logical_intelligence"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Theatre attendants work inside a sterile field discipline - positioning patients, handling equipment, managing waste - where a breach has consequences nobody sees for days. It is the most technical version of this work and the usual step up."
           },
@@ -12558,11 +12558,11 @@
               "Emergency Department Attendant"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "confidence"
             ],
             "lower": [
-              "attention_span",
+              "focus",
               "emotional_stability"
             ],
             "why": "Emergency work is unpredictable, physically heavy and frequently distressing - trauma, intoxication, families in crisis - with no control over what arrives."
@@ -12714,12 +12714,12 @@
             ],
             "higher": [
               "openness",
-              "verbal",
-              "existential"
+              "verbal_intelligence",
+              "existential_intelligence"
             ],
             "lower": [
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "why": "Brand and content work is about what a thing means to someone and rewards imagination and language. Performance marketing and SEO on the same team are measurement jobs run on dashboards and attribution models."
           }
@@ -12773,10 +12773,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "8-18",
-        "mid_career_midpoint": 13.0,
+        "mid_career_midpoint": 13,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -12855,11 +12855,11 @@
               "Inside Sales Executive"
             ],
             "higher": [
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
-              "bodily",
+              "bodily_intelligence",
               "extraversion"
             ],
             "why": "Pre-sales and inside sales are desk jobs run on product depth and written proposals. Field and channel sales are travel-heavy, face-to-face and built on stamina and relationships."
@@ -12910,7 +12910,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "7-16",
         "mid_career_midpoint": 11.5,
@@ -12995,8 +12995,8 @@
               "HR Operations Executive"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
@@ -13063,10 +13063,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3-5.5",
         "mid_career_lpa": "7-15",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.71,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -13146,7 +13146,7 @@
               "Clinical Documentation Specialist"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
@@ -13213,10 +13213,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3-5.5",
         "mid_career_lpa": "7-15",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.71,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -13350,10 +13350,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.5-6",
         "mid_career_lpa": "8-16",
-        "mid_career_midpoint": 12.0,
+        "mid_career_midpoint": 12,
         "payback_years": 0.63,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -13542,7 +13542,7 @@
               "Visual Merchandiser"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "openness"
             ],
             "lower": [
@@ -13597,7 +13597,7 @@
         "cost_of_entry_lakh": 0.3,
         "early_earnings_lpa": "1.8-3.5",
         "mid_career_lpa": "4-8",
-        "mid_career_midpoint": 6.0,
+        "mid_career_midpoint": 6,
         "payback_years": 0.11,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -13725,10 +13725,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "8-16",
         "mid_career_lpa": "20-40",
-        "mid_career_midpoint": 30.0,
+        "mid_career_midpoint": 30,
         "payback_years": 0.25,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -13844,10 +13844,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "5-9",
         "mid_career_lpa": "12-24",
-        "mid_career_midpoint": 18.0,
+        "mid_career_midpoint": 18,
         "payback_years": 0.43,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -13974,7 +13974,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 15.0,
+        "cost_of_entry_lakh": 15,
         "early_earnings_lpa": "8-18",
         "mid_career_lpa": "20-45",
         "mid_career_midpoint": 32.5,
@@ -14059,12 +14059,12 @@
             ],
             "higher": [
               "emotional_intelligence",
-              "verbal",
+              "verbal_intelligence",
               "extraversion"
             ],
             "lower": [
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "why": "Qualitative research is sitting with people and hearing what they will not say directly. Quantitative and category analysis in the same profession is survey design and statistics."
           }
@@ -14113,10 +14113,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.5-6",
         "mid_career_lpa": "8-16",
-        "mid_career_midpoint": 12.0,
+        "mid_career_midpoint": 12,
         "payback_years": 0.63,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -14231,7 +14231,7 @@
       "licensing_body": null,
       "years_to_qualify": 1,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "0-4",
         "mid_career_lpa": "4-15",
         "mid_career_midpoint": 9.5,
@@ -14325,7 +14325,7 @@
             "higher": [
               "conscientiousness",
               "agreeableness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "openness"
@@ -14338,7 +14338,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
               "extraversion",
@@ -14353,11 +14353,11 @@
             ],
             "higher": [
               "confidence",
-              "logical",
-              "verbal"
+              "logical_intelligence",
+              "verbal_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Owning the vehicle changes the job into a business - EMI, fuel, maintenance, load finding and idle days. Instruction is teaching rather than driving. Both are the routes off a wage and both need capital or a licence endorsement."
           }
@@ -14502,7 +14502,7 @@
             "higher": [
               "reasoning",
               "openness",
-              "dogmatism"
+              "firmness"
             ],
             "lower": [
               "agreeableness"
@@ -14564,10 +14564,10 @@
       "licensing_body": "Institute of Chartered Accountants of India (ICAI)",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "15-35",
-        "mid_career_midpoint": 25.0,
+        "mid_career_midpoint": 25,
         "payback_years": 0.22,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -14694,7 +14694,7 @@
         "cost_of_entry_lakh": 0.5,
         "early_earnings_lpa": "2-3.5",
         "mid_career_lpa": "4-8",
-        "mid_career_midpoint": 6.0,
+        "mid_career_midpoint": 6,
         "payback_years": 0.18,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -14772,7 +14772,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
+              "focus",
               "emotional_stability"
             ],
             "lower": [],
@@ -14833,7 +14833,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "6-12",
         "mid_career_lpa": "15-32",
         "mid_career_midpoint": 23.5,
@@ -14953,7 +14953,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "9-20",
         "mid_career_midpoint": 14.5,
@@ -15036,7 +15036,7 @@
               "Claims Analyst (health)"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
@@ -15089,10 +15089,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "7-15",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.44,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -15207,7 +15207,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "3.5-7",
         "mid_career_lpa": "10-25",
         "mid_career_midpoint": 17.5,
@@ -15319,10 +15319,10 @@
       "licensing_body": "Institute of Actuaries of India (IAI)",
       "years_to_qualify": 7,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "5-10",
         "mid_career_lpa": "18-40",
-        "mid_career_midpoint": 29.0,
+        "mid_career_midpoint": 29,
         "payback_years": 0.4,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -15449,10 +15449,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "5-10",
         "mid_career_lpa": "12-28",
-        "mid_career_midpoint": 20.0,
+        "mid_career_midpoint": 20,
         "payback_years": 0.4,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -15535,12 +15535,12 @@
               "Arbitration Counsel"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "confidence",
               "extraversion"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Litigation is performance under pressure — arguing on your feet before a judge who interrupts. Corporate and in-house work in the same profession is drafting and reviewing documents, largely alone and largely silent."
           }
@@ -15604,7 +15604,7 @@
       "licensing_body": "Bar Council of India",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3-10",
         "mid_career_lpa": "12-35",
         "mid_career_midpoint": 23.5,
@@ -15736,7 +15736,7 @@
         "cost_of_entry_lakh": 1.5,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "10-22",
-        "mid_career_midpoint": 16.0,
+        "mid_career_midpoint": 16,
         "payback_years": 0.25,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -15816,12 +15816,12 @@
               "IFS Officer (Foreign Service)"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "emotional_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Diplomacy is language, negotiation and living abroad for a career. District administration in the same service is field work — floods, elections, law and order, on the ground."
           }
@@ -15884,10 +15884,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "8-12",
         "mid_career_lpa": "15-25",
-        "mid_career_midpoint": 20.0,
+        "mid_career_midpoint": 20,
         "payback_years": 0.2,
         "distribution": "range",
         "basis": "Pay follows central government pay matrices. CTC comparison understates the package — housing, medical, pension and allowances are not in the figure.",
@@ -16020,7 +16020,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "9-18",
         "mid_career_midpoint": 13.5,
@@ -16159,10 +16159,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "8-12",
         "mid_career_lpa": "15-25",
-        "mid_career_midpoint": 20.0,
+        "mid_career_midpoint": 20,
         "payback_years": 0.1,
         "distribution": "range",
         "basis": "Defence pay matrix with Military Service Pay, EMPLOYED only. Housing, medical, canteen, pension and post-retirement benefits are excluded and are a large part of the package.",
@@ -16291,10 +16291,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "7-11",
         "mid_career_lpa": "14-28",
-        "mid_career_midpoint": 21.0,
+        "mid_career_midpoint": 21,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "Judicial pay follows its own commission-set scales, EMPLOYED only. Housing, staff and pension are excluded from the figure.",
@@ -16426,7 +16426,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "5-10",
         "mid_career_lpa": "12-25",
         "mid_career_midpoint": 18.5,
@@ -16544,10 +16544,10 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "5-11",
-        "mid_career_midpoint": 8.0,
+        "mid_career_midpoint": 8,
         "payback_years": 0.27,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -16671,7 +16671,7 @@
         "cost_of_entry_lakh": 0.5,
         "early_earnings_lpa": "3-5",
         "mid_career_lpa": "6-12",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.12,
         "distribution": "range",
         "basis": "State pay matrices, EMPLOYED only. Housing, medical and pension sit outside the figure and are a material part of the package.",
@@ -16792,10 +16792,10 @@
       "licensing_body": "Controller General of Patents, Designs and Trade Marks (Register of Patent Agents)",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "4-9",
         "mid_career_lpa": "12-28",
-        "mid_career_midpoint": 20.0,
+        "mid_career_midpoint": 20,
         "payback_years": 0.62,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Business ownership is excluded — that income is entrepreneurship, and self_employment carries it separately.",
@@ -16882,7 +16882,7 @@
               "Election Data Analyst"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning"
             ],
             "lower": [
@@ -16897,7 +16897,7 @@
             ],
             "higher": [
               "extraversion",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [],
             "why": "Field organisation is months of travel, long days and constant contact with people who owe you nothing."
@@ -16944,11 +16944,11 @@
       "licensing_body": null,
       "years_to_qualify": 0,
       "economics": {
-        "cost_of_entry_lakh": 0.0,
+        "cost_of_entry_lakh": 0,
         "early_earnings_lpa": "6.0-9.0",
         "mid_career_lpa": "11.0-16.0",
         "mid_career_midpoint": 13.5,
-        "payback_years": 0.0,
+        "payback_years": 0,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
         "verification": {
@@ -17038,11 +17038,11 @@
               "Motion Graphics Designer"
             ],
             "higher": [
-              "spatial",
-              "logical"
+              "spatial_intelligence",
+              "logical_intelligence"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Motion work is timing, sequencing and software pipelines - nearer to animation than to the typography and copy-driven judgment the rest of the profession runs on."
           },
@@ -17051,12 +17051,12 @@
               "Brand Identity Designer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "confidence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Identity work is argued for in a boardroom before it is drawn. The job is persuading people what a company should look like, not executing a brief someone else settled."
           }
@@ -17108,7 +17108,7 @@
         "cost_of_entry_lakh": 1.5,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "6-14",
-        "mid_career_midpoint": 10.0,
+        "mid_career_midpoint": 10,
         "payback_years": 0.4,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and studio ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -17191,12 +17191,12 @@
               "Usability Analyst"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "emotional_intelligence",
               "reasoning"
             ],
             "lower": [
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Research is interviewing strangers, watching them struggle and synthesising what they could not articulate. No visual composition is involved at all."
           },
@@ -17206,8 +17206,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "openness"
@@ -17258,11 +17258,11 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "4-8",
         "mid_career_lpa": "8-18",
-        "mid_career_midpoint": 13.0,
-        "payback_years": 1.0,
+        "mid_career_midpoint": 13,
+        "payback_years": 1,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and studio ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
         "verification": {
@@ -17345,12 +17345,12 @@
               "Matchmove Artist"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
               "openness",
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Roto and matchmove are high-volume precision tasks done to a deadline against a reference plate. They are the industry's entry rung and the reason India has so many VFX jobs - and they involve no authorship whatsoever."
           },
@@ -17359,12 +17359,12 @@
               "Storyboard Artist"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "reasoning"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Storyboarding is narrative work - deciding what the audience sees and when. It is closer to directing than to any other role in the profession."
           }
@@ -17412,7 +17412,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "2.5-5",
         "mid_career_lpa": "7-18",
         "mid_career_midpoint": 12.5,
@@ -17498,8 +17498,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "naturalistic",
-              "attention_span"
+              "naturalistic_intelligence",
+              "focus"
             ],
             "lower": [
               "openness"
@@ -17511,7 +17511,7 @@
               "Comic & Graphic Novel Artist"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "long_term_memory"
             ],
             "lower": [
@@ -17645,12 +17645,12 @@
               "Narrative Designer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "long_term_memory"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Narrative design is writing - branching dialogue, world lore and character. It shares almost nothing with tuning a difficulty curve or an in-game economy."
           },
@@ -17660,9 +17660,9 @@
               "Playtest & Balance Analyst"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -17710,10 +17710,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.5-7",
         "mid_career_lpa": "8-18",
-        "mid_career_midpoint": 13.0,
+        "mid_career_midpoint": 13,
         "payback_years": 0.57,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and studio ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -17795,9 +17795,9 @@
               "Lighting Designer"
             ],
             "higher": [
-              "spatial",
-              "logical",
-              "attention_span"
+              "spatial_intelligence",
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -17862,7 +17862,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "7-16",
         "mid_career_midpoint": 11.5,
@@ -17949,9 +17949,9 @@
               "Print & Pattern Designer"
             ],
             "higher": [
-              "spatial",
-              "naturalistic",
-              "attention_span"
+              "spatial_intelligence",
+              "naturalistic_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -18020,10 +18020,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 8.0,
+        "cost_of_entry_lakh": 8,
         "early_earnings_lpa": "2.5-6",
         "mid_career_lpa": "6-14",
-        "mid_career_midpoint": 10.0,
+        "mid_career_midpoint": 10,
         "payback_years": 1.88,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and studio ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -18104,12 +18104,12 @@
               "Production Merchandiser"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "conscientiousness"
             ],
             "lower": [
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Merchandising is buyer correspondence, costing and delivery schedules. Pattern making next to it is three-dimensional geometry done on paper and cloth."
           },
@@ -18119,9 +18119,9 @@
               "CAD Pattern & Grading Specialist"
             ],
             "higher": [
-              "spatial",
-              "logical",
-              "attention_span"
+              "spatial_intelligence",
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -18174,7 +18174,7 @@
         "cost_of_entry_lakh": 1.5,
         "early_earnings_lpa": "2.4-4.8",
         "mid_career_lpa": "6-14",
-        "mid_career_midpoint": 10.0,
+        "mid_career_midpoint": 10,
         "payback_years": 0.42,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and studio ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -18255,11 +18255,11 @@
               "Sewing Machine Operator"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "openness"
             ],
@@ -18271,8 +18271,8 @@
               "Cutting Master"
             ],
             "higher": [
-              "spatial",
-              "bodily",
+              "spatial_intelligence",
+              "bodily_intelligence",
               "long_term_memory",
               "emotional_stability"
             ],
@@ -18323,7 +18323,7 @@
         "cost_of_entry_lakh": 0.2,
         "early_earnings_lpa": "1.2-2.4",
         "mid_career_lpa": "1.8-4.2",
-        "mid_career_midpoint": 3.0,
+        "mid_career_midpoint": 3,
         "payback_years": 0.11,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and studio ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -18404,12 +18404,12 @@
               "Handloom Cluster Coordinator"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "The coordinator's day is government schemes, buyer orders, cooperative paperwork and getting yarn to twenty households. It touches the loom only indirectly."
           },
@@ -18419,8 +18419,8 @@
               "Design Card Maker"
             ],
             "higher": [
-              "spatial",
-              "logical"
+              "spatial_intelligence",
+              "logical_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -18689,12 +18689,12 @@
               "CAD Jewellery Designer"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "openness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Design here is drawing and 3D modelling for a brand or a retail range, done on a screen. Bench work next to it is fine motor metalwork learned by apprenticeship, and the two rarely sit in the same person."
           },
@@ -18703,12 +18703,12 @@
               "Gemmologist"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "reasoning",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Gemmology is identification and grading under a loupe against a standard - a laboratory discipline attached to a craft trade."
           }
@@ -18754,7 +18754,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "2-4",
         "mid_career_lpa": "5-14",
         "mid_career_midpoint": 9.5,
@@ -18838,11 +18838,11 @@
               "Art Director (Advertising)"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "openness"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "The art director thinks in image and layout while the copywriter thinks in language. Agencies deliberately pair the two as a team for exactly that difference."
           },
@@ -18852,8 +18852,8 @@
             ],
             "higher": [
               "reasoning",
-              "verbal",
-              "logical"
+              "verbal_intelligence",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -18903,7 +18903,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3-6",
         "mid_career_lpa": "7-16",
         "mid_career_midpoint": 11.5,
@@ -18989,7 +18989,7 @@
             ],
             "higher": [
               "extraversion",
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness",
               "emotional_stability"
             ],
@@ -19003,7 +19003,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "openness",
@@ -19054,7 +19054,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "1.2-3.0",
         "mid_career_lpa": "2.4-9.0",
         "mid_career_midpoint": 5.7,
@@ -19138,12 +19138,12 @@
               "Cobbler & Shoe Repair Specialist"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness"
             ],
             "lower": [
               "openness",
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Repair is manual craft learned on the job with no design component, usually self-employed at a roadside stall or a small shop. It is the base layer of this profession and its most accessible entry."
           },
@@ -19152,9 +19152,9 @@
               "Leather Technologist"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "openness"
@@ -19294,9 +19294,9 @@
               "Fact-Checker"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -19322,9 +19322,9 @@
               "Data Journalist"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "spatial"
+              "spatial_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -19378,7 +19378,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "6-15",
         "mid_career_midpoint": 10.5,
@@ -19480,8 +19480,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "openness"
@@ -19496,7 +19496,7 @@
             "higher": [
               "openness",
               "long_term_memory",
-              "existential"
+              "existential_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -19508,7 +19508,7 @@
               "Translator & Localisation Specialist"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "long_term_memory",
               "reasoning"
             ],
@@ -19559,10 +19559,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5-13",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.54,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -19648,7 +19648,7 @@
               "Screenwriter"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "long_term_memory"
             ],
@@ -19664,7 +19664,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
+              "focus",
               "short_term_memory"
             ],
             "lower": [
@@ -19682,7 +19682,7 @@
               "long_term_memory"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Casting is reading people and remembering hundreds of them. It is a talent-scouting job that happens to sit inside filmmaking."
           }
@@ -19729,7 +19729,7 @@
       "licensing_body": null,
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "2.0-5.0",
         "mid_career_lpa": "5-18",
         "mid_career_midpoint": 11.5,
@@ -19815,12 +19815,12 @@
               "Lighting Technician (Film)"
             ],
             "higher": [
-              "bodily",
-              "spatial",
+              "bodily_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "The lighting department is physical trade work - rigging, power, safety and long hours - executing a cinematographer's intent. It is a skilled crew job with a different entry route from the creative one."
           },
@@ -19829,8 +19829,8 @@
               "Digital Imaging Technician"
             ],
             "higher": [
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "openness"
@@ -19881,10 +19881,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "6-16",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.54,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -19965,12 +19965,12 @@
               "Colourist"
             ],
             "higher": [
-              "spatial",
-              "attention_span",
+              "spatial_intelligence",
+              "focus",
               "openness"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Grading is a visual specialism with its own craft and its own suite. A colourist shapes how a film feels without changing a single cut."
           },
@@ -19981,8 +19981,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "verbal"
+              "focus",
+              "verbal_intelligence"
             ],
             "lower": [
               "openness"
@@ -20032,7 +20032,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "6-15",
         "mid_career_midpoint": 10.5,
@@ -20118,9 +20118,9 @@
               "Production Sound Mixer"
             ],
             "higher": [
-              "bodily",
-              "attention_span",
-              "spatial"
+              "bodily_intelligence",
+              "focus",
+              "spatial_intelligence"
             ],
             "lower": [
               "openness"
@@ -20132,12 +20132,12 @@
               "Foley Artist"
             ],
             "higher": [
-              "bodily",
-              "musical",
+              "bodily_intelligence",
+              "musical_intelligence",
               "openness"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Foley is performance: recreating footsteps, cloth and impacts in real time to picture, with props and a studio floor. It is the most physical craft in audio post."
           },
@@ -20147,8 +20147,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "verbal",
-              "attention_span"
+              "verbal_intelligence",
+              "focus"
             ],
             "lower": [
               "openness"
@@ -20198,7 +20198,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.4-4.8",
         "mid_career_lpa": "5-14",
         "mid_career_midpoint": 9.5,
@@ -20282,7 +20282,7 @@
             "higher": [
               "extraversion",
               "emotional_intelligence",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "openness"
@@ -20294,8 +20294,8 @@
               "Wildlife Photographer"
             ],
             "higher": [
-              "naturalistic",
-              "attention_span",
+              "naturalistic_intelligence",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
@@ -20308,8 +20308,8 @@
               "Photo Editor & Retoucher"
             ],
             "higher": [
-              "spatial",
-              "attention_span"
+              "spatial_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -20357,10 +20357,10 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "1.8-4.2",
         "mid_career_lpa": "4-12",
-        "mid_career_midpoint": 8.0,
+        "mid_career_midpoint": 8,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -20444,10 +20444,10 @@
             "higher": [
               "extraversion",
               "conscientiousness",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Finding and securing locations is negotiation, permissions and logistics with landowners, police and municipalities. It is the least visual job in a visual department."
           },
@@ -20457,9 +20457,9 @@
               "Prop Master"
             ],
             "higher": [
-              "bodily",
-              "spatial",
-              "logical"
+              "bodily_intelligence",
+              "spatial_intelligence",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -20510,7 +20510,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "2.0-4.5",
         "mid_career_lpa": "5-14",
         "mid_career_midpoint": 9.5,
@@ -20607,12 +20607,12 @@
               "Newsletter Writer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "reasoning",
               "long_term_memory"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Audio and text formats reward depth and consistency over performance, and build smaller, more durable audiences than short-form video does."
           },
@@ -20626,7 +20626,7 @@
               "confidence"
             ],
             "lower": [
-              "attention_span",
+              "focus",
               "emotional_stability"
             ],
             "why": "Live and short-form work is continuous public performance with immediate feedback. It is the highest-visibility and least stable end of the profession."
@@ -20768,7 +20768,7 @@
             "higher": [
               "short_term_memory",
               "long_term_memory",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -20780,9 +20780,9 @@
               "Dubbing Artist"
             ],
             "higher": [
-              "musical",
-              "attention_span",
-              "bodily"
+              "musical_intelligence",
+              "focus",
+              "bodily_intelligence"
             ],
             "lower": [
               "openness"
@@ -20800,7 +20800,7 @@
               "emotional_intelligence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Presenting is personality on demand for hours, with an audience that is not in the room. It is performance rather than craft."
           }
@@ -20844,10 +20844,10 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "1.8-4.2",
         "mid_career_lpa": "4-12",
-        "mid_career_midpoint": 8.0,
+        "mid_career_midpoint": 8,
         "payback_years": 0.33,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -20924,7 +20924,7 @@
               "Speechwriter"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "long_term_memory"
             ],
@@ -20994,7 +20994,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "7-16",
         "mid_career_midpoint": 11.5,
@@ -21080,12 +21080,12 @@
               "Outside Broadcast Van Technician"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Broadcast operations is technical shift work in a control room or a van - signal chains, playout and live transmission. It is salaried and rostered, unlike the day-rate crew roles, and it is the one part of this profession with a career ladder that does not require moving into another job entirely."
           }
@@ -21219,7 +21219,7 @@
             "higher": [
               "conscientiousness",
               "short_term_memory",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "confidence"
@@ -21248,8 +21248,8 @@
             ],
             "higher": [
               "long_term_memory",
-              "existential",
-              "attention_span"
+              "existential_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -21391,12 +21391,12 @@
               "Songwriter"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "long_term_memory"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Writing words for music is a literary craft, and in India often in a language the composer does not write in. Many lyricists play no instrument at all."
           },
@@ -21405,9 +21405,9 @@
               "Mixing & Mastering Engineer"
             ],
             "higher": [
-              "logical",
-              "attention_span",
-              "musical"
+              "logical_intelligence",
+              "focus",
+              "musical_intelligence"
             ],
             "lower": [
               "openness"
@@ -21470,10 +21470,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "1.8-4.2",
         "mid_career_lpa": "4-14",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -21556,7 +21556,7 @@
               "Assistant Choreographer"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "extraversion",
               "conscientiousness",
               "emotional_stability"
@@ -21570,8 +21570,8 @@
             ],
             "higher": [
               "long_term_memory",
-              "existential",
-              "attention_span"
+              "existential_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -21585,10 +21585,10 @@
             "higher": [
               "reasoning",
               "emotional_intelligence",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Movement direction shapes how actors inhabit their bodies in a play or film. It is coaching and analysis, and the movement director rarely performs."
           }
@@ -21724,7 +21724,7 @@
             "higher": [
               "long_term_memory",
               "conscientiousness",
-              "bodily",
+              "bodily_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -21736,7 +21736,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "confidence",
@@ -21751,7 +21751,7 @@
             "higher": [
               "extraversion",
               "confidence",
-              "existential",
+              "existential_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -21801,7 +21801,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "1.2-3.6",
         "mid_career_lpa": "2.4-12",
         "mid_career_midpoint": 7.2,
@@ -21892,7 +21892,7 @@
             "higher": [
               "extraversion",
               "conscientiousness",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "openness"
@@ -21904,9 +21904,9 @@
               "Electronic Music Producer"
             ],
             "higher": [
-              "logical",
-              "musical",
-              "attention_span"
+              "logical_intelligence",
+              "musical_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -22041,7 +22041,7 @@
               "Folk Theatre Artist"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "long_term_memory",
               "openness"
             ],
@@ -22056,7 +22056,7 @@
               "Processional Brass Player"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -22198,10 +22198,10 @@
             "higher": [
               "conscientiousness",
               "extraversion",
-              "attention_span"
+              "focus"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Running a show is schedule, communication and problem-solving under a clock that cannot be stopped. It is the management job inside a technical department."
           },
@@ -22210,8 +22210,8 @@
               "Stage Rigger"
             ],
             "higher": [
-              "bodily",
-              "spatial",
+              "bodily_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -22261,7 +22261,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "1.8-3.6",
         "mid_career_lpa": "3.6-9.0",
         "mid_career_midpoint": 6.3,
@@ -22345,9 +22345,9 @@
               "Piano Tuner & Technician"
             ],
             "higher": [
-              "musical",
-              "attention_span",
-              "logical"
+              "musical_intelligence",
+              "focus",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -22360,9 +22360,9 @@
               "Guitar Luthier"
             ],
             "higher": [
-              "spatial",
-              "bodily",
-              "naturalistic"
+              "spatial_intelligence",
+              "bodily_intelligence",
+              "naturalistic_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -22496,7 +22496,7 @@
               "Translation & Adaptation Writer (Theatre)"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "long_term_memory"
             ],
@@ -22527,7 +22527,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical",
+              "logical_intelligence",
               "extraversion"
             ],
             "lower": [
@@ -22582,7 +22582,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "1.2-3.0",
         "mid_career_lpa": "2.4-9.0",
         "mid_career_midpoint": 5.7,
@@ -22815,12 +22815,12 @@
               "Shooter"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "reasoning",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Both are competitive sports in which physical output is nearly irrelevant and concentration under long pressure is everything. Chess in particular has a career shape unlike any other sport here - it starts earlier and lasts far longer."
           },
@@ -22833,7 +22833,7 @@
             "higher": [
               "extraversion",
               "confidence",
-              "bodily",
+              "bodily_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -22845,7 +22845,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "existential"
+              "existential_intelligence"
             ],
             "lower": [
               "extraversion",
@@ -22859,9 +22859,9 @@
               "Rally Co-Driver"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "confidence",
-              "attention_span",
+              "focus",
               "emotional_stability"
             ],
             "lower": [],
@@ -22913,11 +22913,11 @@
       "licensing_body": null,
       "years_to_qualify": 8,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "1.2-4.8",
         "mid_career_lpa": "3.0-12.0",
         "mid_career_midpoint": 7.5,
-        "payback_years": 1.0,
+        "payback_years": 1,
         "distribution": "power_law",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
         "verification": {
@@ -23011,7 +23011,7 @@
               "Rehabilitation & Return-to-Play Coach"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
               "conscientiousness"
             ],
@@ -23025,7 +23025,7 @@
               "Talent Scout"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "long_term_memory",
               "reasoning"
             ],
@@ -23097,7 +23097,7 @@
         "cost_of_entry_lakh": 1.5,
         "early_earnings_lpa": "1.8-4.2",
         "mid_career_lpa": "4-14",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.5,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -23179,12 +23179,12 @@
               "Online Fitness Coach"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Online coaching is programme writing, check-ins and accountability by message. The trainer never touches the client, which removes the safety role that defines the rest of the profession."
           },
@@ -23195,7 +23195,7 @@
             "higher": [
               "agreeableness",
               "emotional_intelligence",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "confidence"
@@ -23209,11 +23209,11 @@
             ],
             "higher": [
               "extraversion",
-              "musical",
+              "musical_intelligence",
               "confidence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Leading a room of thirty people to music is performance. The instructor motivates a crowd rather than correcting an individual."
           }
@@ -23344,9 +23344,9 @@
               "Judge (Scored Sports)"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness",
-              "spatial"
+              "spatial_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -23360,7 +23360,7 @@
             ],
             "higher": [
               "confidence",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "agreeableness",
@@ -23498,10 +23498,10 @@
             "higher": [
               "agreeableness",
               "emotional_intelligence",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Outdoor education runs school and corporate programmes where the objective is confidence, teamwork or leadership. The activity is a vehicle; the client is usually frightened and unfit."
           },
@@ -23512,8 +23512,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "openness"
@@ -23650,7 +23650,7 @@
               "Observer & Production Operator"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "short_term_memory",
               "emotional_stability"
@@ -23665,8 +23665,8 @@
             ],
             "higher": [
               "reasoning",
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "confidence"
@@ -23715,7 +23715,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "0.6-3.6",
         "mid_career_lpa": "2.4-12.0",
         "mid_career_midpoint": 7.2,
@@ -23808,11 +23808,11 @@
             ],
             "higher": [
               "emotional_intelligence",
-              "verbal",
+              "verbal_intelligence",
               "agreeableness"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Performance psychology is conversation and behavioural work with an athlete under pressure. It shares an employer with the rest of this profession and almost no method."
           },
@@ -23822,9 +23822,9 @@
               "Performance Analyst"
             ],
             "higher": [
-              "logical",
-              "spatial",
-              "attention_span"
+              "logical_intelligence",
+              "spatial_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -23876,7 +23876,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5-14",
         "mid_career_midpoint": 9.5,
@@ -23960,7 +23960,7 @@
               "Pitch Curator"
             ],
             "higher": [
-              "naturalistic",
+              "naturalistic_intelligence",
               "long_term_memory",
               "reasoning"
             ],
@@ -23975,10 +23975,10 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Kit management is inventory, logistics and preparation rather than groundwork, and it travels with the team."
           }
@@ -24113,10 +24113,10 @@
             "higher": [
               "agreeableness",
               "emotional_intelligence",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Teaching four-year-olds is care, routine and play rather than subject instruction. The qualification route is different too - a nursery teacher training diploma rather than a B.Ed."
           },
@@ -24127,7 +24127,7 @@
             "higher": [
               "long_term_memory",
               "reasoning",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -24139,12 +24139,12 @@
               "Physical Education Teacher"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "extraversion",
               "confidence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Accountable for a curriculum and a class rather than for competitive results, which is what separates this role from Sports Coach in Sector 11."
           }
@@ -24199,10 +24199,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3.0-8.3",
         "mid_career_lpa": "6.0-16.0",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.71,
         "distribution": "bimodal",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -24297,10 +24297,10 @@
             "higher": [
               "emotional_intelligence",
               "agreeableness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Early intervention works with children under six and with their parents, often delivering a diagnosis families have not accepted. The clinical and counselling content is far higher than in classroom special education."
           },
@@ -24309,8 +24309,8 @@
               "Braille & Assistive Technology Instructor"
             ],
             "higher": [
-              "logical",
-              "spatial",
+              "logical_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -24381,7 +24381,7 @@
       "licensing_body": "Rehabilitation Council of India (RCI)",
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "2.4-6.0",
         "mid_career_lpa": "5.0-12.0",
         "mid_career_midpoint": 8.5,
@@ -24468,7 +24468,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "confidence"
@@ -24482,7 +24482,7 @@
             "higher": [
               "reasoning",
               "openness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -24495,9 +24495,9 @@
               "Laboratory Instructor (College)"
             ],
             "higher": [
-              "bodily",
-              "spatial",
-              "logical"
+              "bodily_intelligence",
+              "spatial_intelligence",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -24558,7 +24558,7 @@
       "licensing_body": null,
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "4.5-9.0",
         "mid_career_lpa": "9.0-18.0",
         "mid_career_midpoint": 13.5,
@@ -24678,8 +24678,8 @@
               "Doubt-Solving Faculty"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "reasoning"
             ],
             "lower": [
@@ -24728,7 +24728,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.4-6.0",
         "mid_career_lpa": "5.0-18.0",
         "mid_career_midpoint": 11.5,
@@ -24821,11 +24821,11 @@
             ],
             "higher": [
               "conscientiousness",
-              "verbal",
+              "verbal_intelligence",
               "extraversion"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Supervisors oversee a cluster of anganwadi centres - records, supplies, reporting and inspection. It is a graded government post with a pay scale, unlike the honorarium roles beneath it, and it is the only promotion route out of this profession."
           },
@@ -24835,7 +24835,7 @@
             ],
             "higher": [
               "openness",
-              "musical",
+              "musical_intelligence",
               "emotional_intelligence",
               "emotional_stability"
             ],
@@ -24976,8 +24976,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "logical"
+              "focus",
+              "logical_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -24989,12 +24989,12 @@
               "Placement & Employability Trainer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "emotional_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Employability training is communication, interviews and workplace behaviour rather than a trade. It is attached to skilling programmes and is a different job entirely."
           },
@@ -25004,12 +25004,12 @@
               "Workshop Instructor"
             ],
             "higher": [
-              "bodily",
-              "spatial",
+              "bodily_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Trade instruction is demonstration at a bench or a machine, taught by someone who did the job. It is the closest teaching gets to the trade itself."
           }
@@ -25063,7 +25063,7 @@
         "cost_of_entry_lakh": 1.5,
         "early_earnings_lpa": "2.4-4.8",
         "mid_career_lpa": "4.0-10.0",
-        "mid_career_midpoint": 7.0,
+        "mid_career_midpoint": 7,
         "payback_years": 0.42,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -25144,9 +25144,9 @@
               "Technical Trainer"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -25164,7 +25164,7 @@
               "emotional_intelligence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "These are performance-led roles - a room of adults who did not choose to be there and must be won over in the first ten minutes."
           }
@@ -25210,7 +25210,7 @@
       "licensing_body": null,
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.6-7.0",
         "mid_career_lpa": "7.0-16.0",
         "mid_career_midpoint": 11.5,
@@ -25296,8 +25296,8 @@
             ],
             "higher": [
               "reasoning",
-              "logical",
-              "attention_span"
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -25309,12 +25309,12 @@
               "E-learning Developer"
             ],
             "higher": [
-              "logical",
-              "spatial",
+              "logical_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "E-learning development is authoring-tool and multimedia production work. It is the technical end of the profession and the most directly exposed."
           },
@@ -25374,7 +25374,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-15.0",
         "mid_career_midpoint": 10.5,
@@ -25454,8 +25454,8 @@
               "Digital Repository Manager"
             ],
             "higher": [
-              "logical",
-              "spatial",
+              "logical_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -25468,12 +25468,12 @@
               "Information Literacy Instructor"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "emotional_intelligence"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Teaching students how to search, evaluate sources and avoid plagiarism is front-of-room teaching, and it has become the most defensible part of the profession."
           }
@@ -25522,10 +25522,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-13.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.81,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -25609,7 +25609,7 @@
             "higher": [
               "extraversion",
               "conscientiousness",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -25623,7 +25623,7 @@
             "higher": [
               "emotional_intelligence",
               "agreeableness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "confidence"
@@ -25635,7 +25635,7 @@
               "Psychometric Assessor (Career)"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
               "conscientiousness"
             ],
@@ -25773,8 +25773,8 @@
               "Psycho-diagnostician"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "reasoning"
             ],
             "lower": [
@@ -25789,7 +25789,7 @@
             "higher": [
               "reasoning",
               "confidence",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -25803,7 +25803,7 @@
             "higher": [
               "agreeableness",
               "emotional_intelligence",
-              "naturalistic"
+              "naturalistic_intelligence"
             ],
             "lower": [
               "confidence"
@@ -25860,7 +25860,7 @@
       "licensing_body": "Rehabilitation Council of India (RCI)",
       "years_to_qualify": 9,
       "economics": {
-        "cost_of_entry_lakh": 5.0,
+        "cost_of_entry_lakh": 5,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-15.0",
         "mid_career_midpoint": 10.5,
@@ -25956,7 +25956,7 @@
               "Genetic Counsellor"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
               "conscientiousness"
             ],
@@ -25986,7 +25986,7 @@
             "higher": [
               "emotional_intelligence",
               "short_term_memory",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "long_term_memory"
@@ -26040,7 +26040,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "4.5-12.0",
         "mid_career_midpoint": 8.25,
@@ -26136,7 +26136,7 @@
               "reasoning"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Hospital-based social work sits inside a clinical team - discharge planning, family counselling and welfare linkage. Psychiatric social work has an RCI-recognised M.Phil route of its own, which puts part of this role under the same statute as clinical psychology."
           },
@@ -26145,11 +26145,11 @@
               "Disaster Response & Relief Worker"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "confidence"
             ],
             "lower": [
-              "attention_span",
+              "focus",
               "emotional_stability"
             ],
             "why": "Relief work is physically hard field deployment at short notice into unsafe places. It is the least desk-bound social work there is."
@@ -26161,7 +26161,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical",
+              "logical_intelligence",
               "confidence"
             ],
             "lower": [
@@ -26215,7 +26215,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-12.0",
         "mid_career_midpoint": 8.5,
@@ -26310,12 +26310,12 @@
               "Partnerships Manager (Development)"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "conscientiousness"
             ],
             "lower": [
-              "naturalistic"
+              "naturalistic_intelligence"
             ],
             "why": "Raising money is proposal writing, donor relationships and reporting against commitments. It is the commercial function of the development sector and it pays best, precisely because everything else depends on it."
           },
@@ -26324,12 +26324,12 @@
               "Field Officer"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "agreeableness",
-              "naturalistic"
+              "naturalistic_intelligence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Field officers live in the block or district they work in and do the actual mobilisation. It is the entry rung, it is where the sector's knowledge comes from, and it is paid least."
           },
@@ -26338,7 +26338,7 @@
               "Advocacy & Campaigns Officer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "confidence",
               "openness"
             ],
@@ -26395,10 +26395,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-16.0",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.89,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -26482,7 +26482,7 @@
             "higher": [
               "conscientiousness",
               "extraversion",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "openness"
@@ -26495,11 +26495,11 @@
             ],
             "higher": [
               "confidence",
-              "verbal",
+              "verbal_intelligence",
               "agreeableness"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Social audit is reading government scheme records aloud to the village the scheme was meant to serve. It is a public accountability ritual and it is sometimes dangerous."
           }
@@ -26548,10 +26548,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3.0-6.5",
         "mid_career_lpa": "6.0-16.0",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.84,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -26633,7 +26633,7 @@
             ],
             "higher": [
               "confidence",
-              "logical",
+              "logical_intelligence",
               "extraversion"
             ],
             "lower": [
@@ -26648,11 +26648,11 @@
             ],
             "higher": [
               "conscientiousness",
-              "verbal",
-              "attention_span"
+              "verbal_intelligence",
+              "focus"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Coordination roles sit between the field and the district office - reporting, verification and scheme paperwork. They are the first step off the field and the only visible promotion in this profession."
           }
@@ -26785,9 +26785,9 @@
               "Assistive Technology Specialist"
             ],
             "higher": [
-              "spatial",
-              "logical",
-              "attention_span"
+              "spatial_intelligence",
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -26799,9 +26799,9 @@
               "Sign Language Interpreter"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "short_term_memory",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "openness"
@@ -26814,11 +26814,11 @@
             ],
             "higher": [
               "agreeableness",
-              "bodily",
-              "naturalistic"
+              "bodily_intelligence",
+              "naturalistic_intelligence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "CBR work is home visits in villages, teaching families to do therapy themselves because no therapist will ever come. It is the largest and least paid part of this profession."
           }
@@ -26866,10 +26866,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-13.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.81,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -26953,7 +26953,7 @@
             ],
             "higher": [
               "confidence",
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
               "emotional_stability"
             ],
@@ -26965,12 +26965,12 @@
               "Outreach Worker (Children at Risk)"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "confidence",
               "agreeableness"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Outreach is street and railway-station work with children who have run away or been trafficked. It is night work in unsafe places and it is the sharpest end of this profession."
           }
@@ -27019,10 +27019,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-11.0",
-        "mid_career_midpoint": 8.0,
+        "mid_career_midpoint": 8,
         "payback_years": 0.81,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -27107,9 +27107,9 @@
               "ETP & STP Operations Engineer"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "openness"
@@ -27121,12 +27121,12 @@
               "Environmental Compliance Engineer"
             ],
             "higher": [
-              "verbal",
-              "logical",
+              "verbal_intelligence",
+              "logical_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Compliance work is consents, returns and inspections with the State Pollution Control Board. It is regulatory rather than technical and sits closest to law."
           }
@@ -27183,7 +27183,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "7.0-16.0",
         "mid_career_midpoint": 11.5,
@@ -27268,12 +27268,12 @@
               "EIA Consultant"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "reasoning",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Environmental Impact Assessment is a regulatory document prepared for a clearance process, argued at public hearings and defended before an appraisal committee. It is part science and part advocacy, and the accredited coordinator signs it."
           },
@@ -27283,9 +27283,9 @@
               "Environmental Monitoring Analyst"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
               "confidence"
@@ -27297,9 +27297,9 @@
               "Biodiversity Assessment Specialist"
             ],
             "higher": [
-              "naturalistic",
-              "attention_span",
-              "bodily"
+              "naturalistic_intelligence",
+              "focus",
+              "bodily_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -27359,10 +27359,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-13.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 1.08,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -27444,12 +27444,12 @@
               "Geospatial Data Scientist"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "The modelling end - machine learning on imagery, change detection, time series. It sits closer to a Data Scientist in Sector 1 than to mapping, and it pays accordingly."
           },
@@ -27459,8 +27459,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "verbal"
+              "focus",
+              "verbal_intelligence"
             ],
             "lower": [
               "openness"
@@ -27472,12 +27472,12 @@
               "Drone Survey Analyst"
             ],
             "higher": [
-              "spatial",
-              "bodily",
-              "logical"
+              "spatial_intelligence",
+              "bodily_intelligence",
+              "logical_intelligence"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Drone survey involves flying and field work as well as processing, and it is regulated - the pilot needs a DGCA Remote Pilot Certificate, which the analyst may not."
           }
@@ -27528,10 +27528,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-16.0",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.89,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -27617,7 +27617,7 @@
             "higher": [
               "confidence",
               "conscientiousness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -27629,9 +27629,9 @@
               "Wildlife Biologist"
             ],
             "higher": [
-              "naturalistic",
+              "naturalistic_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "confidence"
@@ -27644,11 +27644,11 @@
               "Anti-Poaching Watcher"
             ],
             "higher": [
-              "bodily",
-              "attention_span"
+              "bodily_intelligence",
+              "focus"
             ],
             "lower": [
-              "verbal",
+              "verbal_intelligence",
               "emotional_stability"
             ],
             "why": "The base layer, and the most dangerous work in this sector. Patrolling on foot in difficult terrain against armed poachers, usually on contract or daily wage, is what protection actually consists of."
@@ -27661,7 +27661,7 @@
             "higher": [
               "extraversion",
               "agreeableness",
-              "verbal",
+              "verbal_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -27721,7 +27721,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.0-8.0",
         "mid_career_lpa": "7.0-18.0",
         "mid_career_midpoint": 12.5,
@@ -27815,12 +27815,12 @@
               "Green Building Consultant"
             ],
             "higher": [
-              "logical",
-              "spatial",
-              "bodily"
+              "logical_intelligence",
+              "spatial_intelligence",
+              "bodily_intelligence"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "These are technical, on-site roles - walking a plant or a building, metering, and modelling energy use. Energy auditing is also certified by the Bureau of Energy Efficiency, which the reporting roles are not."
           },
@@ -27830,8 +27830,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "logical"
+              "focus",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -27886,7 +27886,7 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 5.0,
+        "cost_of_entry_lakh": 5,
         "early_earnings_lpa": "4.0-8.0",
         "mid_career_lpa": "7.0-18.0",
         "mid_career_midpoint": 12.5,
@@ -27973,9 +27973,9 @@
               "Solar Plant Performance Analyst"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -27988,11 +27988,11 @@
             ],
             "higher": [
               "extraversion",
-              "verbal",
+              "verbal_intelligence",
               "confidence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Rooftop solar is a consumer sale - explaining subsidy, payback and net metering to a household or a housing society. It is the retail end and it is the largest employer in this profession."
           },
@@ -28001,12 +28001,12 @@
               "Renewable Energy Site Engineer"
             ],
             "higher": [
-              "bodily",
-              "spatial",
+              "bodily_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Site engineering is construction supervision in remote locations with long postings - solar parks are built in Rajasthan and Gujarat deserts, not near cities."
           }
@@ -28057,10 +28057,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 6.0,
+        "cost_of_entry_lakh": 6,
         "early_earnings_lpa": "3.5-7.0",
         "mid_career_lpa": "8.0-18.0",
-        "mid_career_midpoint": 13.0,
+        "mid_career_midpoint": 13,
         "payback_years": 1.14,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -28145,11 +28145,11 @@
             ],
             "higher": [
               "confidence",
-              "logical",
+              "logical_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Owning and operating mechanised desludging or sweeping equipment on municipal contract. This is the route the NAMASTE scheme is explicitly designed to create, and it is the only path in this profession that leads out of manual work."
           },
@@ -28159,8 +28159,8 @@
               "Composting Unit Operator"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "conscientiousness",
               "emotional_stability"
             ],
@@ -28172,10 +28172,10 @@
               "Sewer & Septic Tank Worker"
             ],
             "higher": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
-              "verbal",
+              "verbal_intelligence",
               "openness",
               "emotional_stability"
             ],
@@ -28329,8 +28329,8 @@
               "Hazard Mapping Specialist"
             ],
             "higher": [
-              "logical",
-              "spatial",
+              "logical_intelligence",
+              "spatial_intelligence",
               "reasoning"
             ],
             "lower": [
@@ -28384,7 +28384,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-15.0",
         "mid_career_midpoint": 10.5,
@@ -28469,11 +28469,11 @@
               "Agricultural Labourer"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "logical",
+              "logical_intelligence",
               "openness"
             ],
             "why": "Farm labour is paid by the day for someone else's crop, with no land, no decision and no exposure to the harvest. It is the largest single form of rural employment and the poorest, and the survey data shows it is now the biggest income source even for households that farm their own land."
@@ -28484,7 +28484,7 @@
               "Contract Farming Cultivator"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "conscientiousness",
               "reasoning",
               "emotional_stability"
@@ -28497,8 +28497,8 @@
               "Custom Hiring Operator"
             ],
             "higher": [
-              "logical",
-              "spatial",
+              "logical_intelligence",
+              "spatial_intelligence",
               "confidence"
             ],
             "lower": [
@@ -28511,9 +28511,9 @@
               "Organic & Natural Farming Practitioner"
             ],
             "higher": [
-              "naturalistic",
+              "naturalistic_intelligence",
               "openness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "confidence"
@@ -28657,7 +28657,7 @@
             ],
             "higher": [
               "reasoning",
-              "attention_span",
+              "focus",
               "long_term_memory"
             ],
             "lower": [
@@ -28671,8 +28671,8 @@
               "Precision Agriculture Specialist"
             ],
             "higher": [
-              "verbal",
-              "logical",
+              "verbal_intelligence",
+              "logical_intelligence",
               "extraversion"
             ],
             "lower": [
@@ -28734,7 +28734,7 @@
       "licensing_body": null,
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-15.0",
         "mid_career_midpoint": 10.5,
@@ -28822,12 +28822,12 @@
               "Farm Equipment Service Technician"
             ],
             "higher": [
-              "bodily",
-              "spatial",
+              "bodily_intelligence",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "verbal"
+              "verbal_intelligence"
             ],
             "why": "Servicing tractors, harvesters and pump sets is a skilled trade entered through an ITI rather than a degree. It is the largest employment inside this profession and it exists in every taluka."
           },
@@ -28836,8 +28836,8 @@
               "Agri-Drone Application Specialist"
             ],
             "higher": [
-              "spatial",
-              "logical",
+              "spatial_intelligence",
+              "logical_intelligence",
               "confidence"
             ],
             "lower": [
@@ -28899,10 +28899,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 5.0,
+        "cost_of_entry_lakh": 5,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "5.0-11.0",
-        "mid_career_midpoint": 8.0,
+        "mid_career_midpoint": 8,
         "payback_years": 1.11,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -28986,8 +28986,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "logical"
+              "focus",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -29001,7 +29001,7 @@
             ],
             "higher": [
               "openness",
-              "naturalistic",
+              "naturalistic_intelligence",
               "reasoning"
             ],
             "lower": [
@@ -29014,7 +29014,7 @@
               "Food Processing Supervisor"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "extraversion",
               "conscientiousness"
             ],
@@ -29072,10 +29072,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 5.0,
+        "cost_of_entry_lakh": 5,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "5.0-13.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 1.11,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -29162,9 +29162,9 @@
               "Para-Veterinary Worker"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -29176,12 +29176,12 @@
               "Milk Procurement Officer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "conscientiousness"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Procurement runs the collection network for a dairy cooperative or private dairy - testing, pricing, payments and farmer relationships across dozens of villages. It is the commercial job inside a livestock profession."
           },
@@ -29190,8 +29190,8 @@
               "Poultry Farm Supervisor"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
@@ -29243,7 +29243,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "1.2-3.0",
         "mid_career_lpa": "2.4-6.0",
         "mid_career_midpoint": 4.2,
@@ -29333,7 +29333,7 @@
             "higher": [
               "extraversion",
               "conscientiousness",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "openness"
@@ -29345,12 +29345,12 @@
               "Protected Cultivation & Greenhouse Manager"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "reasoning"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Polyhouse and hydroponic growing is climate control, nutrient dosing and pest management as an engineering problem. Capital cost is high, and it is the most technical growing in Indian agriculture."
           },
@@ -29359,12 +29359,12 @@
               "Landscape & Garden Supervisor"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "openness",
               "extraversion"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Landscaping serves clients and aesthetics rather than yield. It is an urban service livelihood attached to a rural profession and it pays more reliably than growing."
           }
@@ -29413,10 +29413,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "1.8-4.2",
         "mid_career_lpa": "3.0-9.0",
-        "mid_career_midpoint": 6.0,
+        "mid_career_midpoint": 6,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -29501,11 +29501,11 @@
               "Fisherman"
             ],
             "higher": [
-              "bodily",
-              "naturalistic"
+              "bodily_intelligence",
+              "naturalistic_intelligence"
             ],
             "lower": [
-              "logical",
+              "logical_intelligence",
               "emotional_stability"
             ],
             "why": "Marine capture fishing is among the most dangerous occupations in India - long voyages, weather, debt to boat owners and a catch that may not come. It is traditional, community-based and almost entirely informal."
@@ -29516,8 +29516,8 @@
               "Aquaculture Farm Manager"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "conscientiousness",
               "emotional_stability"
             ],
@@ -29529,12 +29529,12 @@
               "Fisheries Officer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "A state fisheries department post is extension, licensing and scheme delivery - a government job attached to the sector rather than work on the water."
           }
@@ -29584,10 +29584,10 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "1.5-4.0",
         "mid_career_lpa": "3.0-9.0",
-        "mid_career_midpoint": 6.0,
+        "mid_career_midpoint": 6,
         "payback_years": 0.73,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -29669,12 +29669,12 @@
               "Rural Credit & Agri-Finance Officer"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "conscientiousness",
               "reasoning"
             ],
             "lower": [
-              "naturalistic"
+              "naturalistic_intelligence"
             ],
             "why": "Agricultural lending is credit appraisal against land, crop and weather risk, done for a bank or an NBFC. It is a banking job that requires agronomy, and it pays like banking rather than like agriculture."
           },
@@ -29685,7 +29685,7 @@
             "higher": [
               "extraversion",
               "confidence",
-              "verbal"
+              "verbal_intelligence"
             ],
             "lower": [
               "openness"
@@ -29698,7 +29698,7 @@
             ],
             "higher": [
               "agreeableness",
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -29756,10 +29756,10 @@
       "licensing_body": null,
       "years_to_qualify": 4,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-16.0",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.89,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -29847,9 +29847,9 @@
               "Baker"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -29876,9 +29876,9 @@
               "Cloud Kitchen Cook"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "short_term_memory",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -29930,7 +29930,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "1.8-4.2",
         "mid_career_lpa": "3.6-12.0",
         "mid_career_midpoint": 7.8,
@@ -30035,11 +30035,11 @@
               "Cafe & QSR Service Crew"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness"
             ],
             "lower": [
-              "verbal",
+              "verbal_intelligence",
               "openness"
             ],
             "why": "Banquet and quick-service work is high-volume, standardised and frequently casual or per-shift. It is how most people enter this profession and it teaches little that transfers upward."
@@ -30102,7 +30102,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "1.5-3.6",
         "mid_career_lpa": "2.4-8.0",
         "mid_career_midpoint": 5.2,
@@ -30191,7 +30191,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "extraversion",
@@ -30205,12 +30205,12 @@
               "Facility Housekeeping Executive"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
-              "logical"
+              "logical_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Supervision is rosters, inventory, contract staff and inspection standards. It is the step off the floor and it is the only reliable progression in this profession."
           }
@@ -30341,12 +30341,12 @@
               "Revenue & Reservations Executive"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Revenue management is pricing and inventory analytics - deciding what a room should cost tonight across a dozen booking channels. It is a quantitative desk job inside a hospitality profession and it transfers to airline and travel pricing."
           },
@@ -30361,7 +30361,7 @@
               "confidence"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "The desk is the hotel's face - check-in, complaints, and the person a guest asks for when something is wrong. It runs on shifts including nights and it is the standard entry role for a hotel management graduate."
           }
@@ -30410,7 +30410,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-14.0",
         "mid_career_midpoint": 9.5,
@@ -30500,12 +30500,12 @@
               "Pilgrimage & Cultural Tour Coordinator"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "long_term_memory",
               "extraversion"
             ],
             "lower": [
-              "logical"
+              "logical_intelligence"
             ],
             "why": "Guiding is performance and knowledge on foot, in a language the visitor speaks. Regional-language and foreign-language guides are licensed by the Ministry of Tourism at monument level, which is the only credential in this profession."
           },
@@ -30516,8 +30516,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "logical"
+              "focus",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -30673,7 +30673,7 @@
               "extraversion"
             ],
             "lower": [
-              "logical",
+              "logical_intelligence",
               "emotional_stability"
             ],
             "why": "Indian weddings are the largest single event market in the country and the most emotionally loaded. The planner manages two families, a budget nobody will state honestly, and an event that cannot be rescheduled."
@@ -30684,12 +30684,12 @@
               "Catering Sales Executive"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "confidence",
               "extraversion"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "These are sales roles inside events - finding the money rather than spending it. They carry targets and commission and sit closer to Sector 5's Sales Professional."
           },
@@ -30700,8 +30700,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "spatial",
-              "bodily"
+              "spatial_intelligence",
+              "bodily_intelligence"
             ],
             "lower": [
               "openness"
@@ -30750,7 +30750,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-14.0",
         "mid_career_midpoint": 9.5,
@@ -30833,7 +30833,7 @@
               "Cabin Crew Trainer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
               "confidence",
               "emotional_stability"
@@ -30848,7 +30848,7 @@
             "higher": [
               "extraversion",
               "conscientiousness",
-              "bodily",
+              "bodily_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -30997,11 +30997,11 @@
             ],
             "higher": [
               "long_term_memory",
-              "attention_span",
-              "verbal"
+              "focus",
+              "verbal_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Reading inscriptions and coins requires classical languages and scripts - Brahmi, Sanskrit, Persian, Tamil - held in memory. It is desk and museum work and it is where much of Indian archaeology's actual evidence is produced."
           },
@@ -31010,9 +31010,9 @@
               "Archaeobotanist & Archaeozoologist"
             ],
             "higher": [
-              "logical",
-              "naturalistic",
-              "attention_span"
+              "logical_intelligence",
+              "naturalistic_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -31025,8 +31025,8 @@
               "Excavation Field Director"
             ],
             "higher": [
-              "bodily",
-              "spatial",
+              "bodily_intelligence",
+              "spatial_intelligence",
               "conscientiousness",
               "emotional_stability"
             ],
@@ -31085,10 +31085,10 @@
       "licensing_body": null,
       "years_to_qualify": 7,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-13.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.81,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -31176,7 +31176,7 @@
             ],
             "higher": [
               "conscientiousness",
-              "bodily",
+              "bodily_intelligence",
               "agreeableness"
             ],
             "lower": [
@@ -31189,7 +31189,7 @@
               "User Researcher (Ethnographic)"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "emotional_intelligence",
               "conscientiousness"
             ],
@@ -31204,9 +31204,9 @@
               "Tribal Welfare Research Officer"
             ],
             "higher": [
-              "naturalistic",
+              "naturalistic_intelligence",
               "agreeableness",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "confidence"
@@ -31265,10 +31265,10 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "3.0-6.0",
         "mid_career_lpa": "6.0-16.0",
-        "mid_career_midpoint": 11.0,
+        "mid_career_midpoint": 11,
         "payback_years": 0.67,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -31350,12 +31350,12 @@
               "Public History Practitioner"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "emotional_intelligence",
               "extraversion"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Oral and public history work with living people and general audiences rather than with documents - interviews, exhibitions, walks, podcasts. It is the outward-facing half of the discipline and the part with a market outside universities."
           },
@@ -31365,7 +31365,7 @@
               "Genealogy & Records Researcher"
             ],
             "higher": [
-              "attention_span",
+              "focus",
               "conscientiousness",
               "long_term_memory"
             ],
@@ -31425,7 +31425,7 @@
       "licensing_body": null,
       "years_to_qualify": 7,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-14.0",
         "mid_career_midpoint": 9.5,
@@ -31514,12 +31514,12 @@
               "Museum Education Officer"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "agreeableness"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Education and outreach roles run school programmes, tours and workshops. They are public-facing teaching inside a collections institution and are frequently the only posts a museum is actually hiring for."
           },
@@ -31529,9 +31529,9 @@
               "Records Manager"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "conscientiousness",
-              "attention_span"
+              "focus"
             ],
             "lower": [
               "openness"
@@ -31549,7 +31549,7 @@
               "reasoning"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Curation is scholarship plus argument - deciding what a collection means and how to say it in a room. It is the role the profession is known for and the one it has fewest of."
           }
@@ -31599,7 +31599,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 3.0,
+        "cost_of_entry_lakh": 3,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-12.0",
         "mid_career_midpoint": 8.5,
@@ -31684,12 +31684,12 @@
               "Conservation Scientist"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
-              "attention_span"
+              "focus"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Conservation science is analytical chemistry and materials work - identifying pigments, deterioration mechanisms and treatment chemistry in a laboratory. It supports the treatment work rather than performing it."
           },
@@ -31698,12 +31698,12 @@
               "Architectural Conservator"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "extraversion",
               "conscientiousness"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Building conservation is site work with contractors, masons and budgets, closer to a construction project than to bench conservation. It is also where most Indian conservation money is, because heritage buildings attract funding that objects do not."
           },
@@ -31712,7 +31712,7 @@
               "Preventive Conservation Officer"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -31765,10 +31765,10 @@
       "licensing_body": null,
       "years_to_qualify": 6,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-13.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 1.08,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -31852,11 +31852,11 @@
             ],
             "higher": [
               "conscientiousness",
-              "logical",
+              "logical_intelligence",
               "extraversion"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Running a temple or religious institution is administration - donations, staff, property, festivals and, in several states, a government endowments department. It is management inside a religious institution and needs no priestly training."
           },
@@ -31866,7 +31866,7 @@
               "Astrologer & Ritual Consultant"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "extraversion",
               "long_term_memory"
             ],
@@ -31880,7 +31880,7 @@
               "Religious Teacher"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "long_term_memory",
               "agreeableness"
             ],
@@ -32020,8 +32020,8 @@
               "Lexicographer"
             ],
             "higher": [
-              "logical",
-              "attention_span",
+              "logical_intelligence",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
@@ -32035,8 +32035,8 @@
               "Palaeographer"
             ],
             "higher": [
-              "attention_span",
-              "spatial",
+              "focus",
+              "spatial_intelligence",
               "long_term_memory"
             ],
             "lower": [
@@ -32091,10 +32091,10 @@
       "licensing_body": null,
       "years_to_qualify": 7,
       "economics": {
-        "cost_of_entry_lakh": 2.0,
+        "cost_of_entry_lakh": 2,
         "early_earnings_lpa": "2.4-5.0",
         "mid_career_lpa": "5.0-13.0",
-        "mid_career_midpoint": 9.0,
+        "mid_career_midpoint": 9,
         "payback_years": 0.54,
         "distribution": "range",
         "basis": "mid_career is 5-8 years of EMPLOYMENT after entering the field, EMPLOYED only. Independent practice and business ownership are excluded - that income is entrepreneurship, and self_employment carries it separately.",
@@ -32175,7 +32175,7 @@
               "Heritage Impact Assessment Consultant"
             ],
             "higher": [
-              "logical",
+              "logical_intelligence",
               "reasoning",
               "conscientiousness"
             ],
@@ -32195,7 +32195,7 @@
               "conscientiousness"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Programming a festival or a cultural centre is curation plus event production plus fundraising. It overlaps heavily with Event Manager in Sector 16 and differs by the programme being the point rather than the client."
           },
@@ -32205,8 +32205,8 @@
             ],
             "higher": [
               "agreeableness",
-              "verbal",
-              "naturalistic"
+              "verbal_intelligence",
+              "naturalistic_intelligence"
             ],
             "lower": [
               "confidence"
@@ -32259,7 +32259,7 @@
       "licensing_body": null,
       "years_to_qualify": 5,
       "economics": {
-        "cost_of_entry_lakh": 4.0,
+        "cost_of_entry_lakh": 4,
         "early_earnings_lpa": "2.4-5.5",
         "mid_career_lpa": "5.0-14.0",
         "mid_career_midpoint": 9.5,
@@ -32511,12 +32511,12 @@
               "Corporate Yoga Instructor"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "confidence",
               "extraversion"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Screen-mediated and workplace teaching cannot correct a posture by touch and works with people who are not there for yoga. It is the fastest-growing and least protected part of the profession."
           },
@@ -32578,7 +32578,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "1.8-4.2",
         "mid_career_lpa": "3.6-10.0",
         "mid_career_midpoint": 6.8,
@@ -32671,7 +32671,7 @@
             "higher": [
               "openness",
               "extraversion",
-              "bodily",
+              "bodily_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -32684,7 +32684,7 @@
             "higher": [
               "conscientiousness",
               "extraversion",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "confidence"
@@ -32696,12 +32696,12 @@
               "Salon Receptionist & Coordinator"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
               "extraversion"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Front desk work is booking, retail sales and client management with no treatment skill. It is a common entry into the industry for someone who has not trained."
           }
@@ -32840,7 +32840,7 @@
             "higher": [
               "openness",
               "confidence",
-              "spatial"
+              "spatial_intelligence"
             ],
             "lower": [
               "agreeableness"
@@ -32853,7 +32853,7 @@
               "Mobile Barber"
             ],
             "higher": [
-              "bodily",
+              "bodily_intelligence",
               "conscientiousness",
               "extraversion"
             ],
@@ -32867,9 +32867,9 @@
               "Hair Colourist"
             ],
             "higher": [
-              "spatial",
-              "logical",
-              "attention_span"
+              "spatial_intelligence",
+              "logical_intelligence",
+              "focus"
             ],
             "lower": [
               "extraversion"
@@ -33007,9 +33007,9 @@
               "Prosthetics & Character Makeup Artist"
             ],
             "higher": [
-              "spatial",
+              "spatial_intelligence",
               "openness",
-              "bodily"
+              "bodily_intelligence"
             ],
             "lower": [
               "extraversion"
@@ -33022,11 +33022,11 @@
             ],
             "higher": [
               "extraversion",
-              "verbal",
+              "verbal_intelligence",
               "agreeableness"
             ],
             "lower": [
-              "attention_span"
+              "focus"
             ],
             "why": "Counter work in beauty retail is selling with a demonstration attached. It is salaried with commission, is how many artists first learn products, and it is the only role here that is not freelance."
           },
@@ -33037,7 +33037,7 @@
             "higher": [
               "conscientiousness",
               "emotional_intelligence",
-              "bodily",
+              "bodily_intelligence",
               "emotional_stability"
             ],
             "lower": [],
@@ -33174,12 +33174,12 @@
               "Visually Impaired Massage Therapist"
             ],
             "higher": [
-              "bodily",
-              "attention_span",
+              "bodily_intelligence",
+              "focus",
               "conscientiousness"
             ],
             "lower": [
-              "spatial"
+              "spatial_intelligence"
             ],
             "why": "Massage therapy is one of the few skilled livelihoods with structured training and employment programmes for visually impaired practitioners in India, on the reasoning that touch sensitivity is the core skill. It is a recognised route and worth naming."
           },
@@ -33190,7 +33190,7 @@
               "Wellness Retreat Therapist"
             ],
             "higher": [
-              "naturalistic",
+              "naturalistic_intelligence",
               "conscientiousness",
               "long_term_memory"
             ],
@@ -33205,12 +33205,12 @@
               "Spa Receptionist & Coordinator"
             ],
             "higher": [
-              "verbal",
+              "verbal_intelligence",
               "conscientiousness",
               "extraversion"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Front-of-house and supervision is booking, retail, therapist rosters and hygiene compliance. It is the step off the treatment table and the only reliable progression in a physically demanding job."
           }
@@ -33258,7 +33258,7 @@
       "licensing_body": null,
       "years_to_qualify": 2,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "1.5-3.6",
         "mid_career_lpa": "2.7-7.0",
         "mid_career_midpoint": 4.85,
@@ -33350,8 +33350,8 @@
             ],
             "higher": [
               "conscientiousness",
-              "attention_span",
-              "logical"
+              "focus",
+              "logical_intelligence"
             ],
             "lower": [
               "openness"
@@ -33364,11 +33364,11 @@
             ],
             "higher": [
               "openness",
-              "spatial",
-              "verbal"
+              "spatial_intelligence",
+              "verbal_intelligence"
             ],
             "lower": [
-              "bodily"
+              "bodily_intelligence"
             ],
             "why": "Some studios separate design from application - the designer draws and consults, the artist inks. Design is the part closest to Sector 8's illustration and the part most exposed to generated imagery."
           },
@@ -33378,8 +33378,8 @@
               "Scalp Micropigmentation Technician"
             ],
             "higher": [
-              "attention_span",
-              "spatial",
+              "focus",
+              "spatial_intelligence",
               "conscientiousness"
             ],
             "lower": [
@@ -33429,7 +33429,7 @@
       "licensing_body": null,
       "years_to_qualify": 3,
       "economics": {
-        "cost_of_entry_lakh": 1.0,
+        "cost_of_entry_lakh": 1,
         "early_earnings_lpa": "1.5-4.0",
         "mid_career_lpa": "3.0-10.0",
         "mid_career_midpoint": 6.5,

@@ -411,4 +411,11 @@ const scoreProfile = (psychometric = {}) => {
     }
 }
 
+// The function stays the default export, so every existing caller is untouched. The factor
+// groupings hang off it because the matching engine must derive its 27-factor vector from the same
+// lists the scorer uses — two hand-maintained copies would drift, and the drift would be silent.
 module.exports = scoreProfile
+module.exports.MAJOR_FACTORS = MAJOR_FACTORS
+module.exports.MINOR_FACTORS = MINOR_FACTORS
+module.exports.UNIVERSAL_FACTORS = UNIVERSAL_FACTORS
+module.exports.MATCHING_FACTORS = MATCHING_FACTORS

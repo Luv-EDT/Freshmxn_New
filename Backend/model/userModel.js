@@ -63,6 +63,13 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: "en", // en | hi
         },
+        storiesSeen: {
+            type: [String],
+            default: [], // story ids already assigned — the next one is drawn from those NOT here
+            // 01_Build_PRD calls this `stories_seen`. Named in this file's own convention instead:
+            // every other field here is camelCase, and this is app state, not part of the scoring
+            // engine's snake_case contract the way profiles.raw_scores is.
+        },
         parent: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User", // V2 parent accounts — unused in V1

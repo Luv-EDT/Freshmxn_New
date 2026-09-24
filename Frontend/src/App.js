@@ -14,6 +14,8 @@ import Mentorship from "./pages/User/Mentorship.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
 import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
 import InterestForm from "./pages/Interest/InterestForm.js"
+import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
+import ReportPage from "./pages/Report/ReportPage.js"
 
 function App() {
     return (
@@ -61,6 +63,21 @@ function App() {
                 <Route path="/interest/:step" element={
                     <ProtectedRoute requirePaid={true}>
                         <InterestForm />
+                    </ProtectedRoute>
+                } />
+
+                {/* Stage 2 — the psychometric assessment */}
+                <Route path="/assessment" element={<Navigate to="/assessment/start" replace />} />
+                <Route path="/assessment/:module" element={
+                    <ProtectedRoute requirePaid={true}>
+                        <AssessmentShell />
+                    </ProtectedRoute>
+                } />
+
+                {/* Stage 3 — the report */}
+                <Route path="/report" element={
+                    <ProtectedRoute requirePaid={true}>
+                        <ReportPage />
                     </ProtectedRoute>
                 } />
 
