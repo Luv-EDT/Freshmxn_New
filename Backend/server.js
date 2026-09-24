@@ -24,6 +24,8 @@ const professionsRouter = require("./Routers/professionsRouter")
 const reportsRouter = require("./Routers/reportsRouter")
 const storyRouter = require("./Routers/storyRouter")
 const externalTestsRouter = require("./Routers/externalTestsRouter")
+const mentorsRouter = require("./Routers/mentorsRouter")
+const mentorWaitlistRouter = require("./Routers/mentorWaitlistRouter")
 
 const cors = require("cors")
 const path = require("path")
@@ -76,6 +78,10 @@ app.use("/submissions", submissionsRouter)
 app.use("/professions", professionsRouter)
 app.use("/reports", reportsRouter)
 app.use("/story", storyRouter)
+// API prefixes deliberately differ from the page URLs (/mentor/..., /mentorship): the page
+// fallback below comes after these, so a shared prefix would 404 on refresh
+app.use("/mentors", mentorsRouter)
+app.use("/mentorWaitlist", mentorWaitlistRouter)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")

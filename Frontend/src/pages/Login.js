@@ -83,6 +83,7 @@ function Login() {
         setPassword("")
 
         if (userData.role === "admin") { navigate("/admin"); return }
+        if (userData.role === "mentor") { navigate("/mentor"); return }
         if (!userData.age || !userData.journey) { navigate("/complete-profile"); return }
         if (!userData.paid) { navigate("/paywall"); return }
 

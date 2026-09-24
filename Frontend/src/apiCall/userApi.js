@@ -57,6 +57,15 @@ export async function getCurrentAdmin() {
     }
 }
 
+export async function getCurrentMentor() {
+    try {
+        const response = await axiosInstance.get("/user/getCurrentMentor")
+        return response
+    } catch (error) {
+        return error.response
+    }
+}
+
 export async function updateProfile(payload) {
     try {
         const response = await axiosInstance.put("/user/updateProfile", payload)

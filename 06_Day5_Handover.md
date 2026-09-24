@@ -119,7 +119,81 @@ input `password → text`, `required` intact, admin page shows Log out, the admi
 link, confirming logout lands on `/login` with the token cleared. Build warnings identical to
 before (all pre-existing in `Interest/`, `RequestRefundForm.js`, `VerifyEmail.js`). Fixtures 22/51/99.
 
-**Next:** Stage 1 (public site + mentor tier), then ⏸ STOP 1.
+### Stage 1 — public site + mentor tier ✅ built, ⏸ STOP 1 (owner reviews live)
+
+Owner decisions this round: About section leaves the "(2–3 lines in your own voice)" placeholder
+**out** (owner adds their own words later) · a student's career choice is **locked once sent**
+(admin can reset it) · **mobile-responsive from Stage 1**, not deferred to Stage 2.
+
+**Public site** — `Frontend/src/pages/Public/`
+| File | What |
+|---|---|
+| `Landing.js` | `landing_page_content_v3.md` §1–9 verbatim; `<s>career gyaan</s>`; hero CTA → `/register`, "See how it works" → `#how-it-works` |
+| `SuccessStories.js` | Aarav + Meera from `success_stories_page.md`, both labelled illustrative; the doc's `/start` link (doesn't exist) → `/register` |
+| `MentorWaitlistPublic.js` | `mentor_waitlist_page.md` verbatim; "Pay & join" → `/paywall` (ProtectedRoute sends visitors to log in first) |
+| `MentorRolloverPolicy.js` | the rollover-first/refund-on-request paragraph, shared with the student's `/mentorship` so both say exactly the same thing |
+| `usePricing.js` | every price from `GET /payments/getPricing` — ₹3,500 / ₹6,500 / ₹3,000 upgrade. The copy docs' ₹7,000 was stale; the server wins |
+| `PublicNav.js`, `PublicFooter.js` | logo, links, WhatsApp / call / email, "Mentor with us" |
+| `pages/RootRoute.js` | `/` = Landing without a token, else the untouched `ProtectedRoute` + `Home` |
+
+**Mentor tier — backend (new files; only `server.js` mounts changed)**
+- `model/mentorsModel.js` — PRD §B.9's 12 fields; `status` pending_review → onboarded.
+  `preferredCurrency`/`residenceCitizenship` are admin-only.
+- `model/mentorWaitlistModel.js` — PRD §B.10. **Clock starts at `choiceSentAt`, never payment.**
+- `Routers/mentorsRouter.js` (`/mentors/...`) — `register` (**role hard-coded "mentor"**, no
+  verification email: admin approval is the gate), `onboard`, `getMyMentorProfile`,
+  `updateMyMentorProfile` (whitelisted fields; status is server-owned and an approved mentor stays
+  approved), `getAllForAdmin`, `approveForAdmin/:id`.
+- `Routers/mentorWaitlistRouter.js` (`/mentorWaitlist/...`) — `getMyWaitlist` (tier 2 only;
+  **upserts the row on first visit, so no payment code changed** — `grantAccess` already flips
+  `progress.mentor`), `chooseProfession` (**id must be in the student's own
+  `Recommendation.ranked_professions`; the name is read from there, never the body; one-time**),
+  admin `getAllForAdmin` (every tier-2 student, virtual row if never visited), `matchForAdmin/:id`
+  (approved mentors only), `resolveForAdmin/:id` (rolled_over | refunded — **records only**, the
+  refund itself still goes through Refund Requests), `resetChoiceForAdmin/:id`. Admin `:id` is the
+  **student's user id**. `dueBy` = choice + 15 weekdays (no holiday calendar).
+- API prefixes (`/mentors`, `/mentorWaitlist`) deliberately differ from page URLs (`/mentor/...`,
+  `/mentorship`) — see §2 on refresh-404s.
+
+**Mentor tier — frontend**
+- `pages/Mentor/` — `MentorRegister`, `MentorLogin` (separate page, same `/user/login`; a
+  non-mentor is sent to their own home), `MentorProtectedRoute` (copy of `AdminProtectedRoute`),
+  `MentorHome` (form until submitted, then status + summary + edit), `MentorOnboarding` (the 12
+  fields; A/B/C/D wording **imported** from `Interest/BackgroundInfo.js` `ACADEMIC_OPTIONS`, now
+  exported, so students and mentors read identical labels).
+- `Login.js` + `User/ProtectedRoute.js` — one added line each: `role === "mentor"` → `/mentor`,
+  beside the existing admin line. A mentor can no longer land in the student journey.
+- `User/Mentorship.js` — rewritten: picker from the student's own report ranking → confirm modal →
+  "finding your mentor by {date}" → "mentor confirmed" (name + role only). **"20 days" → "15
+  business days."** The owner's "Who your mentor will be" / "How it works" text is kept verbatim —
+  ⚠ note "How it works" says students can "book further sessions" here, which V1 does not build.
+- Admin — new tabs `Mentors` (approve; the only screen showing the two admin-only fields) and
+  `Mentor Matches` (match / roll over / refunded / reset choice, business days left).
+
+**Mobile** — new `src/styles/base.css` (structure only, imported in `index.js`; Stage 2 extends
+it): box-sizing, `.page` container with 16 px gutters, full-width inputs capped at 480 px,
+`.table-scroll`, wrapping `.nav-row`, `.tap` (≥44 px), `.grid-*`. It also fixed a **pre-existing**
+phone bug: `/admin` rendered 708 px wide on a 360 px screen because the antd tables had no scroll
+container — `.ant-table-wrapper` now scrolls inside itself.
+⚠ `img:not([height]) { height: auto }` is deliberate — a plain `img { height: auto }` overrode the
+logo's `height="32"` and blew it up to full width.
+
+**Verified**
+- **Backend, 38/38** against a real MongoDB-protocol server (FerretDB 1.24 + SQLite from GitHub
+  releases — the container blocks MongoDB's own download hosts): role can't be spoofed via the body;
+  status/user forced server-side; duplicates and bad input rejected; students can't call mentor or
+  admin routes; tier-1 refused; ranking check rejects foreign ids and ignores a body-supplied name;
+  `dueBy` is exactly 15 weekdays; second choice locked; pending mentors can't be matched; reset →
+  re-choose; **no student response contains currency, residence, or the mentor's email/phone.**
+- **Browser, 36/36** (Playwright + Chromium against the production build served by Express, real DB):
+  the full visitor → mentor → admin → tier-2 student journey, **no sideways scroll at 360 px on
+  every public page, the mentor pages, `/mentorship` and each admin tab**, and zero JS errors.
+- Fixtures 22/22 · 51/51 · 99/99. Build warnings unchanged (BackgroundInfo's pre-existing one moved
+  a line). `Backend/scoring/`, `Backend/matching/`, `paymentsRouter.js` untouched.
+- Found while testing: the mentor register/login pages treated a non-JSON error page as success —
+  they now require an explicit `success: true` and a token.
+
+**Next:** owner reviews www.freshmxn.com → go-ahead → Stage 2 (design pass).
 
 **Next (superseded):** owner runs `DEPLOY.md` Steps 1–7 and sends back the Render URL / any red logs → then
 Stage 1 (public site + mentor tier).
@@ -127,6 +201,8 @@ Stage 1 (public site + mentor tier).
 ---
 
 ## 4. Open items carried forward
+- **About section** — the owner's own 2–3 lines (why Freshmxn exists) still to be written.
+- `User/Mentorship.js` "How it works" promises in-app session booking; V1 has none — reword or keep.
 - Everything in Day 4 §5 (owner gates) still stands.
 - Price mismatch in the content docs: `mentor_waitlist_page.md` says ₹6,500, `00_Master_Plan` says
   ₹7,000 — the pages will read `GET /payments/getPricing`, so the server's number wins; the copy doc

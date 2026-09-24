@@ -7,6 +7,8 @@ import RefundRequestsList from "./RefundRequestsList"
 import StudentsList from "./StudentsList"
 import FinancialAidList from "./FinancialAidList"
 import CouponsList from "./CouponsList"
+import MentorsList from "./MentorsList"
+import MentorMatchesList from "./MentorMatchesList"
 
 function AdminHome() {
     // One version counter that every student-facing tab both bumps and watches. antd keeps a tab
@@ -38,6 +40,16 @@ function AdminHome() {
             children: <StudentsList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
         },
         {
+            key: "mentors",
+            label: "Mentors",
+            children: <MentorsList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
+        },
+        {
+            key: "mentorMatches",
+            label: "Mentor Matches",
+            children: <MentorMatchesList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
+        },
+        {
             key: "coupons",
             label: "Coupons",
             children: <CouponsList />,
@@ -47,9 +59,11 @@ function AdminHome() {
     return (
         <div>
             <Navbar />
-            <h2>Admin</h2>
-            <LogoutButton />
-            <Tabs items={items} />
+            <div className="page">
+                <h2>Admin</h2>
+                <LogoutButton />
+                <Tabs items={items} />
+            </div>
         </div>
     )
 }
