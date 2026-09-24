@@ -12,8 +12,10 @@ function PublicNav() {
             <nav className="nav-row">
                 <Link to="/"><img src={logo} alt="Freshmxn" height="34" className="brand-logo" /></Link>
                 <div className="nav-links">
+                    <Link to="/how-it-works" className="nav-link">How it works</Link>
                     <Link to="/success-stories" className="nav-link">Success stories</Link>
                     <Link to="/mentor-waitlist" className="nav-link">Mentors</Link>
+                    <Link to="/about" className="nav-link">About us</Link>
                     {isLoggedIn
                         ? <Link to="/profile" className="nav-link">Profile</Link>
                         : <Link to="/login" className="nav-link">Log in</Link>}

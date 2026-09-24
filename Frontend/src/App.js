@@ -19,6 +19,10 @@ import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
 import ReportPage from "./pages/Report/ReportPage.js"
 import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
+import HowItWorks from "./pages/Public/HowItWorks.js"
+import About from "./pages/Public/About.js"
+import Terms from "./pages/Public/Terms.js"
+import Privacy from "./pages/Public/Privacy.js"
 import MentorRegister from "./pages/Mentor/MentorRegister.js"
 import MentorLogin from "./pages/Mentor/MentorLogin.js"
 import MentorHome from "./pages/Mentor/MentorHome.js"
@@ -38,6 +42,10 @@ function App() {
                 {/* Public site — no login */}
                 <Route path="/success-stories" element={<SuccessStories />} />
                 <Route path="/mentor-waitlist" element={<MentorWaitlistPublic />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
 
                 {/* The company's landing page — for everyone, logged in or not. The logo always
                     leads here; a logged-in student's own space is /dashboard. */}

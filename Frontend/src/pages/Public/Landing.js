@@ -1,17 +1,82 @@
 import { Link } from "react-router-dom"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
-import usePricing, { formatInr } from "./usePricing"
 import { StepIcon, ArrowDoodle } from "./illustrations"
 
-// The public landing page. Copy is VERBATIM from landing_page_content_v3.md (the finalised copy) —
-// every statistic there already carries its source, so nothing here is invented or rounded.
-// Design: Kira's structure (light hero + preview, the strikethrough "system" beat, a four-card
-// how-it-works, a differentiator grid, clean pricing, friendly footer), teal as the star colour and
-// the pastel pink as ONE highlighter swipe per section at most.
-function Landing() {
-    const { tier1, tier2, upgrade } = usePricing()
+// The public landing page. Copy comes from landing_page_content_v3.md — every statistic there
+// carries its source, so nothing here is invented or rounded.
+//
+// ROUND 5 (owner, 2026-09-24): the landing page is SHORT. Hero → the problem as four collapsed
+// questions → who it's for → why we're different → the closing band. The promise, the four steps,
+// the invitation and pricing moved to /how-it-works; the founder's story is on /about.
+// Teal is the star colour, and the pastel pink is ONE highlighter swipe per section at most.
 
+// The four questions students actually ask, each with the trimmed answer and its source kept.
+const QUESTIONS = [
+    {
+        q: "Why do I only know a handful of careers?",
+        a: (
+            <>
+                Because nobody shows you the rest. <strong>93% of Indian students are aware of only seven career
+                options</strong> (India Today survey) — out of hundreds that exist and pay well. You can't choose
+                what you've never heard of.
+            </>
+        ),
+    },
+    {
+        q: "Do my marks decide my career?",
+        a: (
+            <>
+                Not on their own. The gap between graduates and jobs is in problem-solving, communication and digital skills —
+                not raw marks (Mercer-Mettl Graduate Skill Index).
+            </>
+        ),
+    },
+    {
+        q: "Will my degree make me job-ready?",
+        a: (
+            <>
+                Not on its own. <strong>About 44% of Indian graduates still aren't considered job-ready</strong>{" "}
+                (India Skills Report 2026, employability 56.3%). Usually it isn't ability — it's a direction that
+                never fit.
+            </>
+        ),
+    },
+    {
+        q: "Will AI take my job?",
+        a: (
+            <>
+                AI is redrawing the map: AI, data, cloud and cybersecurity are now the most in-demand skills in
+                India, new fields are appearing fast and routine roles are shrinking (India Skills Report 2026).
+                We point you at work that lasts.
+            </>
+        ),
+    },
+]
+
+// Who it's for — the four journeys the product already handles, as three audiences.
+const AUDIENCES = [
+    {
+        icon: "listen",
+        title: "School students",
+        tag: "Class 9–12",
+        body: "Before you pick a stream or a college. Discover careers you've never heard of, see which ones fit how you think, and know the subjects and exams that lead there.",
+    },
+    {
+        icon: "compass",
+        title: "College students",
+        tag: "Any year, any course",
+        body: "Already on a course and not sure it's right? See where your degree and what you've done can actually take you — and which changes are worth making.",
+    },
+    {
+        icon: "mentor",
+        title: "Early professionals",
+        tag: "The first few years of work",
+        body: "In a job that doesn't fit? Find where your experience carries over, what a switch would really cost, and talk to someone who has made the move.",
+    },
+]
+
+function Landing() {
     return (
         <div>
             <PublicNav />
@@ -25,15 +90,14 @@ function Landing() {
                             {/* the company tagline leads; "Careers that fit you" closes the page (owner, 2026-09-24) */}
                             <h1 className="tagline"><span>Explore.</span> <span>Get clarity.</span> <span className="accent">Take action.</span></h1>
                             <p className="lead">
-                                Everybody is different — so why does everyone get similar career advice? Stuck between
-                                what you love, what you're studying, and what the market wants? Scared AI will take your
-                                job? Freshmxn's Lab matches your story and strengths to careers that are{" "}
-                                <strong className="highlight-pink">in demand and AI-resilient</strong> — then helps you
-                                get there, with mentors who've already done it.
+                                Everyone gets the same career advice — but you aren't everyone. Freshmxn's Lab matches
+                                your story and strengths to careers that are{" "}
+                                <strong className="highlight-pink">in demand and AI-resilient</strong>, then helps you
+                                get there with mentors who've done it.
                             </p>
                             <div className="btn-row">
                                 <Link to="/register" className="btn btn-primary tap">Let's figure out your career →</Link>
-                                <a href="#how-it-works" className="btn btn-ghost tap">See how it works</a>
+                                <Link to="/how-it-works" className="btn btn-ghost tap">See how it works</Link>
                             </div>
                         </div>
 
@@ -70,129 +134,41 @@ function Landing() {
                                 You don't need more <s className="strike">career gyaan</s>. You need
                                 a <strong className="highlight-pink">system</strong>.
                             </h2>
-                            <p>
-                                Most students don't choose a career — they inherit one. Picked from the handful they've
-                                heard of. Nudged by which subjects they scored well in. Pushed by what worked for someone
-                                else. And the world is changing faster than that advice can keep up.
-                            </p>
+                            <p>Most students don't choose a career — they inherit one. Here's what they actually ask.</p>
                         </div>
-                        <ul className="stat-list">
-                            <li>
-                                <strong>The list is too short.</strong> 93% of Indian students are aware of only seven
-                                career options (India Today survey) — out of hundreds that exist and pay well. You can't
-                                choose what you've never heard of.
-                            </li>
-                            <li>
-                                <strong>Marks aren't the whole story.</strong> India's own skills data shows why so many
-                                graduates struggle: the gap is between what colleges teach and what work actually
-                                demands — problem-solving, communication, digital skills — not raw marks (Mercer-Mettl
-                                Graduate Skill Index).
-                            </li>
-                            <li>
-                                <strong>About 44% of Indian graduates still aren't considered job-ready</strong> (India
-                                Skills Report 2026, employability 56.3%). The problem usually isn't ability — it's a
-                                direction that never fit.
-                            </li>
-                            <li>
-                                <strong>AI is redrawing the map.</strong> AI, data, cloud and cybersecurity are now the most
-                                in-demand skills in India, with new fields appearing fast while routine roles shrink
-                                (India Skills Report 2026).
-                            </li>
-                        </ul>
+                        {/* COLLAPSED BY DEFAULT: the question is the hook, the answer is one tap away. */}
+                        <div className="faq">
+                            {QUESTIONS.map((item) => (
+                                <details key={item.q} className="faq-item">
+                                    <summary>{item.q}</summary>
+                                    <p>{item.a}</p>
+                                </details>
+                            ))}
+                        </div>
                     </div>
                 </section>
 
-                {/* 3. THE DEMAND-SIDE PROMISE */}
-                <section className="section promise">
-                    <div className="page promise-inner">
-                        <StepIcon name="compass" />
-                        <h2>We don't just train you for a dead end.</h2>
-                        <p>
-                            Most career advice prepares students for jobs — often crowded or fading ones. That's the
-                            education-to-employment mismatch, on repeat. We do it the other way round: we start from{" "}
-                            <strong>where the demand actually is and where it's heading</strong> — careers that are
-                            AI-resilient, financially viable and genuinely in demand — and help match you <em>toward</em> it.
-                            You're not being pointed at a road that ends.
-                        </p>
-                    </div>
-                </section>
-
-                {/* 4. HOW IT WORKS */}
-                <section className="section" id="how-it-works">
-                    <div className="page">
-                        <div className="section-head">
-                            <h2>Four steps. <span className="highlight-pink">Zero gyaan.</span></h2>
-                        </div>
-                        <div className="steps">
-                            <article className="step">
-                                <div className="step-art"><StepIcon name="listen" /></div>
-                                <div className="step-body">
-                                    <span className="step-num">01</span>
-                                    <h3>We get to know you. Properly.</h3>
-                                    <p>
-                                        Your interests, the problems you've faced, what you believe about yourself.
-                                        Career gyanis guess. We ask.
-                                    </p>
-                                </div>
-                            </article>
-                            <article className="step">
-                                <div className="step-art"><StepIcon name="measure" /></div>
-                                <div className="step-body">
-                                    <span className="step-num">02</span>
-                                    <h3>We measure what you're wired for.</h3>
-                                    <p>
-                                        An X-ray of how your brain works — minus the radiation. Personality, thinking
-                                        style, strengths.
-                                    </p>
-                                </div>
-                            </article>
-                            <article className="step">
-                                <div className="step-art"><StepIcon name="compass" /></div>
-                                <div className="step-body">
-                                    <span className="step-num">03</span>
-                                    <h3>Find out where you fit, and what lasts.</h3>
-                                    <p>
-                                        223 Indian careers that are in demand, pay well, and won't get eaten by AI.
-                                        Ranked for <em>you</em>, not for "log kya kahenge."
-                                    </p>
-                                </div>
-                            </article>
-                            <article className="step">
-                                <div className="step-art"><StepIcon name="mentor" /></div>
-                                <div className="step-body">
-                                    <span className="step-num">04</span>
-                                    <h3>Meet someone who's been there. (Mentor tier)</h3>
-                                    <p>
-                                        A 1-on-1 with a working professional in your matched field — someone who was
-                                        once exactly where you are.
-                                    </p>
-                                </div>
-                            </article>
-                        </div>
-                        <blockquote className="rank-note">
-                            <strong>How we rank — read this, it matters.</strong> We do <strong>not</strong> shut you out
-                            of a career because of your "intelligence" scores. We match <em>first</em> on what you've
-                            already done and discovered — your interests, activities, problems, beliefs — and{" "}
-                            <em>then</em> add a psychometric layer only to <strong>sort</strong> the best fit. Your story
-                            goes first. Your marks never get a veto.
-                        </blockquote>
-                    </div>
-                </section>
-
-                {/* 5. THE INVITATION-ONLY BONUS */}
+                {/* 3. WHO IT'S FOR */}
                 <section className="section section-alt">
                     <div className="page">
-                        <div className="invite">
-                            <h2><span aria-hidden="true">🔒</span> We help you get there. (By invitation only)</h2>
-                            <p>
-                                The report is the beginning, not the end. For select students, we go further — turning a
-                                recommendation into real momentum. Your story goes first; your marks never get a veto.
-                            </p>
+                        <div className="section-head">
+                            <h2>Who it's for</h2>
+                            <p>Wherever you are on the road, we start from where you're standing.</p>
+                        </div>
+                        <div className="audience">
+                            {AUDIENCES.map((item) => (
+                                <article key={item.title} className="card audience-card">
+                                    <StepIcon name={item.icon} />
+                                    <h3>{item.title}</h3>
+                                    <p className="audience-tag">{item.tag}</p>
+                                    <p>{item.body}</p>
+                                </article>
+                            ))}
                         </div>
                     </div>
                 </section>
 
-                {/* 6. WHY WE'RE DIFFERENT */}
+                {/* 4. WHY WE'RE DIFFERENT */}
                 <section className="section">
                     <div className="page">
                         <div className="section-head">
@@ -229,42 +205,7 @@ function Landing() {
                     </div>
                 </section>
 
-                {/* 7. PRICING — amounts from the server */}
-                <section className="section section-alt">
-                    <div className="page">
-                        <div className="section-head">
-                            <h2>Pricing</h2>
-                        </div>
-                        <div className="pricing">
-                            <div className="price-card">
-                                <h3>Career Discovery + Full Profile</h3>
-                                <div className="price">{formatInr(tier1)}</div>
-                                <p>
-                                    The complete experience, your detailed profile, and your ranked career matches with a
-                                    readiness guide.
-                                </p>
-                                <Link to="/register" className="btn btn-primary tap">Let's figure out your career →</Link>
-                            </div>
-                            <div className="price-card featured">
-                                <h3>Mentor Connection</h3>
-                                <div className="price">{formatInr(tier2)}</div>
-                                <p>
-                                    Everything above plus two sessions with a working professional in your matched field
-                                    (1-hour clarity + 20-min follow-up).
-                                </p>
-                                <Link to="/mentor-waitlist" className="btn btn-primary tap">Join the waitlist →</Link>
-                            </div>
-                        </div>
-                        <p className="upgrade-note">
-                            <em>
-                                Did the {formatInr(tier1)} profile first? Upgrade to mentorship for just{" "}
-                                <strong>{formatInr(upgrade)} more</strong> after you see your matches — no paying twice.
-                            </em>
-                        </p>
-                    </div>
-                </section>
-
-                {/* CLOSING STATEMENT — moved here from the hero when the tagline took the headline */}
+                {/* 5. CLOSING STATEMENT — moved here from the hero when the tagline took the headline */}
                 <section className="section closing">
                     <div className="page">
                         <h2>Careers that fit <em>you</em>. And the future.</h2>
@@ -272,21 +213,8 @@ function Landing() {
                     </div>
                 </section>
 
-                {/* 8. ABOUT — the owner adds their own 2–3 lines later; nothing is written in their voice */}
-                <section className="section">
-                    <div className="page about">
-                        <h2>About</h2>
-                        <p>
-                            Built by <strong>Luv Goel</strong> (
-                            <a href="https://www.linkedin.com/in/luv-goel/" target="_blank" rel="noreferrer">LinkedIn</a>
-                            ) and the Freshmxn Labs team — because choosing a career in India shouldn't come down to a
-                            short list of options and someone else's expectations.
-                        </p>
-                    </div>
-                </section>
             </main>
 
-            {/* 9. CONTACT */}
             <PublicFooter />
         </div>
     )

@@ -593,12 +593,6 @@
     font-weight: 700;
 }
 
-.illustrative {
-    display: inline-block;
-    margin-top: var(--space-3);
-    font-size: 0.85rem;
-    color: var(--muted);
-}
 
 /* ── mentor waitlist ──────────────────────────────────────────────────────────────────────────── */
 
@@ -703,18 +697,37 @@
     }
 }
 
+/* THE SHAPES LIVE INSIDE THE VISUAL'S OWN BOX (Round 5). They used to hang off the card's edges
+   with negative offsets, and on a phone the hero's overflow clip cut the teal blob down to a sliver.
+   Padding reserves room on the right and below, so the blob and the pink dot always show. */
+.hero-visual {
+    padding: 0 26px 40px 0;
+}
+
 .hero-visual .blob {
-    inset: 14% -10% -12% 16%;
+    inset: 18% 0 0 16%;
 }
 
 .hero-visual .dot-pink {
     position: absolute;
-    width: 84px;
-    height: 84px;
+    width: 76px;
+    height: 76px;
     border-radius: 50%;
     background: var(--pink);
-    left: -18px;
-    bottom: -22px;
+    left: -10px;
+    bottom: 0;
+}
+
+@media (min-width: 900px) {
+    .hero-visual {
+        padding: 0 44px 56px 0;
+    }
+
+    .hero-visual .dot-pink {
+        width: 92px;
+        height: 92px;
+        left: -24px;
+    }
 }
 
 /* the navy band gets a visual anchor */
@@ -767,4 +780,200 @@
 
 .policy p:last-child {
     margin-bottom: 0;
+}
+
+/* ── round 5: the short landing page, How it works, About, legal ─────────────────────────────── */
+
+/* the four student questions — collapsed by default, one tap to open */
+.faq {
+    max-width: 760px;
+    margin: 0 auto;
+    display: grid;
+    gap: var(--space-3);
+}
+
+.faq-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s ease;
+}
+
+.faq-item[open],
+.faq-item:hover {
+    border-color: var(--teal);
+}
+
+.faq-item summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 56px;
+    padding: 12px 16px;
+    font-weight: 900;
+    font-size: 1.05rem;
+    color: var(--navy);
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item summary::after {
+    content: "+";
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.faq-item[open] summary::after {
+    content: "−";
+}
+
+.faq-item p {
+    margin: 0;
+    padding: 0 16px 16px;
+    color: var(--navy-soft);
+}
+
+/* who it's for — three audience cards */
+.audience {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (min-width: 820px) {
+    .audience {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.audience-card svg {
+    width: 52px;
+    height: 52px;
+}
+
+.audience-card h3 {
+    margin: var(--space-3) 0 2px;
+}
+
+.audience-tag {
+    margin: 0 0 var(--space-3);
+    color: var(--teal-dark);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* How it works opens on the navy promise band — it carries the page's h1 */
+.promise-lead {
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-8);
+}
+
+.promise h1 {
+    color: #ffffff;
+}
+
+.promise .eyebrow {
+    display: block;
+    color: var(--pink);
+    margin-bottom: var(--space-4);
+}
+
+/* About us */
+.founder {
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: var(--text-lead);
+}
+
+.founder-sign {
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+.founder-company {
+    margin-top: var(--space-6);
+    font-size: 1rem;
+}
+
+.founder-company p {
+    margin: 0;
+}
+
+/* legal pages: one readable column */
+.legal {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.legal-intro {
+    font-size: var(--text-lead);
+    background: var(--teal-tint);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-5);
+}
+
+.legal-toc {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: var(--space-4) var(--space-5);
+    margin: var(--space-5) 0 var(--space-6);
+}
+
+.legal-toc-title {
+    margin: 0 0 var(--space-2);
+    font-weight: 900;
+}
+
+.legal-toc ol {
+    margin: 0;
+    padding-left: 1.3em;
+}
+
+.legal-toc li {
+    margin: 4px 0;
+}
+
+.legal-section {
+    scroll-margin-top: 110px;         /* the sticky header never covers a jumped-to heading */
+}
+
+.legal-section h2 {
+    font-size: var(--text-h3);
+    margin-top: var(--space-6);
+}
+
+.legal-quote {
+    margin-left: 0;
+}
+
+/* the footer's bottom line: company + legal links */
+.footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    justify-content: space-between;
+}
+
+.footer-legal {
+    display: flex;
+    gap: var(--space-4);
+}
+
+.legal-agree {
+    font-size: 0.9rem;
+    color: var(--muted);
 }
