@@ -211,9 +211,7 @@ li + li {
 }
 
 /* plain (non-antd) form controls, so older pages match antd's inputs */
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-select,
-textarea {
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
     font: inherit;
     color: var(--navy);
     background: var(--surface);
@@ -223,9 +221,8 @@ textarea {
     min-height: 44px;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+/* zero specificity (:where) so antd and component classes always win over these defaults */
+:where(input:focus, select:focus, textarea:focus) {
     border-color: var(--teal);
     outline: none;
     box-shadow: 0 0 0 3px var(--teal-tint);
@@ -236,7 +233,7 @@ label {
 }
 
 /* plain buttons get the brand look; antd buttons are styled by the theme */
-button:not([class*="ant-"]) {
+:where(button:not([class*="ant-"])) {
     font: inherit;
     font-weight: 700;
     color: var(--navy);
@@ -248,23 +245,23 @@ button:not([class*="ant-"]) {
     cursor: pointer;
 }
 
-button:not([class*="ant-"]):hover:not(:disabled) {
+:where(button:not([class*="ant-"]):hover:not(:disabled)) {
     border-color: var(--teal);
     color: var(--teal);
 }
 
-button:not([class*="ant-"]):disabled {
+:where(button:not([class*="ant-"]):disabled) {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-button[type="submit"]:not([class*="ant-"]) {
+:where(button[type="submit"]:not([class*="ant-"])) {
     background: var(--teal);
     border-color: var(--teal);
     color: #ffffff;
 }
 
-button[type="submit"]:not([class*="ant-"]):hover:not(:disabled) {
+:where(button[type="submit"]:not([class*="ant-"]):hover:not(:disabled)) {
     background: var(--teal-dark);
     color: #ffffff;
 }

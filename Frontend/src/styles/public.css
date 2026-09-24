@@ -751,3 +751,20 @@
         radial-gradient(420px 260px at 100% 0%, rgba(255, 179, 199, 0.14), transparent 70%),
         var(--cream);
 }
+
+/* mentor page hero art: the two-people icon, large */
+.mentor-art {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+}
+
+.mentor-art svg {
+    width: 150px;
+    height: 150px;
+}
+
+.policy p:last-child {
+    margin-bottom: 0;
+}

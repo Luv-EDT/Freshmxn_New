@@ -5,6 +5,7 @@ import { Input } from "antd"
 import { registerMentor } from "../../apiCall/mentorsApi"
 import { setUser } from "../../store/userSlice"
 import logo from "../../assets/brand/logo.png"
+import AuthCard from "../AuthCard"
 
 // Mentor sign-up. The account is created with role "mentor" by the server — which endpoint is
 // called decides the role, never a field in the form.
@@ -37,8 +38,8 @@ function MentorRegister() {
     }
 
     return (
-        <div className="page">
-            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Mentor with Freshmxn</h2>
             <p>
                 Students are matched with working professionals in the field they've chosen — someone who was once
@@ -66,7 +67,7 @@ function MentorRegister() {
 
             <p>Already a mentor? <Link to="/mentor/login">Log in</Link></p>
             <p>Looking for career guidance instead? <Link to="/register">Student sign-up</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 

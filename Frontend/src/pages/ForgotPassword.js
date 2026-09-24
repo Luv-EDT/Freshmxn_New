@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { forgotPassword } from "../apiCall/userApi"
 import logo from "../assets/brand/logo.png"
+import AuthCard from "./AuthCard"
 
 function ForgotPassword() {
     const [email, setEmail] = useState("")
@@ -32,8 +33,8 @@ function ForgotPassword() {
     }
 
     return (
-        <div>
-            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Forgot password</h2>
 
             {isSent ? (
@@ -48,7 +49,7 @@ function ForgotPassword() {
             )}
 
             <p><Link to="/login">Back to login</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 

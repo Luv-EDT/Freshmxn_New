@@ -77,44 +77,52 @@ const STORIES = [
 
 function StoryCard({ story }) {
     return (
-        <article>
-            <h2>{story.title}</h2>
-
-            <h3>🧾 What {story.name} told us</h3>
-            <ul>
-                {story.told.map(([label, text]) => (
-                    <li key={label}><strong>{label}:</strong> {text}</li>
-                ))}
-            </ul>
-
-            <h3>🧠 Psychometric strengths that shaped the match</h3>
-            <div className="table-scroll">
-                <table>
-                    <thead>
-                        <tr><th>Strength</th><th>Signal</th></tr>
-                    </thead>
-                    <tbody>
-                        {story.strengths.map(([strength, signal]) => (
-                            <tr key={strength}><td>{strength}</td><td>{signal}</td></tr>
-                        ))}
-                    </tbody>
-                </table>
+        <article className="story">
+            <div className="story-head">
+                <h2>{story.title}</h2>
             </div>
+            <div className="story-body">
+                <h3>🧾 What {story.name} told us</h3>
+                <ul>
+                    {story.told.map(([label, text]) => (
+                        <li key={label}><strong>{label}:</strong> {text}</li>
+                    ))}
+                </ul>
 
-            <h3>🎯 What we recommended (ranked to <em>{story.rankedFor}</em>)</h3>
-            <ol>
-                {story.ranked.map((career, index) => (
-                    <li key={career}>
-                        {index === story.chosen ? <><strong>{career}</strong> ✅ <em>(chose this)</em></> : career}
-                    </li>
-                ))}
-            </ol>
-            <blockquote>{story.insight}</blockquote>
+                <h3>🧠 Psychometric strengths that shaped the match</h3>
+                <div className="table-scroll">
+                    <table>
+                        <thead>
+                            <tr><th>Strength</th><th>Signal</th></tr>
+                        </thead>
+                        <tbody>
+                            {story.strengths.map(([strength, signal]) => (
+                                <tr key={strength}>
+                                    <td>{strength}</td>
+                                    <td className={signal === "High" ? "signal-high" : "muted"}>{signal}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
-            <h3>🚀 Where {story.rankedFor === "him" ? "he" : "she"} is now</h3>
-            <blockquote>{story.now}</blockquote>
+                <h3>🎯 What we recommended (ranked to <em>{story.rankedFor}</em>)</h3>
+                <ol>
+                    {story.ranked.map((career, index) => (
+                        <li key={career}>
+                            {index === story.chosen
+                                ? <span className="chosen"><strong>{career}</strong> ✅ <em>(chose this)</em></span>
+                                : career}
+                        </li>
+                    ))}
+                </ol>
+                <blockquote>{story.insight}</blockquote>
 
-            <p><em>(Illustrative example.)</em></p>
+                <h3>🚀 Where {story.rankedFor === "him" ? "he" : "she"} is now</h3>
+                <blockquote>{story.now}</blockquote>
+
+                <p className="illustrative"><em>(Illustrative example.)</em></p>
+            </div>
         </article>
     )
 }
@@ -124,21 +132,30 @@ function SuccessStories() {
         <div>
             <PublicNav />
 
-            <main className="page">
-                <h1>Success stories</h1>
-                <p>
-                    These are illustrative examples of how a Freshmxn result comes together — from a student's own
-                    story and strengths, to a shortlist, to a choice that fit. (Representative, not real individuals.)
-                </p>
+            <main>
+                <section className="page-hero">
+                    <div className="page">
+                        <h1>Success stories</h1>
+                        <p>
+                            These are illustrative examples of how a Freshmxn result comes together — from a student's
+                            own story and strengths, to a shortlist, to a choice that fit. (Representative, not real
+                            individuals.)
+                        </p>
+                    </div>
+                </section>
 
-                <div className="grid grid-2">
-                    {STORIES.map((story) => <StoryCard key={story.id} story={story} />)}
-                </div>
+                <section className="section">
+                    <div className="page stories">
+                        {STORIES.map((story) => <StoryCard key={story.id} story={story} />)}
+                    </div>
+                </section>
 
-                <section>
-                    <h2>Your story is different from both of these. That's the point.</h2>
-                    {/* the copy doc links /start, which doesn't exist — sign-up is where the journey starts */}
-                    <p><Link to="/register" className="tap">Let's figure out your career →</Link></p>
+                <section className="section closing">
+                    <div className="page">
+                        <h2>Your story is different from both of these. That's the point.</h2>
+                        {/* the copy doc links /start, which doesn't exist — sign-up is where the journey starts */}
+                        <Link to="/register" className="btn btn-light tap">Let's figure out your career →</Link>
+                    </div>
                 </section>
             </main>
 

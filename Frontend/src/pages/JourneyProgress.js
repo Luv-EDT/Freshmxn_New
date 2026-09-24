@@ -89,14 +89,14 @@ function JourneyProgress({ user, current }) {
     const done = stages.filter((stage) => stage.state === "done").length
 
     return (
-        <div style={{ margin: "0 0 24px", maxWidth: "720px" }}>
-            <p style={{ margin: "0 0 8px", fontSize: "14px" }}>
+        <div className="journey">
+            <p className="journey-label">
                 <strong>Your journey</strong> · {done} of {stages.length} finished
             </p>
 
             {/* WRAPS, NEVER SCROLLS. On a 360px phone a four-across row either runs off the side or
                 shrinks each step below a usable tap target. Wrapping keeps every one reachable. */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            <div className="journey-steps">
                 {stages.map((stage, index) => {
                     const style = STAGE_STATE[stage.state] || STAGE_STATE.locked
                     const isCurrent = stage.key === current
@@ -108,22 +108,13 @@ function JourneyProgress({ user, current }) {
                             onClick={() => stage.open && !isCurrent && navigate(stage.path)}
                             disabled={!stage.open || isCurrent}
                             title={stage.note}
-                            style={{
-                                flex: "1 1 150px",
-                                textAlign: "left",
-                                padding: "10px 12px",
-                                minHeight: "44px",
-                                border: isCurrent ? `2px solid ${style.tone}` : "1px solid #ccc",
-                                background: "transparent",
-                                color: stage.open ? "inherit" : "#767676",
-                                cursor: stage.open && !isCurrent ? "pointer" : "default",
-                                fontSize: "14px",
-                            }}
+                            className={`journey-step is-${stage.state}${isCurrent ? " is-current" : ""}${stage.open ? "" : " is-closed"}`}
                         >
-                            <span style={{ color: style.tone, fontWeight: "bold" }}>{style.mark}</span>{" "}
-                            <strong>{index + 1}. {stage.title}</strong>
-                            <br />
-                            <span style={{ fontSize: "12px" }}>{stage.note}</span>
+                            <span className="journey-mark" aria-hidden="true">{style.mark}</span>
+                            <span className="journey-text">
+                                <strong>{index + 1}. {stage.title}</strong>
+                                <span className="journey-note">{stage.note}</span>
+                            </span>
                         </button>
                     )
                 })}

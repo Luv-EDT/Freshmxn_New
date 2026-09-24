@@ -5,6 +5,7 @@ import { Input } from "antd"
 import { loginUser, getCurrentUser } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 import logo from "../../assets/brand/logo.png"
+import AuthCard from "../AuthCard"
 
 // The mentor login page (PRD §C.1: separate page, same auth stack). It calls the ordinary
 // /user/login — the account's role decides where it lands.
@@ -48,8 +49,8 @@ function MentorLogin() {
     }
 
     return (
-        <div className="page">
-            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Mentor login</h2>
 
             <form onSubmit={handleLogin}>
@@ -69,7 +70,7 @@ function MentorLogin() {
             <p><Link to="/forgot-password">Forgot password?</Link></p>
             <p>New mentor? <Link to="/mentor/register">Create a mentor account</Link></p>
             <p>Student? <Link to="/login">Student login</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 

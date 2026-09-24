@@ -284,3 +284,208 @@
     padding: 16px 20px !important;
     align-items: center !important;
 }
+
+/* ── the rest of the app: content after the header gets the page gutters ─────────────────────── */
+
+/* Most app pages render <Navbar/> then their content directly. Rather than wrap every page, the
+   blocks that follow the header take the same centred column and 16 px gutters as .page. */
+.app-header ~ :is(div, h1, h2, h3, h4, p, section, form, ul, ol, table, blockquote):not(.page) {
+    width: 100%;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.app-header + :is(div, h1, h2, h3, p, section, form, main) {
+    margin-top: var(--space-6);
+}
+
+.app-header + main.app-page {
+    margin-top: 0;
+}
+
+.nav-user-name {
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .nav-user-name {
+        display: none;
+    }
+
+    .nav-user {
+        padding: 4px;
+    }
+}
+
+/* ── dashboard ────────────────────────────────────────────────────────────────────────────────── */
+
+.welcome {
+    margin-bottom: var(--space-5);
+}
+
+.btn-next {
+    min-height: 52px;
+    font-size: 1.05rem;
+    padding: 0 28px;
+}
+
+/* ── journey bar (JourneyProgress.js) ─────────────────────────────────────────────────────────── */
+
+.journey {
+    margin: 0 0 var(--space-5);
+    max-width: 900px;
+}
+
+.journey-label {
+    margin: 0 0 var(--space-2);
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.journey-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+button.journey-step {
+    flex: 1 1 170px;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    text-align: left;
+    min-height: 44px;               /* a tap target, kept from the original inline style */
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--navy);
+    font-size: 0.92rem;
+    font-weight: 400;
+}
+
+button.journey-step:hover:not(:disabled) {
+    border-color: var(--teal);
+    color: var(--navy);
+}
+
+button.journey-step:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
+button.journey-step.is-closed {
+    color: var(--muted);
+    background: #f6f4ee;
+}
+
+button.journey-step.is-current {
+    border: 2px solid var(--teal);
+}
+
+.journey-mark {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.85rem;
+    background: #eceae4;
+    color: var(--muted);
+}
+
+.is-done .journey-mark {
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.is-active .journey-mark {
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+.journey-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.journey-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+/* ── upgrade prompt (UpgradeToMentorship.js) ──────────────────────────────────────────────────── */
+
+.upgrade-card {
+    background:
+        radial-gradient(360px 180px at 100% 0%, var(--pink-tint), transparent 70%),
+        var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin: var(--space-5) 0;
+    max-width: 720px;
+    box-shadow: var(--shadow-sm);
+}
+
+.upgrade-card h2 {
+    font-size: 1.5rem;
+}
+
+/* the app header stays one row on a phone: smaller logo, tighter gaps, name hidden (avatar only) */
+.app-header .nav-row {
+    flex-wrap: nowrap;
+}
+
+@media (max-width: 480px) {
+    .app-header .nav-row {
+        gap: 12px;
+        padding: 8px 12px;
+    }
+
+    .app-header .brand-logo {
+        height: 26px;
+    }
+
+    .app-header .nav-link {
+        font-size: 0.95rem;
+    }
+}
+
+/* "Sign in with Google" — a full-width secondary button under the divider */
+.auth-card a > button {
+    width: 100%;
+    background: var(--surface);
+}
+
+.auth-card h2 {
+    margin-bottom: var(--space-5);
+}
+
+.auth-card p:last-child {
+    margin-bottom: 0;
+}
+
+/* antd wraps password (and affix) inputs in its own bordered box — the inner input must not also
+   carry the plain-input padding, border and 44px height, or the box doubles in height */
+.ant-input-affix-wrapper > input,
+.ant-input-password > input {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.ant-input-affix-wrapper {
+    min-height: 44px;
+}

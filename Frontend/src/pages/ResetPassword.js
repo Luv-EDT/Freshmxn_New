@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom"
 import { resetPassword } from "../apiCall/userApi"
 import logo from "../assets/brand/logo.png"
 import { Input } from "antd"
+import AuthCard from "./AuthCard"
 
 function ResetPassword() {
     const navigate = useNavigate()
@@ -42,8 +43,8 @@ function ResetPassword() {
     }
 
     return (
-        <div>
-            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Set a new password</h2>
 
             <form onSubmit={handleSubmit}>
@@ -61,7 +62,7 @@ function ResetPassword() {
             </form>
 
             <p><Link to="/login">Back to login</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 

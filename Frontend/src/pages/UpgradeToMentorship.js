@@ -28,7 +28,7 @@ function UpgradeToMentorship({ user, professions = [], compact = false }) {
             <p>
                 <button
                     type="button"
-                    style={{ padding: "12px 18px", minHeight: "44px", fontSize: "16px" }}
+                    className="btn btn-ghost"
                     onClick={() => navigate("/mentorship")}
                 >
                     Add a mentor to your plan
@@ -38,8 +38,8 @@ function UpgradeToMentorship({ user, professions = [], compact = false }) {
     }
 
     return (
-        <div style={{ border: "1px solid #999", padding: "16px", margin: "24px 0", maxWidth: "620px" }}>
-            <h2 style={{ marginTop: 0 }}>Talk it through with someone who has done it</h2>
+        <div className="upgrade-card">
+            <h2>Talk it through with someone who has done it</h2>
 
             {named.length > 0 ? (
                 <p>
@@ -69,7 +69,7 @@ function UpgradeToMentorship({ user, professions = [], compact = false }) {
 
             <button
                 type="button"
-                style={{ padding: "12px 20px", minHeight: "48px", fontSize: "16px" }}
+                className="btn btn-primary"
                 onClick={() => navigate("/mentorship")}
             >
                 See what Tier 2 includes

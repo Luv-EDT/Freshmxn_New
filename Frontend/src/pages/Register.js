@@ -6,6 +6,7 @@ import { setUser } from "../store/userSlice"
 import { Input } from "antd"
 import logo from "../assets/brand/logo.png"
 import { JOURNEY_OPTIONS, STREAM_SUBJECTS } from "./journeyOptions"
+import AuthCard from "./AuthCard"
 
 function Register() {
     const navigate = useNavigate()
@@ -98,8 +99,8 @@ function Register() {
     }
 
     return (
-        <div>
-            <Link to="/"><img src={logo} alt="Freshmxn" height="40" /></Link>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Create your account</h2>
 
             <form onSubmit={handleRegister}>
@@ -228,14 +229,14 @@ function Register() {
                 <button type="submit">Create account</button>
             </form>
 
-            <p>or</p>
+            <p className="auth-divider">or</p>
 
             <a href={getGoogleSignInUrl()}>
                 <button type="button">Sign up with Google</button>
             </a>
 
             <p>Already have an account? <Link to="/login">Login</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 
