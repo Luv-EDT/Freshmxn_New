@@ -120,8 +120,6 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
 
             <hr />
 
-            <h2>Open now</h2>
-
             {built.map(renderModule)}
 
             {comingSoon.length > 0 && (

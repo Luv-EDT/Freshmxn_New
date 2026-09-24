@@ -2,8 +2,8 @@ import { Link } from "react-router-dom"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
 
-// Verbatim from success_stories_page.md. BOTH STORIES ARE ILLUSTRATIVE — representative, not real
-// individuals — and say so on the page, twice: in the intro and on each card.
+// Verbatim from success_stories_page.md. Both stories are representative composites. The owner
+// removed the on-page "illustrative" labels (2026-09-24) — see the note in the copy doc.
 const STORIES = [
     {
         id: "aarav",
@@ -120,8 +120,6 @@ function StoryCard({ story }) {
 
                 <h3>🚀 Where {story.rankedFor === "him" ? "he" : "she"} is now</h3>
                 <blockquote>{story.now}</blockquote>
-
-                <p className="illustrative"><em>(Illustrative example.)</em></p>
             </div>
         </article>
     )
@@ -137,9 +135,8 @@ function SuccessStories() {
                     <div className="page">
                         <h1>Success stories</h1>
                         <p>
-                            These are illustrative examples of how a Freshmxn result comes together — from a student's
-                            own story and strengths, to a shortlist, to a choice that fit. (Representative, not real
-                            individuals.)
+                            How a Freshmxn result comes together — from a student's own story and strengths, to a
+                            shortlist, to a choice that fit.
                         </p>
                     </div>
                 </section>

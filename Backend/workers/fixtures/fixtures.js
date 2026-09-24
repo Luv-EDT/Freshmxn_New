@@ -2239,7 +2239,9 @@ const fixtures = [
             const problems = []
 
             if (!/How this list is ordered/.test(source)) problems.push("the ordering is no longer explained anywhere on the page")
-            if (!/const tierReason/.test(source)) problems.push("individual professions no longer say why they sit where they do")
+            // The per-profession "why it is here" line (tierReason) was removed on the owner's
+            // instruction (06_Day5_Handover, Round 5): cards show the name only, and the reason lives
+            // at group level — each group heading states its rule (the `why:` check below).
 
             // The five group boundaries must line up with real transitions in the engine's table.
             const boundaries = [...source.matchAll(/upTo:\s*(\d+)/g)].map((match) => Number(match[1]))

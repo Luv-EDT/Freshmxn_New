@@ -8,7 +8,7 @@ import JourneyProgress from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
 import ProfessionCard, { levelPath, JOURNEY_LEVEL } from "./ProfessionCard"
 import ReportFilterBar from "./ReportFilterBar"
-import { chipsFor, studentTags } from "./reportTags"
+import { studentTags } from "./reportTags"
 import { EMPTY_FILTERS, missedBy, optionCounts, sortRanked, hasData } from "./reportFilters"
 
 // Stage 3 — the report.
@@ -77,25 +77,6 @@ const TIER_GROUPS = [
 ]
 
 const groupFor = (tier) => TIER_GROUPS.find((group) => tier <= group.upTo) || TIER_GROUPS[TIER_GROUPS.length - 1]
-
-// What put THIS profession in its bucket, in one line. Sixteen tiers means sixteen distinct
-// reasons, and the student can see which one applies to them rather than inferring it.
-const tierReason = (entry) => {
-    const evidence = []
-    if (entry.passion) evidence.push("you said you love it")
-    if (entry.achievement) evidence.push("you have achieved something in it")
-    if (entry.confidenceExp === "High") evidence.push("you are confident about it")
-
-    const source = entry.list === "A"
-        ? "something you have stuck with long-term"
-        : entry.list === "B"
-            ? "something you do now"
-            : "your profile rather than your activities"
-
-    const fit = entry.comfort ? "it fits how you think and work" : "the fit with how you work is looser"
-
-    return `Reached through ${source}; ${fit}${evidence.length > 0 ? `; ${evidence.join(" and ")}` : ""}.`
-}
 
 // "a, b and c" — because "spatial thinking, reasoning" reads like a truncated list rather than a
 // finished sentence, and these strings sit inside prose.
@@ -414,8 +395,7 @@ function ReportPage() {
 
             {myTags.length > 0 && (
                 <p className="report-small">
-                    What seems to drive you: <strong>{listOf(myTags)}</strong>. You will see this
-                    alongside the careers below that are pursued for the same reason.
+                    What seems to drive you: <strong>{listOf(myTags)}</strong>.
                 </p>
             )}
 
@@ -482,8 +462,6 @@ function ReportPage() {
                                 detail={details[entry.professionId]}
                                 detailsLoaded={detailsLoaded}
                                 journey={journey}
-                                chips={chipsFor(entry, dominantReasons)}
-                                tierReason={tierReason(entry)}
                                 dimmed={missed.length > 0}
                                 missed={missed}
                             />
@@ -513,7 +491,6 @@ function ReportPage() {
                                 key={entry.professionId}
                                 entry={{
                                     ...entry,
-                                    professional_sector: (details[entry.professionId] || {}).professionalSector || "",
                                     display: { yearsToQualify: entry.yearsToQualify },
                                     supportingFactors: entry.supportingFactors || [],
                                     matchedBy: [],
@@ -521,10 +498,7 @@ function ReportPage() {
                                 detail={details[entry.professionId]}
                                 detailsLoaded={detailsLoaded}
                                 journey={journey}
-                                chips={[
-                                    ...(entry.wastedYears > 0 ? [`About ${entry.wastedYears} years left behind`] : []),
-                                    ...(entry.alreadyRanked ? [] : ["Not in the list above"]),
-                                ]}
+                                switchCost={entry.wastedYears}
                                 dimmed={missed.length > 0}
                                 missed={missed}
                             />

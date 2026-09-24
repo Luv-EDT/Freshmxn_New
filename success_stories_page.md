@@ -2,12 +2,14 @@
 
 Separate page, linked from the landing page ("See real-style examples"). Each story shows a
 mock result card: what the student told us, the psychometric strengths that shaped the match,
-the ranked careers we surfaced, the one they chose, and where they are now. Both are clearly
-labelled illustrative.
+the ranked careers we surfaced, the one they chose, and where they are now.
 
-> **Page intro line:** These are illustrative examples of how a Freshmxn result comes together —
-> from a student's own story and strengths, to a shortlist, to a choice that fit. (Representative,
-> not real individuals.)
+> **Page intro line:** How a Freshmxn result comes together — from a student's own story and
+> strengths, to a shortlist, to a choice that fit.
+
+> **Owner decision (2026-09-24):** the "illustrative" labels were removed from the page (the intro
+> parenthetical and the per-card "(Illustrative example.)" line). The stories remain representative
+> composites; that note now lives only in this doc and in the code comment.
 
 ---
 
@@ -45,7 +47,6 @@ labelled illustrative.
 > Aarav is in a **product design** program, building real things, and — in his words —
 > "finally studying something where the way my brain works is the whole point, not a problem."
 
-*(Illustrative example.)*
 
 ---
 
@@ -84,7 +85,6 @@ labelled illustrative.
 > Meera is training as a **sustainability analyst**, combining the cause she cares about with
 > the numbers she's good at — "the part I thought I had to give up to do good."
 
-*(Illustrative example.)*
 
 ---
 

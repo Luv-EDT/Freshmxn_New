@@ -142,7 +142,7 @@ function Mentorship() {
                         <h3>We're finding your mentor</h3>
                         <p>
                             You chose <strong>{waitlist.chosenProfessionName}</strong> on {formatDate(waitlist.choiceSentAt)}.
-                            We'll confirm your mentor by <strong>{formatDate(waitlist.dueBy)}</strong> — 20 business days
+                            We'll confirm your mentor <strong>via WhatsApp</strong> by <strong>{formatDate(waitlist.dueBy)}</strong> — 20 business days
                             from your choice.
                         </p>
                         <p>

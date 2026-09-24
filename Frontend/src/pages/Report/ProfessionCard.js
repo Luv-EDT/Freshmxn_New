@@ -79,7 +79,7 @@ const Section = ({ title, children }) => (
     </div>
 )
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, missed, onOpen, tierReason }) {
+function ProfessionCard({ entry, detail, detailsLoaded, journey, dimmed, missed, onOpen, switchCost }) {
     const [open, setOpen] = useState(false)
 
     const toggle = () => {
@@ -115,32 +115,11 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                 className="pc-toggle"
                 aria-expanded={open}
             >
+                {/* THE NAME, AND NOTHING ELSE (owner, 2026-09-24). Sector, years, tags and the
+                    filter note all live inside the card — a list of bare names is the fastest
+                    thing to scan. */}
                 <span className="pc-name">{entry.profession}</span>
                 <span className="pc-sign" aria-hidden="true">{open ? "−" : "+"}</span>
-                <br />
-                <span className="pc-meta">
-                    {entry.professional_sector}
-                    {typeof entry.display.yearsToQualify === "number" && (
-                        <span> · {entry.display.yearsToQualify} yrs to qualify</span>
-                    )}
-                </span>
-
-                {/* The chips answer "why is this here?" in the student's own terms. Built from
-                    joins the engine already made — see reportTags.js. */}
-                {chips.length > 0 && (
-                    <span className="pc-chips">
-                        {chips.map((chip) => (
-                            <span key={chip} className="chip">{chip}</span>
-                        ))}
-                    </span>
-                )}
-
-                {/* Says which control faded it, rather than leaving a grey row unexplained. */}
-                {dimmed && missed.length > 0 && (
-                    <span className="pc-dim-note">
-                        <em>Outside your {missed.join(" and ")} filter — still here because it matched you.</em>
-                    </span>
-                )}
             </button>
 
             {open && (
@@ -154,11 +133,21 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, chips, dimmed, 
                         <p><em>The details for this one could not be loaded. Everything above it is still accurate.</em></p>
                     )}
 
-                    {/* Why this one sits where it sits, in the ranking's own terms. Shown inside
-                        the card rather than on the row so the list stays scannable — but shown,
-                        because a position with no stated reason is just an assertion. */}
-                    {tierReason && (
-                        <p className="pc-tier-reason"><em>{tierReason}</em></p>
+                    {typeof entry.display.yearsToQualify === "number" && (
+                        <p className="pc-years">About <strong>{entry.display.yearsToQualify} years</strong> to qualify</p>
+                    )}
+
+                    {/* Worth-the-switch shows its cost beside the fit (DECISIONS §5) — as a line
+                        inside the card now, not a tag on the row. */}
+                    {switchCost > 0 && (
+                        <p className="pc-small">About {switchCost} years of what you've done so far would be left behind.</p>
+                    )}
+
+                    {/* Says which control faded it, rather than leaving a grey row unexplained. */}
+                    {dimmed && missed.length > 0 && (
+                        <p className="pc-dim-note">
+                            <em>Outside your {missed.join(" and ")} filter — still here because it matched you.</em>
+                        </p>
                     )}
 
                     {detail && (

@@ -76,21 +76,28 @@
 
 /* profession cards (ProfessionCard.js) */
 .profession-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
+    background: var(--teal-tint);
+    border: 1px solid transparent;
     border-radius: var(--radius);
     margin: var(--space-2) 0;
     max-width: 800px;
-    box-shadow: var(--shadow-sm);
-    transition: opacity 0.2s ease, border-color 0.15s ease;
+    transition: opacity 0.2s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .profession-card:hover {
     border-color: var(--teal);
 }
 
+/* open: the body reads on white, the teal row stays as its header */
 .profession-card.is-open {
+    background: var(--surface);
     border-color: var(--teal);
+    box-shadow: var(--shadow-sm);
+}
+
+.profession-card.is-open button.pc-toggle {
+    background: var(--teal-tint);
+    border-radius: var(--radius) var(--radius) 0 0;
 }
 
 /* a filter FADES a row, never removes it (05_Day4_Handover §2b) */
@@ -99,35 +106,39 @@
 }
 
 button.pc-toggle {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
     width: 100%;
     text-align: left;
-    padding: 14px 16px;
+    padding: 12px 16px;
     min-height: 48px;                 /* a tap target, kept from the original inline style */
     background: transparent;
     border: 0;
     border-radius: var(--radius);
-    color: var(--navy);
+    color: var(--teal-dark);
     font-weight: 400;
     font-size: 1rem;
     cursor: pointer;
 }
 
 button.pc-toggle:hover:not(:disabled) {
-    color: var(--navy);
+    color: var(--teal-dark);
 }
 
 .pc-name {
     font-weight: 900;
-    font-size: 1.08rem;
+    font-size: 1.05rem;
+    color: var(--teal-dark);
 }
 
 .pc-sign {
-    float: right;
+    flex: none;
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--teal-tint);
+    background: var(--surface);
     color: var(--teal-dark);
     display: inline-flex;
     align-items: center;
@@ -135,22 +146,13 @@ button.pc-toggle:hover:not(:disabled) {
     font-weight: 900;
 }
 
-.pc-meta {
-    font-size: 0.85rem;
-    color: var(--muted);
-}
-
-.pc-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: var(--space-2);
+.pc-years {
+    margin: var(--space-4) 0 4px;
 }
 
 .pc-dim-note {
-    display: block;
-    margin-top: 6px;
-    font-size: 0.8rem;
+    margin: 6px 0;
+    font-size: 0.85rem;
     color: var(--muted);
 }
 
@@ -177,7 +179,6 @@ button.pc-toggle:hover:not(:disabled) {
     margin-top: var(--space-4);
 }
 
-.pc-tier-reason,
 .pc-nuance {
     font-size: 0.88rem;
     color: var(--navy-soft);
