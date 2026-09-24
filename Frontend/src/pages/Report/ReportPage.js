@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { getMyReport } from "../../apiCall/reportsApi"
+import { getMyReport, retryMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
 import JourneyProgress from "../JourneyProgress"
@@ -138,6 +138,9 @@ function ReportPage() {
     const [detailsLoaded, setDetailsLoaded] = useState(false)
     const [primary, setPrimary] = useState("best")
     const [secondary, setSecondary] = useState(null)
+    // Bumped after a retry so the polling effect below starts again.
+    const [reloadKey, setReloadKey] = useState(0)
+    const [retrying, setRetrying] = useState(false)
 
     // Polls while the pipeline is running, and stops the moment it is not. A student who has just
     // pressed Submit is looking at this page NOW — telling them to come back later and leaving it
@@ -167,7 +170,22 @@ function ReportPage() {
             cancelled = true
             clearTimeout(timer)
         }
-    }, [])
+    }, [reloadKey])
+
+    // The pipeline gave up (status "failed", or rebuildFailed on an older report). Queue it again
+    // and go back to polling — the page shows "preparing" until the new report lands.
+    const retry = async () => {
+        setRetrying(true)
+        try {
+            const response = await retryMyReport()
+            if (response && response.data && response.data.success === false) throw new Error(response.data.message)
+            setState({ loading: false, data: { status: "generating" }, error: "" })
+            setReloadKey((key) => key + 1)
+        } catch (error) {
+            window.alert("We could not restart it just now. Please try again in a minute, or message us on WhatsApp.")
+        }
+        setRetrying(false)
+    }
 
     // ONE REQUEST FOR EVERY PROFESSION IN THE REPORT, fired once the ranking arrives rather than on
     // each expand. Forty accordion rows fetching themselves individually is forty round trips on a
@@ -246,6 +264,28 @@ function ReportPage() {
                 <h1>Your report</h1>
                 <p>Finish the assessment and your report will be built from it.</p>
                 <button type="button" onClick={() => navigate("/assessment/start")}>Go to the assessment</button>
+            </div>
+        )
+    }
+
+    if (status === "failed") {
+        return (
+            <div>
+                <Navbar />
+                <JourneyProgress user={user} current="report" />
+                <h1>We hit a problem preparing your report</h1>
+                <p>
+                    <strong>Your answers are safe.</strong> Something went wrong on our side while building
+                    your report. Trying again usually fixes it.
+                </p>
+                <button type="button" className="btn btn-primary tap" onClick={retry} disabled={retrying}>
+                    {retrying ? "Starting again…" : "Try again"}
+                </button>
+                <p className="report-small">
+                    If it happens again,{" "}
+                    <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">message us on WhatsApp</a>{" "}
+                    and we will sort it out.
+                </p>
             </div>
         )
     }
@@ -355,6 +395,18 @@ function ReportPage() {
             <JourneyProgress user={user} current="report" />
 
             <h1>Your report</h1>
+
+            {data.rebuildFailed && (
+                <div className="report-banner">
+                    <p>
+                        <strong>We could not update your report with your latest answers.</strong> This is the
+                        previous version.
+                    </p>
+                    <button type="button" className="btn btn-primary btn-sm tap" onClick={retry} disabled={retrying}>
+                        {retrying ? "Starting again…" : "Try again"}
+                    </button>
+                </div>
+            )}
 
             {status === "stale" && (
                 <p><em>Your matches have been recalculated since this was written. A fresh version is

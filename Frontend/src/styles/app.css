@@ -648,3 +648,17 @@ button.sort-primary.is-on {
 .report-bands li {
     margin: 6px 0;
 }
+
+/* the pipeline gave up on a rebuild — the previous report stays, with a way to try again */
+.report-banner {
+    max-width: 800px;
+    background: var(--pink-tint);
+    border-left: 4px solid var(--pink);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+.report-banner p {
+    margin: 0 0 var(--space-2);
+}

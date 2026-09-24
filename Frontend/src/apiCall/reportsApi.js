@@ -10,3 +10,9 @@ export async function getMyScores() {
     const response = await axiosInstance.get("/reports/getMyScores")
     return response
 }
+
+// only offered after the pipeline gave up — see reportsRouter /retryMyReport
+export async function retryMyReport() {
+    const response = await axiosInstance.post("/reports/retryMyReport")
+    return response
+}

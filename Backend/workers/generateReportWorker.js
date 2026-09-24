@@ -196,7 +196,7 @@ const runOne = async (userId) => {
     // A withheld report is still written and still stored — the page renders the completion prompt
     // instead of the findings. Marking it "ready" anyway would show a student a thin report as if
     // it were the finished thing.
-    await User.findByIdAndUpdate(userId, { "progress.report": release === "withhold" ? "locked" : "ready" })
+    await User.findByIdAndUpdate(userId, { "progress.report": release === "withhold" ? "locked" : "ready", reportFailedAt: null })
 
     return { userId, ranked: match.ranked.length, release, report_version }
 }
@@ -220,8 +220,19 @@ const start = async () => {
         console.log(`${QUEUE_NAME} ${job.id} — ${result.ranked} professions ranked, release ${result.release}`)
     })
 
-    worker.on("failed", (job, error) => {
+    worker.on("failed", async (job, error) => {
         console.error(`${QUEUE_NAME} ${job && job.id} FAILED (attempt ${job && job.attemptsMade}) — ${error.message}`)
+
+        // Out of retries: mark it, so the student sees "something went wrong — try again" rather
+        // than a spinner that never ends. See userModel `reportFailedAt`.
+        if (job && job.attemptsMade >= (job.opts.attempts || 1)) {
+            console.error(`${QUEUE_NAME} GAVE UP for student ${job.data.userId} — their report page now offers a retry`)
+            try {
+                await User.updateOne({ _id: job.data.userId }, { reportFailedAt: new Date() })
+            } catch (markError) {
+                console.error(`${QUEUE_NAME} could not mark ${job.data.userId} as failed — ${markError.message}`)
+            }
+        }
     })
 
     console.log(`${QUEUE_NAME} worker listening`)

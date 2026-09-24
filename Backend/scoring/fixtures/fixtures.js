@@ -35,7 +35,7 @@ const fixtures = [
             "completeness.release": "release",
             "completeness.matching": 1,
             "completeness.overall": 1,
-            "scoring_version": "profile@1.0.0",
+            "scoring_version": "profile@1.0.1",
             "component_versions.perspective": "perspective@5.0.0",
             "norm_set_id": null,
         },

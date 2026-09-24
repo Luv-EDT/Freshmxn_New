@@ -339,11 +339,39 @@ switch career, marker text, class 9–10 gets no ignoring-cost option — at 360
 **Backend review (item 5):** run as a read-only subagent; findings relayed to the owner in chat, nothing
 changed from it without their go.
 
+### Round 7 — founder photo + the top three backend-review fixes ✅
+
+A read-only review subagent audited workers, report generation, psychometric scoring and matching
+(report: owner's chat, Round 6). The owner asked for the first three findings fixed:
+
+| # | Problem | Fix |
+|---|---|---|
+| 1 | **P13 day-plan grade ignored for every student.** `llmScorer` stores P13 flat (`{deep_work_first: 1, …}`); `perspectiveScoring` reads `criteria.<name>` as true/false only | Adapter `asP13Criteria` at the boundary in `scoring/scoreProfile.js` `callPerspective` — flat 0/1 → `{criteria: {…: true/false}}`, anything else passes through. Fixes already-stored submissions with no migration; the ported scorer is untouched. **`SCORING_VERSION` → `profile@1.0.1`** (scoring fixture 01 updated with it) |
+| 2 | **A temporary grading failure blanked a written answer forever.** `call_failed`/`malformed_json` were stored as `null`, and only `undefined` items were regraded | `gradeOpenItems.js`: those reasons are **transient** — left ungraded and reported in `transient`; the worker writes what did grade, then throws so BullMQ retries only the rest. On the **last attempt** (`acceptTransient`) the null is stored with its reason so the student still gets a profile; a stored transient null is regraded on the next run; a genuine unscoreable answer is never re-sent. `openMeta` is now merged, not replaced. Same rule for the story's free recall |
+| 3 | **A job out of retries left the student on "generating" forever** | New `User.reportFailedAt` (NOT a `progress.report` value — refunds/"Tier 1 delivered" read `report !== "locked"`). Set by both workers' `failed` handlers on the final attempt (with a loud log naming the student); cleared on a successful report, a new submit, or a retry. `getMyReport` → `status: "failed"` (no usable report) or `rebuildFailed: true` (older report kept, banner). New `POST /reports/retryMyReport` — only when a failure is recorded; enqueues first, clears after. ReportPage: "We hit a problem… Your answers are safe" + **Try again**, and a banner on an older report |
+
+Fixtures: **worker suite 99 → 102** — "P13 stored shape actually counts" (verified to FAIL on the old
+`scoreProfile.js`), "a failed CALL is retried, never stored as a blank grade", "a job out of retries tells
+the student". API **42/42** (+ failed status, retry refused with nothing to retry, retry without a queue
+keeps the retry screen). Browser: round5 **38/38** (+ failed screen calls retry, About photo), uiFlow 63/63,
+round3 39/39. Build: same 8 pre-existing warnings.
+
+⚠ Existing students' profiles pick up the P13 fix only when re-scored — next submit, or
+`node Backend/workers/scoreProfileWorker.js --once <userId>` (grades are stored, so no model calls).
+
+**Founder photo:** `Frontend/public/founder.jpg`, cropped to head and shoulders (250×250) from the
+owner's photo; shown round beside "My story".
+
+**Still open from the review (not done — owner's call):** forbidden-term rejection triggered by a
+student's own words (now at least ends in "failed + retry", not a spinner); resubmit during an active
+job can be lost; `generatedAt` overwritten on every run; story-recall rescaling when free recall is
+missing; digit-span `completedAt`; `savePsychometric` field allow-list; age hard filter reads the wrong
+field (low). Full report: ask Claude for `backend_review.md`, or rerun the review.
+
 ## 4. Open items carried forward
 - **Bare domain** `freshmxn.com` has no DNS record yet (see round 3).
 - **DNS move in Cloudflare** (owner) — then ask Claude to re-check that www and the bare domain
   resolve to Render (`216.24.57.x`).
-- **Founder photo** — add `Frontend/public/founder.jpg` (the About page shows it automatically).
 - **Server waker** — recommended before sharing with students (UptimeRobot, 10 min, `/robots.txt`); see chat.
 - **Legal pages** — lawyer review (DPDP) before go-live; confirm the Grievance Officer name/email;
   the verified parental consent step (V2) must land before the pages' "coming" promise gets old.

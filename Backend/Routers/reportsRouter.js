@@ -90,6 +90,20 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
         const submittedAt = submission && submission.psychometricSubmittedAt
         const isRegenerating = Boolean(report && submittedAt && report.generatedAt < submittedAt)
 
+        // THE PIPELINE GAVE UP (see userModel `reportFailedAt`). Without this a first-time student
+        // saw "generating" and a resubmitter "being rebuilt" — forever, with the page polling every
+        // five seconds. With no usable report the page offers a retry; with an older report it
+        // shows that report plus a banner (`rebuildFailed` below).
+        const failed = Boolean(req.user.reportFailedAt) && req.user.progress.psychometric === "done"
+
+        if (failed && (!report || isRegenerating)) {
+            return res.status(200).json({
+                success: true,
+                message: "Report generation failed",
+                data: { status: "failed", report: null },
+            })
+        }
+
         if (isRegenerating) {
             return res.status(200).json({
                 success: true,
@@ -118,6 +132,7 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
             message: "Report fetched successfully",
             data: {
                 status: stale ? "stale" : "ready",
+                rebuildFailed: failed,
                 release: report.release,
                 journey: report.journey,
                 generatedAt: report.generatedAt,
@@ -197,6 +212,47 @@ const uncertaintyPosition = (score) => {
     if (score >= 3.4) return "somewhere in between"
     return "prefers a clear plan"
 }
+
+// ========================
+// Retry My Report
+// ========================
+
+// Offered only after the pipeline gave up (reportFailedAt is set), so it cannot be used to run up
+// model calls. It re-runs the whole pipeline from score_profile; grading only re-sends the written
+// answers that never got a grade, so a retry costs little.
+router.post("/retryMyReport", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        if (!req.user.reportFailedAt || req.user.progress.psychometric !== "done") {
+            return res.status(400).json({
+                success: false,
+                message: "There is nothing to retry",
+            })
+        }
+
+        // Queued FIRST, flag cleared after: if the queue cannot be reached the student still sees
+        // the retry screen rather than a "generating" that nothing is working on.
+        // Required here, as in submissionsRouter: the queue is built lazily, and this router must
+        // load on a machine with no REDIS_URL.
+        const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
+        await enqueueScoreProfile(req.user._id)
+
+        await req.user.updateOne({ reportFailedAt: null })
+
+        return res.status(200).json({
+            success: true,
+            message: "Your report is being prepared again",
+            data: { status: "generating" },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Could not restart your report — please try again in a minute",
+            error: error.message,
+        })
+    }
+})
+
 
 router.get("/getMyScores", authMiddleware, requirePaid, async (req, res) => {
     try {

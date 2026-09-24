@@ -78,6 +78,19 @@ const createGradingClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = p
     }
 )
 
+// ── transient failures ──────────────────────────────────────────────────────────────────────────
+//
+// A FAILED CALL IS NOT A GRADE. llmScorer turns an HTTP/network error into `call_failed: …` and an
+// unparseable reply into `malformed_json`, both with a null score. Those used to be stored exactly
+// like a genuine "this answer cannot be scored" — and since only `undefined` items are ever graded,
+// a single 529 blanked that written answer for good (backend review, 2026-09-24).
+//
+// Now they are TRANSIENT: left ungraded so the job retries them, unless this is the job's last
+// attempt, when the null is stored (with its reason) so the student still gets a profile with one
+// factor dropped rather than no report at all. A stored transient null is graded again on the
+// next run; a genuine unscoreable answer (blank, off-topic) never is, so it is never re-billed.
+const isTransient = (reason) => typeof reason === "string" && (reason.startsWith("call_failed") || reason === "malformed_json")
+
 // ── the story's free recall ─────────────────────────────────────────────────────────────────────
 //
 // Same separation as the perspective items and for the same reason:
@@ -99,11 +112,13 @@ const loadStoryRubric = () => {
     return block[1].replace(/<response>\s*\{\{STUDENT_TEXT\}\}\s*<\/response>/, "").trim()
 }
 
-const gradeStoryRecall = async ({ psychometric, callLlm, force = false }) => {
+const gradeStoryRecall = async ({ psychometric, callLlm, force = false, acceptTransient = false }) => {
     const block = (psychometric && psychometric.storyRecall) || {}
     const freeText = block.freeText || {}
 
-    if (!force && block.free) return null
+    const retryable = block.free === null && block.freeMeta && isTransient(block.freeMeta.unscoreable_reason)
+    if (!force && block.free && !retryable) return null
+    if (!force && block.free === null && !retryable) return null
 
     const narrated = ["LR1", "LR2", "LR3"].map((id) => freeText[id]).filter((text) => typeof text === "string" && text.trim() !== "")
     if (narrated.length === 0) return null
@@ -115,40 +130,46 @@ const gradeStoryRecall = async ({ psychometric, callLlm, force = false }) => {
     const answer = ["LR1", "LR2", "LR3"].map((id) => `${id}: ${freeText[id] || ""}`).join("\n\n")
     const result = await scoreOpenItem("LR_FREE_RECALL", answer, rubric, callLlm)
 
+    const meta = { score: result.score, unscoreable_reason: result.unscoreable_reason, gradedAt: new Date().toISOString() }
+
+    // Not stored as a grade unless this is the last attempt — see isTransient above.
+    if (isTransient(result.unscoreable_reason) && !acceptTransient) return { transient: true, meta }
+
     return {
         free: result.subScores ? { score: result.score, subScores: result.subScores } : null,
-        meta: { score: result.score, unscoreable_reason: result.unscoreable_reason, gradedAt: new Date().toISOString() },
+        meta,
     }
 }
 
-// Returns { open, meta } — or null when there is nothing new to grade.
+// Returns { open, meta, transient } — or null when there is nothing new to grade.
 //
-// Only ungraded items are sent. A student who edits one written answer and resubmits re-grades that
-// one, not all four.
-const gradeOpenItems = async ({ psychometric, callLlm, force = false }) => {
+// Only ungraded items are sent, plus any stored as null because the CALL failed. A student who edits
+// one written answer and resubmits re-grades that one, not all four. `transient` lists the items
+// whose call failed this time; they are left out of `open` (so they stay ungraded) unless
+// `acceptTransient` is set on the job's last attempt.
+const gradeOpenItems = async ({ psychometric, callLlm, force = false, acceptTransient = false }) => {
     const perspective = (psychometric && psychometric.perspective) || {}
     const openText = perspective.openText || {}
     const alreadyGraded = perspective.open || {}
+    const previousMeta = perspective.openMeta || {}
 
     const todo = OPEN_ITEMS.filter((itemId) => {
         const text = openText[itemId]
         if (typeof text !== "string" || text.trim() === "") return false
-        return force || alreadyGraded[itemId] === undefined
+        if (force || alreadyGraded[itemId] === undefined) return true
+        return alreadyGraded[itemId] === null && Boolean(previousMeta[itemId]) && isTransient(previousMeta[itemId].unscoreable_reason)
     })
 
     if (todo.length === 0) return null
 
     const rubrics = loadRubrics()
     const open = { ...alreadyGraded }
-    const meta = {}
+    // Merged, not replaced: the meta of items graded on an earlier run is kept.
+    const meta = { ...previousMeta }
+    const transient = []
 
     for (const itemId of todo) {
         const result = await scoreOpenItem(itemId, openText[itemId], rubrics[itemId], callLlm)
-
-        // A null score is a real outcome — blank, off-topic, gibberish, or a prompt-injection
-        // attempt. It is recorded as null rather than omitted, so the factor is dropped and
-        // renormalised instead of being quietly treated as un-attempted.
-        open[itemId] = result.subScores || null
 
         meta[itemId] = {
             score: result.score,
@@ -156,9 +177,21 @@ const gradeOpenItems = async ({ psychometric, callLlm, force = false }) => {
             problems: result.problems,
             gradedAt: new Date().toISOString(),
         }
+
+        if (isTransient(result.unscoreable_reason) && !acceptTransient) {
+            // Left ungraded, so the retry sends it again. Not stored as null.
+            delete open[itemId]
+            transient.push(itemId)
+            continue
+        }
+
+        // A null score is a real outcome — blank, off-topic, gibberish, or a prompt-injection
+        // attempt. It is recorded as null rather than omitted, so the factor is dropped and
+        // renormalised instead of being quietly treated as un-attempted.
+        open[itemId] = result.subScores || null
     }
 
-    return { open, meta }
+    return { open, meta, transient }
 }
 
-module.exports = { gradeOpenItems, gradeStoryRecall, createGradingClient, loadRubrics, loadStoryRubric, OPEN_ITEMS }
+module.exports = { gradeOpenItems, gradeStoryRecall, createGradingClient, loadRubrics, loadStoryRubric, OPEN_ITEMS, isTransient }

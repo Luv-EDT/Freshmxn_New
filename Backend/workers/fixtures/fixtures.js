@@ -2603,6 +2603,111 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "P13 — a day-plan grade stored the way the grader stores it actually counts",
+        // THE BUG (backend review, 2026-09-24): llmScorer flattens P13 to `{ deep_work_first: 1, … }`
+        // and that is what gets stored, but perspectiveScoring reads `criteria.<name>` as true/false.
+        // Every real student's day plan was silently unscored; the fixtures missed it because they
+        // fed the scorer its own shape. This drives the STORED shape through scoreProfile.
+        run: () => {
+            const base = buildSubmission()
+            const midRange = { ...base, perspective: fillPerspective("C") }
+            const flat = (value) => ({ deep_work_first: value, urgency_order: value, messages_batched: value, fixed_respected: value, recovery: value })
+            const withP13 = (p13) => scoreProfile({ ...midRange, perspective: { ...midRange.perspective, open: { ...midRange.perspective.open, P13: p13 } } })
+
+            const allMet = withP13(flat(1))
+            const noneMet = withP13(flat(0))
+            const picture = (profile) => JSON.stringify([profile.raw_scores, profile.banks, profile.components])
+
+            if (picture(allMet) === picture(noneMet)) return "an all-1 and an all-0 P13 grade score identically — the stored shape is still ignored"
+            if (JSON.stringify(allMet).includes("only 0 of 5 criteria")) return "the scorer still reports the stored P13 as having no criteria"
+
+            // the scorer's own shape must keep working exactly as before
+            const nested = withP13({ criteria: { deep_work_first: true, urgency_order: true, messages_batched: true, fixed_respected: true, recovery: true } })
+            if (picture(nested) !== picture(allMet)) return "the nested { criteria } shape and the stored flat shape disagree"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "OPEN ITEMS — a failed CALL is retried, never stored as a blank grade",
+        // THE BUG (backend review): a 529 or a network blip became `null` on the submission, and
+        // only `undefined` items were ever graded again — so one bad minute blanked a written
+        // answer for good. Now a failed call leaves the item ungraded (the job throws and retries),
+        // except on the last attempt, when the null is stored with its reason and regraded next run.
+        run: async () => {
+            const { gradeOpenItems } = require("../gradeOpenItems")
+            const good = async () => JSON.stringify({ reasons: 2, evidence: 2, revisability: 2 })
+            const down = async () => { throw new Error("Anthropic HTTP 529 — overloaded") }
+            const text = { openText: { P7: "a real answer" } }
+
+            const problems = []
+
+            // 1. a failure before the last attempt: nothing stored, the item is reported transient
+            const first = await gradeOpenItems({ psychometric: { perspective: text }, callLlm: down })
+            if (!first || !first.transient.includes("P7")) problems.push("a failed call is not reported as transient")
+            if (first && first.open.P7 !== undefined) problems.push("a failed call was stored as a grade")
+            if (first && !(first.meta.P7 && first.meta.P7.unscoreable_reason.startsWith("call_failed"))) problems.push("the failure reason is not recorded")
+
+            // 2. the retry grades it
+            const second = await gradeOpenItems({ psychometric: { perspective: { ...text, open: first.open, openMeta: first.meta } }, callLlm: good })
+            if (!second || !second.open.P7 || second.open.P7.reasons !== 2) problems.push("the retry did not grade the item")
+
+            // 3. the LAST attempt stores the null, and the next run grades it again
+            const last = await gradeOpenItems({ psychometric: { perspective: text }, callLlm: down, acceptTransient: true })
+            if (!last || last.open.P7 !== null || last.transient.length !== 0) problems.push("the last attempt did not store the null")
+            const later = await gradeOpenItems({ psychometric: { perspective: { ...text, open: last.open, openMeta: last.meta } }, callLlm: good })
+            if (!later || !later.open.P7) problems.push("a stored call_failed null is never graded again")
+
+            // 4. a GENUINE unscoreable answer is not re-sent (it would re-bill forever)
+            let calls = 0
+            const counting = async () => { calls++; return JSON.stringify({ reasons: 2, evidence: 2, revisability: 2 }) }
+            const genuine = await gradeOpenItems({
+                psychometric: { perspective: { ...text, open: { P7: null }, openMeta: { P7: { unscoreable_reason: "off_topic" } } } },
+                callLlm: counting,
+            })
+            if (genuine !== null || calls !== 0) problems.push("a genuinely unscoreable answer was sent for grading again")
+
+            // 5. the worker throws on a transient item before the last attempt, so BullMQ retries
+            const worker = fs.readFileSync(path.join(__dirname, "..", "scoreProfileWorker.js"), "utf8")
+            if (!/acceptTransient: lastAttempt/.test(worker)) problems.push("the worker does not pass lastAttempt to the grader")
+            if (!/grading temporarily failed/.test(worker)) problems.push("the worker does not throw on a transient grading failure")
+
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "PIPELINE — a job that runs out of retries tells the student instead of spinning forever",
+        // THE BUG (backend review): a job that failed its fifth attempt only logged, and the report
+        // page kept saying "generating" and polling every five seconds, for ever.
+        run: () => {
+            const read = (...parts) => fs.readFileSync(path.join(__dirname, "..", "..", ...parts), "utf8")
+            const problems = []
+
+            ;["scoreProfileWorker.js", "generateReportWorker.js"].forEach((file) => {
+                const source = read("workers", file)
+                const handler = source.split('worker.on("failed"')[1] || ""
+                if (!/attemptsMade >= \(job\.opts\.attempts/.test(handler)) problems.push(`${file} does not detect the final attempt`)
+                if (!/reportFailedAt: new Date\(\)/.test(handler)) problems.push(`${file} does not mark the student's report as failed`)
+            })
+
+            if (!/reportFailedAt: null/.test(read("workers", "generateReportWorker.js"))) problems.push("a successful report does not clear the failure")
+            if (!/reportFailedAt: null/.test(read("Routers", "submissionsRouter.js"))) problems.push("a new submit does not clear the failure")
+
+            const router = read("Routers", "reportsRouter.js")
+            if (!/status: "failed"/.test(router)) problems.push("getMyReport never reports a failure")
+            if (!/router\.post\("\/retryMyReport"/.test(router)) problems.push("there is no way to retry")
+
+            // a failure must never count as delivery (refunds read progress.report)
+            if (/"progress\.report": "failed"/.test(read("workers", "scoreProfileWorker.js") + read("workers", "generateReportWorker.js"))) {
+                problems.push("failure is written into progress.report, which refunds read as delivered")
+            }
+
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

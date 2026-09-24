@@ -370,7 +370,8 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
             { $set: { psychometricSubmittedAt: new Date() } }
         )
 
-        await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "done" })
+        // A new submit starts a fresh attempt, so any earlier "your report failed" is cleared.
+        await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "done", reportFailedAt: null })
 
         // Required here rather than at the top of the file: the queue is built lazily, and a
         // machine with no REDIS_URL must still be able to load this router and serve every other

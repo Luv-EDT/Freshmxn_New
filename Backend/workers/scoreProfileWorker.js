@@ -30,6 +30,7 @@ const scoreProfile = require("../scoring/scoreProfile")
 const Submission = require("../model/submissionsModel")
 const { gradeOpenItems, gradeStoryRecall, createGradingClient } = require("./gradeOpenItems")
 const Profile = require("../model/profilesModel")
+const User = require("../model/userModel")
 
 const QUEUE_NAME = "score_profile"
 
@@ -66,7 +67,10 @@ const enqueueScoreProfile = async (userId) => addOnce(scoreProfileQueue(), QUEUE
     removeOnFail: { age: 604800 },
 })
 
-const runOne = async (userId) => {
+// `lastAttempt` decides what a failed grading CALL means (gradeOpenItems.js, isTransient): before
+// the last attempt it throws so BullMQ retries just the failed items; on the last attempt the null
+// is stored and the student gets a profile with that one factor dropped rather than no report.
+const runOne = async (userId, { lastAttempt = false } = {}) => {
     const submission = await Submission.findOne({ user: userId })
     if (!submission) throw new Error(`no submission for user ${userId}`)
     if (!submission.psychometric || Object.keys(submission.psychometric).length === 0) {
@@ -83,15 +87,17 @@ const runOne = async (userId) => {
     const graded = await gradeOpenItems({
         psychometric: submission.psychometric,
         callLlm: createGradingClient(),
+        acceptTransient: lastAttempt,
     })
 
+    // What did grade is written FIRST, so a retry never re-bills it.
     if (graded) {
         await Submission.findOneAndUpdate(
             { user: userId },
             { $set: { "psychometric.perspective.open": graded.open, "psychometric.perspective.openMeta": graded.meta } }
         )
         submission.psychometric.perspective.open = graded.open
-        console.log(`${QUEUE_NAME} ${userId} — graded ${Object.keys(graded.meta).join(", ")}`)
+        console.log(`${QUEUE_NAME} ${userId} — graded ${Object.keys(graded.open).join(", ") || "nothing new"}`)
     }
 
     // The story's free recall, same separation: `freeText` is what the student narrated, `free` is
@@ -99,7 +105,14 @@ const runOne = async (userId) => {
     const story = await gradeStoryRecall({
         psychometric: submission.psychometric,
         callLlm: createGradingClient(),
+        acceptTransient: lastAttempt,
     })
+
+    // A failed call before the last attempt: throw, and the job retries only what is missing.
+    const pending = [...((graded && graded.transient) || []), ...(story && story.transient ? ["story free recall"] : [])]
+    if (pending.length > 0) {
+        throw new Error(`grading temporarily failed for ${pending.join(", ")} — will retry`)
+    }
 
     if (story) {
         await Submission.findOneAndUpdate(
@@ -145,7 +158,8 @@ const start = async () => {
     require("../config/MongoDBCon")
 
     const worker = new Worker(QUEUE_NAME, async (job) => {
-        const profile = await runOne(job.data.userId)
+        const lastAttempt = job.attemptsMade + 1 >= (job.opts.attempts || 1)
+        const profile = await runOne(job.data.userId, { lastAttempt })
 
         // Hand off to generate_report as a SEPARATE job, not an inline call. That separation is
         // the whole point: report generation makes model calls and can fail for reasons that have
@@ -171,8 +185,19 @@ const start = async () => {
 
     // A failure is logged loudly and the job is retried. It is never swallowed: a student whose
     // profile silently never computed looks identical to one who never submitted.
-    worker.on("failed", (job, error) => {
+    worker.on("failed", async (job, error) => {
         console.error(`${QUEUE_NAME} ${job && job.id} FAILED (attempt ${job && job.attemptsMade}) — ${error.message}`)
+
+        // Out of retries: mark it, so the student sees "something went wrong — try again" rather
+        // than a spinner that never ends. See userModel `reportFailedAt`.
+        if (job && job.attemptsMade >= (job.opts.attempts || 1)) {
+            console.error(`${QUEUE_NAME} GAVE UP for student ${job.data.userId} — their report page now offers a retry`)
+            try {
+                await User.updateOne({ _id: job.data.userId }, { reportFailedAt: new Date() })
+            } catch (markError) {
+                console.error(`${QUEUE_NAME} could not mark ${job.data.userId} as failed — ${markError.message}`)
+            }
+        }
     })
 
     console.log(`${QUEUE_NAME} worker listening`)
