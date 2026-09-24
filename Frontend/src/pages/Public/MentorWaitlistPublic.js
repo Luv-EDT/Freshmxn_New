@@ -68,7 +68,7 @@ function MentorWaitlistPublic() {
                         </div>
                         <blockquote className="rank-note">
                             <strong>Why the wait?</strong> We don't hand you a random name from a list. We match on your
-                            specific chosen field so the person you talk to has genuinely walked that exact path — which
+                            specific chosen field so the person you talk to has genuinely walked that path — which
                             takes a little time to get right.
                         </blockquote>
                     </div>

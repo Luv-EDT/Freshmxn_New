@@ -35,7 +35,7 @@ We'll confirm your mentor and schedule your two sessions within **20 business da
 choice.
 
 > **Why the wait?** We don't hand you a random name from a list. We match on your specific chosen
-> field so the person you talk to has genuinely walked that exact path — which takes a little time
+> field so the person you talk to has genuinely walked that path — which takes a little time
 > to get right.
 
 ---

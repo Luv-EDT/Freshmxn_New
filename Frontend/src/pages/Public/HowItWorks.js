@@ -36,7 +36,7 @@ function HowItWorks() {
                 <section className="section" id="steps">
                     <div className="page">
                         <div className="section-head">
-                            <h2>Four steps. <span className="highlight-pink">Zero gyaan.</span></h2>
+                            <h2>4 steps. <span className="highlight-pink">0 gyaan.</span></h2>
                         </div>
                         <div className="steps">
                             <article className="step">
@@ -101,7 +101,7 @@ function HowItWorks() {
                             <h2><span aria-hidden="true">🔒</span> We help you get there. (By invitation only)</h2>
                             <p>
                                 The report is the beginning, not the end. For select students, we go further — turning a
-                                recommendation into real momentum. Your story goes first; your marks never get a veto.
+                                recommendation into real momentum.
                             </p>
                         </div>
                     </div>

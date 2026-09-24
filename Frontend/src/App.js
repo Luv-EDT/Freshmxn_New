@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import ScrollToTop from "./ScrollToTop.js"
 import Login from "./pages/Login.js"
 import Register from "./pages/Register.js"
 import ForgotPassword from "./pages/ForgotPassword.js"
@@ -31,6 +32,7 @@ import MentorProtectedRoute from "./pages/Mentor/MentorProtectedRoute.js"
 function App() {
     return (
         <BrowserRouter>
+            <ScrollToTop />
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

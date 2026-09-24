@@ -65,7 +65,7 @@ genuinely in demand — and help match you *toward* it. You're not being pointed
 
 ## 4. HOW IT WORKS  *(Kira's four-card rhythm)*
 
-**Heading (Orelega One):** Four steps. Zero gyaan.
+**Heading (Orelega One):** 4 steps. 0 gyaan.
 
 **01 · We get to know you. Properly.**
 Your interests, the problems you've faced, what you believe about yourself. Career gyanis guess. We ask.
@@ -92,7 +92,7 @@ A 1-on-1 with a working professional in your matched field — someone who was o
 **Heading:** 🔒 We help you get there. (By invitation only)
 
 The report is the beginning, not the end. For select students, we go further — turning a
-recommendation into real momentum. Your story goes first; your marks never get a veto.
+recommendation into real momentum.
 
 ---
 

@@ -54,7 +54,7 @@ const QUESTIONS = [
     },
 ]
 
-// Who it's for — the four journeys the product already handles, as three audiences.
+// Who is it for — the four journeys the product already handles, as three audiences.
 const AUDIENCES = [
     {
         icon: "listen",
@@ -134,7 +134,7 @@ function Landing() {
                                 You don't need more <s className="strike">career gyaan</s>. You need
                                 a <strong className="highlight-pink">system</strong>.
                             </h2>
-                            <p>Most students don't choose a career — they inherit one. Here's what they actually ask.</p>
+                            <p>Most students don't choose a career — they inherit one. Here's what they should actually ask.</p>
                         </div>
                         {/* COLLAPSED BY DEFAULT: the question is the hook, the answer is one tap away. */}
                         <div className="faq">
@@ -152,7 +152,7 @@ function Landing() {
                 <section className="section section-alt">
                     <div className="page">
                         <div className="section-head">
-                            <h2>Who it's for</h2>
+                            <h2>Who is it for</h2>
                             <p>Wherever you are on the road, we start from where you're standing.</p>
                         </div>
                         <div className="audience">
