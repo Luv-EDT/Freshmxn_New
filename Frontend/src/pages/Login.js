@@ -3,6 +3,8 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { loginUser, getCurrentUser, getGoogleSignInUrl } from "../apiCall/userApi"
 import { setUser } from "../store/userSlice"
+import { Input } from "antd"
+import logo from "../assets/brand/logo.png"
 
 function Login() {
     const navigate = useNavigate()
@@ -89,6 +91,7 @@ function Login() {
 
     return (
         <div>
+            <img src={logo} alt="Freshmxn" height="40" />
             <h2>Login</h2>
 
             <form onSubmit={handleLogin}>
@@ -100,7 +103,7 @@ function Login() {
                 <div>
                     <label>Password</label>
                     <br />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Input.Password value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <button type="submit">Login</button>
             </form>

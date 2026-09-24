@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom"
 import { useSelector } from "react-redux"
+import logo from "../assets/brand/logo.png"
 
 function Navbar() {
     const { user } = useSelector((state) => state.user)
 
     return (
         <div>
-            <strong>Freshmxn</strong>
+            <Link to="/"><img src={logo} alt="Freshmxn" height="32" /></Link>
             {" | "}
             {user && user.role === "admin" && <Link to="/admin">Admin</Link>}
             {user && user.role !== "admin" && (
@@ -28,7 +29,8 @@ function Navbar() {
                 mid-assessment, where the most destructive action available is one mis-tap from the
                 thing beside it. Profile.js already has it, behind the same confirm, next to the
                 account it belongs to. */}
-            {user && (
+            {/* not for admins: /profile bounces them straight back to /admin, so it is a dead link */}
+            {user && user.role !== "admin" && (
                 <>
                     {" | "}
                     <Link to="/profile">{user.name}</Link>

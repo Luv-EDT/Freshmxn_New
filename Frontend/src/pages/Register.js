@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { registerUser, getGoogleSignInUrl } from "../apiCall/userApi"
 import { setUser } from "../store/userSlice"
+import { Input } from "antd"
+import logo from "../assets/brand/logo.png"
 import { JOURNEY_OPTIONS, STREAM_SUBJECTS } from "./journeyOptions"
 
 function Register() {
@@ -97,6 +99,7 @@ function Register() {
 
     return (
         <div>
+            <img src={logo} alt="Freshmxn" height="40" />
             <h2>Create your account</h2>
 
             <form onSubmit={handleRegister}>
@@ -113,7 +116,7 @@ function Register() {
                 <div>
                     <label>Password (at least 8 characters)</label>
                     <br />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+                    <Input.Password value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
                 </div>
                 <div>
                     <label>Age</label>

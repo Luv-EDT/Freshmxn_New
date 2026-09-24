@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { useSelector, useDispatch } from "react-redux"
-import { Table, Collapse, Popconfirm, message } from "antd"
+import { Table, Collapse, message } from "antd"
 import dayjs from "dayjs"
 import { getMyPayments, getMyRefundRequests, getMyFinancialAid } from "../../apiCall/paymentsApi"
 import { resendVerification, getCurrentUser } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 import RequestRefundForm from "./RequestRefundForm"
 import Navbar from "../Navbar"
+import LogoutButton from "../LogoutButton"
 import { JOURNEY_OPTIONS } from "../journeyOptions"
 
 const TIER_NAMES = {
@@ -21,7 +21,6 @@ const OPEN_REFUND_STATUSES = ["pending", "refund_pending", "refund_failed"]
 // Account + money. Refunds are payment rows, so purchases, upgrades and refunds all sit in the
 // one Payment history table rather than being split across two.
 function Profile() {
-    const navigate = useNavigate()
     const dispatch = useDispatch()
     const { user } = useSelector((state) => state.user)
     const [payments, setPayments] = useState([])
@@ -65,12 +64,6 @@ function Profile() {
         } else {
             message.error(response?.data?.message || "Could not send the email")
         }
-    }
-
-    const handleLogout = () => {
-        dispatch(setUser({ user: null }))
-        localStorage.removeItem("token")
-        navigate("/login")
     }
 
     // after clicking the link in a second tab, this pulls the confirmed status in
@@ -175,14 +168,7 @@ function Profile() {
             <Collapse items={panels} defaultActiveKey={["account"]} />
 
             <p>
-                <Popconfirm
-                    title="Log out of Freshmxn?"
-                    okText="Log out"
-                    cancelText="Stay"
-                    onConfirm={handleLogout}
-                >
-                    <button type="button">Log out</button>
-                </Popconfirm>
+                <LogoutButton />
             </p>
 
             <RequestRefundForm

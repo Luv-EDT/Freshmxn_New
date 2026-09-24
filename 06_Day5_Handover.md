@@ -82,6 +82,10 @@ Nothing in `scoring/`, `matching/`, payments or any route changed. Locally, leav
   files, 440 kB main bundle.
 - `Frontend/public/index.html` has `<meta name="robots" content="noindex, nofollow">` — **preview
   only, remove at go-live** (DEPLOY.md Phase B step 5).
+- **Google sign-in was broken in production (fixed).** `apiCall/userApi.js` `getGoogleSignInUrl()`
+  built `${REACT_APP_API_URL}/auth/google`; with the variable unset (same-origin) the bundle shipped
+  `href="undefined/auth/google"`. Now falls back to `""`. Axios was already fine (`baseURL`
+  undefined → relative). **Any future link built from `REACT_APP_API_URL` needs the same `|| ""`.**
 - New API route prefixes must not equal a page's URL prefix (e.g. API `/mentors` vs page
   `/mentor/…`): the SPA fallback is registered after the routers, so a collision 404s on refresh.
 
@@ -97,7 +101,27 @@ Nothing in `scoring/`, `matching/`, payments or any route changed. Locally, leav
   and the two-phase freshmxn.com domain move.
 - Worker changes, lockfile repair and `noindex` as above.
 
-**Next:** owner runs `DEPLOY.md` Steps 1–7 and sends back the Render URL / any red logs → then
+**Owner deployed** — live at **https://www.freshmxn.com** (went straight to Phase B, `www` on
+Render). `noindex` is still on — remove only at go-live.
+
+### Owner corrections round 1 ✅
+| Fix | Where |
+|---|---|
+| Google sign-in link (`undefined/auth/google`) | `apiCall/userApi.js` |
+| Admins could not log out — the only button was on `/profile`, which bounces admins to `/admin` | new `pages/LogoutButton.js` (moved out of `Profile.js` unchanged), rendered in `Admin/AdminHome.js`; `Navbar.js` hides the dead name→profile link for admins |
+| Password show/hide eye | antd `Input.Password` in `Login.js`, `Register.js`, `ResetPassword.js` (×2); `required`/`minLength` still enforced by the browser |
+| **Company logo** | Owner supplied 5 PNGs (500×500). Trimmed copies in `src/assets/brand/`: `logo.png` (navy+teal, main), `logo-light.png` (white text, for dark sections), `logo-navy.png`, `mark-dark.png`, `mark-light.png`, plus `mark.png` — the high-res arrows recoloured to logo 5's exact navy `#1E2A38` / teal `#007582` (top arrow navy, bottom teal). Logo shown in the navbar and above Login/Register — unstyled until Stage 2 |
+| **Site icon** (owner chose the navy+teal mark) | `public/favicon.ico` (16/32/48), `favicon-32.png`, `apple-touch-icon.png`, `icon-192/512.png`, `manifest.json`, `theme-color` — built from `mark.png` on a **white rounded tile**, because the navy arrow vanishes on dark browser tabs. The image-3 source file had an opaque white background; converted to transparency |
+
+Verified in Chromium (Playwright) against the production build served by Express: logo renders,
+favicon served (200, `image/vnd.microsoft.icon`), Google link is `/auth/google`, eye flips the
+input `password → text`, `required` intact, admin page shows Log out, the admin has no `/profile`
+link, confirming logout lands on `/login` with the token cleared. Build warnings identical to
+before (all pre-existing in `Interest/`, `RequestRefundForm.js`, `VerifyEmail.js`). Fixtures 22/51/99.
+
+**Next:** Stage 1 (public site + mentor tier), then ⏸ STOP 1.
+
+**Next (superseded):** owner runs `DEPLOY.md` Steps 1–7 and sends back the Render URL / any red logs → then
 Stage 1 (public site + mentor tier).
 
 ---

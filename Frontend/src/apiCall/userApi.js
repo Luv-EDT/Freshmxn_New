@@ -96,5 +96,7 @@ export async function updateStudentForAdmin(id, payload) {
 
 // Google sign-in is a full-page redirect through the backend, not an axios call
 export function getGoogleSignInUrl() {
-    return `${process.env.REACT_APP_API_URL}/auth/google`
+    // same-origin in production, where REACT_APP_API_URL is unset — without the fallback the link
+    // compiled to "undefined/auth/google" and Google sign-in silently bounced back to the start
+    return `${process.env.REACT_APP_API_URL || ""}/auth/google`
 }

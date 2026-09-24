@@ -150,6 +150,19 @@ Last: in `render.yaml`, change `branch:` to `main` once the work is merged.
 
 ---
 
+## If Google sign-in fails
+
+Check all five — any one of them breaks it:
+1. Render → Environment → `FRONTEND_URL` is exactly `https://www.freshmxn.com` (no trailing slash).
+   This is also the CORS allow-list, so a wrong value breaks every login, not just Google.
+2. `GOOGLE_CALLBACK_URL` is exactly `https://www.freshmxn.com/auth/google/callback`.
+3. Google Cloud → Credentials → OAuth client → **Authorized redirect URIs** contains that exact URL.
+4. Google Cloud → **OAuth consent screen** → Publishing status **In production**. In *Testing*,
+   only listed test users can sign in; everyone else sees "Access blocked".
+5. OAuth consent screen → **Authorized domains** contains `freshmxn.com`.
+
+If it still fails, Render → Logs shows a line starting `Google callback failed:` — paste it to Claude.
+
 ## Things to know
 
 - **Free plan sleeps** after ~15 min with no visitors; the next visit takes ~50 s. A student

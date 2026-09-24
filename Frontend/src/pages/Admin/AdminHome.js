@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Tabs } from "antd"
 import Navbar from "../Navbar"
+import LogoutButton from "../LogoutButton"
 import AccessRequestsList from "./AccessRequestsList"
 import RefundRequestsList from "./RefundRequestsList"
 import StudentsList from "./StudentsList"
@@ -47,6 +48,7 @@ function AdminHome() {
         <div>
             <Navbar />
             <h2>Admin</h2>
+            <LogoutButton />
             <Tabs items={items} />
         </div>
     )
