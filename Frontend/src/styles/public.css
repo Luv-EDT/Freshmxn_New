@@ -1010,7 +1010,7 @@
     height: 160px;
     border-radius: 50%;
     object-fit: cover;
-    object-position: 50% 22%;
+    object-position: 50% 30%;
     border: 4px solid var(--teal-tint);
     box-shadow: var(--shadow-sm);
 }
