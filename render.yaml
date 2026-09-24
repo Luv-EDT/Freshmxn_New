@@ -1,0 +1,85 @@
+# Render Blueprint — Freshmxn. Render → New → Blueprint → pick this repo. See DEPLOY.md.
+#
+# ONE free web service runs everything: the Express API, the built React app, and — because
+# RUN_WORKERS_IN_WEB is "true" — both BullMQ workers inside the same process (see server.js).
+#
+# Values marked `sync: false` are secrets: Render asks for them once, in the dashboard, and they are
+# never written to this file or to git.
+
+services:
+  - type: web
+    name: freshmxn
+    runtime: node
+    plan: free
+    region: singapore             # closest Render region to students in India
+    branch: claude/peaceful-bohr-rkxau6   # the preview branch; switch to main after the merge
+    autoDeploy: true              # every push to the branch redeploys by itself
+    # CI=false: Render may set CI=true, which turns pre-existing warnings in Interest/ into build
+    # errors (Day 4 handover §6). GENERATE_SOURCEMAP=false keeps the build inside free-tier memory
+    # and keeps the source code out of the browser.
+    buildCommand: cd Frontend && npm ci && CI=false GENERATE_SOURCEMAP=false npm run build && cd ../Backend && npm ci
+    startCommand: cd Backend && npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: RUN_WORKERS_IN_WEB
+        value: "true"
+      - key: WORKER_DRAIN_DELAY_S
+        value: "60"
+      - key: WORKER_STALLED_INTERVAL_MS
+        value: "120000"
+      - key: PAYMENT_MODE
+        value: manual
+
+      # ── secrets: filled in on the Render dashboard ──
+      - key: DB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: VOYAGE_API_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+  # ── LATER, when traffic justifies paid workers ($7/month each) ─────────────────────────────────
+  # 1. Set RUN_WORKERS_IN_WEB to "false" on the web service above.
+  # 2. Uncomment these two, and give them the same secrets as the web service.
+  #
+  # - type: worker
+  #   name: freshmxn-worker-score
+  #   runtime: node
+  #   plan: starter
+  #   region: singapore
+  #   branch: main
+  #   buildCommand: cd Backend && npm ci
+  #   startCommand: cd Backend && node workers/scoreProfileWorker.js
+  #
+  # - type: worker
+  #   name: freshmxn-worker-report
+  #   runtime: node
+  #   plan: starter
+  #   region: singapore
+  #   branch: main
+  #   buildCommand: cd Backend && npm ci
+  #   startCommand: cd Backend && node workers/generateReportWorker.js
