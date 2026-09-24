@@ -272,11 +272,46 @@ Not restyled beyond tokens (Tier 2 per plan): the admin dashboard. Remaining inl
 functional ones (SART, DigitSpan's big digit display and answer box, ExternalTest/StoryRecall input
 widths) — safe to class up later, but they measure things, so each needs its own careful pass.
 
+### Round 5 — owner changes after STOP 2 ✅ built · ⏸ STOP 3 (owner review)
+
+Owner decisions: parental consent **stays the self-declared checkbox for now** (the legal pages say
+so honestly and say verified consent is coming); company **Freshmxn Education India Private Limited**,
+CIN U85500DL2025PTC453582, registered 3477 Sarwan Building, Nicholson Road, Chandni Chowk, Delhi
+110006 (PAN/TAN deliberately not published); keep and fix the hero illustration; remove every
+"illustrative" on Success stories.
+
+| Area | What changed |
+|---|---|
+| **Legal** (new) | `Public/LegalPage.js` (shared layout: contents list, "Last updated 24 September 2026", `COMPANY` constants), `Public/Privacy.js` at `/privacy` (DPDP Act 2023 + Rules 2025: fiduciary, what we collect — mapped to the real models, screenshots **never stored** per `externalTestsRouter.js`, purposes, no ads/sale/child tracking, children + the current checkbox consent recorded with time/IP/`POLICY_VERSION`, processors incl. cross-border, retention, rights, breach, Grievance Officer, Data Protection Board), `Public/Terms.js` at `/terms` (plans, minors, INR pricing, refunds incl. the **same** `MentorRolloverPolicy` component, guidance-not-guarantees / not a diagnosis, independent mentors, AssessmentDay, acceptable use, IP, liability, Delhi courts). Linked from the footer, Register ("By creating an account you agree…"), CompleteProfile, and both under-18 consent checkboxes. **Draft — not legal advice; DPDP lawyer review is still a go-live gate.** Grievance officer = Luv Goel, luvgoel@freshmxn.com (**assumption — owner to confirm**) |
+| **Landing** | Now: hero (trimmed copy) → "You need a system" with **four collapsed questions** (`<details>`; answers trimmed, stats + sources kept) → **new "Who it's for"** (School Class 9–12 / College / Early professionals) → Why we're different → closing band → footer. Promise, steps, invite, pricing and About **moved off** the landing page |
+| **Hero art** | Shapes were hanging off the card with negative offsets and the hero's overflow clip cut the teal blob to a sliver on phones. `.hero-visual` now reserves padding right/below so the blob and pink dot always show (phone + desktop) |
+| **How it works** (new) | `Public/HowItWorks.js` at `/how-it-works`: opens on "We don't just train you for a dead end" (navy band, page `h1`), then the four steps + How we rank, "By invitation only", Pricing (server prices). Copy moved verbatim. Hero "See how it works" links here |
+| **About us** (new) | `Public/About.js` at `/about`: the owner's story, edited for spelling/flow only, first person, + LinkedIn, company name, CTA. (Closes the old "About section" open item) |
+| **Nav / footer / sitemap** | PublicNav: How it works · Success stories · Mentors · About us · Log in/Profile + CTA (wraps to two rows on a phone — accepted). Footer: + How it works, About us, Terms, Privacy; "© 2026 Freshmxn Education India Private Limited · CIN …". `sitemap.xml` + 4 URLs |
+| **Success stories** | Per-card "(Illustrative example.)" and the intro parenthetical removed; `success_stories_page.md` updated with the owner decision. (The landing hero's small "Illustrative example" note on the mock matches card is a different thing and stays) |
+| **Assessment** | "Open now" heading removed from `AssessmentIntro.js` |
+| **Mentorship** | "We'll confirm your mentor **via WhatsApp** by {date}" |
+| **Report** | Collapsed `ProfessionCard` = **name only** on a teal-tint row with a teal-dark name. Sector line (the "11. Sports & Fitness" numbering), years, chips and the filter note left the row. Inside the card: years to qualify first, worth-the-switch cost as a plain line ("About N years of what you've done so far would be left behind" — DECISIONS §5 keeps the cost visible), the filter note. **Removed entirely:** chips and the per-profession "why we selected this" (`tierReason`); "Not in the list above" gone. `reportTags.js` untouched (`studentTags` still drives "What seems to drive you"; its "you will see this alongside the careers below" clause was dropped because the tags no longer appear) |
+
+⚠ **One fixture changed, on purpose:** `workers/fixtures` "TIERS — the ranking explains itself"
+asserted `const tierReason` exists in `ReportPage.js`. The owner explicitly removed the per-profession
+reason, so that one assertion was replaced by a comment; the rest of the fixture (5 group boundaries
+matching the engine, every group states its `why:`, "How this list is ordered") still runs — the
+ranking still explains itself at group level. No other fixture touched. Still 99/99.
+
+Verified: build (same 8 pre-existing warnings), fixtures 22/51/99, API 38/38, `uiFlow` **54/54**
+(updated for the new landing + new checks: questions start collapsed and open on tap, How it works
+opens on the dead-end band with server prices, About/Terms/Privacy render with the CIN, footer links,
+Register links Terms/Privacy, no "illustrative" on stories, "via WhatsApp"), `round3` 39/39, new
+`round5` 16/16 (report rows are name-only, coloured, no chips, years inside, no tier reason, no
+"Open now", 360 + 1280), no sideways scroll at 360 on every new page.
+
 ## 4. Open items carried forward
 - **Bare domain** `freshmxn.com` has no DNS record yet (see round 3).
 - **DNS move in Cloudflare** (owner) — then ask Claude to re-check that www and the bare domain
   resolve to Render (`216.24.57.x`).
-- **About section** — the owner's own 2–3 lines (why Freshmxn exists) still to be written.
+- **Legal pages** — lawyer review (DPDP) before go-live; confirm the Grievance Officer name/email;
+  the verified parental consent step (V2) must land before the pages' "coming" promise gets old.
 - `User/Mentorship.js` "How it works" promises in-app session booking; V1 has none — reword or keep.
 - Everything in Day 4 §5 (owner gates) still stands.
 - Price mismatch in the content docs: `mentor_waitlist_page.md` says ₹6,500, `00_Master_Plan` says

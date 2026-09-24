@@ -211,7 +211,8 @@ function Register() {
                         <p><strong>You're under 18</strong></p>
                         <label>
                             <input type="checkbox" checked={parentConsentChecked} onChange={(e) => setParentConsentChecked(e.target.checked)} />
-                            I have taken permission from my parent/guardian to use Freshmxn.
+                            I have taken permission from my parent/guardian to use Freshmxn, and they agree to the{" "}
+                            <Link to="/terms" target="_blank">Terms</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link>.
                         </label>
                         <div>
                             <label>Parent/guardian name</label>
@@ -225,6 +226,11 @@ function Register() {
                         </div>
                     </div>
                 )}
+
+                <p className="legal-agree">
+                    By creating an account you agree to our <Link to="/terms" target="_blank">Terms</Link> and{" "}
+                    <Link to="/privacy" target="_blank">Privacy Policy</Link>.
+                </p>
 
                 <button type="submit">Create account</button>
             </form>
