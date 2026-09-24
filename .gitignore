@@ -9,3 +9,6 @@ node_modules/
 # Raw Baseline_Rating sample passes. Disposable by design — every sample they contain is preserved
 # inside Backend/data/baseline_rating.json under sample_variance, so the merged file is the record.
 /.ratings/
+
+# design-loop screenshots from Frontend/scripts/shoot.js
+/Frontend/shots/

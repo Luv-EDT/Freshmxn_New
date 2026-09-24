@@ -1,0 +1,286 @@
+/* Shared pieces used across the public site and the app. */
+
+/* ── buttons ──────────────────────────────────────────────────────────────────────────────────── */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--teal-dark);
+    color: #ffffff;
+}
+
+.btn-ghost {
+    background: transparent;
+    border-color: var(--navy);
+    color: var(--navy);
+}
+
+.btn-ghost:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+.btn-light {
+    background: #ffffff;
+    color: var(--navy);
+}
+
+.btn-light:hover {
+    color: var(--teal);
+}
+
+.btn-sm {
+    min-height: 40px;
+    padding: 0 16px;
+    font-size: 0.95rem;
+}
+
+.btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+/* ── highlighter & strikethrough (the Kira moves) ─────────────────────────────────────────────── */
+
+/* a pastel pink swipe BEHIND navy text — one phrase per section at most */
+.highlight-pink {
+    background: linear-gradient(transparent 55%, var(--pink) 55%, var(--pink) 92%, transparent 92%);
+    padding: 0 0.1em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+.strike {
+    text-decoration: line-through;
+    text-decoration-color: var(--teal);
+    text-decoration-thickness: 0.12em;
+    color: var(--muted);
+}
+
+.accent {
+    color: var(--teal);
+}
+
+/* ── cards, chips, eyebrows ───────────────────────────────────────────────────────────────────── */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+.eyebrow {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: var(--space-3);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+/* ── the logged-in app header (Navbar.js) ─────────────────────────────────────────────────────── */
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: saturate(1.4) blur(8px);
+    border-bottom: 1px solid var(--line);
+}
+
+.app-header .nav-row {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 16px;
+}
+
+.nav-link {
+    color: var(--navy);
+    font-weight: 700;
+    text-decoration: none;
+    padding: 8px 4px;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--teal);
+}
+
+.nav-spacer {
+    flex: 1 1 auto;
+}
+
+.nav-user {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--navy);
+    font-weight: 700;
+    text-decoration: none;
+    padding: 6px 12px 6px 6px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.nav-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 900;
+}
+
+.brand-logo {
+    display: block;
+    width: auto;
+}
+
+/* ── app pages ────────────────────────────────────────────────────────────────────────────────── */
+
+.app-page {
+    padding-top: var(--space-6);
+}
+
+.page-title {
+    margin-bottom: var(--space-2);
+}
+
+.section-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── auth pages: one centred card ─────────────────────────────────────────────────────────────── */
+
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--space-6) 16px;
+    background:
+        radial-gradient(600px 300px at 110% -10%, var(--teal-tint), transparent 70%),
+        radial-gradient(500px 260px at -10% 110%, var(--pink-tint), transparent 70%),
+        var(--page);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: var(--space-6) var(--space-5);
+}
+
+.auth-card .brand-link {
+    display: inline-block;
+    margin-bottom: var(--space-5);
+}
+
+.auth-card form > div {
+    margin-bottom: var(--space-4);
+}
+
+.auth-card input:not([type="checkbox"]):not([type="radio"]),
+.auth-card select,
+.auth-card .ant-input-password {
+    width: 100%;
+    max-width: none;
+    margin-top: 6px;
+}
+
+.auth-card button[type="submit"] {
+    width: 100%;
+    margin-top: var(--space-2);
+}
+
+.auth-card .ant-input-password input {
+    margin-top: 0;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--muted);
+    margin: var(--space-5) 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--line);
+}
+
+/* ── antd refinements on top of the theme ─────────────────────────────────────────────────────── */
+
+.ant-collapse {
+    background: var(--surface);
+    border-radius: var(--radius-lg) !important;
+    overflow: hidden;
+}
+
+.ant-collapse > .ant-collapse-item > .ant-collapse-header {
+    font-weight: 700;
+    padding: 16px 20px !important;
+    align-items: center !important;
+}

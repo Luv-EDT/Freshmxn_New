@@ -125,3 +125,175 @@ video:not([height]) {
     max-width: 100%;
     overflow-x: auto;
 }
+
+/* ── typography and page colour (Stage 2) ─────────────────────────────────────────────────────── */
+
+body {
+    background: var(--page);
+    color: var(--navy);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Orelega One is the display personality — H1 to H3 only. Lato does everything else. */
+h1,
+h2,
+h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--navy);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-4);
+}
+
+h1 { font-size: var(--text-h1); }
+h2 { font-size: var(--text-h2); }
+h3 { font-size: var(--text-h3); }
+
+h4,
+h5,
+h6 {
+    font-family: var(--font-body);
+    font-weight: 900;
+    color: var(--navy);
+    margin: var(--space-5) 0 var(--space-2);
+}
+
+p {
+    margin: 0 0 var(--space-4);
+}
+
+a {
+    color: var(--teal);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+}
+
+a:hover {
+    color: var(--teal-dark);
+}
+
+strong {
+    font-weight: 700;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--line);
+    margin: 0;
+}
+
+blockquote {
+    margin: var(--space-5) 0;
+    padding: var(--space-4) var(--space-5);
+    background: var(--teal-tint);
+    border-left: 4px solid var(--teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+ul,
+ol {
+    padding-left: 1.25em;
+    margin: 0 0 var(--space-4);
+}
+
+li + li {
+    margin-top: var(--space-2);
+}
+
+:focus-visible {
+    outline: 3px solid var(--teal);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* plain (non-antd) form controls, so older pages match antd's inputs */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+    font: inherit;
+    color: var(--navy);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    min-height: 44px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--teal);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--teal-tint);
+}
+
+label {
+    font-weight: 700;
+}
+
+/* plain buttons get the brand look; antd buttons are styled by the theme */
+button:not([class*="ant-"]) {
+    font: inherit;
+    font-weight: 700;
+    color: var(--navy);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+button:not([class*="ant-"]):hover:not(:disabled) {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+button:not([class*="ant-"]):disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+button[type="submit"]:not([class*="ant-"]) {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #ffffff;
+}
+
+button[type="submit"]:not([class*="ant-"]):hover:not(:disabled) {
+    background: var(--teal-dark);
+    color: #ffffff;
+}
+
+fieldset {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin: 0 0 var(--space-4);
+}
+
+legend {
+    font-weight: 700;
+    padding: 0 var(--space-2);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+th {
+    font-weight: 700;
+    background: #f6f4ee;
+}

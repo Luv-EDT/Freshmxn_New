@@ -1,0 +1,753 @@
+/* The public site — Kira's structure and energy (Frontendref1.png), borrowing only warmth (soft
+   edges, gentle gradients) from the Cofounder reference. Light base, navy ink, teal the star. */
+
+/* ── public header ────────────────────────────────────────────────────────────────────────────── */
+
+.public-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255, 251, 239, 0.92);
+    backdrop-filter: saturate(1.4) blur(8px);
+    border-bottom: 1px solid rgba(30, 42, 56, 0.06);
+}
+
+.public-header .nav-row {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 16px;
+}
+
+.public-header .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 18px;
+}
+
+/* on a phone the links sit on their own row under the logo + CTA */
+@media (max-width: 719px) {
+    .public-header .nav-row {
+        row-gap: 4px;
+    }
+
+    .public-header .nav-links {
+        order: 3;
+        width: 100%;
+        font-size: 0.95rem;
+    }
+
+    .public-header .nav-cta {
+        margin-left: auto;
+    }
+}
+
+@media (min-width: 720px) {
+    .public-header .nav-links {
+        margin-left: var(--space-5);
+    }
+
+    .public-header .nav-cta {
+        margin-left: auto;
+    }
+}
+
+/* ── sections ─────────────────────────────────────────────────────────────────────────────────── */
+
+.section {
+    padding: var(--space-7) 0;
+}
+
+@media (min-width: 900px) {
+    .section {
+        padding: var(--space-8) 0;
+    }
+}
+
+.section-head {
+    max-width: 760px;
+    margin: 0 auto var(--space-6);
+    text-align: center;
+}
+
+.section-head p {
+    color: var(--muted);
+    font-size: var(--text-lead);
+}
+
+.section-alt {
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+/* ── hero ─────────────────────────────────────────────────────────────────────────────────────── */
+
+.hero {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(700px 360px at 85% 10%, rgba(0, 117, 130, 0.10), transparent 70%),
+        radial-gradient(520px 300px at 5% 95%, rgba(255, 179, 199, 0.28), transparent 70%),
+        var(--cream);
+    padding: var(--space-7) 0 var(--space-7);
+}
+
+.hero-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    align-items: center;
+}
+
+@media (min-width: 900px) {
+    .hero {
+        padding: var(--space-8) 0;
+    }
+
+    .hero-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: var(--space-7);
+    }
+}
+
+.hero h1 {
+    margin-bottom: var(--space-4);
+}
+
+.hero .lead {
+    font-size: var(--text-lead);
+    color: var(--navy-soft);
+    max-width: 38em;
+}
+
+.hero .btn-row {
+    margin-top: var(--space-5);
+}
+
+/* the illustrative "your matches" preview beside the hero copy */
+.hero-visual {
+    position: relative;
+    max-width: 440px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.hero-visual .blob {
+    position: absolute;
+    inset: 8% -6% -6% 8%;
+    background: var(--teal);
+    border-radius: 42% 58% 55% 45% / 48% 42% 58% 52%;
+    opacity: 0.9;
+}
+
+.preview-card {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-5);
+}
+
+.preview-card .preview-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    margin-bottom: var(--space-4);
+}
+
+.preview-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--line);
+}
+
+.preview-row strong {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.preview-rank {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+}
+
+.preview-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.preview-note {
+    margin: var(--space-3) 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.hero-visual .doodle {
+    position: absolute;
+    width: 92px;
+    right: -8px;
+    top: -34px;
+}
+
+/* ── problem (strikethrough beat) ─────────────────────────────────────────────────────────────── */
+
+.problem h2 {
+    max-width: 18em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.stat-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+@media (min-width: 720px) {
+    .stat-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.stat-list li {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── promise ──────────────────────────────────────────────────────────────────────────────────── */
+
+.promise {
+    background: var(--navy);
+    color: var(--grey-light);
+}
+
+.promise h2 {
+    color: #ffffff;
+}
+
+.promise strong {
+    color: #ffffff;
+}
+
+.promise .promise-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: var(--text-lead);
+}
+
+/* ── how it works: four cards ─────────────────────────────────────────────────────────────────── */
+
+.steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+    .steps {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1000px) {
+    .steps {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.step-art {
+    height: 112px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-art svg {
+    width: 64px;
+    height: 64px;
+}
+
+.step:nth-child(1) .step-art { background: var(--teal-tint); }
+.step:nth-child(2) .step-art { background: var(--cream); }
+.step:nth-child(3) .step-art { background: var(--pink-tint); }
+.step:nth-child(4) .step-art { background: #e8ecf1; }
+
+.step-body {
+    padding: var(--space-5);
+}
+
+.step-num {
+    font-weight: 900;
+    color: var(--teal);
+    letter-spacing: 0.08em;
+    font-size: 0.85rem;
+}
+
+.step h3 {
+    font-size: 1.25rem;
+    margin: var(--space-2) 0 var(--space-3);
+}
+
+.step p {
+    margin: 0;
+    color: var(--navy-soft);
+}
+
+.rank-note {
+    max-width: 860px;
+    margin: var(--space-6) auto 0;
+    background: var(--teal-tint);
+    border: 0;
+    border-left: 5px solid var(--teal);
+    border-radius: var(--radius);
+    padding: var(--space-5);
+}
+
+/* ── invitation band ──────────────────────────────────────────────────────────────────────────── */
+
+.invite {
+    max-width: 860px;
+    margin: 0 auto;
+    text-align: center;
+    background: var(--cream);
+    border: 1px dashed var(--teal);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6) var(--space-5);
+}
+
+/* ── differentiators ──────────────────────────────────────────────────────────────────────────── */
+
+.compare {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+    .compare {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.compare .card h3 {
+    font-size: 1.3rem;
+}
+
+.compare ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.compare li {
+    position: relative;
+    padding-left: 28px;
+}
+
+.compare li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.45em;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+
+/* ── pricing ──────────────────────────────────────────────────────────────────────────────────── */
+
+.pricing {
+    display: grid;
+    gap: var(--space-5);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+@media (min-width: 720px) {
+    .pricing {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.price-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6) var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+.price-card.featured {
+    border: 2px solid var(--teal);
+    box-shadow: var(--shadow);
+}
+
+.price-card h3 {
+    font-size: 1.35rem;
+    margin: 0;
+}
+
+.price {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    line-height: 1;
+    color: var(--navy);
+}
+
+.price-card p {
+    color: var(--navy-soft);
+    margin: 0;
+}
+
+.price-card .btn {
+    margin-top: auto;
+    align-self: flex-start;
+}
+
+.upgrade-note {
+    text-align: center;
+    color: var(--muted);
+    margin-top: var(--space-5);
+}
+
+/* ── closing statement band ───────────────────────────────────────────────────────────────────── */
+
+.closing {
+    background:
+        radial-gradient(500px 240px at 90% 0%, rgba(255, 179, 199, 0.35), transparent 70%),
+        var(--teal);
+    color: #ffffff;
+    text-align: center;
+}
+
+.closing h2 {
+    color: #ffffff;
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    margin-bottom: var(--space-5);
+}
+
+/* ── about ────────────────────────────────────────────────────────────────────────────────────── */
+
+.about {
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+    font-size: var(--text-lead);
+}
+
+/* ── footer ───────────────────────────────────────────────────────────────────────────────────── */
+
+.site-footer {
+    background: var(--navy);
+    color: var(--grey-light);
+    padding: var(--space-7) 0 var(--space-6);
+}
+
+.site-footer a {
+    color: #ffffff;
+}
+
+.site-footer h3 {
+    color: #ffffff;
+    font-size: 1.3rem;
+}
+
+.footer-grid {
+    display: grid;
+    gap: var(--space-6);
+}
+
+@media (min-width: 720px) {
+    .footer-grid {
+        grid-template-columns: 1.2fr 1fr 1fr;
+    }
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-bottom {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.9rem;
+    color: var(--grey);
+}
+
+.btn-whatsapp {
+    background: #25d366;
+    color: #0b3d20;
+}
+
+.btn-whatsapp:hover {
+    background: #1fb857;
+    color: #0b3d20;
+}
+
+/* ── success stories ──────────────────────────────────────────────────────────────────────────── */
+
+.page-hero {
+    background: var(--cream);
+    padding: var(--space-7) 0 var(--space-6);
+    text-align: center;
+}
+
+.page-hero p {
+    max-width: 720px;
+    margin: 0 auto;
+    color: var(--navy-soft);
+    font-size: var(--text-lead);
+}
+
+.stories {
+    display: grid;
+    gap: var(--space-5);
+}
+
+@media (min-width: 960px) {
+    .stories {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.story {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.story-head {
+    background: var(--teal);
+    color: #ffffff;
+    padding: var(--space-5);
+}
+
+.story-head h2 {
+    color: #ffffff;
+    font-size: 1.6rem;
+    margin: 0;
+}
+
+.story-body {
+    padding: var(--space-5);
+}
+
+.story-body h3 {
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 1.05rem;
+    margin: var(--space-5) 0 var(--space-3);
+}
+
+.story-body h3:first-child {
+    margin-top: 0;
+}
+
+.story .chosen {
+    background: var(--teal-tint);
+    border-radius: 8px;
+    padding: 2px 8px;
+}
+
+.signal-high {
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+.illustrative {
+    display: inline-block;
+    margin-top: var(--space-3);
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+/* ── mentor waitlist ──────────────────────────────────────────────────────────────────────────── */
+
+.numbered {
+    display: grid;
+    gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+    .numbered {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.policy {
+    background: var(--cream);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    border: 1px solid var(--line);
+}
+
+.check-list {
+    list-style: none;
+    padding: 0;
+}
+
+.check-list li {
+    position: relative;
+    padding-left: 28px;
+}
+
+.check-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--teal);
+    font-weight: 900;
+}
+
+/* ── round 2 refinements (critique loop) ──────────────────────────────────────────────────────── */
+
+/* header CTA: full wording on a laptop, "Get started" on a phone so the header stays one row */
+.label-short { display: none; }
+
+@media (max-width: 719px) {
+    .label-long { display: none; }
+    .label-short { display: inline; }
+
+    .public-header .nav-row {
+        padding: 8px 16px 4px;
+    }
+
+    .public-header .nav-links {
+        gap: 0 18px;
+        padding-bottom: 4px;
+    }
+
+    .public-header .nav-link {
+        padding: 6px 0;
+    }
+
+    /* hero buttons: equal, full width, easy thumb targets */
+    .hero .btn-row .btn {
+        width: 100%;
+    }
+
+    /* step cards: icon beside the text, not a tall band above it */
+    .step {
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+    .step-art {
+        height: auto;
+        width: 76px;
+        flex: none;
+    }
+
+    .step-art svg {
+        width: 44px;
+        height: 44px;
+    }
+
+    .step-body {
+        padding: var(--space-4);
+    }
+}
+
+/* a bolder hero on a laptop, with the visual given real presence */
+@media (min-width: 900px) {
+    .hero h1 {
+        font-size: clamp(3rem, 5.2vw, 4.2rem);
+    }
+
+    .hero-visual {
+        max-width: 460px;
+    }
+
+    .preview-card {
+        padding: var(--space-6);
+        transform: rotate(-1.5deg);
+    }
+}
+
+.hero-visual .blob {
+    inset: 14% -10% -12% 16%;
+}
+
+.hero-visual .dot-pink {
+    position: absolute;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: var(--pink);
+    left: -18px;
+    bottom: -22px;
+}
+
+/* the navy band gets a visual anchor */
+.promise svg {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--space-4);
+}
+
+/* warmer invitation card */
+.invite {
+    background:
+        radial-gradient(360px 180px at 100% 0%, var(--pink-tint), transparent 70%),
+        var(--cream);
+    border: 2px dashed var(--teal);
+}
+
+/* ── round 3 refinements ──────────────────────────────────────────────────────────────────────── */
+
+/* the tagline's three beats, one per line — a rhythm, never broken mid-phrase */
+.tagline span {
+    display: block;
+}
+
+/* the highlighted phrase never strands a single word at a line end */
+.hero .highlight-pink {
+    white-space: nowrap;
+}
+
+/* cleaner hero wash: cream with a soft pink glow only — the teal glow read as grey on cream */
+.hero {
+    background:
+        radial-gradient(520px 300px at 0% 100%, rgba(255, 179, 199, 0.30), transparent 70%),
+        radial-gradient(420px 260px at 100% 0%, rgba(255, 179, 199, 0.14), transparent 70%),
+        var(--cream);
+}
