@@ -10,6 +10,36 @@ process. Config lives in `render.yaml` at the repo root.
 
 ---
 
+## `render.yaml` vs this file — why there are two
+
+| | `render.yaml` (repo root) | `DEPLOY.md` (this file) |
+|---|---|---|
+| What it is | **Executable configuration** — a Render *Blueprint* | **The human runbook** |
+| Who reads it | **Render**, automatically, on every deploy / Blueprint sync | You (and Claude) |
+| What it holds | the service type, plan, region, **branch**, build and start commands, health check, and the *names* of env vars (non-secret values inline, secrets as `sync: false`) | everything a machine can't do: dashboard clicks, pasting secrets, Atlas network access, Upstash, Google OAuth redirect URIs, Cloudflare DNS, Search Console, the smoke test |
+| Can it move? | **No** — Render only looks for it at the repo root | Yes (it lives in `docs/2_build/`) |
+
+Keep both. Render cannot follow a runbook, and the yaml cannot hold secrets or manual steps.
+Neither belongs inside the Build PRD — the PRD describes *what* the system is; these two describe
+*where and how it runs*.
+
+## Moving the live site to `main` (September 2026)
+
+The site was deployed from the preview branch `claude/peaceful-bohr-rkxau6`. After that branch is
+merged into `main`, `render.yaml` says `branch: main`, and Render has to be pointed there too:
+
+1. **Render → the `freshmxn` service → Settings → Build & Deploy → Branch → `main` → Save.**
+   If the service was created from the Blueprint, also open **Blueprints → freshmxn → Manual sync**
+   so the Blueprint picks up `branch: main` from the yaml (otherwise a later sync could flip it back).
+2. **Manual Deploy → "Deploy latest commit".** Watch the log: `npm ci`, `react-scripts build`,
+   then `Server is running` and both `worker listening` lines.
+3. **Nothing else changes** — env vars, the custom domain, Google OAuth and DNS all stay as they are.
+4. **Smoke test:** open www.freshmxn.com, log in, open `/report` and `/profile`.
+5. From now on every push to `main` redeploys by itself (`autoDeploy: true`). The old preview
+   branch can be deleted on GitHub once you're happy.
+
+---
+
 ## Step 1 — MongoDB Atlas: let Render in
 
 Render's free plan has no fixed IP address, so Atlas must accept connections from anywhere (the
