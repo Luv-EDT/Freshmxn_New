@@ -22,7 +22,9 @@ const path = require("path")
 
 const scoreOpenItem = require("../scoring/llmScorer")
 
-const DOCS = path.join(__dirname, "..", "..")
+// The rubrics are parsed out of these two docs at runtime, so the docs are part of the pipeline:
+// moving or renaming them breaks grading (the fixture "every rubric is findable" catches it).
+const DOCS = path.join(__dirname, "..", "..", "docs", "5_finalized", "algorithms")
 
 // Which items exist, and where their rubric lives. The four perspective items are in
 // llm_scoring_prompts.md; the story's free-recall rubric is in the story bank.
