@@ -245,7 +245,7 @@ function InterestForm() {
                 <p>Would you like to edit your answers? You can change anything until your report is generated.</p>
                 <button type="button" onClick={() => navigate(`/interest/${steps[0].key}`)}>Yes, edit my answers</button>
                 {" "}
-                <button type="button" onClick={() => navigate("/")}>No, back to home</button>
+                <button type="button" onClick={() => navigate("/dashboard")}>No, back to home</button>
             </div>
         )
     }
@@ -328,7 +328,7 @@ function InterestForm() {
                         {...commonProps}
                         isSubmitting={isSubmitting}
                         isSubmitted={hasSubmitted}
-                        onGoHome={() => navigate("/")}
+                        onGoHome={() => navigate("/dashboard")}
                     />
                 )
             default:

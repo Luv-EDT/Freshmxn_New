@@ -24,7 +24,8 @@ const COMPETITION_OPTIONS = [
     { value: "recognition", label: "I don't seek competition, nor do I intentionally take out-of-the-box approaches—but I still desire recognition and appreciation." },
 ]
 
-const ACADEMIC_OPTIONS = [
+// exported: the mentor onboarding form asks mentors the same question in the same words (PRD §B.9)
+export const ACADEMIC_OPTIONS = [
     { value: "Category A", label: "Category A: Knew exactly which path to take, applied to specific colleges with clear goals, and achieved them" },
     { value: "Category B", label: "Category B: Followed successful peers' paths and achieved desired outcomes" },
     { value: "Category C", label: "Category C: Tried to follow established paths but couldn't achieve desired outcomes" },

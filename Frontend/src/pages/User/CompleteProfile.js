@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { updateProfile } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
@@ -175,7 +175,8 @@ function CompleteProfile() {
                         <p><strong>You're under 18</strong></p>
                         <label>
                             <input type="checkbox" checked={parentConsentChecked} onChange={(e) => setParentConsentChecked(e.target.checked)} />
-                            I have taken permission from my parent/guardian to use Freshmxn.
+                            I have taken permission from my parent/guardian to use Freshmxn, and they agree to the{" "}
+                            <Link to="/terms" target="_blank">Terms</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link>.
                         </label>
                         <div>
                             <label>Parent/guardian name</label>
@@ -189,6 +190,11 @@ function CompleteProfile() {
                         </div>
                     </div>
                 )}
+
+                <p className="legal-agree">
+                    By continuing you agree to our <Link to="/terms" target="_blank">Terms</Link> and{" "}
+                    <Link to="/privacy" target="_blank">Privacy Policy</Link>.
+                </p>
 
                 <button type="submit">Save and continue</button>
             </form>

@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { getMyReport } from "../../apiCall/reportsApi"
+import { getMyReport, retryMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
 import JourneyProgress from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
 import ProfessionCard, { levelPath, JOURNEY_LEVEL } from "./ProfessionCard"
-import ReportFilterBar from "./ReportFilterBar"
-import { chipsFor, studentTags } from "./reportTags"
-import { EMPTY_FILTERS, missedBy, optionCounts, sortRanked, hasData } from "./reportFilters"
+import ReportSortMenu from "./ReportSortMenu"
+import { studentTags } from "./reportTags"
+import { buildList } from "./reportFilters"
 
 // Stage 3 — the report.
 //
@@ -25,9 +25,11 @@ import { EMPTY_FILTERS, missedBy, optionCounts, sortRanked, hasData } from "./re
 //                      because a confident-looking report built on a fifth of the evidence is worse
 //                      than no report.
 //
-// BOTH LISTS, ALWAYS. DECISIONS.md §5 is explicit that fit × switching-cost makes the engine
-// structurally timid — it will never advise the hard change even when that is the true answer. So
-// "Worth the switch" is rendered beside the ranking, never instead of it, with the cost shown.
+// ONE LIST, TWO ORDERS (owner, Round 6). DECISIONS.md §5 is explicit that fit × switching-cost makes
+// the engine structurally timid — it will never advise the hard change even when that is the true
+// answer. The worth-the-switch careers used to be a second list under their own heading; students
+// could not tell the headings apart. Now they are one tap away as a primary sort, "Best fit, ignoring
+// switching cost", which adds them to the same list with the cost shown inside each card.
 //
 // match_confidence is already stripped by reportsRouter, and every factor slug is already
 // translated there. Nothing here needs to know either exists.
@@ -35,8 +37,10 @@ import { EMPTY_FILTERS, missedBy, optionCounts, sortRanked, hasData } from "./re
 // ── THE SIXTEEN TIERS, MADE VISIBLE ─────────────────────────────────────────────────────────────
 //
 // `tiers.js` sorts every profession into one of sixteen buckets from three signals. Sixteen
-// headings on a screen would be noise, so they collapse into five — but the RULE behind each one is
-// shown, because a ranking a student cannot interrogate is just an opinion with a number on it.
+// headings on a screen would be noise, so they collapse into five bands — and since Round 6 the
+// bands are no longer headings in the list at all (students could not tell them apart). The RULE
+// behind each one is shown inside "How this list is ordered", because a ranking a student cannot
+// interrogate is just an opinion with a number on it.
 //
 // The three signals, and the exact tier boundaries they produce (see Backend/matching/tiers.js):
 //
@@ -76,26 +80,6 @@ const TIER_GROUPS = [
     },
 ]
 
-const groupFor = (tier) => TIER_GROUPS.find((group) => tier <= group.upTo) || TIER_GROUPS[TIER_GROUPS.length - 1]
-
-// What put THIS profession in its bucket, in one line. Sixteen tiers means sixteen distinct
-// reasons, and the student can see which one applies to them rather than inferring it.
-const tierReason = (entry) => {
-    const evidence = []
-    if (entry.passion) evidence.push("you said you love it")
-    if (entry.achievement) evidence.push("you have achieved something in it")
-    if (entry.confidenceExp === "High") evidence.push("you are confident about it")
-
-    const source = entry.list === "A"
-        ? "something you have stuck with long-term"
-        : entry.list === "B"
-            ? "something you do now"
-            : "your profile rather than your activities"
-
-    const fit = entry.comfort ? "it fits how you think and work" : "the fit with how you work is looser"
-
-    return `Reached through ${source}; ${fit}${evidence.length > 0 ? `; ${evidence.join(" and ")}` : ""}.`
-}
 
 // "a, b and c" — because "spatial thinking, reasoning" reads like a truncated list rather than a
 // finished sentence, and these strings sit inside prose.
@@ -126,19 +110,19 @@ const JOURNEY_FRAMING = {
     },
     class11_12: {
         switchHeading: "Worth the switch",
-        switchIntro: "The list above accounts for your stream. These are the strongest fits ignoring that — some may need a stream change or an extra subject, which is still possible now.",
+        switchIntro: "The strongest fits even if they need a different stream or an extra subject — still possible at your stage.",
         switchIsDistinct: true,
         runwayNote: null,
     },
     college: {
         switchHeading: "Worth the switch",
-        switchIntro: "The list above is weighted by what changing course would cost you now. These are the strongest fits ignoring that cost — shown because the safe answer is not always the right one.",
+        switchIntro: "The strongest fits even if changing course would cost you time — because the safe answer is not always the right one.",
         switchIsDistinct: true,
         runwayNote: null,
     },
     early_professional: {
         switchHeading: "Worth the switch",
-        switchIntro: "The list above is weighted by what leaving your current track would cost. These ignore that entirely. Your experience is not wasted in most of them — work skills carry further between fields than qualifications do.",
+        switchIntro: "The strongest fits even if leaving your current track would cost you time. Work skills carry further between fields than qualifications do.",
         switchIsDistinct: true,
         runwayNote: null,
     },
@@ -152,8 +136,11 @@ function ReportPage() {
     const [state, setState] = useState({ loading: true, data: null, error: "" })
     const [details, setDetails] = useState({})        // professionId → the full student-facing record
     const [detailsLoaded, setDetailsLoaded] = useState(false)
-    const [filters, setFilters] = useState(EMPTY_FILTERS)
-    const [sort, setSort] = useState("best")
+    const [primary, setPrimary] = useState("best")
+    const [secondary, setSecondary] = useState(null)
+    // Bumped after a retry so the polling effect below starts again.
+    const [reloadKey, setReloadKey] = useState(0)
+    const [retrying, setRetrying] = useState(false)
 
     // Polls while the pipeline is running, and stops the moment it is not. A student who has just
     // pressed Submit is looking at this page NOW — telling them to come back later and leaving it
@@ -183,7 +170,22 @@ function ReportPage() {
             cancelled = true
             clearTimeout(timer)
         }
-    }, [])
+    }, [reloadKey])
+
+    // The pipeline gave up (status "failed", or rebuildFailed on an older report). Queue it again
+    // and go back to polling — the page shows "preparing" until the new report lands.
+    const retry = async () => {
+        setRetrying(true)
+        try {
+            const response = await retryMyReport()
+            if (response && response.data && response.data.success === false) throw new Error(response.data.message)
+            setState({ loading: false, data: { status: "generating" }, error: "" })
+            setReloadKey((key) => key + 1)
+        } catch (error) {
+            window.alert("We could not restart it just now. Please try again in a minute, or message us on WhatsApp.")
+        }
+        setRetrying(false)
+    }
 
     // ONE REQUEST FOR EVERY PROFESSION IN THE REPORT, fired once the ranking arrives rather than on
     // each expand. Forty accordion rows fetching themselves individually is forty round trips on a
@@ -237,42 +239,21 @@ function ReportPage() {
     }, [detailKey])
 
     const data = state.data
-    const ordered = useMemo(() => (ranked ? sortRanked(ranked, sort, details) : []), [ranked, sort, details])
 
-    // THE CONTROLS GOVERN EVERY PROFESSION ON THE PAGE, not just the ranking. Worth-the-switch is a
-    // list of careers too, and a student who sets "quickest to qualify" and finds one list obeying
-    // it and another ignoring it has been given a control that half works.
-    const orderedSwitch = useMemo(
-        () => (switchList ? sortRanked(switchList, sort, details) : []),
-        [switchList, sort, details]
+    // THE LIST THE STUDENT SEES — see buildList in reportFilters.js. No filter ever hides a career.
+    const ordered = useMemo(
+        () => buildList(ranked, switchList, primary, secondary, details),
+        [ranked, switchList, primary, secondary, details]
     )
 
-    // Counted across BOTH lists, so "High demand (11)" describes what the page will actually show
-    // rather than what one section of it will show.
-    const countable = useMemo(() => [...(ranked || []), ...(switchList || [])], [ranked, switchList])
-
-    const counts = useMemo(
-        () => (countable.length > 0 ? optionCounts(countable, filters, details) : { ai: {}, demand: {}, pay: {} }),
-        [countable, filters, details]
-    )
-
-    // Which controls have anything behind them on THIS list. An attribute we do not hold for any
-    // ranked profession gets no control at all rather than a row of dead buttons.
-    const available = useMemo(() => ({
-        ai: hasData(countable, details, "ai"),
-        demand: hasData(countable, details, "demand"),
-        pay: hasData(countable, details, "pay"),
-    }), [countable, details])
-
-    const matchingCount = useMemo(
-        () => countable.filter((entry) => missedBy(entry, filters, details[entry.professionId]).length === 0).length,
-        [countable, filters, details]
-    )
+    // The engine's top three keep their colours under every order, so "my best matches" never
+    // gets lost when a student sorts by pay.
+    const topIds = useMemo(() => (ranked || []).slice(0, 3).map((entry) => String(entry.professionId)), [ranked])
 
     if (state.loading) return <div><Navbar />Loading your report…</div>
     if (state.error) return <div><Navbar /><p>{state.error}</p></div>
 
-    const { status, release, sections, worthTheSwitch, aspirationSignals, filtered, journey, dominantReasons } = data
+    const { status, release, sections, aspirationSignals, filtered, journey, dominantReasons } = data
     const framing = framingFor(journey)
 
     if (status === "not_started") {
@@ -283,6 +264,28 @@ function ReportPage() {
                 <h1>Your report</h1>
                 <p>Finish the assessment and your report will be built from it.</p>
                 <button type="button" onClick={() => navigate("/assessment/start")}>Go to the assessment</button>
+            </div>
+        )
+    }
+
+    if (status === "failed") {
+        return (
+            <div>
+                <Navbar />
+                <JourneyProgress user={user} current="report" />
+                <h1>We hit a problem preparing your report</h1>
+                <p>
+                    <strong>Your answers are safe.</strong> Something went wrong on our side while building
+                    your report. Trying again usually fixes it.
+                </p>
+                <button type="button" className="btn btn-primary tap" onClick={retry} disabled={retrying}>
+                    {retrying ? "Starting again…" : "Try again"}
+                </button>
+                <p className="report-small">
+                    If it happens again,{" "}
+                    <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">message us on WhatsApp</a>{" "}
+                    and we will sort it out.
+                </p>
             </div>
         )
     }
@@ -325,14 +328,6 @@ function ReportPage() {
         )
     }
 
-    const grouped = []
-    ordered.forEach((entry) => {
-        const label = groupFor(entry.tier).label
-        const bucket = grouped.find((item) => item.label === label)
-        if (bucket) bucket.entries.push(entry)
-        else grouped.push({ label, entries: [entry] })
-    })
-
     const myTags = studentTags(dominantReasons)
 
     // ── CONCRETE NEXT STEPS, DERIVED ────────────────────────────────────────────────────────────
@@ -344,7 +339,8 @@ function ReportPage() {
     // list is better than a filler action.
     const nextActions = (() => {
         const actions = []
-        const topThree = ordered.slice(0, 3)
+        // Always the engine's top three — next steps do not change because the list was re-sorted.
+        const topThree = (ranked || []).slice(0, 3)
 
         // The immediate path step, named, for the strongest matches that share one.
         const steps = new Map()
@@ -394,11 +390,23 @@ function ReportPage() {
     })()
 
     return (
-        <div style={{ maxWidth: "800px" }}>
+        <div className="report-page">
             <Navbar />
             <JourneyProgress user={user} current="report" />
 
             <h1>Your report</h1>
+
+            {data.rebuildFailed && (
+                <div className="report-banner">
+                    <p>
+                        <strong>We could not update your report with your latest answers.</strong> This is the
+                        previous version.
+                    </p>
+                    <button type="button" className="btn btn-primary btn-sm tap" onClick={retry} disabled={retrying}>
+                        {retrying ? "Starting again…" : "Try again"}
+                    </button>
+                </div>
+            )}
 
             {status === "stale" && (
                 <p><em>Your matches have been recalculated since this was written. A fresh version is
@@ -413,54 +421,63 @@ function ReportPage() {
             )}
 
             {myTags.length > 0 && (
-                <p style={{ fontSize: "14px" }}>
-                    What seems to drive you: <strong>{listOf(myTags)}</strong>. You will see this
-                    alongside the careers below that are pursued for the same reason.
+                <p className="report-small">
+                    What seems to drive you: <strong>{listOf(myTags)}</strong>.
                 </p>
             )}
 
             <hr />
 
-            <h2>Reachable from here</h2>
+            <h2>Your matches</h2>
             {framing.runwayNote && <p><em>{framing.runwayNote}</em></p>}
 
-            <p style={{ fontSize: "14px" }}><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
+            <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
 
-            <ReportFilterBar
-                filters={filters}
-                counts={counts}
-                onChange={setFilters}
-                sort={sort}
-                onSort={setSort}
-                activeCount={matchingCount}
-                total={countable.length}
-                available={available}
+            <ReportSortMenu
+                primary={primary}
+                onPrimary={setPrimary}
+                secondary={secondary}
+                onSecondary={setSecondary}
+                noCostHint={framing.switchIsDistinct ? framing.switchIntro : null}
             />
 
-            {/* THE RANKING EXPLAINS ITSELF. A student who cannot see why one career sits above
-                another has been handed an opinion with a number on it. */}
-            <details style={{ margin: "12px 0" }}>
-                <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "15px" }}>
+            {/* THE RANKING EXPLAINS ITSELF, in one place. A student who cannot see why one career
+                sits above another has been handed an opinion with a number on it. */}
+            <details className="report-details">
+                <summary className="report-summary small">
                     <strong>How this list is ordered</strong>
                 </summary>
-                <p style={{ fontSize: "14px" }}>Three things decide where a career sits, in this order:</p>
-                <ol style={{ fontSize: "14px", paddingLeft: "20px" }}>
-                    <li style={{ margin: "6px 0" }}>
+                <p className="report-small">Three things decide where a career sits, in this order:</p>
+                <ol className="report-small">
+                    <li>
                         <strong>What you have actually done.</strong> Something you have stuck with for
                         years counts for more than something you picked up recently, and both count for
                         more than a career that reached you on your profile alone.
                     </li>
-                    <li style={{ margin: "6px 0" }}>
+                    <li>
                         <strong>Whether it fits how you think and work.</strong> Measured from the
                         assessment against what the work actually demands.
                     </li>
-                    <li style={{ margin: "6px 0" }}>
+                    <li>
                         <strong>How strongly you feel about it.</strong> Loving something outranks having
                         won at it, which outranks saying you are confident about it — what you told us
                         about yourself is the softest of the three, so it counts least.
                     </li>
                 </ol>
-                <p style={{ fontSize: "14px" }}>
+                <p className="report-small">From the top of the list to the bottom, that gives five bands:</p>
+                <ul className="report-small report-bands">
+                    {TIER_GROUPS.map((group) => (
+                        <li key={group.label}><strong>{group.label}</strong> — {group.why}</li>
+                    ))}
+                </ul>
+                {framing.switchIsDistinct && (
+                    <p className="report-small">
+                        <strong>Switching cost.</strong> Inside each band, careers that would waste less of
+                        what you have already done come first. Choose <em>Best fit, ignoring switching
+                        cost</em> under "Sort your list" to see the strongest fits without that weighting.
+                    </p>
+                )}
+                <p className="report-small">
                     <em>
                         Nothing here is a verdict on what you are capable of. It is a reading of the
                         evidence you gave us, and it moves when you give us more.
@@ -468,77 +485,30 @@ function ReportPage() {
                 </p>
             </details>
 
-            {grouped.map((group) => (
-                <div key={group.label}>
-                    <h3 style={{ fontSize: "15px", marginBottom: "2px" }}>{group.label}</h3>
-                    <p style={{ fontSize: "13px", margin: "0 0 10px" }}><em>{group.why}</em></p>
-                    {group.entries.map((entry) => {
-                        const missed = missedBy(entry, filters, details[entry.professionId])
+            <div className="match-list">
+                {ordered.map((entry) => {
+                    const topRank = topIds.indexOf(String(entry.professionId)) + 1
 
-                        return (
-                            <ProfessionCard
-                                key={entry.professionId}
-                                entry={entry}
-                                detail={details[entry.professionId]}
-                                detailsLoaded={detailsLoaded}
-                                journey={journey}
-                                chips={chipsFor(entry, dominantReasons)}
-                                tierReason={tierReason(entry)}
-                                dimmed={missed.length > 0}
-                                missed={missed}
-                            />
-                        )
-                    })}
-                </div>
-            ))}
-
-            {/* Rendered for every journey EXCEPT class 9-10, where nothing is sunk and the two
-                lists are the same ranking. See JOURNEY_FRAMING. */}
-            {/* NOT COLLAPSED. These are the strongest fits ignoring what changing course would
-                cost, and DECISIONS.md §5 exists because fit × cost makes the engine structurally
-                timid — it will never advise the hard change even when that is the true answer.
-                Hiding this list behind a disclosure is the interface doing the same timidity the
-                maths was corrected for. They get the same cards as the main list. */}
-            {worthTheSwitch.length > 0 && framing.switchIsDistinct && (
-                <>
-                    <hr />
-                    <h2>{framing.switchHeading}</h2>
-                    <p>{framing.switchIntro}</p>
-
-                    {orderedSwitch.map((entry) => {
-                        const missed = missedBy(entry, filters, details[entry.professionId])
-
-                        return (
-                            <ProfessionCard
-                                key={entry.professionId}
-                                entry={{
-                                    ...entry,
-                                    professional_sector: (details[entry.professionId] || {}).professionalSector || "",
-                                    display: { yearsToQualify: entry.yearsToQualify },
-                                    supportingFactors: entry.supportingFactors || [],
-                                    matchedBy: [],
-                                }}
-                                detail={details[entry.professionId]}
-                                detailsLoaded={detailsLoaded}
-                                journey={journey}
-                                chips={[
-                                    ...(entry.wastedYears > 0 ? [`About ${entry.wastedYears} years left behind`] : []),
-                                    ...(entry.alreadyRanked ? [] : ["Not in the list above"]),
-                                ]}
-                                dimmed={missed.length > 0}
-                                missed={missed}
-                            />
-                        )
-                    })}
-                </>
-            )}
+                    return (
+                        <ProfessionCard
+                            key={entry.professionId}
+                            entry={entry}
+                            detail={details[entry.professionId]}
+                            detailsLoaded={detailsLoaded}
+                            journey={journey}
+                            topRank={topRank}
+                            switchCost={primary === "noCost" ? entry.wastedYears : 0}
+                        />
+                    )
+                })}
+            </div>
 
             {/* THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —
                 but a student who is happy with their list does not have to scroll past all of it. */}
             {aspirationSignals.length > 0 && (
-                <details style={{ margin: "20px 0" }}>
-                    <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+                <details className="report-details">
+                    <summary className="report-summary">
                         <strong>What you said you wanted</strong> — what happened to {aspirationSignals.length === 1 ? "it" : "all of them"}
                     </summary>
 
@@ -548,8 +518,8 @@ function ReportPage() {
                     </p>
 
                     {aspirationSignals.map((signal) => (
-                        <div key={signal.professionText} style={{ borderLeft: "3px solid #ccc", paddingLeft: "12px", margin: "16px 0" }}>
-                            <p style={{ marginTop: 0, fontSize: "17px" }}>
+                        <div key={signal.professionText} className="aspiration-card">
+                            <p className="aspiration-title">
                                 <strong>{signal.professionText}</strong>
                             </p>
 
@@ -665,8 +635,8 @@ function ReportPage() {
             )}
 
             {filtered.length > 0 && (
-                <details style={{ margin: "20px 0" }}>
-                    <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+                <details className="report-details">
+                    <summary className="report-summary">
                         <strong>Ruled out</strong> — {filtered.length} that are not open from here
                     </summary>
                     <ul>
@@ -696,25 +666,25 @@ function ReportPage() {
                 generic-ish actions; the concrete ones can be derived — the actual next step on the
                 actual top matches, the exams those need, and the sections still unfinished. A
                 student who opens this should find things with names in them, not advice. */}
-            <details style={{ margin: "16px 0" }} open>
-                <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+            <details className="report-details" open>
+                <summary className="report-summary">
                     <strong>What to do next</strong>
                 </summary>
 
                 {sections.nextSteps && <p>{sections.nextSteps}</p>}
 
                 {nextActions.length > 0 && (
-                    <ul style={{ paddingLeft: "20px" }}>
+                    <ul>
                         {nextActions.map((action, index) => (
-                            <li key={index} style={{ margin: "8px 0" }}>{action}</li>
+                            <li key={index}>{action}</li>
                         ))}
                     </ul>
                 )}
             </details>
 
             {sections.readiness && (
-                <details style={{ margin: "16px 0" }}>
-                    <summary style={{ cursor: "pointer", minHeight: "44px", padding: "10px 0", fontSize: "16px" }}>
+                <details className="report-details">
+                    <summary className="report-summary">
                         <strong>Where you are right now</strong>
                     </summary>
                     <p>{sections.readiness}</p>

@@ -1,0 +1,491 @@
+/* Shared pieces used across the public site and the app. */
+
+/* ── buttons ──────────────────────────────────────────────────────────────────────────────────── */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: var(--radius-pill);
+    border: 2px solid transparent;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--teal-dark);
+    color: #ffffff;
+}
+
+.btn-ghost {
+    background: transparent;
+    border-color: var(--navy);
+    color: var(--navy);
+}
+
+.btn-ghost:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+.btn-light {
+    background: #ffffff;
+    color: var(--navy);
+}
+
+.btn-light:hover {
+    color: var(--teal);
+}
+
+.btn-sm {
+    min-height: 40px;
+    padding: 0 16px;
+    font-size: 0.95rem;
+}
+
+.btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+/* ── highlighter & strikethrough (the Kira moves) ─────────────────────────────────────────────── */
+
+/* a pastel pink swipe BEHIND navy text — one phrase per section at most */
+.highlight-pink {
+    background: linear-gradient(transparent 55%, var(--pink) 55%, var(--pink) 92%, transparent 92%);
+    padding: 0 0.1em;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+.strike {
+    text-decoration: line-through;
+    text-decoration-color: var(--teal);
+    text-decoration-thickness: 0.12em;
+    color: var(--muted);
+}
+
+.accent {
+    color: var(--teal);
+}
+
+/* ── cards, chips, eyebrows ───────────────────────────────────────────────────────────────────── */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+.eyebrow {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: var(--space-3);
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+/* ── the logged-in app header (Navbar.js) ─────────────────────────────────────────────────────── */
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: saturate(1.4) blur(8px);
+    border-bottom: 1px solid var(--line);
+}
+
+.app-header .nav-row {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 10px 16px;
+}
+
+.nav-link {
+    color: var(--navy);
+    font-weight: 700;
+    text-decoration: none;
+    padding: 8px 4px;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--teal);
+}
+
+.nav-spacer {
+    flex: 1 1 auto;
+}
+
+.nav-user {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--navy);
+    font-weight: 700;
+    text-decoration: none;
+    padding: 6px 12px 6px 6px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--line);
+    background: var(--surface);
+}
+
+.nav-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 900;
+}
+
+.brand-logo {
+    display: block;
+    width: auto;
+}
+
+/* ── app pages ────────────────────────────────────────────────────────────────────────────────── */
+
+.app-page {
+    padding-top: var(--space-6);
+}
+
+.page-title {
+    margin-bottom: var(--space-2);
+}
+
+.section-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin-bottom: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── auth pages: one centred card ─────────────────────────────────────────────────────────────── */
+
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--space-6) 16px;
+    background:
+        radial-gradient(600px 300px at 110% -10%, var(--teal-tint), transparent 70%),
+        radial-gradient(500px 260px at -10% 110%, var(--pink-tint), transparent 70%),
+        var(--page);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: var(--space-6) var(--space-5);
+}
+
+.auth-card .brand-link {
+    display: inline-block;
+    margin-bottom: var(--space-5);
+}
+
+.auth-card form > div {
+    margin-bottom: var(--space-4);
+}
+
+.auth-card input:not([type="checkbox"]):not([type="radio"]),
+.auth-card select,
+.auth-card .ant-input-password {
+    width: 100%;
+    max-width: none;
+    margin-top: 6px;
+}
+
+.auth-card button[type="submit"] {
+    width: 100%;
+    margin-top: var(--space-2);
+}
+
+.auth-card .ant-input-password input {
+    margin-top: 0;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--muted);
+    margin: var(--space-5) 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--line);
+}
+
+/* ── antd refinements on top of the theme ─────────────────────────────────────────────────────── */
+
+.ant-collapse {
+    background: var(--surface);
+    border-radius: var(--radius-lg) !important;
+    overflow: hidden;
+}
+
+.ant-collapse > .ant-collapse-item > .ant-collapse-header {
+    font-weight: 700;
+    padding: 16px 20px !important;
+    align-items: center !important;
+}
+
+/* ── the rest of the app: content after the header gets the page gutters ─────────────────────── */
+
+/* Most app pages render <Navbar/> then their content directly. Rather than wrap every page, the
+   blocks that follow the header take the same centred column and 16 px gutters as .page. */
+.app-header ~ :is(div, h1, h2, h3, h4, p, section, form, ul, ol, table, blockquote):not(.page) {
+    width: 100%;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.app-header + :is(div, h1, h2, h3, p, section, form, main) {
+    margin-top: var(--space-6);
+}
+
+.app-header + main.app-page {
+    margin-top: 0;
+}
+
+.nav-user-name {
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .nav-user-name {
+        display: none;
+    }
+
+    .nav-user {
+        padding: 4px;
+    }
+}
+
+/* ── dashboard ────────────────────────────────────────────────────────────────────────────────── */
+
+.welcome {
+    margin-bottom: var(--space-5);
+}
+
+.btn-next {
+    min-height: 52px;
+    font-size: 1.05rem;
+    padding: 0 28px;
+}
+
+/* ── journey bar (JourneyProgress.js) ─────────────────────────────────────────────────────────── */
+
+.journey {
+    margin: 0 0 var(--space-5);
+    max-width: 900px;
+}
+
+.journey-label {
+    margin: 0 0 var(--space-2);
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.journey-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+button.journey-step {
+    flex: 1 1 170px;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    text-align: left;
+    min-height: 44px;               /* a tap target, kept from the original inline style */
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--navy);
+    font-size: 0.92rem;
+    font-weight: 400;
+}
+
+button.journey-step:hover:not(:disabled) {
+    border-color: var(--teal);
+    color: var(--navy);
+}
+
+button.journey-step:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
+button.journey-step.is-closed {
+    color: var(--muted);
+    background: #f6f4ee;
+}
+
+button.journey-step.is-current {
+    border: 2px solid var(--teal);
+}
+
+.journey-mark {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.85rem;
+    background: #eceae4;
+    color: var(--muted);
+}
+
+.is-done .journey-mark {
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.is-active .journey-mark {
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+.journey-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.journey-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+/* ── upgrade prompt (UpgradeToMentorship.js) ──────────────────────────────────────────────────── */
+
+.upgrade-card {
+    background:
+        radial-gradient(360px 180px at 100% 0%, var(--pink-tint), transparent 70%),
+        var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin: var(--space-5) 0;
+    max-width: 720px;
+    box-shadow: var(--shadow-sm);
+}
+
+.upgrade-card h2 {
+    font-size: 1.5rem;
+}
+
+/* the app header stays one row on a phone: smaller logo, tighter gaps, name hidden (avatar only) */
+.app-header .nav-row {
+    flex-wrap: nowrap;
+}
+
+@media (max-width: 480px) {
+    .app-header .nav-row {
+        gap: 12px;
+        padding: 8px 12px;
+    }
+
+    .app-header .brand-logo {
+        height: 26px;
+    }
+
+    .app-header .nav-link {
+        font-size: 0.95rem;
+    }
+}
+
+/* "Sign in with Google" — a full-width secondary button under the divider */
+.auth-card a > button {
+    width: 100%;
+    background: var(--surface);
+}
+
+.auth-card h2 {
+    margin-bottom: var(--space-5);
+}
+
+.auth-card p:last-child {
+    margin-bottom: 0;
+}
+
+/* antd wraps password (and affix) inputs in its own bordered box — the inner input must not also
+   carry the plain-input padding, border and 44px height, or the box doubles in height */
+.ant-input-affix-wrapper > input,
+.ant-input-password > input {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.ant-input-affix-wrapper {
+    min-height: 44px;
+}

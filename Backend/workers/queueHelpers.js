@@ -84,6 +84,30 @@ const addOnce = async (queue, queueName, userId, options) => {
     return queue.add(queueName, { userId: String(userId) }, { jobId, ...options })
 }
 
+// ── how often an idle worker talks to Redis ─────────────────────────────────────────────────────
+//
+// An idle worker is never silent. It sits in a blocking BZPOPMIN that times out every `drainDelay`
+// seconds and is re-issued, and separately runs a stalled-job sweep every `stalledInterval` ms.
+// BullMQ's defaults (5 s and 30 s) cost roughly 20k Redis commands a day PER WORKER while nothing
+// is happening — two workers idling for a month is over a million commands, far past Upstash's
+// free tier, spent on a queue that is empty almost all the time.
+//
+// RAISING drainDelay DOES NOT DELAY JOBS. That is the part that is easy to get wrong. The blocking
+// pop returns the instant a job lands (BullMQ writes a marker key on add), so drainDelay is only the
+// longest a worker waits when NOTHING arrives. Verified in bullmq 6.3.8's worker.js getBlockTimeout():
+// with no delayed jobs the block is max(drainDelay, minimumBlockTimeout) and is NOT clipped to the
+// 10 s maximumBlockTimeout — that ceiling applies only while a retry is sitting in the delayed set.
+//
+// The cost of a longer stalledInterval is on the unhappy path only: a job orphaned by a restart
+// mid-run is noticed within about two sweeps instead of one minute. Both workers' jobs are safe to
+// re-run (the LLM grades are stored on the submission), so a slower rescue loses nothing.
+//
+// Both are env-tunable so a paid deployment with traffic can go back towards the defaults.
+const idleTimings = () => ({
+    drainDelay: Number(process.env.WORKER_DRAIN_DELAY_S) || 60,
+    stalledInterval: Number(process.env.WORKER_STALLED_INTERVAL_MS) || 120000,
+})
+
 // ── connection noise ────────────────────────────────────────────────────────────────────────────
 //
 // ioredis reconnects by itself when the network drops, which is the behaviour we want — a worker
@@ -130,4 +154,4 @@ const attachConnectionLogging = (emitter, label) => {
     })
 }
 
-module.exports = { addOnce, IN_FLIGHT, attachConnectionLogging, withDnsWorkaround }
+module.exports = { addOnce, IN_FLIGHT, attachConnectionLogging, withDnsWorkaround, idleTimings }

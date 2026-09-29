@@ -1,6 +1,9 @@
 import { useState } from "react"
 import { useNavigate, useParams, Link } from "react-router-dom"
 import { resetPassword } from "../apiCall/userApi"
+import logo from "../assets/brand/logo.png"
+import { Input } from "antd"
+import AuthCard from "./AuthCard"
 
 function ResetPassword() {
     const navigate = useNavigate()
@@ -40,25 +43,26 @@ function ResetPassword() {
     }
 
     return (
-        <div>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Set a new password</h2>
 
             <form onSubmit={handleSubmit}>
                 <div>
                     <label>New password (at least 8 characters)</label>
                     <br />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+                    <Input.Password value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
                 </div>
                 <div>
                     <label>Confirm new password</label>
                     <br />
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={8} required />
+                    <Input.Password value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={8} required />
                 </div>
                 <button type="submit">Reset password</button>
             </form>
 
             <p><Link to="/login">Back to login</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 

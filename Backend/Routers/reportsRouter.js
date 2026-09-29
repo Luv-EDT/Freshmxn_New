@@ -2,6 +2,7 @@ const express = require("express")
 const Report = require("../model/reportsModel")
 const Recommendation = require("../model/recommendationsModel")
 const Submission = require("../model/submissionsModel")
+const Profile = require("../model/profilesModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
@@ -89,6 +90,20 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
         const submittedAt = submission && submission.psychometricSubmittedAt
         const isRegenerating = Boolean(report && submittedAt && report.generatedAt < submittedAt)
 
+        // THE PIPELINE GAVE UP (see userModel `reportFailedAt`). Without this a first-time student
+        // saw "generating" and a resubmitter "being rebuilt" — forever, with the page polling every
+        // five seconds. With no usable report the page offers a retry; with an older report it
+        // shows that report plus a banner (`rebuildFailed` below).
+        const failed = Boolean(req.user.reportFailedAt) && req.user.progress.psychometric === "done"
+
+        if (failed && (!report || isRegenerating)) {
+            return res.status(200).json({
+                success: true,
+                message: "Report generation failed",
+                data: { status: "failed", report: null },
+            })
+        }
+
         if (isRegenerating) {
             return res.status(200).json({
                 success: true,
@@ -117,6 +132,7 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
             message: "Report fetched successfully",
             data: {
                 status: stale ? "stale" : "ready",
+                rebuildFailed: failed,
                 release: report.release,
                 journey: report.journey,
                 generatedAt: report.generatedAt,
@@ -140,6 +156,142 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to fetch report",
+            error: error.message,
+        })
+    }
+})
+
+// ========================
+// Get My Scores (the Profile page's "Your psychometric profile")
+// ========================
+
+// WORDS, NEVER NUMBERS. V1 has no norms (PRD §B.4: normed_scores and bands stay empty until 500+
+// per age band), so a raw "3/10" has nothing to be compared against — and most readers are minors,
+// who read any number as a grade. The raw 0–10 score is turned into High / Medium / Low HERE, and
+// the number itself never leaves the server.
+//
+// Two factors are deliberately special:
+//   confidence            — left out entirely. It is never shown to a student as "your confidence
+//                           score" (profilesModel.js; PRD §B.4).
+//   uncertainty_tolerance — a POSITION, not a level (Master Plan rule 4), so it goes out as where the
+//                           student sits between two ways of working, never as high or low.
+// data_quality, flags, banks and components are never sent.
+//
+// Grouped and labelled with FACTOR_LABELS, the same map the report uses, so a factor has one name
+// everywhere a student sees it.
+const SCORE_GROUPS = [
+    { title: "Personality", factors: ["openness", "conscientiousness", "agreeableness", "extraversion", "emotional_stability"] },
+    { title: "Thinking and memory", factors: ["reasoning", "short_term_memory", "long_term_memory", "processing_speed", "focus", "learning_capacity"] },
+    {
+        title: "Ways of being smart",
+        factors: [
+            "logical_intelligence", "verbal_intelligence", "spatial_intelligence", "musical_intelligence",
+            "bodily_intelligence", "naturalistic_intelligence", "existential_intelligence",
+            "intrapersonal_intelligence", "interpersonal_intelligence", "emotional_intelligence", "practical_intelligence",
+        ],
+    },
+    {
+        title: "How you work",
+        factors: [
+            "firmness", "collaboration", "consistency_grit", "divergent_thinking", "convergent_thinking",
+            "propensity_to_go_deep", "informed_decision_making",
+        ],
+    },
+]
+
+const levelFor = (score) => {
+    if (typeof score !== "number" || Number.isNaN(score)) return null
+    if (score >= 6.7) return "High"
+    if (score >= 3.4) return "Medium"
+    return "Low"
+}
+
+const uncertaintyPosition = (score) => {
+    if (typeof score !== "number" || Number.isNaN(score)) return null
+    if (score >= 6.7) return "comfortable not knowing"
+    if (score >= 3.4) return "somewhere in between"
+    return "prefers a clear plan"
+}
+
+// ========================
+// Retry My Report
+// ========================
+
+// Offered only after the pipeline gave up (reportFailedAt is set), so it cannot be used to run up
+// model calls. It re-runs the whole pipeline from score_profile; grading only re-sends the written
+// answers that never got a grade, so a retry costs little.
+router.post("/retryMyReport", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        if (!req.user.reportFailedAt || req.user.progress.psychometric !== "done") {
+            return res.status(400).json({
+                success: false,
+                message: "There is nothing to retry",
+            })
+        }
+
+        // Queued FIRST, flag cleared after: if the queue cannot be reached the student still sees
+        // the retry screen rather than a "generating" that nothing is working on.
+        // Required here, as in submissionsRouter: the queue is built lazily, and this router must
+        // load on a machine with no REDIS_URL.
+        const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
+        await enqueueScoreProfile(req.user._id)
+
+        await req.user.updateOne({ reportFailedAt: null })
+
+        return res.status(200).json({
+            success: true,
+            message: "Your report is being prepared again",
+            data: { status: "generating" },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Could not restart your report — please try again in a minute",
+            error: error.message,
+        })
+    }
+})
+
+
+router.get("/getMyScores", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const profile = await Profile.findOne({ user: req.user._id }).select("raw_scores computed_at").lean()
+
+        if (!profile) {
+            return res.status(200).json({
+                success: true,
+                message: "No scores yet",
+                data: null,
+            })
+        }
+
+        const raw = profile.raw_scores || {}
+
+        return res.status(200).json({
+            success: true,
+            message: "Scores fetched successfully",
+            data: {
+                computedAt: profile.computed_at,
+                groups: SCORE_GROUPS.map((group) => ({
+                    title: group.title,
+                    factors: group.factors.map((slug) => ({
+                        slug,
+                        label: FACTOR_LABELS[slug] || String(slug).replace(/_/g, " "),
+                        level: levelFor(raw[slug]),   // null → "not measured yet" on the page
+                    })),
+                })),
+                uncertainty: {
+                    label: FACTOR_LABELS.uncertainty_tolerance,
+                    position: uncertaintyPosition(raw.uncertainty_tolerance),
+                },
+            },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch your scores",
             error: error.message,
         })
     }

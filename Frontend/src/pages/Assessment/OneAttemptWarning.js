@@ -15,14 +15,14 @@
 
 function OneAttemptWarning({ minutes, reason }) {
     return (
-        <div style={{ border: "2px solid #b00", padding: "16px", margin: "16px 0" }}>
-            <h3 style={{ marginTop: 0 }}>One attempt only. You cannot retake this.</h3>
+        <div className="caution-card">
+            <h3>One attempt only. You cannot retake this.</h3>
 
             <p>Find a quiet place and take your time. Most people need about {minutes} minutes.</p>
 
             <p>Rushing produces a score that does not reflect you, and we cannot undo it.</p>
 
-            {reason && <p style={{ marginBottom: 0 }}>{reason}</p>}
+            {reason && <p>{reason}</p>}
         </div>
     )
 }

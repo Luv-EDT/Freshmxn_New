@@ -1,0 +1,6 @@
+# The public pages are open to search engines. Account pages sit behind a login, so there is
+# nothing there for a crawler to index anyway.
+User-agent: *
+Allow: /
+
+Sitemap: https://www.freshmxn.com/sitemap.xml

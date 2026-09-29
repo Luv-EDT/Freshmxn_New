@@ -107,7 +107,7 @@ function StoryRecall({ onDone }) {
                 </p>
                 <hr />
                 <p><em>Ready to start the one-hour clock? Once you open the story, the timer begins and cannot be paused.</em></p>
-                <button type="button" onClick={handleOpen} disabled={busy}>
+                <button type="button" className="btn btn-primary" onClick={handleOpen} disabled={busy}>
                     {busy ? "Opening…" : "Open the story and start the hour"}
                 </button>
             </div>
@@ -203,7 +203,7 @@ function StoryRecall({ onDone }) {
 
                 <hr />
                 <p><em>{answered} of 3 answered. The next page asks specific questions — you cannot come back here afterwards.</em></p>
-                <button type="button" onClick={() => { setPart("structured"); window.scrollTo(0, 0) }}>
+                <button type="button" className="btn btn-primary" onClick={() => { setPart("structured"); window.scrollTo(0, 0) }}>
                     Continue to the specific questions
                 </button>
             </div>
@@ -217,7 +217,7 @@ function StoryRecall({ onDone }) {
         <div>
             <p><strong>{label}</strong></p>
             {(options[id] || []).map((option) => (
-                <label key={option} style={{ display: "block", padding: "10px 0", cursor: "pointer" }}>
+                <label key={option} className="choice">
                     <input
                         type="radio"
                         name={id}
@@ -264,7 +264,7 @@ function StoryRecall({ onDone }) {
             {select("LR10", "What was the unusual ability the third person had?")}
 
             <hr />
-            <button type="button" onClick={handleSubmit} disabled={busy}>
+            <button type="button" className="btn btn-primary" onClick={handleSubmit} disabled={busy}>
                 {busy ? "Saving…" : "Finish this section"}
             </button>
         </div>

@@ -1867,29 +1867,43 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT PAGE — sort and filter govern worth-the-switch too, not only the ranking",
-        // A control that reorders one list on the page and ignores another is a control that half
-        // works, and the student cannot tell which half.
+        name: "REPORT PAGE — one list: ignoring switching cost surfaces every worth-the-switch career",
+        // REPLACES "sort and filter govern worth-the-switch too" (owner, Round 6). The page no longer
+        // has a separate switch list or any filter: it is ONE list with two primary orders. What
+        // DECISIONS.md §5 needs is that the hard change the cost-weighting hides is never lost — so
+        // this pins that "Best fit, ignoring switching cost" contains every ranked career AND every
+        // worth-the-switch career, ordered on raw fit, and that no order ever drops anything.
         run: () => {
+            const { buildList } = loadReportFilters()
             const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
 
             const problems = []
+            const ranked = [
+                { professionId: "a", tier: 1, comfortScore: 0.71, rankedPosition: 1, display: { yearsToQualify: 6, aiExposure: { band: "low", raw: 20 } } },
+                { professionId: "b", tier: 2, comfortScore: 0.93, rankedPosition: 2, display: { yearsToQualify: 3, aiExposure: { band: "low", raw: 20 } } },
+                { professionId: "c", tier: 5, comfortScore: 0.80, rankedPosition: 3, display: { yearsToQualify: 3, aiExposure: { band: "medium", raw: 50 } } },
+            ]
+            const switchList = [
+                { professionId: "b", comfortScore: 0.93, wastedYears: 0, yearsToQualify: 3, alreadyRanked: true },
+                { professionId: "x", comfortScore: 0.97, wastedYears: 2, yearsToQualify: 5, alreadyRanked: false },
+                { professionId: "y", comfortScore: null, wastedYears: 1, yearsToQualify: 4, alreadyRanked: false },
+            ]
+            const ids = (list) => list.map((entry) => entry.professionId).join(",")
 
-            if (!/const orderedSwitch/.test(source)) problems.push("worth-the-switch is not sorted")
-            if (!/sortRanked\(switchList/.test(source)) problems.push("worth-the-switch does not use the same sort as the ranking")
+            if (ids(buildList(ranked, switchList, "best", null)) !== "a,b,c") problems.push("Best match is not the engine's ranking")
 
-            // The switch list must be rendered from the SORTED array, not the raw one.
-            if (/\{worthTheSwitch\.map\(/.test(source)) problems.push("worth-the-switch still renders the unsorted array")
-            if (!/\{orderedSwitch\.map\(/.test(source)) problems.push("the sorted switch list is never rendered")
+            const noCost = buildList(ranked, switchList, "noCost", null)
+            if (ids(noCost) !== "x,b,c,a,y") problems.push(`ignoring switching cost should order on raw fit with nulls last, got ${ids(noCost)}`)
+            if (!noCost.every((entry) => entry.display && "yearsToQualify" in entry.display)) problems.push("switch entries reach the card without display fields")
 
-            // Filtering must reach it as well.
-            const block = (source.split("{orderedSwitch.map(")[1] || "").split("</>")[0]
-            if (!/missedBy\(entry, filters/.test(block)) problems.push("worth-the-switch rows are never filtered")
-            if (!/dimmed=\{missed\.length > 0/.test(block)) problems.push("worth-the-switch rows never dim")
+            // A secondary sort is a permutation, and a tie keeps the PRIMARY order.
+            const thenQuick = buildList(ranked, switchList, "noCost", "fastest")
+            if (ids(thenQuick).split(",").sort().join(",") !== ids(noCost).split(",").sort().join(",")) problems.push("a secondary sort changed which careers are shown")
+            if (ids(thenQuick) !== "b,c,y,x,a") problems.push(`secondary ties should keep the primary order, got ${ids(thenQuick)}`)
 
-            // And the counts must describe both lists, or they lie about what the page will show.
-            if (!/const countable/.test(source)) problems.push("option counts still cover only the ranking")
-            if (!/optionCounts\(countable/.test(source)) problems.push("counts are not computed over both lists")
+            // The page must actually use it, and offer the no-cost order only where it differs.
+            if (!/buildList\(ranked, switchList, primary, secondary/.test(source)) problems.push("the page does not build its list with buildList")
+            if (!/framing\.switchIsDistinct \? framing\.switchIntro : null/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -1961,18 +1975,11 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "FILTERS — nothing is pinned; the controls apply uniformly",
-        // PINNING WAS REMOVED, and the reason it existed is worth recording. The top three were
-        // exempt from fading because `reportComposer` wrote `yourMatches` against the top eight BY
-        // NAME, so dimming one made the prose describe something the student could not see.
-        //
-        // That prompt was later rewritten to forbid naming professions at all — and the pin was not
-        // revisited, which left three rows stubbornly bright under a filter for a reason that no
-        // longer existed and which no student could have inferred. Uniform behaviour is both
-        // simpler and now correct.
-        //
-        // Aspirations are not pinned either: the aspiration section answers every stated wish in
-        // full regardless of what the list is doing, so nothing is lost by letting the row fade.
+        name: "REPORT PAGE — no control hides or fades a career",
+        // REPLACES "nothing is pinned; the controls apply uniformly" (owner, Round 6). Filters were
+        // removed from the page because they crowded the screen and confused students; the filter
+        // module stays (its own fixtures still run) but nothing on the page may hide, fade or pin a
+        // row. Every order shows every career.
         run: () => {
             const filters = loadReportFilters()
             const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
@@ -1980,15 +1987,10 @@ const fixtures = [
             const problems = []
 
             if (filters.isPinned) problems.push("isPinned is back in the filter module")
-            if (/isPinned|const pinned/.test(page)) problems.push("the page still exempts rows from fading")
-            if (/&& !pinned/.test(page)) problems.push("dimming is still conditional on a pin")
-
-            // Both lists must dim on the same rule, with nothing special-cased.
-            const dimCalls = [...page.matchAll(/dimmed=\{([^}]*)\}/g)].map((match) => match[1].trim())
-            if (dimCalls.length < 2) problems.push(`expected both lists to compute dimming, found ${dimCalls.length}`)
-            dimCalls.forEach((call) => {
-                if (call !== "missed.length > 0") problems.push(`a list dims on "${call}" rather than the shared rule`)
-            })
+            if (/isPinned|const pinned/.test(page)) problems.push("the page exempts rows again")
+            if (/missedBy\(|dimmed=\{/.test(page)) problems.push("the page fades rows again")
+            const listBlock = page.split('<div className="match-list">')[1] || ""
+            if (!/^\s*\{ordered\.map\(/.test(listBlock)) problems.push("the rendered list is not the full ordered list")
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2239,7 +2241,9 @@ const fixtures = [
             const problems = []
 
             if (!/How this list is ordered/.test(source)) problems.push("the ordering is no longer explained anywhere on the page")
-            if (!/const tierReason/.test(source)) problems.push("individual professions no longer say why they sit where they do")
+            // The per-profession "why it is here" line (tierReason) was removed on the owner's
+            // instruction (06_Day5_Handover, Round 5): cards show the name only, and the reason lives
+            // at group level — each group heading states its rule (the `why:` check below).
 
             // The five group boundaries must line up with real transitions in the engine's table.
             const boundaries = [...source.matchAll(/upTo:\s*(\d+)/g)].map((match) => Number(match[1]))
@@ -2594,6 +2598,111 @@ const fixtures = [
             const problems = []
             if (!/"sartMeta"/.test(router)) problems.push("sartMeta is not an accepted module key, so a refused session cannot be recorded")
             if (/sartMeta/.test(scorer)) problems.push("scoreProfile reads sartMeta — diagnostics have become an input")
+
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "P13 — a day-plan grade stored the way the grader stores it actually counts",
+        // THE BUG (backend review, 2026-09-24): llmScorer flattens P13 to `{ deep_work_first: 1, … }`
+        // and that is what gets stored, but perspectiveScoring reads `criteria.<name>` as true/false.
+        // Every real student's day plan was silently unscored; the fixtures missed it because they
+        // fed the scorer its own shape. This drives the STORED shape through scoreProfile.
+        run: () => {
+            const base = buildSubmission()
+            const midRange = { ...base, perspective: fillPerspective("C") }
+            const flat = (value) => ({ deep_work_first: value, urgency_order: value, messages_batched: value, fixed_respected: value, recovery: value })
+            const withP13 = (p13) => scoreProfile({ ...midRange, perspective: { ...midRange.perspective, open: { ...midRange.perspective.open, P13: p13 } } })
+
+            const allMet = withP13(flat(1))
+            const noneMet = withP13(flat(0))
+            const picture = (profile) => JSON.stringify([profile.raw_scores, profile.banks, profile.components])
+
+            if (picture(allMet) === picture(noneMet)) return "an all-1 and an all-0 P13 grade score identically — the stored shape is still ignored"
+            if (JSON.stringify(allMet).includes("only 0 of 5 criteria")) return "the scorer still reports the stored P13 as having no criteria"
+
+            // the scorer's own shape must keep working exactly as before
+            const nested = withP13({ criteria: { deep_work_first: true, urgency_order: true, messages_batched: true, fixed_respected: true, recovery: true } })
+            if (picture(nested) !== picture(allMet)) return "the nested { criteria } shape and the stored flat shape disagree"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "OPEN ITEMS — a failed CALL is retried, never stored as a blank grade",
+        // THE BUG (backend review): a 529 or a network blip became `null` on the submission, and
+        // only `undefined` items were ever graded again — so one bad minute blanked a written
+        // answer for good. Now a failed call leaves the item ungraded (the job throws and retries),
+        // except on the last attempt, when the null is stored with its reason and regraded next run.
+        run: async () => {
+            const { gradeOpenItems } = require("../gradeOpenItems")
+            const good = async () => JSON.stringify({ reasons: 2, evidence: 2, revisability: 2 })
+            const down = async () => { throw new Error("Anthropic HTTP 529 — overloaded") }
+            const text = { openText: { P7: "a real answer" } }
+
+            const problems = []
+
+            // 1. a failure before the last attempt: nothing stored, the item is reported transient
+            const first = await gradeOpenItems({ psychometric: { perspective: text }, callLlm: down })
+            if (!first || !first.transient.includes("P7")) problems.push("a failed call is not reported as transient")
+            if (first && first.open.P7 !== undefined) problems.push("a failed call was stored as a grade")
+            if (first && !(first.meta.P7 && first.meta.P7.unscoreable_reason.startsWith("call_failed"))) problems.push("the failure reason is not recorded")
+
+            // 2. the retry grades it
+            const second = await gradeOpenItems({ psychometric: { perspective: { ...text, open: first.open, openMeta: first.meta } }, callLlm: good })
+            if (!second || !second.open.P7 || second.open.P7.reasons !== 2) problems.push("the retry did not grade the item")
+
+            // 3. the LAST attempt stores the null, and the next run grades it again
+            const last = await gradeOpenItems({ psychometric: { perspective: text }, callLlm: down, acceptTransient: true })
+            if (!last || last.open.P7 !== null || last.transient.length !== 0) problems.push("the last attempt did not store the null")
+            const later = await gradeOpenItems({ psychometric: { perspective: { ...text, open: last.open, openMeta: last.meta } }, callLlm: good })
+            if (!later || !later.open.P7) problems.push("a stored call_failed null is never graded again")
+
+            // 4. a GENUINE unscoreable answer is not re-sent (it would re-bill forever)
+            let calls = 0
+            const counting = async () => { calls++; return JSON.stringify({ reasons: 2, evidence: 2, revisability: 2 }) }
+            const genuine = await gradeOpenItems({
+                psychometric: { perspective: { ...text, open: { P7: null }, openMeta: { P7: { unscoreable_reason: "off_topic" } } } },
+                callLlm: counting,
+            })
+            if (genuine !== null || calls !== 0) problems.push("a genuinely unscoreable answer was sent for grading again")
+
+            // 5. the worker throws on a transient item before the last attempt, so BullMQ retries
+            const worker = fs.readFileSync(path.join(__dirname, "..", "scoreProfileWorker.js"), "utf8")
+            if (!/acceptTransient: lastAttempt/.test(worker)) problems.push("the worker does not pass lastAttempt to the grader")
+            if (!/grading temporarily failed/.test(worker)) problems.push("the worker does not throw on a transient grading failure")
+
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "PIPELINE — a job that runs out of retries tells the student instead of spinning forever",
+        // THE BUG (backend review): a job that failed its fifth attempt only logged, and the report
+        // page kept saying "generating" and polling every five seconds, for ever.
+        run: () => {
+            const read = (...parts) => fs.readFileSync(path.join(__dirname, "..", "..", ...parts), "utf8")
+            const problems = []
+
+            ;["scoreProfileWorker.js", "generateReportWorker.js"].forEach((file) => {
+                const source = read("workers", file)
+                const handler = source.split('worker.on("failed"')[1] || ""
+                if (!/attemptsMade >= \(job\.opts\.attempts/.test(handler)) problems.push(`${file} does not detect the final attempt`)
+                if (!/reportFailedAt: new Date\(\)/.test(handler)) problems.push(`${file} does not mark the student's report as failed`)
+            })
+
+            if (!/reportFailedAt: null/.test(read("workers", "generateReportWorker.js"))) problems.push("a successful report does not clear the failure")
+            if (!/reportFailedAt: null/.test(read("Routers", "submissionsRouter.js"))) problems.push("a new submit does not clear the failure")
+
+            const router = read("Routers", "reportsRouter.js")
+            if (!/status: "failed"/.test(router)) problems.push("getMyReport never reports a failure")
+            if (!/router\.post\("\/retryMyReport"/.test(router)) problems.push("there is no way to retry")
+
+            // a failure must never count as delivery (refunds read progress.report)
+            if (/"progress\.report": "failed"/.test(read("workers", "scoreProfileWorker.js") + read("workers", "generateReportWorker.js"))) {
+                problems.push("failure is written into progress.report, which refunds read as delivered")
+            }
 
             return problems.length > 0 ? problems.join("; ") : null
         },

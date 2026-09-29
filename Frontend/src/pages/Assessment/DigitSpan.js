@@ -186,7 +186,7 @@ function DigitSpan({ onDone, alreadyTaken }) {
                     first, and the practice does not count.
                 </p>
 
-                <button type="button" style={{ padding: "12px 18px", minHeight: "44px", fontSize: "16px" }} onClick={startPractice}>
+                <button type="button" className="btn btn-primary" style={{ padding: "12px 18px", minHeight: "44px", fontSize: "16px" }} onClick={startPractice}>
                     Start the practice round
                 </button>
             </div>
@@ -218,7 +218,7 @@ function DigitSpan({ onDone, alreadyTaken }) {
                     style={{ fontSize: "40px", textAlign: "center", width: "100%", maxWidth: "320px", padding: "12px", letterSpacing: "8px", boxSizing: "border-box" }}
                 />
                 <p>
-                    <button type="button" onClick={submitAnswer} disabled={!typed || busy}>
+                    <button type="button" className="btn btn-primary" onClick={submitAnswer} disabled={!typed || busy}>
                         {busy ? "Saving…" : "Submit"}
                     </button>
                 </p>
@@ -235,7 +235,7 @@ function DigitSpan({ onDone, alreadyTaken }) {
                         : `Not quite — the numbers were ${PRACTICE_SEQUENCE}. That is what the practice round is for.`}
                 </p>
                 <p>The real rounds start now. They will not tell you whether you got them right.</p>
-                <button type="button" onClick={loadNextTrial} disabled={busy}>
+                <button type="button" className="btn btn-primary" onClick={loadNextTrial} disabled={busy}>
                     {busy ? "Starting…" : "Start"}
                 </button>
             </div>

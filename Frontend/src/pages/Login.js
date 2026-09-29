@@ -3,6 +3,9 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { loginUser, getCurrentUser, getGoogleSignInUrl } from "../apiCall/userApi"
 import { setUser } from "../store/userSlice"
+import { Input } from "antd"
+import logo from "../assets/brand/logo.png"
+import AuthCard from "./AuthCard"
 
 function Login() {
     const navigate = useNavigate()
@@ -16,7 +19,7 @@ function Login() {
     useEffect(() => {
         const token = localStorage.getItem("token")
         if (token) {
-            navigate("/")
+            navigate("/dashboard")
             return
         }
 
@@ -81,14 +84,16 @@ function Login() {
         setPassword("")
 
         if (userData.role === "admin") { navigate("/admin"); return }
+        if (userData.role === "mentor") { navigate("/mentor"); return }
         if (!userData.age || !userData.journey) { navigate("/complete-profile"); return }
         if (!userData.paid) { navigate("/paywall"); return }
 
-        navigate("/")
+        navigate("/dashboard")
     }
 
     return (
-        <div>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Login</h2>
 
             <form onSubmit={handleLogin}>
@@ -100,14 +105,14 @@ function Login() {
                 <div>
                     <label>Password</label>
                     <br />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    <Input.Password value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
                 <button type="submit">Login</button>
             </form>
 
             <p><Link to="/forgot-password">Forgot password?</Link></p>
 
-            <p>or</p>
+            <p className="auth-divider">or</p>
 
             {/* full-page redirect: backend → Google → backend → /oauth-success */}
             <a href={getGoogleSignInUrl()}>
@@ -115,7 +120,7 @@ function Login() {
             </a>
 
             <p>New here? <Link to="/register">Create an account</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 

@@ -18,8 +18,8 @@ highlight only.** All statistics verified to a citable source — cite inline on
 ## 1. HERO
 
 **Eyebrow:** FRESHMXN'S LAB
-**Headline (Orelega One):** Careers that fit *you*. And the future.
-**Sub-headline:** Explore. Get clarity. Take action.
+**Headline (Orelega One):** Explore. Get clarity. Take action.  *(the company tagline — owner, 2026-09-24)*
+**Closing statement (end of the page, before About):** Careers that fit *you*. And the future.
 **Body:** Everybody is different — so why does everyone get similar career advice? Stuck between what
 you love, what you're studying, and what the market wants? Scared AI will take your job? Freshmxn's
 Lab matches your story and strengths to careers that are **in demand and AI-resilient** — then helps
@@ -65,7 +65,7 @@ genuinely in demand — and help match you *toward* it. You're not being pointed
 
 ## 4. HOW IT WORKS  *(Kira's four-card rhythm)*
 
-**Heading (Orelega One):** Four steps. Zero gyaan.
+**Heading (Orelega One):** 4 steps. 0 gyaan.
 
 **01 · We get to know you. Properly.**
 Your interests, the problems you've faced, what you believe about yourself. Career gyanis guess. We ask.
@@ -92,7 +92,7 @@ A 1-on-1 with a working professional in your matched field — someone who was o
 **Heading:** 🔒 We help you get there. (By invitation only)
 
 The report is the beginning, not the end. For select students, we go further — turning a
-recommendation into real momentum. Your story goes first; your marks never get a veto.
+recommendation into real momentum.
 
 ---
 

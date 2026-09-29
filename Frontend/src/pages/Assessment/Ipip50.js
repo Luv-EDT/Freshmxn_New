@@ -71,7 +71,7 @@ function Ipip50({ answers, onChange, onDone }) {
                         {IPIP_SCALE.map((option) => (
                             <label
                                 key={option.value}
-                                style={{ display: "block", padding: "10px 0", cursor: "pointer" }}
+                                className="choice"
                             >
                                 <input
                                     type="radio"

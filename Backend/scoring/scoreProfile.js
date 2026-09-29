@@ -50,7 +50,7 @@ const { combine, worstQuality, round2 } = require("./scoringHelpers")
    }
    ========================================================================== */
 
-const SCORING_VERSION = "profile@1.0.0"
+const SCORING_VERSION = "profile@1.0.1" // 1.0.1: P13 grades stored flat now count (asP13Criteria)
 
 const COMPONENT_VERSIONS = {
     perspective: "perspective@5.0.0",
@@ -137,6 +137,29 @@ const RELEASE_FULL = 1
 const RELEASE_WITH_NOTE = 0.75
 
 // the ported perspective scorer takes 53 positional arguments in this exact order
+// P13 IS STORED IN A DIFFERENT SHAPE FROM THE ONE THE PERSPECTIVE SCORER READS, and that silently
+// dropped the day-plan grade for every real student (backend review, 2026-09-24).
+//
+// llmScorer flattens P13's five criteria into numeric sub-scores — `{ deep_work_first: 1, … }` —
+// and gradeOpenItems stores exactly that. perspectiveScoring.js reads `criteria.<name>` as
+// true/false and nothing else, so it saw no criteria, left the day plan unscored and reported
+// "only 0 of 5 criteria returned". The fixtures never caught it because they fed the scorer the
+// shape it wanted rather than the shape the pipeline stores.
+//
+// Adapted HERE, at the boundary, rather than by changing what is stored: every submission already
+// graded keeps working without a migration, and the ported scorer stays untouched. Anything that
+// already has `criteria` (or is null) passes through unchanged.
+const P13_CRITERIA = ["deep_work_first", "urgency_order", "messages_batched", "fixed_respected", "recovery"]
+
+const asP13Criteria = (graded) => {
+    if (graded === null || graded === undefined || typeof graded !== "object" || graded.criteria) return graded
+
+    const flat = P13_CRITERIA.every((name) => graded[name] === 0 || graded[name] === 1)
+    if (!flat) return graded
+
+    return { criteria: Object.fromEntries(P13_CRITERIA.map((name) => [name, graded[name] === 1])) }
+}
+
 const callPerspective = (perspective, sart, traits) => {
     const answers = (perspective && perspective.answers) || {}
     const open = (perspective && perspective.open) || {}
@@ -147,7 +170,7 @@ const callPerspective = (perspective, sart, traits) => {
         item("P1"), item("P2"), item("P3"), item("P4"), item("P5"), item("P6"),
         open.P7 === undefined ? null : open.P7,
         item("P8"), item("P9"), item("P10"), item("P11"), item("P12"),
-        open.P13 === undefined ? null : open.P13,
+        open.P13 === undefined ? null : asP13Criteria(open.P13),
         item("P14"), item("P15"), item("P16"), item("P17"), item("P18"), item("P19"), item("P20"), item("P21"),
         open.P22 === undefined ? null : open.P22,
         item("P23"), item("P24"), item("P25"), item("P26"), item("P27"), item("P28"), item("P29"), item("P30"),

@@ -4,6 +4,14 @@ Companion to `00_Master_Plan_and_Theory.md`. That document is the *what and why*
 *how* — every system, schema, route, integration, and the order to build them. The 5-day execution
 plan is Part D at the end.
 
+> **Since this PRD (Sept 2026).** The build followed this spec; where it moved, the record is
+> `docs/3_handover/HANDOVER.md` and the summary is the ★ table at the top of
+> `docs/1_research/00_Master_Plan_and_Theory.md` (prices ₹3,500 / ₹6,500 / upgrade ₹3,000, the
+> 20-business-day mentor match, Google OAuth in V1, the one-list report, the free Render deploy with
+> workers inside the web service, `User.reportFailedAt`). Deployment: `render.yaml` + `DEPLOY.md`
+> (same folder). The finalised item banks, scoring references and page copy are in
+> `docs/5_finalized/`.
+
 ---
 
 ## A. ARCHITECTURE OVERVIEW

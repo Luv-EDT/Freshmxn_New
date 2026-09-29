@@ -459,7 +459,7 @@ function Sart({ alreadyTaken, onDone }) {
                 </p>
 
                 <p>
-                    <button type="button" style={button} onClick={runChecks}>Check my device and start</button>
+                    <button type="button" className="btn btn-primary" style={button} onClick={runChecks}>Check my device and start</button>
                 </p>
             </>,
             false
@@ -551,7 +551,7 @@ function Sart({ alreadyTaken, onDone }) {
                 </p>
 
                 <p>
-                    <button type="button" style={{ ...button, marginRight: "8px" }} onClick={runChecks}>Check again</button>
+                    <button type="button" className="btn btn-primary" style={{ ...button, marginRight: "8px" }} onClick={runChecks}>Check again</button>
                     <button type="button" style={button} onClick={onDone}>Go back</button>
                 </p>
             </>,
@@ -572,7 +572,7 @@ function Sart({ alreadyTaken, onDone }) {
                     area. The practice round tells you when you get one wrong; the real one does not.
                 </p>
                 <p>
-                    <button type="button" style={button} onClick={runPractice}>Start the practice round</button>
+                    <button type="button" className="btn btn-primary" style={button} onClick={runPractice}>Start the practice round</button>
                 </p>
             </>,
             false
@@ -604,7 +604,7 @@ function Sart({ alreadyTaken, onDone }) {
                     do not switch apps — we record it if you do.
                 </p>
                 <p>
-                    <button type="button" style={{ ...button, marginRight: "8px" }} onClick={runTest}>Start</button>
+                    <button type="button" className="btn btn-primary" style={{ ...button, marginRight: "8px" }} onClick={runTest}>Start</button>
                     <button type="button" style={button} onClick={runPractice}>Practise again</button>
                 </p>
             </>,

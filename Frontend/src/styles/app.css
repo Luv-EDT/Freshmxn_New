@@ -1,0 +1,664 @@
+/* The logged-in product: report, assessment, interest form, paywall, profile. */
+
+/* ── report ───────────────────────────────────────────────────────────────────────────────────── */
+
+/* the report reads best in a narrower column than the rest of the app */
+.report-page .app-header ~ :is(div, h1, h2, h3, h4, p, section, form, ul, ol, details, blockquote):not(.page) {
+    max-width: 840px;
+}
+
+.report-page details {
+    width: 100%;
+    max-width: 840px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.report-details {
+    margin: var(--space-4) auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0 var(--space-4) var(--space-2);
+}
+
+.report-page .app-header ~ details.report-details {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+    /* a bordered box: the page gutter has to be OUTSIDE the border, or it runs edge to edge on a phone */
+    width: auto;
+    max-width: 808px;
+    margin-left: max(16px, calc((100% - 808px) / 2));
+    margin-right: max(16px, calc((100% - 808px) / 2));
+}
+
+.report-summary {
+    cursor: pointer;
+    min-height: 44px;                 /* a tap target, kept from the original inline style */
+    padding: 12px 0;
+    font-weight: 700;
+    font-size: 1rem;
+    list-style-position: inside;
+}
+
+.report-summary.small {
+    font-size: 0.95rem;
+}
+
+.report-small {
+    font-size: 0.92rem;
+}
+
+.report-small li {
+    margin: 6px 0;
+}
+
+.aspiration-card {
+    border-left: 4px solid var(--pink);
+    background: var(--surface);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+.aspiration-title {
+    margin-top: 0;
+    font-size: 1.05rem;
+}
+
+/* profession cards (ProfessionCard.js) */
+.profession-card {
+    background: var(--teal-tint);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    margin: var(--space-2) 0;
+    max-width: 800px;
+    transition: opacity 0.2s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.profession-card:hover {
+    border-color: var(--teal);
+}
+
+/* open: the body reads on white, the teal row stays as its header */
+.profession-card.is-open {
+    background: var(--surface);
+    border-color: var(--teal);
+    box-shadow: var(--shadow-sm);
+}
+
+.profession-card.is-open button.pc-toggle {
+    background: var(--teal-tint);
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+
+button.pc-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    min-height: 48px;                 /* a tap target, kept from the original inline style */
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius);
+    color: var(--teal-dark);
+    font-weight: 400;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+button.pc-toggle:hover:not(:disabled) {
+    color: var(--teal-dark);
+}
+
+.pc-name {
+    font-weight: 900;
+    font-size: 1.05rem;
+    color: var(--teal-dark);
+}
+
+.pc-sign {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--teal-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+
+.pc-years {
+    margin: var(--space-4) 0 4px;
+}
+
+
+.pc-body {
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--line);
+}
+
+.pc-section {
+    margin: var(--space-4) 0;
+}
+
+/* "Follow subheading and text format" (owner, Round 6): section titles are real subheadings in the
+   display face, and the text under them is ordinary body text — full navy, never pale grey. */
+.pc-section-title {
+    margin: 0 0 6px;
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--navy);
+    font-size: 1.15rem;
+    line-height: 1.3;
+}
+
+.pc-body {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--navy);
+}
+
+.pc-oneliner {
+    font-size: 1.05rem;
+    margin-top: var(--space-4);
+}
+
+.pc-nuance {
+    font-size: 0.95rem;
+    color: var(--navy-soft);
+    margin: 8px 0;
+}
+
+.pc-line {
+    margin: 4px 0;
+}
+
+.pc-small {
+    margin: 4px 0;
+    font-size: 0.95rem;
+    color: var(--navy-soft);
+}
+
+.pc-small.tight {
+    margin: 2px 0;
+}
+
+.pc-group {
+    margin: 8px 0;
+}
+
+.pc-path {
+    padding-left: 20px;
+    margin: 0;
+}
+
+.pc-path li {
+    margin: 8px 0;
+}
+
+.pc-path li.is-past {
+    opacity: 0.7;
+}
+
+.pc-path li.is-next {
+    font-weight: 700;
+}
+
+.pc-stage,
+.pc-next {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+.pc-path li.is-next .pc-next {
+    color: var(--teal);
+}
+
+button.filter-option {
+    padding: 8px 14px;
+    min-height: 44px;                 /* a tap target, kept from the original inline style */
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--navy);
+}
+
+button.filter-option.is-on {
+    border: 2px solid var(--teal);
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+/* ── paywall (Paywall.js) ─────────────────────────────────────────────────────────────────────── */
+
+.plan-grid {
+    display: grid;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+@media (min-width: 720px) {
+    .plan-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.plan-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-sm);
+}
+
+.plan-card.is-selected {
+    border: 2px solid var(--teal);
+    box-shadow: var(--shadow);
+}
+
+.plan-card h3 {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.plan-card .price {
+    margin: 0;
+}
+
+.plan-card .btn {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.coupon-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.coupon-row label {
+    width: 100%;
+}
+
+.coupon-row br {
+    display: none;
+}
+
+.coupon-row input {
+    flex: 1 1 180px;
+    max-width: 320px;
+}
+
+.coupon-row p {
+    width: 100%;
+}
+
+.quote-card,
+.aid-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin: var(--space-4) 0;
+}
+
+.quote-card {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.aid-card h3 {
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+}
+
+/* ── assessment intro (AssessmentIntro.js) ────────────────────────────────────────────────────── */
+
+.module-row {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    box-shadow: var(--shadow-sm);
+}
+
+.module-row.is-done {
+    background: #f6f4ee;
+}
+
+.module-row p {
+    margin-bottom: var(--space-2);
+}
+
+.module-row .module-title {
+    margin-bottom: var(--space-2);
+}
+
+.module-row .btn {
+    margin-top: var(--space-1);
+}
+
+/* ── question screens (LikertModule and the other modules) ────────────────────────────────────── */
+
+.question-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    box-shadow: var(--shadow-sm);
+}
+
+.question-card.is-answered {
+    border-color: var(--teal-tint);
+}
+
+.question-text {
+    margin-bottom: var(--space-3);
+}
+
+.choices {
+    display: grid;
+    gap: 6px;
+}
+
+/* every answer is a full-width row — a big, forgiving tap target on a phone */
+label.choice,
+:is(.page, .app-header ~ *) label:has(> input[type="radio"]),
+:is(.page, .app-header ~ *) label:has(> input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-weight: 400;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+label.choice:hover,
+:is(.page, .app-header ~ *) label:has(> input[type="radio"]):hover,
+:is(.page, .app-header ~ *) label:has(> input[type="checkbox"]):hover {
+    border-color: var(--teal);
+}
+
+label.choice.is-checked,
+:is(.page, .app-header ~ *) label:has(> input:checked) {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+    font-weight: 700;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+    accent-color: var(--teal);
+    width: 18px;
+    height: 18px;
+    flex: none;
+    margin: 0;
+}
+
+/* labels that hold a choice sit as a stacked list with a little air */
+:is(.page, .app-header ~ *) label:has(> input[type="radio"]) + label,
+:is(.page, .app-header ~ *) label:has(> input[type="checkbox"]) + label {
+    margin-top: 6px;
+}
+
+.module-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    margin: var(--space-4) 0 var(--space-6);
+}
+
+.module-nav p {
+    width: 100%;
+    margin: 0;
+    color: var(--muted);
+}
+
+/* "one attempt only" — a warm caution, not an error: pink rule, cream ground, navy text */
+.caution-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--pink);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-5);
+    margin: var(--space-4) 0;
+}
+
+.caution-card h3 {
+    margin-top: 0;
+    font-size: 1.2rem;
+}
+
+.caution-card p:last-child {
+    margin-bottom: 0;
+}
+
+/* plain text fields on every app page fill the column (capped for a readable line on a laptop) —
+   the interest form's inputs had no width at all and cut their own placeholders off at 180 px */
+.app-header ~ * :where(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select, textarea):not([class*="ant-"]) {
+    width: 100%;
+    max-width: 480px;
+}
+
+/* stacked plain buttons in the long forms get a little air between them */
+.app-header ~ * :where(button:not([class*="ant-"])) {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+/* ── the one list + sort menu (Round 6) ───────────────────────────────────────────────────────── */
+
+.match-list {
+    max-width: 800px;
+}
+
+/* the engine's top three, each its own colour, kept under every sort */
+.profession-card.is-top-1 {
+    background: var(--teal);
+}
+
+.profession-card.is-top-2 {
+    background: var(--navy);
+}
+
+.profession-card.is-top-3 {
+    background: var(--pink-tint);
+}
+
+.profession-card.is-top-1 .pc-name,
+.profession-card.is-top-2 .pc-name {
+    color: #ffffff;
+}
+
+.profession-card.is-top-3 .pc-name {
+    color: var(--navy);
+}
+
+.profession-card.is-top.is-open {
+    background: var(--surface);
+}
+
+.profession-card.is-top-1.is-open button.pc-toggle {
+    background: var(--teal);
+}
+
+.profession-card.is-top-2.is-open button.pc-toggle {
+    background: var(--navy);
+}
+
+.profession-card.is-top-3.is-open button.pc-toggle {
+    background: var(--pink-tint);
+}
+
+.pc-top {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 2px;
+}
+
+.sort-menu {
+    max-width: 800px;
+    margin: var(--space-4) 0;
+}
+
+button.sort-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px var(--space-3);
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 16px;
+    text-align: left;
+    background: var(--surface);
+    color: var(--navy);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-weight: 900;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+button.sort-toggle:hover:not(:disabled) {
+    background: var(--surface);
+    color: var(--navy);
+    border-color: var(--teal);
+}
+
+.sort-burger {
+    font-size: 1.2rem;
+    color: var(--teal);
+}
+
+.sort-current {
+    margin-left: auto;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--teal-dark);
+    background: var(--teal-tint);
+    border-radius: var(--radius-pill);
+    padding: 4px 10px;
+}
+
+.sort-panel {
+    background: var(--surface);
+    border: 1px solid var(--teal);
+    border-top: 0;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: var(--space-4);
+}
+
+.sort-menu.is-open button.sort-toggle {
+    border-color: var(--teal);
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.sort-title {
+    margin: 0 0 var(--space-2);
+    font-weight: 900;
+}
+
+.sort-note {
+    font-weight: 400;
+    color: var(--navy-soft);
+}
+
+.sort-primaries {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+@media (min-width: 720px) {
+    .sort-primaries {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+button.sort-primary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+    min-height: 44px;
+    padding: 12px 14px;
+    background: var(--teal-tint);
+    color: var(--navy);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    font-weight: 400;
+    font-size: 0.92rem;
+    cursor: pointer;
+}
+
+button.sort-primary strong {
+    font-size: 1rem;
+    color: var(--teal-dark);
+}
+
+button.sort-primary:hover:not(:disabled) {
+    background: var(--teal-tint);
+    color: var(--navy);
+    border-color: var(--teal);
+}
+
+button.sort-primary.is-on {
+    border-color: var(--teal);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.sort-secondaries {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.report-bands li {
+    margin: 6px 0;
+}
+
+/* the pipeline gave up on a rebuild — the previous report stays, with a way to try again */
+.report-banner {
+    max-width: 800px;
+    background: var(--pink-tint);
+    border-left: 4px solid var(--pink);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+.report-banner p {
+    margin: 0 0 var(--space-2);
+}

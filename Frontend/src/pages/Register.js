@@ -3,7 +3,10 @@ import { useNavigate, Link } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { registerUser, getGoogleSignInUrl } from "../apiCall/userApi"
 import { setUser } from "../store/userSlice"
+import { Input } from "antd"
+import logo from "../assets/brand/logo.png"
 import { JOURNEY_OPTIONS, STREAM_SUBJECTS } from "./journeyOptions"
+import AuthCard from "./AuthCard"
 
 function Register() {
     const navigate = useNavigate()
@@ -23,7 +26,7 @@ function Register() {
     useEffect(() => {
         const token = localStorage.getItem("token")
         if (token) {
-            navigate("/")
+            navigate("/dashboard")
             return
         }
     }, [navigate])
@@ -96,7 +99,8 @@ function Register() {
     }
 
     return (
-        <div>
+        <AuthCard>
+            <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Create your account</h2>
 
             <form onSubmit={handleRegister}>
@@ -113,7 +117,7 @@ function Register() {
                 <div>
                     <label>Password (at least 8 characters)</label>
                     <br />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+                    <Input.Password value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
                 </div>
                 <div>
                     <label>Age</label>
@@ -207,7 +211,8 @@ function Register() {
                         <p><strong>You're under 18</strong></p>
                         <label>
                             <input type="checkbox" checked={parentConsentChecked} onChange={(e) => setParentConsentChecked(e.target.checked)} />
-                            I have taken permission from my parent/guardian to use Freshmxn.
+                            I have taken permission from my parent/guardian to use Freshmxn, and they agree to the{" "}
+                            <Link to="/terms" target="_blank">Terms</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link>.
                         </label>
                         <div>
                             <label>Parent/guardian name</label>
@@ -222,17 +227,22 @@ function Register() {
                     </div>
                 )}
 
+                <p className="legal-agree">
+                    By creating an account you agree to our <Link to="/terms" target="_blank">Terms</Link> and{" "}
+                    <Link to="/privacy" target="_blank">Privacy Policy</Link>.
+                </p>
+
                 <button type="submit">Create account</button>
             </form>
 
-            <p>or</p>
+            <p className="auth-divider">or</p>
 
             <a href={getGoogleSignInUrl()}>
                 <button type="button">Sign up with Google</button>
             </a>
 
             <p>Already have an account? <Link to="/login">Login</Link></p>
-        </div>
+        </AuthCard>
     )
 }
 

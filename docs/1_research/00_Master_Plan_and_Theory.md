@@ -6,10 +6,34 @@ single coherent theory before any full-stack build begins. This is the *what and
 *how* (auth, schemas, routes, APIs, payments) is the second document, written after you mark
 this one up.
 
-**Status of inputs.** Part 1 research is frozen (`00_Research_Summary_FROZEN.md`,
+**Status of inputs** *(as written before the build — see ★ below for today)*. Part 1 research is frozen (`00_Research_Summary_FROZEN.md`,
 `07_Part2_Handoff_Brief.md`). Part 2 taxonomy is built (218 professions, verified, in Claude
 Code). Part 2 matching algorithm is specced (the career-matching PRD). This document resolves
 the seams between them.
+
+---
+
+## ★ Current state — September 2026 (read this first)
+
+This plan was written before the build. The theory in §0–§5 still holds and is what the code
+implements. The product details in §6–§9 moved during the build; the inline notes marked
+**(updated Sept 2026)** correct them, and this table is the summary. The day-by-day record of how
+each decision was made is `docs/3_handover/HANDOVER.md`.
+
+| Area | The plan said | What is built and live (www.freshmxn.com) |
+|---|---|---|
+| Prices | ₹3,500 / ₹7,000, upgrade ₹3,500 | **₹3,500 / ₹6,500, upgrade ₹3,000** — always read from the server (`GET /payments/getPricing`) |
+| Payments | Razorpay | Razorpay built; **manual mode live** (admin grants access) until KYC |
+| Mentor match clock | 15 business days | **20 business days** from the student's career choice |
+| Auth | email + password; Google OAuth in V2 | email + password **and Google OAuth, both live** |
+| Taxonomy | 218 professions | **223** (`Backend/data/ALL-professions.json`) |
+| Factor model | 22 majors + 9 minors, 27-factor matching vector | as planned (`profile@1.0.1`) |
+| Report | tiered list + readiness + values | **one list** under "Your matches" — the 16 tiers + switching cost are "Best match"; **"Best fit, ignoring switching cost"** replaces the separate worth-the-switch list; the top 3 are highlighted; an optional secondary sort (AI exposure, quickest, pay, demand); **no filters on the page**. The five tier bands are explained in "How this list is ordered" |
+| Public site | landing, success stories, mentor waitlist | + **How it works**, **About us** (founder story + photo), **Terms**, **Privacy** (DPDP draft) |
+| Parental consent | verified parental consent | **self-declared checkbox** + parent name/mobile, recorded with time, IP and policy version; verified consent is V2 and the legal pages say so |
+| DPDP minor tracking aggregates · 6/12-month follow-up | "must ship in V1" | **deferred to V2** by the owner (Day 4 §2.1–2.2) — see `docs/4_v2/06_V2_and_Beyond.md` |
+| Deploy | Render | **one free Render web service**; both BullMQ workers run inside it (`RUN_WORKERS_IN_WEB=true`) |
+| Company | — | Freshmxn Education India Private Limited, CIN U85500DL2025PTC453582 |
 
 ---
 
@@ -263,7 +287,7 @@ but the college-shaped report).
 existing interest-form content. **Journey-specific inputs** are the disambiguating fields above
 (stream/subject-set, course+year, experience-years) — the additions missing from the current form.
 
-**Report shape by journey:**
+**Report shape by journey:** *(updated Sept 2026: the "two lists" below are now one list with two orders — "Best match" and "Best fit, ignoring switching cost"; class 9–10 gets only the first, since the two are identical when nothing is sunk. See the ★ table.)*
 - **9–10:** stream-inversion headline (*"Commerce keeps 38 open, PCM 34, PCB 21"*) **plus** career
   detail on the top matches.
 - **11–12:** ranked professions reachable from the stream (`class12_prerequisite` filters), each with
@@ -312,12 +336,13 @@ deliverable** (assessment, recommendation, or mentorship). One gate up front, no
 | Tier | Price | What it includes |
 |---|---|---|
 | **Career Recommendation + Psychometric Analysis** | **₹3,500** | Full assessment, the 22+9 profile, the journey-shaped profession report, the readiness layer, the values profile |
-| **Mentor Connection** | **₹7,000** | The above PLUS a mentor matched to the chosen profession: one 1-hour clarity session + one 20-min follow-up/doubts session |
+| **Mentor Connection** | **₹6,500** *(updated Sept 2026; was ₹7,000)* | The above PLUS a mentor matched to the chosen profession: one 1-hour clarity session + one 20-min follow-up/doubts session |
 
-- **Payments:** Razorpay (India-domestic: UPI + cards + netbanking), amounts ₹3,500 / ₹7,000
-  (+ ₹3,500 upgrade top-up).
+- **Payments:** Razorpay (India-domestic: UPI + cards + netbanking), amounts ₹3,500 / ₹6,500
+  (+ ₹3,000 upgrade top-up). **(updated Sept 2026)** Live in manual mode until Razorpay KYC; prices
+  come from the server.
 - **Upgrade path:** a student who bought the ₹3,500 tier sees, *after* their report is generated, an
-  **"Upgrade to Mentorship"** option costing the **difference (₹3,500)**, not the full ₹7,000. On
+  **"Upgrade to Mentorship"** option costing the **difference (₹3,000)**, not the full ₹6,500. On
   payment it flips them to the mentor tier and drops them into the paid-waitlist flow (§6.4). The
   `payments` collection records both the original tier and the upgrade as separate charges.
 
@@ -334,11 +359,11 @@ waitlist**, not a "coming soon" placeholder.
   of experience · 8. Languages · 9. Motivation (open) · 10. High-school→college approach
   (Category A/B/C/D — same decision-style vocabulary as the student model) · 11. Preferred payment
   currency **(admin-only)** · 12. Country of residence/citizenship **(admin-only)**.
-- **Student-facing paid waitlist** for the ₹7,000 tier. The flow, stated on the waitlist page:
+- **Student-facing paid waitlist** for the ₹6,500 tier. The flow, stated on the waitlist page:
   1. Student **pays** to join the waitlist (place held on payment).
   2. Student **completes Step 1** (career discovery + profile) and **chooses a career** from their
      matches, then sends it to us.
-  3. We **match a best-fit mentor in that field within 15 business days** of the choice (the clock
+  3. We **match a best-fit mentor in that field within 20 business days** *(updated Sept 2026; was 15)* of the choice (the clock
      starts at the choice, not at payment). Matching is a **manual admin action in V1.**
 - Sessions: 1-hour clarity + 20-min follow-up, delivered manually/off-platform in V1.
 
@@ -354,7 +379,11 @@ Before the paywall, a public site sells the depth so a student/parent understand
 before paying. Pages: **Landing** (hero → problem-with-verified-stats → demand-side thesis →
 who-it's-for → how-it-works → why-we're-different → pricing → about → contact),
 **Success Stories** (two illustrative result cards showing story→strengths→ranked matches→choice→
-outcome), and **Mentor Waitlist** (the §6.4 paid-waitlist flow). Copy rules: intelligence *sorts,
+outcome), and **Mentor Waitlist** (the §6.4 paid-waitlist flow). **(updated Sept 2026)** Built as:
+a short landing page (hero → the problem as four collapsed questions → who is it for → why we're
+different → closing band), a separate **How it works** page (demand-side thesis, 4 steps, how we
+rank, by-invitation bonus, pricing), **Success Stories** (three representative journeys: school,
+college, early career), **Mentors**, **About us**, **Terms** and **Privacy**. Copy rules: intelligence *sorts,
 never filters* is stated explicitly in the how-it-works steps; "human connection" routes to the
 mentor tier; every statistic is verified to a citable source (India Skills Report 2026,
 Mercer-Mettl Graduate Skill Index, India Today careers-awareness survey, ET work-experience
@@ -368,13 +397,16 @@ These are non-optional and shape the schemas in the build PRD:
 
 - **DPDP / minors:** for under-18 users, per-profession behavioural events
   (`viewed/expanded/saved/dismissed/dwell_ms`) must be stored as **aggregates, not per-user
-  trails**. Parental consent flow required. Get a lawyer's hour on DPDP parental consent + the
+  trails**. Parental consent flow required. **(updated Sept 2026)** Aggregates deferred to V2 by the
+  owner; V1 consent is the self-declared checkbox described in the ★ table. Get a lawyer's hour on DPDP parental consent + the
   minor-tracking rule (open verification task).
 - **Phone OTP excluded** for student login (SMS pumping fraud). V1 login is email + password + JWT
-  + bcrypt (per CODING_STYLE.md); magic-link + Google OAuth deferred to V2.
+  + bcrypt (per CODING_STYLE.md); magic-link deferred to V2. **(updated Sept 2026)** Google OAuth
+  shipped in V1.
   Parent-consent OTP is a different, rate-limited, one-per-account case.
 - **Never impute averages** for invalid modules — null stays visible.
-- **6- and 12-month follow-up must ship in V1.** It is a scheduled job + email template, but one
+- **(updated Sept 2026: deferred to V2 by the owner — Day 4 §2.2. The reasoning below still stands and
+  is why it is the first V2 item.)** **6- and 12-month follow-up must ship in V1.** It is a scheduled job + email template, but one
   added later produces no usable data for 18 months, and every future model improvement depends
   on it. This is the single most time-sensitive thing in the whole build.
 - **Versioning on every recommendation record:** `profile_id · scoring_version · norm_set_id ·
@@ -395,7 +427,7 @@ These are non-optional and shape the schemas in the build PRD:
    Google Forms + Gumloop); the interest form ("Virtual Career Counselling") already exists.
 4. **Paywall immediately after signup**, after showing both offerings, before any deliverable.
 5. **Mentor tier = V2**, but V1 ships **mentor-as-a-user**: sign-in + onboarding form (§6.4) + a
-   student-facing **waitlist** for the ₹7,000 tier. No booking/scheduling/matching in V1.
+   student-facing **waitlist** for the ₹6,500 tier *(updated Sept 2026)*. No booking/scheduling/matching in V1.
 6. **V1 serves all four journeys** (class 9–10, 11–12, college, early-professional), filtered by the
    taxonomy's `degree_dependency` / `class12_prerequisite` / `mid_stream_entry` fields.
 
@@ -410,9 +442,8 @@ Now that §8 is locked, the second document specifies:
 - **Authorization / roles:** student · parent · **mentor** · admin.
 - **The staged single-frontend flow:** progress-bar state machine across Interest Form →
   Psychometric Assessment → Report → Mentor(waitlist), with a resumable per-stage position.
-- **Paywall:** Razorpay gate immediately post-signup, amounts ₹3,500 / ₹7,000 (+ ₹3,500 upgrade),
-  before any
-  deliverable; ₹7,000 currently resolves to a waitlist entry.
+- **Paywall:** Razorpay gate immediately post-signup, amounts ₹3,500 / ₹6,500 (+ ₹3,000 upgrade)
+  *(updated Sept 2026)*, before any deliverable; ₹6,500 resolves to a waitlist entry.
 - **DB:** MongoDB Atlas + Atlas Vector Search.
 - **Schema set:** users, consent, sessions, profiles (22+9), submissions (interest + psychometric),
   baseline_ratings (separate, versioned), activity_factor_cache (rubric-versioned), recommendations

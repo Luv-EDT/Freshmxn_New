@@ -1,0 +1,52 @@
+/* THE DESIGN TOKENS — the one place colours, type and spacing are decided (01_Build_PRD §E.1,
+   landing_page_content_v3.md). Every other stylesheet reads these; nothing else hard-codes a colour.
+
+   Colour discipline:
+     navy  — the ink: headings and text. Never the page background.
+     teal  — THE star: every CTA, link and highlight.
+     pink  — a single highlighter swipe BEHIND navy text, one key phrase per section at most.
+             Never text colour (too low-contrast on white), never structural.
+     greys — muted text, and text on the (rare) dark sections only. */
+
+:root {
+    --navy: #1e2a38;
+    --navy-soft: #3a4756;
+    --teal: #007582;
+    --teal-dark: #005c66;
+    --teal-tint: #e3f2f3;
+    --pink: #ffb3c7;
+    --pink-tint: #ffe3eb;
+    --cream: #fffbef;
+    --page: #fbfaf6;
+    --surface: #ffffff;
+    --line: #e7e3da;
+    --muted: #5d6874;
+    --grey-light: #d1d1d1;
+    --grey: #bebebe;
+
+    --font-display: "Orelega One", Georgia, serif;
+    --font-body: "Lato", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+    /* fluid type: comfortable on a 360 px phone, generous on a laptop */
+    --text-h1: clamp(2.1rem, 6.5vw, 3.6rem);
+    --text-h2: clamp(1.6rem, 4.5vw, 2.4rem);
+    --text-h3: clamp(1.2rem, 3vw, 1.45rem);
+    --text-lead: clamp(1.05rem, 2.4vw, 1.2rem);
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 72px;
+
+    --radius: 12px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+
+    --shadow-sm: 0 1px 2px rgba(30, 42, 56, 0.06), 0 1px 1px rgba(30, 42, 56, 0.04);
+    --shadow: 0 8px 24px rgba(30, 42, 56, 0.08);
+    --shadow-lg: 0 20px 48px rgba(30, 42, 56, 0.12);
+}

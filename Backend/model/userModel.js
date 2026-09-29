@@ -103,6 +103,14 @@ const userSchema = new mongoose.Schema(
                 default: "not_applicable", // not_applicable | waitlisted
             },
         },
+        // Set when score_profile or generate_report has failed on its LAST attempt, so the report
+        // page can say so instead of showing "generating" forever. Deliberately NOT a
+        // `progress.report` value: refunds and "Tier 1 delivered" read `report !== "locked"`, and a
+        // failure must never count as delivery. Cleared on a successful report, a new submit or a retry.
+        reportFailedAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

@@ -141,7 +141,7 @@ deferred on the *product/platform* side (auth, payments, mentor tier, public sit
 isn't re-litigated or lost.
 
 ## Mentor tier — full automation (V2)
-V1 ships mentor **onboarding + a paid waitlist + manual admin matching within 15 business days**.
+V1 ships mentor **onboarding + a paid waitlist + manual admin matching within 20 business days**.
 Deferred to V2:
 - Automated mentor↔student matching (keyed on the student's chosen profession)
 - In-app scheduling / calendar for the two sessions (1-hr clarity + 20-min follow-up)
@@ -221,7 +221,49 @@ Orelega One + Lato). Deeper motion/illustration/brand system is post-launch poli
 - **The external tests have never hit the live vision API** — every gate is fixture-proven with a
   stubbed Haiku client; no real screenshot has been through Haiku 4.5. Validate before real use.
 
-## THE STANDING V1 TASK
-**Get everything into git.** Across every day's handover the note has been "nothing committed."
-This is the single most overdue housekeeping item — do it before/around Day 5, so all the work
-is versioned and safe, not just living on one machine.
+## ~~THE STANDING V1 TASK — get everything into git~~ ✅ done
+Committed (`269dfa5`) and, since Day 5, everything lives on GitHub and deploys from `main`.
+
+---
+
+# ADDENDUM 2 — DEFERRED DURING DAY 5 (the cloud session, Sept 2026)
+
+## Report output — a deeper, journey-shaped report (next build)
+The report shows names, then one expandable card per career. The owner judges it superficial: a
+student should learn **what to do next**, not just which careers fit. `ALL-professions.json` holds
+far more than the report uses. The brainstorm goes in `docs/2_build/Report_Output_Brainstorm.md`.
+
+## Backend-review findings not yet fixed (V1.1 — before real volume)
+From the read-only review in Round 6 (the three high-severity ones were fixed in Round 7):
+- **Forbidden-term rejection** matches plain English ("data quality"), which a student's own words
+  can trigger; the report job then fails. It now ends in "failed + Try again", not a spinner — fix
+  the matcher (engine identifiers only) and add a safe fallback.
+- **A resubmit during an active job can be lost**, and the old report then looks fresh. Needs a
+  `sourceSubmittedAt` on the report and a re-enqueue when the submission changed mid-job.
+- **`reports.generatedAt` is overwritten on every run** — against the rule above. Use
+  `$setOnInsert` + a separate `lastGeneratedAt`.
+- **Story recall:** a missing free-recall answer counts as zero instead of being rescaled.
+- **Digit span:** an abandoned attempt scores as a full-quality 0 (`completedAt` ignored).
+- **`savePsychometric` accepts server-owned fields** (digit-span correctness, grades, percentiles) —
+  allow-list per module.
+- Low: the age hard filter reads `journeyDetail.age` instead of `user.age`; undergrad waste is
+  non-monotonic (spec question); a 429 is treated as non-transient in report retries;
+  `getMyReport.readiness` sends raw confidence numbers the page doesn't render.
+
+## Report filters (removed from the page, kept in code)
+The owner removed the AI / demand / pay filters from the report (Round 6) — students found them
+noisy. `missedBy`, `optionCounts`, `hasData` in `Report/reportFilters.js` stay, fixture-covered and
+unused. Bring back as a "refine" drawer only if students ask; otherwise delete with their fixtures.
+
+## Ops
+- **Paid background workers** (Render starter, $7/month each) once traffic justifies it — the
+  commented block in `render.yaml`; set `RUN_WORKERS_IN_WEB=false`.
+- **Uptime ping** (UptimeRobot, 10 min) — needed on the free plan; not needed on a paid instance.
+- **Admin alert on a failed report** — today it is a loud log line plus `User.reportFailedAt`; an
+  admin list or an email would surface it without reading logs.
+- The browser and API test suites used in the cloud session were scratch scripts; make a committed
+  e2e suite (Playwright) part of the repo.
+
+## Legal
+- DPDP lawyer review of `/terms` and `/privacy`; confirm the Grievance Officer.
+- Verified parental consent (above) — the privacy page already promises it is coming.

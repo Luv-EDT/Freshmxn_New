@@ -45,6 +45,12 @@ function ProtectedRoute({ children, requirePaid }) {
                     return
                 }
 
+                // mentors have their own pages — the student journey is not theirs
+                if (userData.role === "mentor") {
+                    navigate("/mentor")
+                    return
+                }
+
                 // a Google sign-in has no age or journey yet
                 if ((!userData.age || !userData.journey) && location.pathname !== "/complete-profile") {
                     navigate("/complete-profile")

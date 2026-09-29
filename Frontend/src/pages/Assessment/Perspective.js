@@ -76,7 +76,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
     }
 
     const radioRow = (name, option, checked, onSelect) => (
-        <label key={String(option.value)} style={{ display: "block", padding: "10px 0", cursor: "pointer" }}>
+        <label key={String(option.value)} className="choice">
             <input type="radio" name={name} checked={checked} onChange={onSelect} />
             {" "}{option.label}
         </label>
@@ -202,7 +202,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
                 <button type="button" onClick={() => { setPage(page - 1); window.scrollTo(0, 0) }}>Back</button>
             )}
             {" "}
-            <button type="button" onClick={advance} disabled={!pageComplete}>
+            <button type="button" className="btn btn-primary" onClick={advance} disabled={!pageComplete}>
                 {page === totalPages - 1 ? "Finish this section" : "Next"}
             </button>
             {!pageComplete && <p><em>Answer everything on this page to continue.</em></p>}

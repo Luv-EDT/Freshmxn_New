@@ -42,13 +42,16 @@ function Home() {
     return (
         <div>
             <Navbar />
-            <h2>Hi {user.name}</h2>
-            <p>Your plan: <strong>{TIER_NAMES[user.currentTier] || TIER_NAMES[0]}</strong></p>
+            <main className="page app-page">
+            <section className="welcome">
+                <h1 className="page-title">Hi {user.name}</h1>
+                <p>Your plan: <span className="chip">{TIER_NAMES[user.currentTier] || TIER_NAMES[0]}</span></p>
+            </section>
 
             {!user.paid && (
-                <div>
+                <div className="section-card">
                     <p>Pick a plan to unlock your journey.</p>
-                    <button type="button" onClick={() => navigate("/paywall")}>See plans</button>
+                    <button type="button" className="btn btn-primary" onClick={() => navigate("/paywall")}>See plans</button>
                 </div>
             )}
 
@@ -63,7 +66,7 @@ function Home() {
                         <p>
                             <button
                                 type="button"
-                                style={{ padding: "12px 20px", minHeight: "48px", fontSize: "16px" }}
+                                className="btn btn-primary btn-next"
                                 onClick={() => navigate(nextStage.path)}
                             >
                                 {nextStage.key === "interest" && (interestFormLabel[user.progress?.interestForm] || "Open the interest form")}
@@ -81,6 +84,7 @@ function Home() {
                     <UpgradeToMentorship user={user} />
                 </div>
             )}
+            </main>
         </div>
     )
 }
