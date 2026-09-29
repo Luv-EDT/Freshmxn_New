@@ -1,4 +1,4 @@
-# Render Blueprint — Freshmxn. Render → New → Blueprint → pick this repo. See DEPLOY.md.
+# Render Blueprint — Freshmxn. Render → New → Blueprint → pick this repo. See docs/2_build/DEPLOY.md.
 #
 # ONE free web service runs everything: the Express API, the built React app, and — because
 # RUN_WORKERS_IN_WEB is "true" — both BullMQ workers inside the same process (see server.js).
@@ -12,7 +12,7 @@ services:
     runtime: node
     plan: free
     region: singapore             # closest Render region to students in India
-    branch: claude/peaceful-bohr-rkxau6   # the preview branch; switch to main after the merge
+    branch: main                  # live site deploys from main (was the preview branch until Sept 2026)
     autoDeploy: true              # every push to the branch redeploys by itself
     # CI=false: Render may set CI=true, which turns pre-existing warnings in Interest/ into build
     # errors (Day 4 handover §6). GENERATE_SOURCEMAP=false keeps the build inside free-tier memory
