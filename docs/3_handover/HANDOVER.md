@@ -91,7 +91,7 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 - 90 nuances are withheld from students (builder phrasing / identifiers); a copy pass would recover many. Some still say "taxonomy" or "Sector 5".
 - Two flagged baseline professions (Railway Operations Professional, Model) need the admin screen.
 - `User/Mentorship.js` "How it works" mentions booking further sessions in-app — V1 has none; reword or keep.
-- The report output is superficial — the brainstorm goes in `docs/2_build/Report_Output_Brainstorm.md` (next step).
+- The report output is superficial — see `docs/2_build/Report_Output_Brainstorm.md` and answer its §7 questions before the rebuild.
 
 **Backend review (Sept 2026) — still open** (the three high-severity ones were fixed in Round 7):
 forbidden-term rejection can be triggered by a student's own words (now ends in "failed + Try again",

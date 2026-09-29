@@ -10,7 +10,7 @@ Every project document, and when to read it. Numbers give the reading order.
 | **2_build/** | 01_Build_PRD.md | The *how*: architecture, schemas, routes, integrations, the build order |
 | | CODING_STYLE.md | House style every file follows (router → model, `{ success, message, data }`, no semicolons, 4 spaces) |
 | | DEPLOY.md | The deploy runbook: Render, Atlas, Upstash, Google OAuth, Cloudflare DNS, moving the site to `main`; also why `render.yaml` (repo root) and this file are separate |
-| | Report_Output_Brainstorm.md | *(coming next)* What `ALL-professions.json` holds and how a richer, journey-shaped report could use it |
+| | Report_Output_Brainstorm.md | What `ALL-professions.json` holds and how a richer, journey-shaped report could use it — discussion, with open questions for the owner |
 | **3_handover/** | HANDOVER.md | **The single handover**: where things stand, how to run and test, open items and owner gates, decisions that must not drift, then the full day-by-day record (Day 1 → Day 5 and its rounds) |
 | **4_v2/** | 06_V2_and_Beyond.md | Everything deliberately deferred — instrument (V1.1 → V3), product and platform, and the Day 5 addendum (backend-review items, report output, ops, legal) |
 | **5_finalized/algorithms/** | 04_Item_Bank.md | Every assessment item and the SART spec (§6). Fixtures check the code against it |
