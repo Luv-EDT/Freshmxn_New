@@ -22,13 +22,17 @@ const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
 // keys that a 2.0.0 report does not, and the page renders against the shape. Reports are read back
 // by version, so mixing the two under one stamp makes an old report unrenderable rather than merely
 // old. Anything comparing reports across this line is comparing different documents.
-const REPORT_VERSION = "report@2.0.0"
+// 3.0.0 — three sections, `nextSteps` removed (owner, 2026-09-29). The page now derives next steps
+// from the data per career and per journey (Frontend/src/pages/Report/reportPlan.js), which the model
+// cannot do: it never sees exams, deadlines or subjects, so its steps could only be generic. MAJOR,
+// because a key is gone; the page still shows a 2.x report's `nextSteps` if one exists.
+const REPORT_VERSION = "report@3.0.0"
 
 // Terms that must never reach a student, checked on the way out. See reportsModel.js.
 const FORBIDDEN = ["match_confidence", "data_quality", "match confidence", "data quality"]
 
 const SYSTEM_PROMPT = `You write career-guidance reports for Indian students. Most of your readers
-are between 14 and 22 years old, and many will read this with a parent.
+are between 14 and 25 years old, and many will read this with a parent.
 
 WHAT YOU ARE GIVEN
 
@@ -83,15 +87,17 @@ Return ONLY a JSON object with these keys, each a string of plain prose. No mark
 the values, no preamble, no code fences.
 
 {
-  "opening":     "TWO SENTENCES, 35 words at most. How this person works. Start with the substance — never 'You are someone who' or 'Based on your assessment'.",
-  "yourMatches": "TWO SENTENCES, 35 words at most. The one thread running through their top matches, named in the words given to you. Do NOT list the professions — they are on screen directly below this.",
-  "readiness":   "ONE SENTENCE, 25 words at most. The single most useful thing to build, from confidence, consistency, learning capacity and decision-making. Not a verdict, not a list of all four.",
-  "nextSteps":   "THREE bullet-style actions separated by ' · '. Each under 12 words, each a thing they could actually do this month. Not 'research your options'. Not 'talk to people'."
+  "opening":     "TWO SENTENCES, 30 words at most. How this person works. Start with the substance — never 'You are someone who' or 'Based on your assessment'.",
+  "yourMatches": "ONE SENTENCE, 20 words at most. The one thread running through their top matches, named in the words given to you. Do NOT list the professions — they are on screen directly below this.",
+  "readiness":   "ONE SENTENCE, 20 words at most. The single most useful thing to build, from confidence, consistency, learning capacity and decision-making. Not a verdict, not a list of all four."
 }
 
-LENGTH IS THE FEATURE. The whole of your output should fit on a phone screen without scrolling —
-about 110 words in total, across all four. The professions carry the detail; each one opens into its
-own page of facts. You are the thread between them, not a summary of everything known.
+Do NOT give next steps, study advice or exam names — the page works those out from the data and
+shows them beside each career. Your job is only the three lines above.
+
+LENGTH IS THE FEATURE. About 70 words in total, across all three. The professions carry the detail;
+each one opens into its own page of facts. You are the thread between them, not a summary of
+everything known.
 
 Three rules that override everything above:
   · If a sentence could appear in ANY student's report, cut it. Do not rewrite it, cut it.

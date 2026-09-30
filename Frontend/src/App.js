@@ -18,6 +18,7 @@ import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
 import InterestForm from "./pages/Interest/InterestForm.js"
 import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
 import ReportPage from "./pages/Report/ReportPage.js"
+import ComparePage from "./pages/Report/ComparePage.js"
 import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
 import HowItWorks from "./pages/Public/HowItWorks.js"
@@ -112,6 +113,11 @@ function App() {
                 <Route path="/report" element={
                     <ProtectedRoute requirePaid={true}>
                         <ReportPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/report/compare" element={
+                    <ProtectedRoute requirePaid={true}>
+                        <ComparePage />
                     </ProtectedRoute>
                 } />
 

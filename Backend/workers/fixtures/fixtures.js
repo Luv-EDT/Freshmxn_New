@@ -1975,7 +1975,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT PAGE — no control hides or fades a career",
+        name: "REPORT PAGE — nothing hides a career except the owner-approved blue-collar opt-out",
         // REPLACES "nothing is pinned; the controls apply uniformly" (owner, Round 6). Filters were
         // removed from the page because they crowded the screen and confused students; the filter
         // module stays (its own fixtures still run) but nothing on the page may hide, fade or pin a
@@ -1989,6 +1989,21 @@ const fixtures = [
             if (filters.isPinned) problems.push("isPinned is back in the filter module")
             if (/isPinned|const pinned/.test(page)) problems.push("the page exempts rows again")
             if (/missedBy\(|dimmed=\{/.test(page)) problems.push("the page fades rows again")
+
+            // The ONE exception (owner, 2026-09-30): "Leave out blue-collar careers" — off by default,
+            // removes only blue-collar ids, and the page says how many it hid.
+            if (!/const \[excludeBlueCollar, setExcludeBlueCollar\] = useState\(false\)/.test(page)) {
+                problems.push("the blue-collar filter is not off by default")
+            }
+            if (!/hiddenBlueCollar > 0/.test(page)) problems.push("the page does not say how many careers the blue-collar filter hid")
+
+            const { buildList } = filters
+            const ranked = [{ professionId: "a" }, { professionId: "b" }, { professionId: "c" }]
+            const details = { a: { blueCollar: true }, b: { coreEngineering: true }, c: {} }
+            const ids = (list) => list.map((entry) => entry.professionId).join(",")
+            if (ids(buildList(ranked, [], "best", null, details, {})) !== "a,b,c") problems.push("with no options set the list is not the full ranking")
+            if (ids(buildList(ranked, [], "best", null, details, { excludeBlueCollar: true })) !== "b,c") problems.push("the blue-collar filter removed the wrong careers")
+            if (ids(buildList(ranked, [], "best", null, details, { showFirst: "coreEngineering" })) !== "b,a,c") problems.push("show-first is not a stable partition that keeps everything")
             const listBlock = page.split('<div className="match-list">')[1] || ""
             if (!/^\s*\{ordered\.map\(/.test(listBlock)) problems.push("the rendered list is not the full ordered list")
 
@@ -2117,7 +2132,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT — the prompt is four short sections and the version bumped with it",
+        name: "REPORT — the prompt is three short sections, no next steps, and the version is 3.x",
         // A prose-shape change without a MAJOR version bump makes an old report unrenderable rather
         // than merely old — the page renders against the section keys.
         run: () => {
@@ -2129,11 +2144,16 @@ const fixtures = [
                 if (SYSTEM_PROMPT.includes(`"${gone}"`)) problems.push(`${gone} is still requested from the model`)
             })
 
-            ;["opening", "yourMatches", "readiness", "nextSteps"].forEach((kept) => {
+            ;["opening", "yourMatches", "readiness"].forEach((kept) => {
                 if (!SYSTEM_PROMPT.includes(`"${kept}"`)) problems.push(`${kept} is no longer requested`)
             })
 
-            if (!/^report@2\./.test(REPORT_VERSION)) problems.push(`REPORT_VERSION is ${REPORT_VERSION} — the prose shape changed, so it must be a 2.x`)
+            // Owner, 2026-09-29: next steps come from the data (reportPlan.js), not the model, which
+            // never sees exams, deadlines or subjects and could only write generic advice.
+            if (SYSTEM_PROMPT.includes('"nextSteps"')) problems.push("nextSteps is still requested from the model")
+            if (!/between 14 and 25/.test(SYSTEM_PROMPT)) problems.push("the prompt no longer states the 14-25 readership")
+
+            if (!/^report@3\./.test(REPORT_VERSION)) problems.push(`REPORT_VERSION is ${REPORT_VERSION} — a key was removed, so it must be a 3.x`)
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2705,6 +2725,107 @@ const fixtures = [
             }
 
             return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "REPORT PLAN — the stream map uses the engine's own prerequisite rule",
+        // The class 9-10 headline says "PCM keeps 12 of your 20 open". If it used a different rule
+        // from journey.js, the report would promise careers the engine then filters out in class 11.
+        run: () => {
+            const { streamKeepsOpen, STREAMS } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { class12Satisfied } = require("../../matching/journey")
+            const professions = require("../../data/ALL-professions.json").professions
+
+            const problems = []
+            professions.forEach((profession) => {
+                STREAMS.forEach((stream) => {
+                    const ours = streamKeepsOpen(Array.isArray(profession.class12_prerequisite) ? profession.class12_prerequisite : ["any"], stream.subjects)
+                    // journey.js treats an EMPTY stream as "undeclared, keep everything" — correct for
+                    // a student who skipped the field, but not what "no science, no maths" means. So
+                    // the engine is compared only for streams that name subjects.
+                    if (stream.subjects.length > 0) {
+                        const engine = class12Satisfied(profession, { stream: stream.subjects })
+                        if (ours !== engine) problems.push(`${profession.profession} × ${stream.key}: page ${ours}, engine ${engine}`)
+                    } else if (ours && Array.isArray(profession.class12_prerequisite) && profession.class12_prerequisite.length > 0) {
+                        problems.push(`${profession.profession} needs ${profession.class12_prerequisite.join("+")} but the no-maths stream keeps it open`)
+                    }
+                })
+            })
+
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "REPORT PLAN — next steps are at most three real sentences, for every career and every stage",
+        // Built from data, never filler: an empty string, an "undefined" or a fourth step would all
+        // be the report padding itself.
+        run: () => {
+            const { cardSteps, whyFits } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+
+            const problems = []
+            ;["class9_10", "class11_12", "college", "early_professional"].forEach((journey) => {
+                professions.forEach((profession) => {
+                    const detail = studentFacing(profession)
+                    const steps = cardSteps({ professionId: profession.id }, detail, journey, detail.pathToEntry[1] || null)
+                    if (steps.length > 3) problems.push(`${profession.profession} (${journey}): ${steps.length} steps`)
+                    steps.forEach((step) => {
+                        if (typeof step !== "string" || step.trim() === "" || /undefined|null|NaN/.test(step)) {
+                            problems.push(`${profession.profession} (${journey}): bad step "${step}"`)
+                        }
+                    })
+                })
+            })
+
+            // "Why it fits you" never names confidence or uncertainty tolerance as a strength.
+            const fit = whyFits({
+                supportingFactors: [
+                    { factor: "confidence", slug: "confidence", held: 9 },
+                    { factor: "working without knowing the outcome", slug: "uncertainty_tolerance", held: 9 },
+                    { factor: "logical thinking", slug: "logical_intelligence", held: 8 },
+                ],
+                matchedBy: [{ activity: "coding club" }],
+            })
+            if (fit.strengths.join() !== "logical thinking") problems.push(`why-it-fits named ${fit.strengths.join(", ")}`)
+            if (fit.via !== "coding club") problems.push("why-it-fits lost the activity")
+
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "TAGS — the blue-collar list is the owner's reviewed list, and core engineering follows filter_rules.json",
+        run: () => {
+            const blueCollar = require("../../data/blue_collar.json")
+            const professions = require("../../data/ALL-professions.json").professions
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const ids = new Set(professions.map((profession) => profession.id))
+            const byName = new Map(professions.map((profession) => [profession.profession, profession]))
+
+            const problems = []
+            blueCollar.ids.forEach((id) => { if (!ids.has(id)) problems.push(`blue_collar.json names ${id}, which does not exist`) })
+            if (blueCollar.ids.includes(byName.get("Chef & Professional Cook").id)) problems.push("Chef & Professional Cook is tagged blue-collar against the owner's decision")
+
+            const facing = professions.map(studentFacing)
+            if (facing.filter((profession) => profession.blueCollar).length !== blueCollar.ids.length) problems.push("the API tag does not match the list")
+
+            // Every Engineering & Making career, and every named also_include, is core engineering.
+            const also = Object.keys(require("../../data/filter_rules.json").preference_filters.presets.core_engineering_track.also_include)
+            professions.forEach((profession, index) => {
+                if ((profession.professional_sector_id === 2 || also.includes(profession.profession)) && !facing[index].coreEngineering) {
+                    problems.push(`${profession.profession} should be core engineering`)
+                }
+            })
+
+            // The pay caution is exactly filter_rules.json's derived flag.
+            const cautions = facing.filter((profession) => profession.payCaution).length
+            const flagged = professions.filter((profession) => profession.filter === false).length
+            if (cautions !== flagged) problems.push(`${cautions} pay cautions for ${flagged} flagged careers`)
+
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
         },
         expect: null,
     },

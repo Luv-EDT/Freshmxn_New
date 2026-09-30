@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { getMyReport, retryMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
@@ -10,6 +10,8 @@ import ProfessionCard, { levelPath, JOURNEY_LEVEL } from "./ProfessionCard"
 import ReportSortMenu from "./ReportSortMenu"
 import { studentTags } from "./reportTags"
 import { buildList } from "./reportFilters"
+import { journeyHeadline } from "./reportPlan"
+import ReportHeadline from "./ReportHeadline"
 
 // Stage 3 — the report.
 //
@@ -138,6 +140,9 @@ function ReportPage() {
     const [detailsLoaded, setDetailsLoaded] = useState(false)
     const [primary, setPrimary] = useState("best")
     const [secondary, setSecondary] = useState(null)
+    const [showFirst, setShowFirst] = useState(null)
+    // Off by default. The only control that may hide careers (owner, 2026-09-30).
+    const [excludeBlueCollar, setExcludeBlueCollar] = useState(false)
     // Bumped after a retry so the polling effect below starts again.
     const [reloadKey, setReloadKey] = useState(0)
     const [retrying, setRetrying] = useState(false)
@@ -242,9 +247,17 @@ function ReportPage() {
 
     // THE LIST THE STUDENT SEES — see buildList in reportFilters.js. No filter ever hides a career.
     const ordered = useMemo(
-        () => buildList(ranked, switchList, primary, secondary, details),
-        [ranked, switchList, primary, secondary, details]
+        () => buildList(ranked, switchList, primary, secondary, details, { showFirst, excludeBlueCollar }),
+        [ranked, switchList, primary, secondary, details, showFirst, excludeBlueCollar]
     )
+
+    // How many the blue-collar filter hid, so the page can say so — a filter that hides silently is
+    // the thing this report was rebuilt to avoid.
+    const hiddenBlueCollar = useMemo(() => {
+        if (!excludeBlueCollar) return 0
+        const all = buildList(ranked, switchList, primary, secondary, details, { showFirst })
+        return all.length - ordered.length
+    }, [excludeBlueCollar, ranked, switchList, primary, secondary, details, showFirst, ordered])
 
     // The engine's top three keep their colours under every order, so "my best matches" never
     // gets lost when a student sorts by pay.
@@ -428,7 +441,11 @@ function ReportPage() {
 
             <hr />
 
-            <h2>Your matches</h2>
+            <div className="report-matches-head">
+                <h2>Your matches</h2>
+                {/* Its own page (owner): the student picks 2-3 careers and sees them side by side. */}
+                <Link to="/report/compare" className="btn btn-ghost btn-sm tap">Compare careers →</Link>
+            </div>
             {framing.runwayNote && <p><em>{framing.runwayNote}</em></p>}
 
             <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
@@ -439,6 +456,10 @@ function ReportPage() {
                 secondary={secondary}
                 onSecondary={setSecondary}
                 noCostHint={framing.switchIsDistinct ? framing.switchIntro : null}
+                showFirst={showFirst}
+                onShowFirst={setShowFirst}
+                excludeBlueCollar={excludeBlueCollar}
+                onExcludeBlueCollar={setExcludeBlueCollar}
             />
 
             {/* THE RANKING EXPLAINS ITSELF, in one place. A student who cannot see why one career
@@ -502,6 +523,39 @@ function ReportPage() {
                     )
                 })}
             </div>
+
+            {hiddenBlueCollar > 0 && (
+                <p className="report-hidden-note">
+                    {hiddenBlueCollar} blue-collar {hiddenBlueCollar === 1 ? "career is" : "careers are"} hidden — some of the most
+                    AI-proof careers are among them.{" "}
+                    <button type="button" className="link-button" onClick={() => setExcludeBlueCollar(false)}>Show them again</button>
+                </p>
+            )}
+
+            {/* WHAT TO DO NEXT — the report-level plan (owner: both a report-level plan and per-card
+                steps, all collapsible). It opens with the picture for this student's stage — the
+                stream map, the exam map, or what they can move into — then the concrete actions
+                derived from the top matches. Collapsible, open by default. */}
+            <details className="report-details" open>
+                <summary className="report-summary">
+                    <strong>What to do next</strong> — your next 12 months
+                </summary>
+
+                <ReportHeadline headline={journeyHeadline(journey, ranked, details)} />
+
+                {/* A report written before report@3.0.0 still carries the model's own next steps. */}
+                {sections.nextSteps && <p>{sections.nextSteps}</p>}
+
+                {nextActions.length > 0 && (
+                    <ul>
+                        {nextActions.map((action, index) => (
+                            <li key={index}>{action}</li>
+                        ))}
+                    </ul>
+                )}
+
+                <p className="report-small"><em>Each career above also has its own next steps — open it to see them.</em></p>
+            </details>
 
             {/* THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —
@@ -659,28 +713,6 @@ function ReportPage() {
                     {sections.yourMatches && <p>{sections.yourMatches}</p>}
                 </>
             )}
-
-            {(sections.readiness || sections.nextSteps) && <hr />}
-
-            {/* COLLAPSIBLE, AND BACKED BY DATA RATHER THAN ONLY PROSE. The model writes three
-                generic-ish actions; the concrete ones can be derived — the actual next step on the
-                actual top matches, the exams those need, and the sections still unfinished. A
-                student who opens this should find things with names in them, not advice. */}
-            <details className="report-details" open>
-                <summary className="report-summary">
-                    <strong>What to do next</strong>
-                </summary>
-
-                {sections.nextSteps && <p>{sections.nextSteps}</p>}
-
-                {nextActions.length > 0 && (
-                    <ul>
-                        {nextActions.map((action, index) => (
-                            <li key={index}>{action}</li>
-                        ))}
-                    </ul>
-                )}
-            </details>
 
             {sections.readiness && (
                 <details className="report-details">

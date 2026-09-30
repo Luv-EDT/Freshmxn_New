@@ -662,3 +662,273 @@ button.sort-primary.is-on {
 .report-banner p {
     margin: 0 0 var(--space-2);
 }
+
+/* ── Round 9: the deeper report — card sections, plan, compare ─────────────────────────────────── */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* the blue-collar tag travels with the name everywhere (owner, 2026-09-30) */
+.pc-tag {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--cream);
+    border: 1px solid var(--line);
+    color: var(--navy);
+    font-size: 0.72rem;
+    font-weight: 700;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.pc-what {
+    margin-top: var(--space-4);
+}
+
+.pc-what .pc-oneliner {
+    margin: 0 0 4px;
+}
+
+.pc-steps {
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.pc-steps li {
+    margin: 6px 0;
+}
+
+/* the collapsed sub-sections inside an opened card */
+.pc-more {
+    border-top: 1px solid var(--line);
+}
+
+.pc-more summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--navy);
+}
+
+.pc-more summary::-webkit-details-marker {
+    display: none;
+}
+
+.pc-more summary::after {
+    content: "+";
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    font-weight: 900;
+}
+
+.pc-more[open] summary::after {
+    content: "−";
+}
+
+.pc-more-body {
+    padding-bottom: var(--space-3);
+}
+
+.pc-facts {
+    display: grid;
+    grid-template-columns: minmax(120px, 40%) 1fr;
+    gap: 6px var(--space-3);
+    margin: var(--space-3) 0;
+}
+
+.pc-facts dt {
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.pc-facts dd {
+    margin: 0;
+}
+
+.pc-source {
+    font-style: italic;
+}
+
+.pc-caution {
+    background: var(--pink-tint);
+    border-left: 4px solid var(--pink);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.95rem;
+}
+
+/* the report-level plan */
+.report-matches-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.report-matches-head h2 {
+    margin-bottom: 0;
+}
+
+.report-headline {
+    background: var(--teal-tint);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-2) 0 var(--space-4);
+}
+
+.report-headline-title {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+}
+
+.muted-line {
+    color: var(--navy-soft);
+}
+
+.stream-map {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-3);
+}
+
+.stream-map li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px var(--space-3);
+    font-size: 0.95rem;
+}
+
+.stream-name {
+    font-weight: 700;
+}
+
+.stream-count {
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+.stream-bar {
+    grid-column: 1 / -1;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.stream-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.stream-closes {
+    grid-column: 1 / -1;
+    font-size: 0.85rem;
+    color: var(--navy-soft);
+}
+
+.report-hidden-note {
+    max-width: 800px;
+    background: var(--cream);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.92rem;
+}
+
+button.link-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    min-height: 0;
+    color: var(--teal-dark);
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+button.link-button:hover:not(:disabled) {
+    background: none;
+    color: var(--teal);
+}
+
+.sort-filter {
+    margin-top: var(--space-4);
+}
+
+/* compare page */
+.compare-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 16px var(--space-6);
+}
+
+.compare-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: var(--space-3) 0 var(--space-5);
+}
+
+.compare-scroll {
+    max-width: 100%;
+}
+
+.compare-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 560px;
+    background: var(--surface);
+    font-size: 0.92rem;
+}
+
+.compare-table th,
+.compare-table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.compare-table thead th {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.05rem;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+/* the row labels stay visible while the table scrolls sideways on a phone */
+.compare-table tbody th,
+.compare-table thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--cream);
+    min-width: 130px;
+    max-width: 160px;
+}
