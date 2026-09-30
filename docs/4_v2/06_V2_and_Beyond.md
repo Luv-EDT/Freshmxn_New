@@ -231,7 +231,7 @@ Committed (`269dfa5`) and, since Day 5, everything lives on GitHub and deploys f
 ## Report output — a deeper, journey-shaped report (next build)
 The report shows names, then one expandable card per career. The owner judges it superficial: a
 student should learn **what to do next**, not just which careers fit. `ALL-professions.json` holds
-far more than the report uses. The brainstorm goes in `docs/2_build/Report_Output_Brainstorm.md`.
+far more than the report uses. The brainstorm is `docs/2_build/Report_Output_Brainstorm.md`.
 
 ## Backend-review findings not yet fixed (V1.1 — before real volume)
 From the read-only review in Round 6 (the three high-severity ones were fixed in Round 7):
