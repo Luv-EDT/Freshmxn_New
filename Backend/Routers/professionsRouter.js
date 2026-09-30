@@ -9,6 +9,8 @@ const router = express.Router()
 const taxonomy = require("../data/ALL-professions.json")
 const industrialSectors = require("../data/industrial_sectors.json")
 const entranceGates = require("../data/entrance_gates.json")
+const filterRules = require("../data/filter_rules.json")
+const blueCollar = require("../data/blue_collar.json")
 
 // The full records, for /getProfession. The slim projection below is what /search walks.
 const fullById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
@@ -37,6 +39,59 @@ const asArray = (value) => {
     if (value === null || value === undefined) return []
     return Array.isArray(value) ? value : [value]
 }
+
+// ── REPORT TAGS FROM THE REVIEWED DATA FILES (Round 9) ─────────────────────────────────────────
+//
+// BLUE-COLLAR is a reviewed list (data/blue_collar.json), not a live rule — the label carries a
+// social meaning, so a person owns it. The report tags these careers and lets a student leave them
+// out (off by default).
+const BLUE_COLLAR = new Set(blueCollar.ids)
+
+// CORE ENGINEERING is filter_rules.json's `core_engineering_track`, computed here from the rule as
+// the file writes it: engineering_gated OR in also_include. engineering_gated is sector 2, OR a
+// class-12 prerequisite of physics AND maths, OR an engineering route in path_to_entry (B.Tech /
+// B.E. / polytechnic, or an ITI in a named engineering trade — never a bare "ITI" or "diploma",
+// which the file records once admitted Tailor & Garment Maker).
+//
+// ⚠ It admits more than the file's own note implies (about 63 careers here against "180-odd removed"):
+// the tool that produced that count is not in this repo, and B.Tech routes into software and science
+// careers pass the rule as written. It is only ever used to REORDER ("show first"), never to hide,
+// so an over-inclusive list costs a student nothing. Tighten it in filter_rules.json, not here.
+const ENGINEERING_TRADES = /fitter|turner|electrician|mechanic|welder|machinist|draughtsman|instrumentation|refrigeration|plumbing|carpentry|electronics/i
+const ALSO_ENGINEERING = new Set(Object.keys(
+    (filterRules.preference_filters.presets.core_engineering_track || {}).also_include || {}
+))
+
+const isEngineeringGated = (profession) => {
+    if (profession.professional_sector_id === 2) return true
+
+    const required = profession.class12_prerequisite
+    if (Array.isArray(required) && required.includes("physics") && required.includes("maths")) return true
+
+    return (profession.path_to_entry || []).some((step) => {
+        const text = String(step.requirement || "")
+        if (/\bB\.?\s?Tech\b|\bB\.E\.|\bpolytechnic\b/i.test(text)) return true
+        return /\bITI\b/.test(text) && ENGINEERING_TRADES.test(text)
+    })
+}
+
+const isCoreEngineering = (profession) => isEngineeringGated(profession) || ALSO_ENGINEERING.has(profession.profession)
+
+// `ai_exposure.work_composition` in words. The five shares always sum to 100; the two largest name
+// what the work is mostly made of, which is what decides how much of it AI touches.
+const WORK_PARTS = {
+    knowledge_foundational: "deep knowledge",
+    knowledge_retrievable: "looking things up",
+    skill_physical: "hands-on physical work",
+    skill_digital: "screen-based skill",
+    clarity: "judgement in unclear situations",
+}
+
+const workMostly = (composition) => Object.entries(composition || {})
+    .filter(([key, share]) => WORK_PARTS[key] && typeof share === "number" && share > 0)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 2)
+    .map(([key]) => WORK_PARTS[key])
 
 const labelFactors = (slugs) => asArray(slugs).map((slug) => FACTOR_LABELS[slug] || String(slug).replace(/_/g, " "))
 
@@ -110,7 +165,8 @@ const NUANCE_SECTION = {
 // `admin_review` (56 records flagged for internal review), `verification` (judgment-vs-verified
 // status and sources), the `filter` boolean, and the internals of `entry_competition`. None of that
 // is student-facing, and an endpoint that serves the whole object leaks all of it the first time
-// somebody adds a field.
+// somebody adds a field. Where the report needs something from them it gets a DERIVED value only:
+// `checked` (verified or estimate), `payCaution` (from `filter`), never the record itself.
 const studentFacing = (profession) => {
     const gate = profession.entry_competition && entranceGates.gates
         ? entranceGates.gates[profession.entry_competition.primary_gate]
@@ -154,6 +210,12 @@ const studentFacing = (profession) => {
                 applicantsPerSeat: gate.applicants_per_seat,
                 preparationYears: gate.preparation_years,
                 note: gate.note || null,
+                // A private gate's odds mean nothing without its price (entrance_gates.json).
+                typicalTotalCostLakh: typeof gate.typical_total_cost_lakh === "number" ? gate.typical_total_cost_lakh : null,
+                // Plan B: where the preparation still counts if this exam does not work out.
+                ifUnsuccessful: gate.if_unsuccessful && Array.isArray(gate.if_unsuccessful.transfers_to)
+                    ? gate.if_unsuccessful.transfers_to
+                    : [],
             }
             : null,
 
@@ -177,8 +239,21 @@ const studentFacing = (profession) => {
                 // nine professions. Removing it would leave a number with no warning attached.
                 distribution: profession.economics.distribution,
                 basis: profession.economics.basis,
+                // "estimate" vs "checked" — 155 of 223 pay blocks are judgment. The student is told
+                // which, never the sources or the review flags behind it.
+                checked: Boolean(profession.economics.verification && profession.economics.verification.status === "verified"),
+                checkedOn: profession.economics.verification && profession.economics.verification.status === "verified"
+                    ? profession.economics.verification.checked_on || null
+                    : null,
             }
             : null,
+
+        // filter_rules.json's compensation rule, shown as a caution — NEVER used to hide or rank.
+        // `filter` is the derived flag; false means mid-career pay stays low (see the rule there).
+        payCaution: profession.filter === false,
+
+        blueCollar: BLUE_COLLAR.has(profession.id),
+        coreEngineering: isCoreEngineering(profession),
 
         demand: profession.demand_signal
             ? {
@@ -194,6 +269,9 @@ const studentFacing = (profession) => {
                 raw: profession.ai_exposure.exposure_raw,
                 reason: profession.ai_exposure.reason,
                 workComposition: profession.ai_exposure.work_composition,
+                workMostly: workMostly(profession.ai_exposure.work_composition),
+                // Work where a named, licensed person must sign off — accountability AI cannot hold.
+                legalAccountability: Boolean(profession.ai_exposure.legal_accountability),
             }
             : null,
 
