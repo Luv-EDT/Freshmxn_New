@@ -130,10 +130,23 @@ you wait at the desk**. Instead:
 5. **Meanwhile your report page checks every 5 seconds** (`GET /reports/getMyReport`) and shows
    "preparing" until the report is there — then shows it.
 
-On the report you see **one list of careers**. Tap one to open it: how you get there step by step,
-exams, pay, demand, how AI affects it. **"Sort your list"** lets you switch between **Best match**
-(our ranking) and **Best fit, ignoring switching cost**, and then order by pay, demand, speed or AI
-safety. Nothing is ever hidden — sorting only reorders.
+On the report you see **one list of careers** — just the names, with your top 3 coloured, and a
+**Blue-collar** label on hands-on trade careers. Tap one to open it: first *what it is*, *why it fits
+you* (your strongest traits it uses, and the activity that led you there) and *your next steps* for
+your stage; then four folded sections you can open — **the road** (subjects, degree, exams, how hard
+they are, deadlines and the other ways in), **money** (pay ranges, marked "estimate" or "checked"),
+**the future** (demand, how AI affects it, working for yourself) and **more about the work**. None of
+those steps are written by AI: they are worked out from the career data (`Report/reportPlan.js`).
+
+**"What to do next — your next 12 months"** starts with one picture for your stage: which Class 11
+stream keeps most of your careers open (Class 9–10), which exams matter (Class 11–12), or what you
+can move into from where you are (college and working).
+
+**"Sort your list"** switches between **Best match** (our ranking) and **Best fit, ignoring switching
+cost**, can then order by pay, demand, speed or AI safety, can move **core engineering** careers to the
+top, and has one filter — **leave out blue-collar careers** — which is off unless you turn it on and
+always tells you how many it hid. **"Compare careers →"** opens a page where you pick 2–3 careers and see
+them side by side. The AI writes only three short lines about you at the end.
 
 ---
 

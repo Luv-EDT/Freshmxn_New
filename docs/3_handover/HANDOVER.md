@@ -26,7 +26,7 @@ mentor match.
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`): Tier 1 ₹3,500 · Tier 2 ₹6,500 · upgrade ₹3,000 |
 | **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · interest form · 12-part assessment incl. SART and external tests · scoring (`profile@1.0.1`) · matching (16 tiers + switching cost) · report (one sortable list) · profile · mentor tier (mentor sign-up, admin approval, student waitlist, 20-business-day match) · admin dashboard |
-| **Tests** | fixtures 22 (scoring) / 51 (matching) / 102 (workers) — all offline, all green |
+| **Tests** | fixtures 22 (scoring) / 51 (matching) / 105 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -59,7 +59,7 @@ cd Backend && npm run seed:admin                  # once — the admin account
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
 node Backend/matching/fixtures/runFixtures.js    # 51/51
-node Backend/workers/fixtures/runFixtures.js     # 102/102 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 105/105 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -79,7 +79,8 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 | Item | Notes |
 |---|---|
 | DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice. Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
-| Report prompt `report@2.0.0` (`Backend/workers/reportComposer.js`) | Approve before it runs on a real student — most readers are minors |
+| Report prompt `report@3.0.0` (`Backend/workers/reportComposer.js`) | Shrunk to three lines on the owner's instruction (Round 9); still to be approved against a live run before real students |
+| Human review of the 223 baseline ratings (`baseline_rating.json`) | All still `unreviewed` — rated by Claude in 3 passes against anchors. The weights and driving reasons in it drive matching |
 | The five LLM rubrics (`llm_scoring_prompts.md`) and the 132 interest-form problem prompts | Never reviewed |
 | Razorpay KYC | Then `PAYMENT_MODE=razorpay` |
 | SART on a real low-end Android | The 20 ms timing gate has never run on physical budget hardware |
@@ -87,11 +88,13 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 | P22 and LR_FREE_RECALL against the live API | Never exercised live |
 
 **Product decisions pending:**
-- `profession.filter` is read nowhere — 12 professions marked `filter: false` are shown. Wire it or leave it.
+- ~~`profession.filter`~~ — **decided (Round 9):** the 12 careers stay shown, with a pay caution in their Money section.
+- **Data debt:** 56 careers carry `admin_review.required` (almost all missing or unreliable pay figures). The report now labels unverified pay as "estimate" (155 careers).
+- **Core engineering list** is computed from `filter_rules.json`'s rule as written and admits ~63 careers (the file's own note implies ~43). It only reorders; tighten the rule in `filter_rules.json` if the list looks too wide.
 - 90 nuances are withheld from students (builder phrasing / identifiers); a copy pass would recover many. Some still say "taxonomy" or "Sector 5".
 - Two flagged baseline professions (Railway Operations Professional, Model) need the admin screen.
 - `User/Mentorship.js` "How it works" mentions booking further sessions in-app — V1 has none; reword or keep.
-- The report output is superficial — see `docs/2_build/Report_Output_Brainstorm.md` and answer its §7 questions before the rebuild.
+- **Next round (owner-approved):** ask college students their degree + subject and working students their field · disability → support info and "not measured" for affected timed tasks (never used to rank) · keep trauma answers, unused, with a Privacy Policy line on why · a curated list of ~40 combined careers · the exam calendar. Details: `docs/4_v2/06_V2_and_Beyond.md`, Addendum 3.
 
 **Backend review (Sept 2026) — still open** (the three high-severity ones were fixed in Round 7):
 forbidden-term rejection can be triggered by a student's own words (now ends in "failed + Try again",
@@ -114,7 +117,9 @@ Everything deferred beyond V1 is in `docs/4_v2/06_V2_and_Beyond.md`.
 - `match_confidence` and `data_quality` are never shown to a student; confidence is never a score; uncertainty tolerance is a position, not a level.
 - The word "optional" never appears in student-facing assessment code (fixture).
 - SART stimulus rendering (`Sart.js` stimulus block, `FONT_SIZES`, `sartTask.js`) is untouched.
-- The report never hides a career: no filters on the page; "Best fit, ignoring switching cost" always surfaces the worth-the-switch careers (DECISIONS §5).
+- The report never hides a career **except** the owner-approved "Leave out blue-collar careers" filter (off by default, says how many it hid). "Best fit, ignoring switching cost" always surfaces the worth-the-switch careers (DECISIONS §5). "Show first" only reorders.
+- The blue-collar list is `Backend/data/blue_collar.json`, reviewed by the owner (30 careers; Chef & Professional Cook deliberately excluded). Change it there, never in code.
+- Next steps, why-it-fits and the journey headline are built from data (`Report/reportPlan.js`), never by the model; the model writes only three short lines.
 - A failed pipeline is `User.reportFailedAt`, never a `progress.report` value (refunds read `report !== "locked"`).
 - Prices are always read from the server, never from copy.
 - API route prefixes must not equal a page URL (a refresh would 404).
@@ -1552,3 +1557,33 @@ field (low). Full report: ask Claude for `backend_review.md`, or rerun the revie
   ₹7,000 — the pages will read `GET /payments/getPricing`, so the server's number wins; the copy doc
   should be corrected.
 - `RESEND_API_KEY` crash-at-boot (§2) — a one-line lazy construction would fix it; owner's call.
+
+### Round 8 — docs reorganised, merged to main (2026-09-29)
+Every doc moved under `docs/` (research / build / handover / v2 / finalized / media), the five day
+handovers folded into this file, the master plan given a current-state table, V2 updated, a plain-language
+explainer (`docs/HOW_FRESHMXN_WORKS.md`), an index (`docs/README.md`) and a root `CLAUDE.md` added.
+`gradeOpenItems.js` reads its rubrics from `docs/5_finalized/algorithms/`. `render.yaml` deploys from
+`main`. Merged as PR #1 (Day 5) and PR #2 (the report brainstorm).
+
+### Round 9 — the deeper report (2026-09-30)
+Owner answers to the brainstorm: why-it-fits yes · next steps both per card and report-level, all
+collapsible · stream map for class 9–10 · money as ranges only · a compare page · shrink the prompt ·
+exam calendar explained (not built). Then: pay caution from `filter_rules.json`, "Show first: core
+engineering", and a blue-collar tag with an opt-out filter (no blue-collar sort).
+
+| Area | What changed |
+|---|---|
+| `Report/reportPlan.js` (new, pure) | `whyFits` (top strengths by plain label, never confidence or uncertainty tolerance; the activity that led there; one "would stretch you" factor) · `cardSteps` (≤3, stage-aware, only from data) · `streamMap` (5 streams, the engine's own prerequisite rule) · `journeyHeadline` (stream map / exam map / "what you can move into" + what carries over) |
+| Card (`ProfessionCard.js`) | Opened card = What it is · **Why it fits you** · **Your next steps** always visible; **The road** (path, subjects, degree needed, can you switch in, master's, licence, exams + competition + private-seat cost + "if it doesn't work out", deadline + other ways in) · **Money** (ranges, cost, "estimate / checked {month}", what mid-career means, uneven-pay caveat, **pay caution**) · **The future** (demand, "for clients anywhere", AI with which part of the work + sign-off accountability, working for yourself) · **More about the work** — each collapsed. **Blue-collar** tag on the row |
+| Report page | "Compare careers →" beside "Your matches" · "What to do next — your next 12 months" (collapsible, open) leads with the journey headline, then the derived actions · Sort menu: **Show first: core engineering** and **Leave out blue-collar careers** (off by default; the page says how many were hidden, one tap to undo) |
+| Compare (`/report/compare`, new) | Pick 2–3 of your careers (top 3 preselected, choice kept in `?ids=`), side-by-side table with a sticky label column on phones |
+| API (`professionsRouter`) | `payCaution` (from `filter`), `blueCollar` (from `data/blue_collar.json`, new), `coreEngineering` (from `filter_rules.json`), `economics.checked/checkedOn`, `aiExposure.workMostly/legalAccountability`, `entryGate.typicalTotalCostLakh/ifUnsuccessful` |
+| Prompt | `report@3.0.0`: three sections (`opening` ≤30 words, `yourMatches` ≤20, `readiness` ≤20), **no `nextSteps`**, readers "between 14 and 25". A 2.x report's `nextSteps` still renders |
+
+Fixtures: **102 → 105** (stream map agrees with `journey.js` for every career × stream; next steps ≤3 and never
+blank for every career × journey, why-it-fits never names confidence; blue-collar list valid and Chef-free,
+core engineering covers sector 2 + also_include, pay cautions = `filter:false`). Changed on the owner's
+decisions: the prompt fixture (three sections, 3.x, 14–25) and the no-hiding fixture (now "nothing hides
+except the blue-collar opt-out, off by default, with a hidden count"). Browser: new Round 9 suite 38/38,
+uiFlow 63, round3 39, round5 38, API 42.
+

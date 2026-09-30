@@ -228,10 +228,8 @@ Committed (`269dfa5`) and, since Day 5, everything lives on GitHub and deploys f
 
 # ADDENDUM 2 — DEFERRED DURING DAY 5 (the cloud session, Sept 2026)
 
-## Report output — a deeper, journey-shaped report (next build)
-The report shows names, then one expandable card per career. The owner judges it superficial: a
-student should learn **what to do next**, not just which careers fit. `ALL-professions.json` holds
-far more than the report uses. The brainstorm is `docs/2_build/Report_Output_Brainstorm.md`.
+## ~~Report output — a deeper, journey-shaped report~~ ✅ built in Round 9
+See `docs/2_build/Report_Output_Brainstorm.md` §8 and the handover.
 
 ## Backend-review findings not yet fixed (V1.1 — before real volume)
 From the read-only review in Round 6 (the three high-severity ones were fixed in Round 7):
@@ -267,3 +265,63 @@ unused. Bring back as a "refine" drawer only if students ask; otherwise delete w
 ## Legal
 - DPDP lawyer review of `/terms` and `/privacy`; confirm the Grievance Officer.
 - Verified parental consent (above) — the privacy page already promises it is coming.
+
+---
+
+# ADDENDUM 3 — DECIDED IN ROUND 9, FOR THE NEXT ROUNDS (owner, 2026-09-29/30)
+
+## Degree / field input (next round — owner: yes)
+The interest form never asks a college student WHICH degree, or a working person WHICH field — only
+the stage and the year. So the report cannot say "your B.Com already counts", and switching cost
+treats every degree alike. Add degree + subject (college) and field (working), feed matching so a
+matching degree is not counted as waste, and say it in the card.
+
+## Disability — support, and fair scoring (next round)
+Owner: keep collecting disability and trauma answers; use disability for support; make sure it does
+not unfairly lower scores.
+- Before the assessment: a self-declared, structured question — would any of these make timed or
+  on-screen tasks harder? (vision · hearing · movement / fine motor · reading, e.g. dyslexia ·
+  attention · none · prefer not to say).
+- For a declared need, the affected timed measures (SART → focus and speed, digit span, timed
+  reasoning) are recorded as **"not measured"**, never as a low score — the engine already drops a
+  missing factor and renormalises (never impute). Offer an accommodation where one exists.
+- Report: a short support section (PwBD reservation, scribe and extra-time rules for the student's
+  exams) from a verified data file. Mentor told, with consent.
+- **Never** used to remove or re-rank careers.
+
+## Trauma answers (kept, unused)
+Collected, used nowhere. Until there is a reviewed purpose, the Privacy Policy should say they are
+kept for future support features and never used to rank (DPDP purpose limitation), and they are
+deleted on request.
+
+## Combined careers (next round — curated)
+About 40 real combined careers (Sports Journalist, Sports Nutritionist, Legal Journalist, Scientific
+& Medical Illustrator, therapeutic-nutrition chef…), each linked to its two parent career ids and shown
+when both parents are in the student's top 20. Many exist today only as job titles inside one career.
+Hand-checked, never generated per student.
+
+## Exam calendar
+An alias map from the 174 exam spellings in the data to ~55 real exams; per exam the conducting body,
+official link, usual application window and exam month, eligibility line, `last_checked`. Shown as
+"Applications usually open Nov–Dec — check the official site", never an exact date unless verified
+that year. A fixture fails when any row is older than 13 months. About half a day.
+
+## Monthly data refresh (owner: monthly, legal sources only)
+Sources: PLFS (MoSPI) · India Skills Report · Naukri JobSpeak · LinkedIn's **published** Economic Graph
+reports · the NCS portal · a licensed job-board API (e.g. Adzuna — India coverage to confirm). **No
+scraping of LinkedIn or X** (terms of service, legal risk, personal data under DPDP). Claude summarises
+changes to demand and pay per career into an admin review queue; nothing changes without approval.
+
+## Weekly "emerging careers" scout
+Each week: pull new job titles and counts from the licensed job API and the reports → embed each title
+and compare with our 223 (`profession_embeddings.json`) → titles far from all of them, or between two
+(a composite), become candidates → Claude estimates pay (from postings), AI resilience (the same
+`work_composition` rubric) and growth (the posting trend) → only high-pay, AI-resilient, rising ones go
+on an admin watchlist → approved ones get a full record through the normal data process. Read-only;
+it never changes live data.
+
+## Learning from outcomes ("machine learning")
+Tuning weights on real outcomes is supervised learning; re-ordering on what students chose and how
+they fared is learning-to-rank. Both need outcome data — the 6/12-month follow-up (above) is the
+prerequisite. No model fine-tuning is needed: the AI only writes text and grades answers.
+

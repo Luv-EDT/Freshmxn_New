@@ -28,7 +28,7 @@ site and both workers (`render.yaml`, deploys from `main`).
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
 node Backend/matching/fixtures/runFixtures.js    # 51/51
-node Backend/workers/fixtures/runFixtures.js     # 102/102
+node Backend/workers/fixtures/runFixtures.js     # 105/105
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 
