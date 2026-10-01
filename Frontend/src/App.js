@@ -11,6 +11,7 @@ import Landing from "./pages/Public/Landing.js"
 import ProtectedRoute from "./pages/User/ProtectedRoute.js"
 import CompleteProfile from "./pages/User/CompleteProfile.js"
 import Paywall from "./pages/User/Paywall.js"
+import ParentConsent from "./pages/User/ParentConsent"
 import Profile from "./pages/User/Profile.js"
 import Mentorship from "./pages/User/Mentorship.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
@@ -78,6 +79,12 @@ function App() {
                 <Route path="/paywall" element={
                     <ProtectedRoute>
                         <Paywall />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/parent-consent" element={
+                    <ProtectedRoute>
+                        <ParentConsent />
                     </ProtectedRoute>
                 } />
 

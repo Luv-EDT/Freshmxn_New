@@ -3,7 +3,6 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const crypto = require("crypto")
 const rateLimit = require("express-rate-limit")
-const { Resend } = require("resend")
 const User = require("../model/userModel")
 const Consent = require("../model/consentModel")
 const PasswordReset = require("../model/passwordResetsModel")
@@ -14,7 +13,10 @@ const mentorAuthMiddleware = require("../middlewares/mentorAuthMiddleware")
 
 const router = express.Router()
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Emails go through the shared mailer (utils/mailer.js), which builds its Resend client on first use:
+// a missing RESEND_API_KEY no longer stops the whole server from starting (Round 10).
+const { sendEmail } = require("../utils/mailer")
+const { sendParentCode } = require("../utils/parentConsent")
 
 const JOURNEYS = ["class9_10", "class11_12", "college", "early_professional"]
 const POLICY_VERSION = "v1.1"   // 1 October 2026: the sensitive-answers section; email-verified parental consent
@@ -149,33 +151,33 @@ const sendVerificationEmail = async (user) => {
 
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${rawToken}`
 
-    try {
-        const { error: emailError } = await resend.emails.send({
-            from: process.env.EMAIL_FROM,
-            to: user.email,
-            subject: "Confirm your email for Freshmxn",
-            html: `<p>Hi ${user.name},</p>
-                   <p>Please confirm this is your email address. The link expires in 24 hours.</p>
-                   <p><a href="${verifyUrl}">${verifyUrl}</a></p>
-                   <p>If you didn't sign up for Freshmxn, you can ignore this email.</p>`,
-        })
-
-        if (emailError) {
-            console.log("Verification email failed:", emailError)
-        }
-
-    } catch (error) {
-        console.log("Verification email threw:", error)
-    }
+    // never throws (the mailer logs any failure) — a signup must not fail because an email did
+    await sendEmail({
+        to: user.email,
+        subject: "Confirm your email for Freshmxn",
+        html: `<p>Hi ${user.name},</p>
+               <p>Please confirm this is your email address. The link expires in 24 hours.</p>
+               <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+               <p>If you didn't sign up for Freshmxn, you can ignore this email.</p>`,
+    })
 }
 
-// TEMPORARY (V1): under 18 must tick "I have my parent's permission" + give one parent's name and mobile.
-// returns an error message, or null when the details are fine
-const checkParentConsent = (age, parentConsentChecked, parentName, parentPhone) => {
+// Under 18: the student ticks "I have my parent's permission" and gives one parent's name, mobile and
+// EMAIL. The tick alone is the student's word; the email is where the parent's own confirmation goes
+// (Round 10 — utils/parentConsent.js). Returns an error message, or null when the details are fine.
+const checkParentConsent = (age, parentConsentChecked, parentName, parentPhone, parentEmail, studentEmail) => {
     if (age >= 18) return null
 
     if (parentConsentChecked !== true || !parentName || !parentName.trim() || !phoneRegex.test(parentPhone || "")) {
         return "Please confirm parental permission"
+    }
+
+    const email = typeof parentEmail === "string" ? parentEmail.trim().toLowerCase() : ""
+    if (!emailRegex.test(email)) {
+        return "Please enter your parent's email address — we email them a code to confirm"
+    }
+    if (studentEmail && email === String(studentEmail).trim().toLowerCase()) {
+        return "Your parent's email has to be different from yours"
     }
 
     return null
@@ -188,7 +190,7 @@ const checkParentConsent = (age, parentConsentChecked, parentName, parentPhone) 
 
 router.post("/register", async (req, res) => {
     try {
-        const { name, email, password, age, journey, journeyDetail, parentConsentChecked, parentName, parentPhone } = req.body
+        const { name, email, password, age, journey, journeyDetail, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
 
         if (!name || !name.trim()) {
             return res.status(400).json({
@@ -228,8 +230,8 @@ router.post("/register", async (req, res) => {
             })
         }
 
-        // TEMPORARY (V1) parent permission checkbox
-        const consentError = checkParentConsent(ageNumber, parentConsentChecked, parentName, parentPhone)
+        // parent permission: the student's tick now, the parent's own code next
+        const consentError = checkParentConsent(ageNumber, parentConsentChecked, parentName, parentPhone, parentEmail, email)
 
         if (consentError) {
             return res.status(400).json({
@@ -266,12 +268,13 @@ router.post("/register", async (req, res) => {
             lastLoginAt: new Date(),
         })
 
-        // TEMPORARY (V1): record the self-declared parent permission
+        // record the self-declared permission, then ask the parent to confirm it themselves
         if (ageNumber < 18) {
-            await Consent.create({
+            const consent = await Consent.create({
                 user: newUser._id,
                 parentName: parentName.trim(),
                 parentPhone,
+                parentEmail: parentEmail.trim().toLowerCase(),
                 isParentPermissionChecked: true,
                 consentMethod: "self_declared_checkbox",
                 isTemporary: true,
@@ -279,6 +282,8 @@ router.post("/register", async (req, res) => {
                 ipAtConsent: req.ip,
                 policyVersion: POLICY_VERSION,
             })
+            // never blocks the signup: if the email fails, the parent-consent page sends it again
+            await sendParentCode(consent, newUser)
         }
 
         // they can log in and look around straight away; paying is what waits for the link
@@ -414,8 +419,9 @@ router.post("/forgotPassword", forgotPasswordRateLimiter, async (req, res) => {
 
         const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${rawToken}`
 
-        const { error: emailError } = await resend.emails.send({
-            from: process.env.EMAIL_FROM,
+        // the student always sees the same generic reply, so the mailer logs the full error —
+        // a misconfigured sending domain must not be invisible
+        await sendEmail({
             to: user.email,
             subject: "Reset your Freshmxn password",
             html: `<p>Hi ${user.name},</p>
@@ -423,12 +429,6 @@ router.post("/forgotPassword", forgotPasswordRateLimiter, async (req, res) => {
                    <p><a href="${resetUrl}">${resetUrl}</a></p>
                    <p>If you didn't ask for this, you can ignore this email.</p>`,
         })
-
-        // the student always sees the same generic reply, so the full error has to surface here
-        // or a misconfigured sending domain is invisible
-        if (emailError) {
-            console.log("Reset email failed:", emailError)
-        }
 
         return res.status(200).json({
             success: true,
@@ -660,7 +660,7 @@ router.get(
 router.put("/updateProfile", authMiddleware, async (req, res) => {
     try {
         // never spread req.body here — role, paid and currentTier are server-owned
-        const { name, age, journey, journeyDetail, preferredLanguage, parentConsentChecked, parentName, parentPhone } = req.body
+        const { name, age, journey, journeyDetail, preferredLanguage, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
 
         const updates = {}
 
@@ -701,12 +701,14 @@ router.put("/updateProfile", authMiddleware, async (req, res) => {
             updates.preferredLanguage = preferredLanguage
         }
 
-        // TEMPORARY (V1): a student under 18 without a consent record must give parent permission now
+        // a student under 18 without a consent record gives the parent's details now (Google sign-ups
+        // land here), and the parent is emailed their code
         const finalAge = updates.age !== undefined ? updates.age : req.user.age
         const existingConsent = await Consent.findOne({ user: req.user._id })
+        let newConsent = null
 
         if (finalAge !== undefined && finalAge < 18 && !existingConsent) {
-            const consentError = checkParentConsent(finalAge, parentConsentChecked, parentName, parentPhone)
+            const consentError = checkParentConsent(finalAge, parentConsentChecked, parentName, parentPhone, parentEmail, req.user.email)
 
             if (consentError) {
                 return res.status(400).json({
@@ -715,10 +717,11 @@ router.put("/updateProfile", authMiddleware, async (req, res) => {
                 })
             }
 
-            await Consent.create({
+            newConsent = await Consent.create({
                 user: req.user._id,
                 parentName: parentName.trim(),
                 parentPhone,
+                parentEmail: parentEmail.trim().toLowerCase(),
                 isParentPermissionChecked: true,
                 consentMethod: "self_declared_checkbox",
                 isTemporary: true,
@@ -733,6 +736,8 @@ router.put("/updateProfile", authMiddleware, async (req, res) => {
             updates,
             { returnDocument: "after" }  // returns the updated document, not the old one
         ).select("-password")
+
+        if (newConsent) await sendParentCode(newConsent, updatedUser)
 
         return res.status(200).json({
             success: true,
@@ -759,11 +764,22 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
         const users = await User.find({})
             .select("-password")
             .sort({ createdAt: -1 })
+            .lean()
+
+        // the parent-consent state of every under-18 (Round 10), for the Students tab
+        const consents = await Consent.find({ user: { $in: users.map((user) => user._id) } }).select("user isTemporary verifiedAt consentMethod").lean()
+        const consentByUser = new Map(consents.map((consent) => [String(consent.user), consent]))
+
+        const data = users.map((user) => {
+            if (!(typeof user.age === "number" && user.age < 18)) return { ...user, parentConsent: "not_needed" }
+            const consent = consentByUser.get(String(user._id))
+            return { ...user, parentConsent: !consent ? "missing" : consent.verifiedAt && consent.isTemporary === false ? "verified" : "waiting_for_parent" }
+        })
 
         return res.status(200).json({
             success: true,
             message: "Users fetched successfully",
-            data: users,
+            data,
         })
 
     } catch (error) {
@@ -871,3 +887,4 @@ router.put("/updateForAdmin/:id", authMiddleware, adminAuthMiddleware, async (re
 })
 
 module.exports = router
+module.exports.POLICY_VERSION = POLICY_VERSION

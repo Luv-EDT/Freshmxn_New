@@ -153,15 +153,15 @@ const SECTIONS = [
                     lawful guardian before we process a child's personal data, and we take that seriously.
                 </p>
                 <p>
-                    <strong>How it works today:</strong> a student under 18 must confirm that they have their
-                    parent or guardian's permission and give that parent's name and mobile number. We record the
-                    confirmation with the time, the IP address and the version of this policy that applied. We may
-                    contact the parent to confirm.
+                    <strong>How it works:</strong> a student under 18 confirms that they have their parent or
+                    guardian's permission and gives that parent's name, mobile number and email address. We then
+                    email the <strong>parent</strong> a 6-digit code; the parent confirms by giving that code back
+                    (or entering it themselves). We record each step with the time, the IP address and the version
+                    of this policy that applied. Until the parent has confirmed, nothing can be paid for.
                 </p>
                 <p>
-                    <strong>What is coming:</strong> we are introducing a verified parental consent step, in which
-                    the parent confirms directly. When it launches, we will ask existing under-18 users' parents to
-                    confirm through it.
+                    Students who signed up before this step existed are asked to have their parent confirm in the
+                    same way. Confirmation by SMS is coming later.
                 </p>
                 <p>
                     <strong>Parents and guardians</strong> can at any time ask to see their child's data, withdraw

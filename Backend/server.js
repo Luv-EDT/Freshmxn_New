@@ -27,6 +27,7 @@ const externalTestsRouter = require("./Routers/externalTestsRouter")
 const mentorsRouter = require("./Routers/mentorsRouter")
 const mentorWaitlistRouter = require("./Routers/mentorWaitlistRouter")
 const assessmentIssuesRouter = require("./Routers/assessmentIssuesRouter")
+const consentRouter = require("./Routers/consentRouter")
 
 const cors = require("cors")
 const path = require("path")
@@ -84,6 +85,7 @@ app.use("/story", storyRouter)
 app.use("/mentors", mentorsRouter)
 app.use("/mentorWaitlist", mentorWaitlistRouter)
 app.use("/assessmentIssues", assessmentIssuesRouter)
+app.use("/consent", consentRouter)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")

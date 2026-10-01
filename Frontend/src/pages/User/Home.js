@@ -3,6 +3,7 @@ import { useSelector } from "react-redux"
 import Navbar from "../Navbar"
 import JourneyProgress, { journeyStages } from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
+import ParentConsentBanner from "./ParentConsentBanner"
 
 const TIER_NAMES = {
     0: "No plan yet",
@@ -47,6 +48,8 @@ function Home() {
                 <h1 className="page-title">Hi {user.name}</h1>
                 <p>Your plan: <span className="chip">{TIER_NAMES[user.currentTier] || TIER_NAMES[0]}</span></p>
             </section>
+
+            <ParentConsentBanner />
 
             {!user.paid && (
                 <div className="section-card">

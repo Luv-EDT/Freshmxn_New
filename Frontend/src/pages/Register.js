@@ -22,6 +22,7 @@ function Register() {
     const [parentConsentChecked, setParentConsentChecked] = useState(false)
     const [parentName, setParentName] = useState("")
     const [parentPhone, setParentPhone] = useState("")
+    const [parentEmail, setParentEmail] = useState("")
 
     // If already logged in, go to Home
     useEffect(() => {
@@ -62,6 +63,7 @@ function Register() {
             parentConsentChecked: parentConsentChecked,
             parentName: parentName,
             parentPhone: parentPhone,
+            parentEmail: parentEmail,
         }
 
         const registerResponse = await registerUser(payload)
@@ -209,7 +211,7 @@ function Register() {
                 {/* Round 10: the degree, so the years already in it are not counted as switching cost */}
                 <DegreeFields journey={journey} detail={journeyDetail} onChange={handleDetailChange} />
 
-                {/* TEMPORARY (V1): parent permission for under-18 — a proper parental consent step comes in V2 */}
+                {/* under-18: the student's tick here, then the parent's own confirmation by an emailed code (Round 10) */}
                 {isMinor && (
                     <div>
                         <p><strong>You're under 18</strong></p>
@@ -227,6 +229,12 @@ function Register() {
                             <label>Parent/guardian mobile (10 digits)</label>
                             <br />
                             <input value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} pattern="[0-9]{10}" required />
+                        </div>
+                        <div>
+                            <label>Parent/guardian email</label>
+                            <br />
+                            <input type="email" value={parentEmail} onChange={(e) => setParentEmail(e.target.value)} required />
+                            <p className="legal-agree">We email them a 6-digit code so they can confirm their permission themselves.</p>
                         </div>
                     </div>
                 )}

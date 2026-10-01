@@ -8,6 +8,23 @@ const RefundRequest = require("../model/refundRequestsModel")
 const FinancialAidRequest = require("../model/financialAidRequestsModel")
 const Coupon = require("../model/couponsModel")
 const MentorWaitlist = require("../model/mentorWaitlistModel")
+const Consent = require("../model/consentModel")
+const { isMinor, isVerified } = require("../utils/parentConsent")
+
+// NO PAYMENT FROM AN UNDER-18 UNTIL THEIR PARENT HAS CONFIRMED (Round 10). Asked once, at the two
+// doors to paying: a manual access request and a Razorpay order. A student already paying before
+// this existed is not locked out — the dashboard asks their parent to confirm.
+const parentConsentMissing = async (user) => {
+    if (!isMinor(user)) return false
+    const consent = await Consent.findOne({ user: user._id }).lean()
+    return !isVerified(consent)
+}
+
+const PARENT_CONSENT_REPLY = {
+    success: false,
+    message: "Your parent needs to confirm their permission before you can pay — we've emailed them a code",
+    data: { code: "PARENT_CONSENT_REQUIRED" },
+}
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
@@ -594,6 +611,10 @@ router.post("/requestAccess", express.json(), authMiddleware, async (req, res) =
     try {
         const { tier, coupon, name, phone, callbackDay, callbackSlot } = req.body
 
+        if (await parentConsentMissing(req.user)) {
+            return res.status(403).json(PARENT_CONSENT_REPLY)
+        }
+
         // an address nobody can open must never be attached to money — see /user/verifyEmail
         if (req.user.isEmailVerified !== true) {
             return res.status(403).json({
@@ -681,6 +702,10 @@ router.post("/requestAccess", express.json(), authMiddleware, async (req, res) =
 
 router.post("/create-order", express.json(), authMiddleware, async (req, res) => {
     try {
+        if (await parentConsentMissing(req.user)) {
+            return res.status(403).json(PARENT_CONSENT_REPLY)
+        }
+
         // dormant at launch — PAYMENT_MODE=manual until Razorpay KYC clears
         if (process.env.PAYMENT_MODE !== "razorpay" || !razorpay) {
             return res.status(400).json({
