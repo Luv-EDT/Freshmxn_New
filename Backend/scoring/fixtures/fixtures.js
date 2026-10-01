@@ -35,7 +35,7 @@ const fixtures = [
             "completeness.release": "release",
             "completeness.matching": 1,
             "completeness.overall": 1,
-            "scoring_version": "profile@1.1.0",
+            "scoring_version": "profile@1.2.0",
             "component_versions.perspective": "perspective@5.0.0",
             "norm_set_id": null,
         },
@@ -129,7 +129,7 @@ const fixtures = [
         assert: (profile) => {
             const scored = Object.entries(profile.raw_scores).filter(([, value]) => value !== null)
             if (scored.length > 0) return `expected every factor null, got ${scored.map(([key]) => key).join(", ")}`
-            if ((profile.flags.modules_missing || []).length !== 10) return "expected all 10 modules listed missing"
+            if ((profile.flags.modules_missing || []).length !== 11) return "expected all 11 modules listed missing (Round 10 added the O*NET activities)"
             return null
         },
     },

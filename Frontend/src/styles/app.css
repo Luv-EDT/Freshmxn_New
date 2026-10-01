@@ -1099,3 +1099,154 @@ button.link-button:hover:not(:disabled) {
     font-size: 0.9rem;
     color: var(--teal-dark);
 }
+
+/* ── the in-house reasoning puzzles (Round 10) ───────────────────────────────────────────────── */
+.reasoning-progress {
+    font-weight: 700;
+    color: var(--teal-dark);
+    margin-bottom: var(--space-2);
+}
+
+.reasoning-bar {
+    height: 6px;
+    background: var(--line);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin-bottom: var(--space-4);
+}
+
+.reasoning-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.reasoning-prompt {
+    font-size: 1.2rem;
+    line-height: 1.45;
+}
+
+.matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    max-width: 330px;
+    margin: var(--space-3) 0 var(--space-4);
+}
+
+.matrix-cell {
+    aspect-ratio: 1;
+    min-width: 0;
+}
+
+.reasoning-option svg {
+    max-width: 100%;
+}
+
+.series-terms {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin: var(--space-3) 0 var(--space-4);
+    overflow-wrap: anywhere;
+}
+
+.rotation-target {
+    display: flex;
+    justify-content: center;
+    background: var(--cream);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    margin: var(--space-3) 0 var(--space-4);
+}
+
+.reasoning-options {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.reasoning-options-matrix,
+.reasoning-options-rotation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+    .reasoning-options-matrix {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .reasoning-options-rotation {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.reasoning-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--navy);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+}
+
+.reasoning-options-matrix .reasoning-option,
+.reasoning-options-rotation .reasoning-option {
+    flex-direction: column;
+    justify-content: center;
+}
+
+.reasoning-option.is-picked {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.reasoning-option-letter {
+    font-weight: 900;
+    color: var(--teal-dark);
+}
+
+/* ── the 60-activity checklist (Round 10) ─────────────────────────────────────────────────────── */
+.interest-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+@media (min-width: 720px) {
+    .interest-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.interest-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.interest-item.is-on {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.interest-item input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--teal);
+    flex: 0 0 auto;
+}

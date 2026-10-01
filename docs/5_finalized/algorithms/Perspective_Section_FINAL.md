@@ -503,6 +503,23 @@ It's measured directly rather than derived, because deriving it from Openness + 
 
 Instead it drives a flag: `uncertainty_tolerance ≥ 7` **and** U7 ∈ {C, D} → `risk_uncalibrated`. This is the one pattern in the section that should be named plainly rather than framed as a strength.
 
+### U8 — Second calibration check *(NOT scored into the scale — added Round 10)*
+
+> A friend says a new coaching app is guaranteed to double your exam marks within a month — if you pay for a full year today. They can't explain how it works. What do you do?
+
+| A | Ask how it works and what the results are based on, and don't pay without that |
+|---|---|
+| B | Try only the free part to see what happens |
+| C | Pay for one month — an amount I could afford to lose |
+| D | Pay for the full year — a guarantee like this doesn't come often |
+| E | Say no straight away without asking |
+
+The same check as U7 in a different area of life (study rather than money), so one answer is no longer the whole signal. Applied in `Backend/scoring/scoreProfile.js`, not inside the ported scorer:
+
+- `uncertainty_tolerance ≥ 7` **and** both U7 and U8 ∈ {C, D} → `risk_uncalibrated`; matching uses `0.7 × UT + 0.3 × 5`.
+- `uncertainty_tolerance ≥ 7` **and** exactly one of them ∈ {C, D} → `risk_calibration_mixed`; matching uses `0.85 × UT + 0.15 × 5`.
+- U8 not answered (submissions from before it existed) → U7 alone decides, as before.
+
 ```
 uncertainty_tolerance = average of U1–U6, rescaled to 0–10
 ```

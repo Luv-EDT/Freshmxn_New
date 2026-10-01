@@ -262,7 +262,9 @@ const fixtures = [
 
             // Modules whose answers are not a simple id→letter map (digit span, SART, the external
             // tests, story recall) are exempt: they have their own shapes and their own checks.
-            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective"]
+            // The reasoning puzzles and the activity checklist (Round 10) are covered by the
+            // REASONING and INTERESTS fixtures below.
+            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "interests60"]
             const uncovered = built.filter((key) => !covered.includes(key) && !SHAPED_DIFFERENTLY.includes(key))
 
             return uncovered.length > 0 ? `built but untested: ${uncovered.join(", ")}` : null
@@ -2661,6 +2663,117 @@ const fixtures = [
             if (missing.length > 0) return `no research note for: ${missing.join(", ")}`
             const overclaims = Object.entries(MODULE_RESEARCH).filter(([, note]) => /validated/i.test(note.why + note.measures)).map(([key]) => key)
             return overclaims.length > 0 ? `claims our version is validated: ${overclaims.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
+        name: "REASONING — the same seed deals the same sixteen items, four of each kind, and no answer reaches the browser",
+        run: () => {
+            const bank = require("../../assessment/reasoningBank")
+            const deal = (seed) => Array.from({ length: bank.ITEM_COUNT }, (_, index) => bank.itemFor(seed, index))
+            const first = deal(424242)
+            if (JSON.stringify(first) !== JSON.stringify(deal(424242))) return "the same seed dealt different items"
+            const counts = {}
+            first.forEach((item) => { counts[item.type] = (counts[item.type] || 0) + 1 })
+            if (bank.TYPES.some((type) => counts[type] !== 4)) return `expected four of each kind, got ${JSON.stringify(counts)}`
+            const leaked = first.map(bank.publicItem).filter((item) => "answer" in item)
+            if (leaked.length > 0) return "publicItem still carries the answer"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "REASONING — across 300 students every item has one valid answer, distinct options, and exactly one true turn",
+        run: () => {
+            const bank = require("../../assessment/reasoningBank")
+            for (let seed = 1; seed <= 300; seed += 1) {
+                for (let index = 0; index < bank.ITEM_COUNT; index += 1) {
+                    const item = bank.itemFor(seed * 104729, index)
+                    if (!(item.answer >= 0 && item.answer < item.options.length)) return `no answer: seed ${seed} item ${index}`
+                    if (item.options.length < 4) return `too few options: seed ${seed} item ${index}`
+                    const keys = item.options.map((option) => JSON.stringify(option))
+                    if (new Set(keys).size !== keys.length) return `repeated option: seed ${seed} item ${index}`
+                    if (item.type === "rotation") {
+                        const turns = item.options.filter((option) => bank.isTurnOf(option, item.payload.target)).length
+                        if (turns !== 1) return `rotation with ${turns} correct options: seed ${seed} item ${index}`
+                    }
+                }
+            }
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "REASONING — an unfinished run is not measured; a finished one is a share, with its three parts",
+        run: () => {
+            const score = require("../../scoring/reasoningInHouse")
+            const response = (type, correct) => ({ type, correct })
+            const types = ["matrix", "series", "verbal", "rotation"]
+            const allRight = Array.from({ length: 16 }, (_, index) => response(types[index % 4], true))
+            const half = Array.from({ length: 16 }, (_, index) => response(types[index % 4], index % 4 !== 3))
+            const unfinished = score({ responses: allRight.slice(0, 9) })
+            const full = score({ responses: allRight, completedAt: new Date() })
+            const mixed = score({ responses: half, completedAt: new Date() })
+            if (unfinished.score !== null) return "an abandoned run must not be scored"
+            if (full.score !== 10 || full.parts.spatial !== 10) return `all right should be 10, got ${full.score}`
+            if (mixed.parts.spatial !== 0 || mixed.parts.logical !== 10 || mixed.score !== 7.5) return `parts wrong: ${JSON.stringify(mixed.parts)} ${mixed.score}`
+            if (!full.flags.reasoning_provisional_norms) return "the in-house score must be flagged provisional"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "INTERESTS — the O*NET items that feed the intelligences exist, and none feeds two",
+        run: () => {
+            const interests = require("../../scoring/interests60")
+            const used = Object.values(interests.MI_ITEMS).flat()
+            const unknown = used.filter((id) => !interests.ALL_ITEMS.includes(id))
+            if (unknown.length > 0) return `unknown items: ${unknown.join(", ")}`
+            if (new Set(used).size !== used.length) return "an activity feeds two intelligences"
+            if (interests.ALL_ITEMS.length !== 60) return `expected 60 items, got ${interests.ALL_ITEMS.length}`
+            const frontend = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "interestItems.js"), "utf8")
+            const missing = interests.ALL_ITEMS.filter((id) => !frontend.includes(`id: "${id}"`))
+            return missing.length > 0 ? `not asked on the page: ${missing.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
+        name: "MI — each intelligence is built from self-report, activities and (where tested) reasoning",
+        run: () => {
+            const answers = {}
+            ;["V", "S", "M", "B", "N", "E", "L"].forEach((letter) => { for (let item = 1; item <= 5; item += 1) answers[`MI_${letter}${item}`] = "C" })
+            const onlySelf = scoreProfile({ mi: { answers } })
+            const ticks = {}
+            ;["A4", "A5", "A6", "A10"].forEach((id) => { ticks[id] = true })
+            const withActivities = scoreProfile({ mi: { answers }, interests60: { answers: ticks, completedAt: new Date() } })
+            if (onlySelf.raw_scores.existential_intelligence !== 5) return `existential is self-report only, expected 5, got ${onlySelf.raw_scores.existential_intelligence}`
+            if (onlySelf.data_quality.spatial_intelligence !== "partial") return "spatial without activities or the reasoning test should be partial"
+            // spatial: affinity 0.7*5 + 0.3*10 = 6.5, no reasoning part → 6.5
+            if (withActivities.raw_scores.spatial_intelligence !== 6.5) return `spatial with all four drawing activities ticked: expected 6.5, got ${withActivities.raw_scores.spatial_intelligence}`
+            if (withActivities.factor_coverage.spatial_intelligence !== 0.5) return `spatial coverage without the reasoning test should be 50%, got ${withActivities.factor_coverage.spatial_intelligence}`
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "UNCERTAINTY — U7 and U8 together: both accept the sure thing → uncalibrated; one → mixed; U8 absent → U7 alone",
+        run: () => {
+            const high = { U1: "A", U2: "A", U3: "A", U4: "A", U5: "A", U6: "B" }
+            const run = (extra) => {
+                const profile = scoreProfile({ perspective: { answers: { ...high, ...extra } } })
+                return [Boolean(profile.flags.risk_uncalibrated), Boolean(profile.flags.risk_calibration_mixed), profile.components.uncertainty_tolerance_matching, profile.raw_scores.uncertainty_tolerance]
+            }
+            const both = run({ U7: "C", U8: "D" })
+            const one = run({ U7: "C", U8: "A" })
+            const neither = run({ U7: "A", U8: "E" })
+            const legacy = run({ U7: "D" })
+            if (both[3] < 7) return `the test answers should give a high tolerance, got ${both[3]}`
+            if (!(both[0] && !both[1])) return "both C/D should be uncalibrated"
+            if (!(!one[0] && one[1])) return "one C/D should be mixed"
+            if (neither[0] || neither[1]) return "neither should be flagged"
+            if (!legacy[0]) return "with no U8, U7 alone should still decide"
+            if (!(one[2] > both[2] && one[2] < one[3])) return "mixed should adjust half as far as uncalibrated"
+            return null
         },
         expect: null,
     },

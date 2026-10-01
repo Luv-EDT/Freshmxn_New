@@ -9,7 +9,7 @@
 //     P23–P30  values_profile         importance − fulfilment, never summed into a factor
 //     P31–P32  narrative              report colour, plus the social-desirability flag
 //     P33      intrapersonal          with P7's revisability
-//     U1–U6    uncertainty_tolerance  U7 is a calibration check, deliberately NOT scored
+//     U1–U6    uncertainty_tolerance  U7 and U8 are calibration checks, deliberately NOT scored
 //     PS1–PS4  persistence            consistency/grit, at 0.20 (04_Item_Bank.md §4c). Added in
 //                                     Round 10 — the scorer always took them, but they were never
 //                                     asked, so grit was built from C, focus and IDM alone
@@ -292,6 +292,18 @@ export const PERSPECTIVE_MCQ = [
             "Put in what I could afford to lose",
             "Put in a significant amount — chances like this don't come often",
             "Decline immediately without asking",
+        ]),
+    },
+    // U8 — the second calibration check (Round 10). Like U7, never scored into the scale.
+    {
+        id: "U8",
+        text: "A friend says a new coaching app is guaranteed to double your exam marks within a month — if you pay for a full year today. They can't explain how it works. What do you do?",
+        options: opts([
+            "Ask how it works and what the results are based on, and don't pay without that",
+            "Try only the free part to see what happens",
+            "Pay for one month — an amount I could afford to lose",
+            "Pay for the full year — a guarantee like this doesn't come often",
+            "Say no straight away without asking",
         ]),
     },
     // ── persistence — 04_Item_Bank.md §4c, verbatim. Situational, not self-rating ─────────────────

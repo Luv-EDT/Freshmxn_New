@@ -62,3 +62,13 @@ export async function confirmTestResult(payload) {
     const response = await axiosInstance.post("/external/confirmResult", payload)
     return response
 }
+
+export async function reasoningNext() {
+    const response = await axiosInstance.post("/submissions/reasoningNext", {})
+    return response
+}
+
+export async function reasoningAnswer(payload) {
+    const response = await axiosInstance.post("/submissions/reasoningAnswer", payload)
+    return response
+}

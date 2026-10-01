@@ -443,6 +443,119 @@ router.post("/digitSpanAnswer", authMiddleware, requirePaid, async (req, res) =>
 
 
 // ========================
+// Reasoning — the in-house test, served one item at a time
+// ========================
+
+// Same two rules as the digit span, for the same reasons (Round 10). THE ITEMS: built from a seed
+// stored on the block, one at a time, never ahead of presentation, and never with the answer
+// (reasoningBank.publicItem). THE MARKING: here, against the item rebuilt from the seed — the browser
+// only ever says which option was picked.
+//
+// One attempt. Time is recorded per item (from when it was issued) but nothing is cut off: the test
+// it follows (ICAR) is untimed, and a clock on screen measures nerves as much as reasoning. An item
+// left for more than five minutes is noted, because three of those in a row usually means the
+// device or the connection, not the student — and the admin is told.
+const reasoningBank = require("../assessment/reasoningBank")
+const REASONING_SLOW_MS = 5 * 60 * 1000
+
+router.post("/reasoningNext", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.reasoning) || {}
+        const responses = block.responses || []
+
+        if (block.completedAt || responses.length >= reasoningBank.ITEM_COUNT) {
+            return res.status(200).json({ success: true, message: "Reasoning complete", data: { done: true, answered: responses.length } })
+        }
+
+        const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
+        const index = responses.length
+
+        // an item already shown and not yet answered is shown again — a refresh is not a reroll,
+        // and its clock keeps running from when it was first issued
+        const pending = block.pending && block.pending.index === index ? block.pending : { index, issuedAt: new Date() }
+
+        await Submission.findOneAndUpdate(
+            { user: req.user._id },
+            { $set: {
+                "psychometric.reasoning.seed": seed,
+                "psychometric.reasoning.startedAt": block.startedAt || new Date(),
+                "psychometric.reasoning.responses": responses,
+                "psychometric.reasoning.pending": pending,
+                lastSavedAt: new Date(),
+            } },
+            { upsert: true }
+        )
+
+        if (req.user.progress.psychometric === "not_started") {
+            await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Next item",
+            data: { done: false, number: index + 1, of: reasoningBank.ITEM_COUNT, item: reasoningBank.publicItem(reasoningBank.itemFor(seed, index)) },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not load the next puzzle", error: error.message })
+    }
+})
+
+router.post("/reasoningAnswer", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const { choice } = req.body
+
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.reasoning) || {}
+        const responses = block.responses || []
+        const pending = block.pending
+
+        if (!pending || typeof block.seed !== "number" || pending.index !== responses.length) {
+            return res.status(400).json({ success: false, message: "No puzzle is currently shown" })
+        }
+
+        const item = reasoningBank.itemFor(block.seed, pending.index)
+        const picked = Number.isInteger(choice) && choice >= 0 && choice < item.options.length ? choice : null
+        const ms = Math.max(Date.now() - new Date(pending.issuedAt).getTime(), 0)
+
+        // Marked HERE. A skipped item (no choice) counts as not correct: it was shown.
+        const response = {
+            id: item.id,
+            type: item.type,
+            level: item.level,
+            choice: picked,
+            correct: picked !== null && picked === item.answer,
+            ms,
+            slow: ms > REASONING_SLOW_MS,
+        }
+
+        const all = [...responses, response]
+        const finished = all.length >= reasoningBank.ITEM_COUNT
+        const changes = {
+            "psychometric.reasoning.responses": all,
+            "psychometric.reasoning.pending": null,
+            lastSavedAt: new Date(),
+        }
+        if (finished) changes["psychometric.reasoning.completedAt"] = new Date()
+
+        await Submission.findOneAndUpdate({ user: req.user._id }, { $set: changes })
+
+        const lastThree = all.slice(-3)
+        if (lastThree.length === 3 && lastThree.every((entry) => entry.slow)) {
+            await raiseIssue({ user: req.user._id, module: "reasoning", kind: "reasoning_timeouts", detail: `three puzzles in a row took over five minutes each (up to ${response.id})` })
+        }
+
+        // No right/wrong back to the page: knowing you got one wrong changes how you attempt the next.
+        return res.status(200).json({ success: true, message: "Answer recorded", data: { done: finished, answered: all.length } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not record the answer", error: error.message })
+    }
+})
+
+
+// ========================
 // Submit the assessment — starts the pipeline
 // ========================
 
@@ -538,9 +651,9 @@ const forStudent = (submission) => {
         psychometric.digitSpan = { ...span, trials: (span.trials || []).map(({ correct, ...trial }) => trial) }
     }
     if (psychometric.reasoning) {
-        const { items, pending, ...reasoning } = psychometric.reasoning
-        psychometric.reasoning = { ...reasoning, answered: (reasoning.responses || []).length }
-        delete psychometric.reasoning.responses
+        // the seed rebuilds every item WITH its answer, so it never leaves the server either
+        const { seed, pending, responses, ...reasoning } = psychometric.reasoning
+        psychometric.reasoning = { ...reasoning, answered: (responses || []).length }
     }
     delete psychometric.history
 
