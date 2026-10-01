@@ -276,6 +276,7 @@ function AssessmentShell() {
                     alreadySubmitted={user.progress.psychometric === "done"}
                     hasNewAnswers={hasNewAnswers}
                     onReadReport={() => navigate("/report")}
+                    retakeGranted={psychometric.retakeGranted || {}}
                 />
             </div>
         )

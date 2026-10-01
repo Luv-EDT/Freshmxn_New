@@ -1,5 +1,10 @@
 import { TOTAL_MINUTES } from "./assessmentModules"
 import { reviewLabel } from "./moduleLabels"
+import { factorCoverage } from "./factorFeeds"
+import { ResearchBox, ModuleWhy, ReportProblem } from "./ResearchBox"
+
+// the tests a student can raise a technical problem about (and the admin can reopen)
+const PERFORMANCE_TESTS = ["storyRecall", "digitSpan", "sartRaw", "reasoning", "extReasoning", "extVerbal"]
 
 // The assessment's landing page — every section, what is done, what is still to come.
 //
@@ -47,10 +52,11 @@ const storyNote = (module, storyState) => {
 //
 // So the list says nothing about which sections gate submission. A student who finishes everything
 // gets the best report; a student who cannot finish one is not stuck.
-function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport }) {
+function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {} }) {
     const built = modules.filter((module) => module.built)
     const comingSoon = modules.filter((module) => !module.built)
     const unfinished = built.filter((module) => !completed.includes(module.key))
+    const coverage = factorCoverage(completed)
 
     // One renderer for both lists. They differ in what the heading above them says, not in how a
     // section behaves — and having two copies of this is how "Continue" stopped matching the story's
@@ -82,15 +88,28 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
 
         // The finished label itself says whether anything can still be changed — see reviewLabel.
 
+        // an admin reopened this test after a technical problem, and it has not been taken again yet
+        const reopened = Boolean(retakeGranted[module.key]) && !isDone
+
         return (
             <div key={module.key} className={`module-row${isDone ? " is-done" : ""}`}>
-                <p className="module-title">
-                    <strong>{module.title}</strong> · about {module.minutes} minutes
-                    {isDone && <span> · done</span>}
-                    {isStarted && <span> · in progress</span>}
-                </p>
+                <div className="module-title-row">
+                    <p className="module-title">
+                        <strong>{module.title}</strong> · about {module.minutes} minutes
+                        {isDone && <span> · done</span>}
+                        {isStarted && <span> · in progress</span>}
+                    </p>
+                    <ModuleWhy moduleKey={module.key} />
+                </div>
+                {reopened && (
+                    <p className="retake-note">
+                        <strong>Retake available</strong> — your earlier attempt had a technical problem, so this is open
+                        again for one more try. Press Submit again afterwards so your report is updated.
+                    </p>
+                )}
                 {note && <p><em>{note}</em></p>}
                 <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
+                {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && <ReportProblem moduleKey={module.key} />}
             </div>
         )
     }
@@ -108,6 +127,15 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
             <p>
                 <strong>About {TOTAL_MINUTES} minutes</strong> in total, across all the sections below.
             </p>
+
+            <ResearchBox />
+
+            {/* how much of the picture the finished sections already measure (owner, Round 10) */}
+            <p className="coverage-line">
+                <strong>{coverage.count} of {coverage.total} factors</strong> can be measured from what you have
+                finished — {coverage.pct}%.
+            </p>
+            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${coverage.pct}%` }} /></div>
 
             {alreadySubmitted && (
                 <p>

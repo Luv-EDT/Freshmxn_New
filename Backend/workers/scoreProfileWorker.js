@@ -24,6 +24,7 @@ require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
 const { Queue, Worker } = require("bullmq")
 const { addOnce, attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
+const { raiseIssue } = require("../utils/assessmentIssues")
 const mongoose = require("mongoose")
 
 const scoreProfile = require("../scoring/scoreProfile")
@@ -98,6 +99,15 @@ const runOne = async (userId, { lastAttempt = false } = {}) => {
         )
         submission.psychometric.perspective.open = graded.open
         console.log(`${QUEUE_NAME} ${userId} — graded ${Object.keys(graded.open).join(", ") || "nothing new"}`)
+
+        // On the last attempt a failed call is stored as a blank grade so the student still gets a
+        // report; the admin is told which written answers that cost them.
+        const lost = Object.entries(graded.meta || {})
+            .filter(([itemId, meta]) => graded.open[itemId] === null && meta && typeof meta.unscoreable_reason === "string" && meta.unscoreable_reason.startsWith("call_failed"))
+            .map(([itemId]) => itemId)
+        if (lost.length > 0) {
+            await raiseIssue({ user: userId, module: "perspective", kind: "grading_failed", detail: `written answers not graded: ${lost.join(", ")}` })
+        }
     }
 
     // The story's free recall, same separation: `freeText` is what the student narrated, `free` is
@@ -222,6 +232,8 @@ const start = async () => {
             console.error(`${QUEUE_NAME} GAVE UP for student ${job.data.userId} — their report page now offers a retry`)
             try {
                 await User.updateOne({ _id: job.data.userId }, { reportFailedAt: new Date() })
+                // and the team hears about it — the student sees "Try again", the admin sees why
+                await raiseIssue({ user: job.data.userId, module: "report", kind: "report_failed", detail: `${QUEUE_NAME}: ${error.message.slice(0, 300)}`, notify: true })
             } catch (markError) {
                 console.error(`${QUEUE_NAME} could not mark ${job.data.userId} as failed — ${markError.message}`)
             }

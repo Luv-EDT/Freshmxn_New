@@ -26,6 +26,7 @@ const storyRouter = require("./Routers/storyRouter")
 const externalTestsRouter = require("./Routers/externalTestsRouter")
 const mentorsRouter = require("./Routers/mentorsRouter")
 const mentorWaitlistRouter = require("./Routers/mentorWaitlistRouter")
+const assessmentIssuesRouter = require("./Routers/assessmentIssuesRouter")
 
 const cors = require("cors")
 const path = require("path")
@@ -82,6 +83,7 @@ app.use("/story", storyRouter)
 // fallback below comes after these, so a shared prefix would 404 on refresh
 app.use("/mentors", mentorsRouter)
 app.use("/mentorWaitlist", mentorWaitlistRouter)
+app.use("/assessmentIssues", assessmentIssuesRouter)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")

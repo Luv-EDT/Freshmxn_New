@@ -22,6 +22,7 @@ require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
 const { Queue, Worker } = require("bullmq")
 const { addOnce, attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
+const { raiseIssue } = require("../utils/assessmentIssues")
 const mongoose = require("mongoose")
 
 const scoreProfile = require("../scoring/scoreProfile")
@@ -154,6 +155,7 @@ const runOne = async (userId) => {
             // the report stands on its data without the three lines, so the student gets it now.
             if (!error.permanent) throw error
             console.error(`${QUEUE_NAME} ${userId}: prose could not be written (${error.message.slice(0, 160)}) — report saved without it`)
+            await raiseIssue({ user: userId, module: "report", kind: "report_prose_failed", detail: error.message.slice(0, 300) })
             composed = { sections: {}, report_version: REPORT_VERSION }
             composeFailed = true
         }
@@ -270,6 +272,8 @@ const start = async () => {
             console.error(`${QUEUE_NAME} GAVE UP for student ${job.data.userId} — their report page now offers a retry`)
             try {
                 await User.updateOne({ _id: job.data.userId }, { reportFailedAt: new Date() })
+                // and the team hears about it — the student sees "Try again", the admin sees why
+                await raiseIssue({ user: job.data.userId, module: "report", kind: "report_failed", detail: `${QUEUE_NAME}: ${error.message.slice(0, 300)}`, notify: true })
             } catch (markError) {
                 console.error(`${QUEUE_NAME} could not mark ${job.data.userId} as failed — ${markError.message}`)
             }

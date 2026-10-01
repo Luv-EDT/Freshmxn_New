@@ -6,6 +6,8 @@ const authMiddleware = require("../middlewares/authMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
 const { extractTestResult, createExtractionClient, INSTRUMENTS } = require("../workers/extractTestResult")
 
+const { raiseIssue } = require("../utils/assessmentIssues")
+
 const router = express.Router()
 
 // The two external tests — 04_Item_Bank.md §7. The student takes them on somebody else's website
@@ -220,6 +222,8 @@ router.post("/confirmResult", authMiddleware, requirePaid, async (req, res) => {
         // Clearing the block instead would also hand anyone a way to erase a low score by pressing
         // "no", so the honest version is: it stays, it is flagged, and it is re-uploadable.
         if (agrees === false) {
+            await raiseIssue({ user: req.user._id, module: moduleKey, kind: "result_disputed", detail: "The student says the number read from the screenshot is wrong" })
+
             // marked on the block too, so the scorer — which never reads Verification — can see it
             await Submission.findOneAndUpdate(
                 { user: req.user._id },

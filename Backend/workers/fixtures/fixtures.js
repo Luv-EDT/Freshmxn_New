@@ -2634,6 +2634,37 @@ const fixtures = [
         expect: null,
     },
     {
+        name: "COVERAGE — the assessment page counts exactly the factors the scorer produces",
+        // factorFeeds.js mirrors scoreProfile's inputs for the "N of 31 factors" line. If a factor is
+        // added to or removed from the profile, the page's count must move with it.
+        run: () => {
+            const { FACTOR_FEEDS, factorCoverage } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "factorFeeds.js"))
+            const engine = [...scoreProfile.MAJOR_FACTORS, ...scoreProfile.MINOR_FACTORS].sort()
+            const page = Object.keys(FACTOR_FEEDS).sort()
+            if (JSON.stringify(engine) !== JSON.stringify(page)) return `factor lists differ: engine ${engine.length}, page ${page.length}`
+
+            const nothing = factorCoverage([])
+            const all = factorCoverage(["ipip50", "mi", "rosenberg", "confidence", "perspective", "digitSpan", "extReasoning", "extVerbal", "sartRaw", "storyRecall"])
+            if (nothing.count !== 0) return `nothing finished should measure 0, got ${nothing.count}`
+            if (all.count !== 31 || all.pct !== 100) return `everything finished should measure 31 (100%), got ${all.count} (${all.pct}%)`
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "RESEARCH — every section on the assessment page has its research note, and none says 'validated'",
+        run: () => {
+            const { MODULE_RESEARCH } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "researchNotes.js"))
+            const modulesSource = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "assessmentModules.js"), "utf8")
+            const keys = [...modulesSource.matchAll(/\{ key: "(\w+)"/g)].map((match) => match[1])
+            const missing = keys.filter((key) => !MODULE_RESEARCH[key] || MODULE_RESEARCH[key].references.length === 0)
+            if (missing.length > 0) return `no research note for: ${missing.join(", ")}`
+            const overclaims = Object.entries(MODULE_RESEARCH).filter(([, note]) => /validated/i.test(note.why + note.measures)).map(([key]) => key)
+            return overclaims.length > 0 ? `claims our version is validated: ${overclaims.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
         name: "MODULES — sartMeta is savable and is not something the scorer reads",
         // A refused session still records why, and that record must never be mistaken for data.
         run: () => {

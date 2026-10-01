@@ -4,6 +4,8 @@ const User = require("../model/userModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
 
+const { raiseIssue } = require("../utils/assessmentIssues")
+
 const router = express.Router()
 
 
@@ -177,6 +179,27 @@ const MODULE_KEYS = Object.keys(CLIENT_OWNED)
 // automatic one for a run that did not record properly, or one an admin grants (retakeGrants).
 const WRITE_ONCE = ["sartRaw"]
 
+const offerSartRetakeIfInvalid = async (userId, rawRows, submission) => {
+    const scoreSart = require("../scoring/sartScoring")
+    const result = scoreSart(rawRows)
+    if (!result || result.valid || result.action !== "offer_retake") return false
+
+    const used = (submission && submission.psychometric && submission.psychometric.sartRetakes) || 0
+    const reasons = (result.invalid_reasons || result.problems || []).join(", ")
+
+    if (used >= 1) {
+        await raiseIssue({ user: userId, module: "sartRaw", kind: "sart_invalid", detail: `second run also invalid: ${reasons}` })
+        return false
+    }
+
+    await Submission.updateOne(
+        { user: userId },
+        { $set: { "psychometric.retakeGrants.sartRaw": true, "psychometric.sartRetakes": used + 1 } }
+    )
+    await raiseIssue({ user: userId, module: "sartRaw", kind: "sart_invalid", detail: `automatic retry offered: ${reasons}`, status: "retake_granted" })
+    return true
+}
+
 router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) => {
     try {
         const { module, block } = req.body
@@ -236,10 +259,19 @@ router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) =
             await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
         }
 
+        // A SART RUN THAT DID NOT MEASURE ANYTHING GETS ONE MORE TRY, automatically. The scorer can
+        // tell (sartScoring's `offer_retake`: too few responses, a key held down, a session that
+        // never really ran) — and until now nothing read that answer, so the run was simply lost.
+        // Once only: a second invalid run is recorded as it is, and the admin sees both.
+        let retakeOffered = false
+        if (module === "sartRaw") {
+            retakeOffered = await offerSartRetakeIfInvalid(req.user._id, block, updatedSubmission)
+        }
+
         return res.status(200).json({
             success: true,
-            message: "Progress saved",
-            data: { module, savedAt: updatedSubmission.lastSavedAt },
+            message: retakeOffered ? "That run did not record properly — you can take it once more" : "Progress saved",
+            data: { module, savedAt: updatedSubmission.lastSavedAt, retakeOffered },
         })
 
     } catch (error) {
@@ -427,6 +459,13 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
                 success: false,
                 message: "No assessment answers to submit",
             })
+        }
+
+        // An abandoned number-memory run is not scored (it would read as a floor), and the admin is
+        // told, so they can open it again if something broke.
+        const span = submission.psychometric.digitSpan
+        if (span && (span.trials || []).length > 0 && !span.completedAt) {
+            await raiseIssue({ user: req.user._id, module: "digitSpan", kind: "digit_span_unfinished", detail: `${span.trials.length} sequences answered, then stopped` })
         }
 
         // Stamped so the report page can tell a FRESH report from a stale one. Without it, a

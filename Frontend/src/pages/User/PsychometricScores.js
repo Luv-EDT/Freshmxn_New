@@ -36,6 +36,11 @@ function PsychometricScores() {
                         {group.factors.map((factor) => (
                             <li key={factor.slug}>
                                 {factor.label} — <strong>{factor.level || "not measured yet"}</strong>
+                                {/* Round 10 (owner): how much of this factor was measured, only when it
+                                    is less than all of it — a complete factor shows nothing extra */}
+                                {factor.level && typeof factor.partialPct === "number" && (
+                                    <span className="pc-partial">Partial · {factor.partialPct}%</span>
+                                )}
                             </li>
                         ))}
                     </ul>

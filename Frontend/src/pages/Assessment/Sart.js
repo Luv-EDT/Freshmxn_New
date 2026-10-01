@@ -33,6 +33,7 @@ import OneAttemptWarning from "./OneAttemptWarning"
 
 function Sart({ alreadyTaken, onDone }) {
     const [phase, setPhase] = useState(alreadyTaken ? "alreadyTaken" : "intro")
+    const [retakeNotice, setRetakeNotice] = useState(false)
     const [check, setCheck] = useState(null)        // the timing-check result
     const [refresh, setRefresh] = useState(null)
     const [checkProgress, setCheckProgress] = useState(0)
@@ -319,7 +320,16 @@ function Sart({ alreadyTaken, onDone }) {
                     ...toPsyToolkitRows(practiceRecords.current, "training", 1),
                     ...toPsyToolkitRows(result.records, "realtest", 1),
                 ]
-                await savePsychometric({ module: "sartRaw", block: rows.join("\n") })
+                const saved = await savePsychometric({ module: "sartRaw", block: rows.join("\n") })
+
+                // THE RUN DID NOT MEASURE ANYTHING (too few responses, a key held down…) and the
+                // server has opened it once more — see submissionsRouter offerSartRetakeIfInvalid.
+                // Back to the start screen with the reason, rather than a "done" that hides it.
+                if (saved && saved.data && saved.data.data && saved.data.data.retakeOffered) {
+                    setRetakeNotice(true)
+                    setPhase("ready")
+                    return
+                }
             }
 
             setSummary({ ...meta.sessionTiming, scored: timingOk, interruptions: meta.interruptions, descriptives: meta.descriptives })
@@ -562,6 +572,13 @@ function Sart({ alreadyTaken, onDone }) {
     if (phase === "ready") {
         return wrap(
             <>
+                {retakeNotice && (
+                    <p className="retake-note">
+                        <strong>That run did not record properly</strong> — for example, very few key presses
+                        came through. You can take it once more. Keep your eyes on the digits and press for
+                        every one except 3.
+                    </p>
+                )}
                 <h2>Your screen is fine</h2>
                 <p>
                     Redrawing about <strong>{check && check.hz} times a second</strong> — plenty for

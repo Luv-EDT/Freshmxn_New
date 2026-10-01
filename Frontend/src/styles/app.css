@@ -963,3 +963,139 @@ button.link-button:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.9);
     color: var(--navy);
 }
+
+/* ── assessment page: research box, the "?" per section, coverage, problems (Round 10) ───────── */
+.research-box {
+    margin: var(--space-4) 0;
+}
+
+.research-body h3 {
+    font-size: 1.05rem;
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+.factor-chips {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.factor-chips li {
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.research-refs {
+    font-size: 0.85rem;
+    color: var(--navy-soft);
+    padding-left: 1.1rem;
+}
+
+.research-refs li {
+    margin-bottom: 4px;
+}
+
+.module-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.module-why {
+    flex: 0 0 auto;
+}
+
+.module-why > summary {
+    list-style: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--teal);
+    color: var(--teal-dark);
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.module-why > summary::-webkit-details-marker {
+    display: none;
+}
+
+.module-why[open] {
+    flex: 1 1 100%;
+}
+
+.module-why-body {
+    margin-top: var(--space-2);
+    padding: var(--space-3);
+    background: var(--cream);
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+}
+
+.module-row .module-title-row:has(.module-why[open]) {
+    flex-wrap: wrap;
+}
+
+.coverage-line {
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+.coverage-bar {
+    height: 8px;
+    background: var(--line);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin-bottom: var(--space-4);
+}
+
+.coverage-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.retake-note {
+    background: var(--pink-tint);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+}
+
+.report-problem {
+    margin-top: var(--space-2);
+    font-size: 0.9rem;
+}
+
+.report-problem summary {
+    color: var(--navy-soft);
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.report-problem label {
+    display: block;
+    margin: var(--space-2) 0;
+}
+
+.report-problem textarea {
+    width: 100%;
+    max-width: 480px;
+    display: block;
+    margin-bottom: var(--space-2);
+}
+
+.report-problem-sent {
+    font-size: 0.9rem;
+    color: var(--teal-dark);
+}
