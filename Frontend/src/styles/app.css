@@ -1293,3 +1293,45 @@ button.link-button:hover:not(:disabled) {
 .support-list li {
     margin-bottom: var(--space-2);
 }
+
+/* ── the follow-up form (Round 10) ───────────────────────────────────────────────────────────── */
+.follow-up fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0 0 var(--space-4);
+    display: grid;
+    gap: 6px;
+}
+
+.follow-up legend {
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.rating-row {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.rating-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.rating-dot input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rating-dot.is-on {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}

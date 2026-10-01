@@ -28,6 +28,7 @@ const mentorsRouter = require("./Routers/mentorsRouter")
 const mentorWaitlistRouter = require("./Routers/mentorWaitlistRouter")
 const assessmentIssuesRouter = require("./Routers/assessmentIssuesRouter")
 const consentRouter = require("./Routers/consentRouter")
+const followUpsRouter = require("./Routers/followUpsRouter")
 
 const cors = require("cors")
 const path = require("path")
@@ -86,6 +87,7 @@ app.use("/mentors", mentorsRouter)
 app.use("/mentorWaitlist", mentorWaitlistRouter)
 app.use("/assessmentIssues", assessmentIssuesRouter)
 app.use("/consent", consentRouter)
+app.use("/followUps", followUpsRouter)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")
@@ -111,7 +113,7 @@ app.listen(PORT, () => {
 // ── the workers, hosted in this process on the free tier ────────────────────────────────────────
 //
 // Render's free plan runs web services only; a background worker is a paid service each. So when
-// RUN_WORKERS_IN_WEB is "true" the two BullMQ workers run here, inside the web process, instead of
+// RUN_WORKERS_IN_WEB is "true" the BullMQ workers run here, inside the web process, instead of
 // as their own processes. Nothing about them changes — same queue, same retries, same code; start()
 // is exactly what `npm run worker:score` / `worker:report` call. Leave the flag unset locally and
 // keep running the workers in their own terminals; flip it off in production once the workers
@@ -124,6 +126,8 @@ if (process.env.RUN_WORKERS_IN_WEB === "true") {
     Promise.all([
         require("./workers/scoreProfileWorker").start(),
         require("./workers/generateReportWorker").start(),
+        // Round 10: the calendar jobs — follow-up emails, the monthly data refresh, the weekly scout
+        require("./workers/housekeepingWorker").start(),
     ])
         .then((started) => workers.push(...started))
         .catch((error) => console.log("Workers failed to start inside the web process:", error.message))

@@ -124,6 +124,11 @@ const userSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        // Round 10: the student asked not to be emailed the 6- and 12-month follow-up questions
+        followUpOptOut: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

@@ -12,6 +12,7 @@ import ProtectedRoute from "./pages/User/ProtectedRoute.js"
 import CompleteProfile from "./pages/User/CompleteProfile.js"
 import Paywall from "./pages/User/Paywall.js"
 import ParentConsent from "./pages/User/ParentConsent"
+import FollowUpPage from "./pages/Public/FollowUpPage"
 import Profile from "./pages/User/Profile.js"
 import Mentorship from "./pages/User/Mentorship.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
@@ -50,6 +51,7 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/follow-up/:token" element={<FollowUpPage />} />
 
                 {/* The company's landing page — for everyone, logged in or not. The logo always
                     leads here; a logged-in student's own space is /dashboard. */}

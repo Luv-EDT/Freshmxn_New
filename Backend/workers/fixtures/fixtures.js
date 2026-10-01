@@ -2837,6 +2837,31 @@ const fixtures = [
         expect: null,
     },
     {
+        name: "FOLLOW-UP — reports.generatedAt is the FIRST report's date: written only on insert, never moved",
+        // The 6- and 12-month follow-up counts from it (housekeeping/followUpScan.js). A rebuild that
+        // moved it would restart every student's clock and the follow-up would never arrive.
+        run: () => {
+            const worker = fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8")
+            const reportWrite = worker.slice(worker.indexOf("await Report.findOneAndUpdate("), worker.indexOf("await User.findByIdAndUpdate(userId, { \"progress.report\""))
+            if (!/\$setOnInsert:\s*\{\s*generatedAt/.test(reportWrite)) return "generatedAt is not written with $setOnInsert"
+            const setBlock = reportWrite.slice(reportWrite.indexOf("$set:"))
+            if (/\bgeneratedAt:/.test(setBlock.replace(/lastGeneratedAt/g, ""))) return "generatedAt is also in $set — a rebuild would move it"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "HOUSEKEEPING — every scheduled job has a runner, and no job id can contain a colon",
+        run: () => {
+            const { SCHEDULES, JOBS } = require("../housekeepingWorker")
+            const missing = SCHEDULES.filter((schedule) => !JOBS[schedule.name]).map((schedule) => schedule.name)
+            if (missing.length > 0) return `scheduled with no runner: ${missing.join(", ")}`
+            const colons = SCHEDULES.filter((schedule) => schedule.name.includes(":")).map((schedule) => schedule.name)
+            return colons.length > 0 ? `ids with a colon: ${colons.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
         name: "MODULES — sartMeta is savable and is not something the scorer reads",
         // A refused session still records why, and that record must never be mistaken for data.
         run: () => {

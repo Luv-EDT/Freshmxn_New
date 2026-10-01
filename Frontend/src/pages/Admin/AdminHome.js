@@ -10,6 +10,7 @@ import CouponsList from "./CouponsList"
 import MentorsList from "./MentorsList"
 import MentorMatchesList from "./MentorMatchesList"
 import AssessmentIssuesList from "./AssessmentIssuesList"
+import FollowUpsList from "./FollowUpsList"
 import { getAllIssuesForAdmin } from "../../apiCall/assessmentIssuesApi"
 
 function AdminHome() {
@@ -63,6 +64,11 @@ function AdminHome() {
             key: "assessmentIssues",
             label: <Badge count={openIssues} size="small" offset={[8, -2]}>Assessment issues</Badge>,
             children: <AssessmentIssuesList dataVersion={dataVersion} onDataChanged={handleDataChanged} onOpenCount={setOpenIssues} />,
+        },
+        {
+            key: "followUps",
+            label: "Follow-ups",
+            children: <FollowUpsList dataVersion={dataVersion} />,
         },
         {
             key: "coupons",
