@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom"
 import { getMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
-import { whyFits } from "./reportPlan"
+import { whyFits, entryRoute } from "./reportPlan"
 import { aiExposureText } from "./ProfessionCard"
 
 // Compare careers side by side (owner, 2026-09-29): its own page, reached from the top of the
@@ -23,7 +23,7 @@ const ROWS = [
     ["Why it fits you", (entry) => whyFits(entry).strengths.join(", ") || "—"],
     ["Years to qualify", (entry, detail) => (typeof detail.yearsToQualify === "number" ? `About ${detail.yearsToQualify}` : "—")],
     ["Subjects in Class 11–12", (entry, detail) => (detail.class12Prerequisite.includes("any") ? "Any stream" : detail.class12Prerequisite.map((subject) => SUBJECTS[subject] || subject).join(" + "))],
-    ["Degree needed", (entry, detail) => DEGREE[detail.degreeDependency] || "—"],
+    ["Degree needed", (entry, detail) => entryRoute(detail) || DEGREE[detail.degreeDependency] || "—"],
     ["Main exam", (entry, detail) => {
         if (detail.entryGate) {
             return `${detail.entryGate.name}${typeof detail.entryGate.applicantsPerSeat === "number" ? ` — about ${Math.round(detail.entryGate.applicantsPerSeat)} per seat` : ""}`

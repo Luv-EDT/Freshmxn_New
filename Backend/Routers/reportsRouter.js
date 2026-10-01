@@ -6,6 +6,26 @@ const Profile = require("../model/profilesModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
+const DEGREE_OPTIONS = require("../data/degree_options.json")
+const DISABILITY_SUPPORT = require("../data/disability_support.json")
+
+// The support section (owner, Round 10) — only for a student who declared a difficulty, and only
+// once the owner has checked the file against its official sources (verified_by_owner). Until then
+// nothing is shown: an unverified legal claim is worse than none.
+const supportFor = (submission) => {
+    if (!DISABILITY_SUPPORT.verified_by_owner || !DISABILITY_SUPPORT.checked_on) return null
+    const declared = submission && submission.psychometric && submission.psychometric.accommodations
+    if (!declared || !Array.isArray(declared.needs) || declared.needs.length === 0) return null
+    return { checkedOn: DISABILITY_SUPPORT.checked_on, rows: DISABILITY_SUPPORT.rows }
+}
+
+// "B.Tech / B.E. (Civil)" — for the card's "your degree already counts" line
+const degreeLabelFor = (detail) => {
+    const family = detail && DEGREE_OPTIONS.families.find((option) => option.id === detail.degree)
+    if (!family || family.id === "none") return null
+    const subject = family.subjects.find((option) => option.id === detail.subject)
+    return subject && subject.id !== "other" ? `${family.label} (${subject.label})` : family.label
+}
 
 const router = express.Router()
 
@@ -89,7 +109,7 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
         const [report, recommendation, submission] = await Promise.all([
             Report.findOne({ user: req.user._id }).lean(),
             Recommendation.findOne({ user: req.user._id }).lean(),
-            Submission.findOne({ user: req.user._id }).select("psychometricSubmittedAt").lean(),
+            Submission.findOne({ user: req.user._id }).select("psychometricSubmittedAt psychometric.accommodations").lean(),
         ])
 
         // A REPORT OLDER THAN THE LAST SUBMIT IS BEING REPLACED, not the answer.
@@ -165,6 +185,8 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
                 rebuildFailed: failed,
                 release: report.release,
                 journey: report.journey,
+                degree: degreeLabelFor(req.user.journeyDetail),
+                support: supportFor(submission),
                 generatedAt: report.lastGeneratedAt || report.generatedAt,
                 sections: report.sections,
                 ranked: recommendation ? recommendation.ranked_professions.map(stripInternal) : [],

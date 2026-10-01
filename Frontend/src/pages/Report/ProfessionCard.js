@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { whyFits, cardSteps } from "./reportPlan"
+import { whyFits, cardSteps, entryRoute } from "./reportPlan"
 
 // One profession in the report: a heading until it is opened, then everything the taxonomy knows.
 //
@@ -137,7 +137,7 @@ const monthYear = (iso) => {
         : null
 }
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi }) {
+function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel }) {
     const [open, setOpen] = useState(false)
 
     const toggle = () => {
@@ -228,19 +228,30 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                     )}
 
                     {/* 2. WHY IT FITS YOU — built from the ranking, never from a model, never a number */}
-                    {(fit.strengths.length > 0 || fit.via) && (
+                    {(fit.strengths.length > 0 || fit.via || entry.bestRoles) && (
                         <Section title="Why it fits you">
                             {fit.strengths.length > 0 && (
                                 <p className="pc-line">It uses what you're strongest at: <strong>{fit.strengths.join(", ")}</strong>.</p>
                             )}
                             {fit.via && <p className="pc-line">You got here through: <strong>{fit.via}</strong>.</p>}
                             {fit.stretch && <p className="pc-small">It would stretch you on {fit.stretch}.</p>}
+                            {/* Round 10: the role group inside this career that fits better than the whole */}
+                            {entry.bestRoles && entry.bestRoles.roles && (
+                                <p className="pc-line">
+                                    Roles in this career that suit you most: <strong>{entry.bestRoles.roles.join(", ")}</strong>.
+                                    {entry.bestRoles.why && <span className="pc-small"> {entry.bestRoles.why}</span>}
+                                </p>
+                            )}
                         </Section>
                     )}
 
                     {/* 3. YOUR NEXT STEPS — for this student's stage */}
-                    {(nextSteps.length > 0 || switchCost > 0) && (
+                    {(nextSteps.length > 0 || switchCost > 0 || (entry.degreeCounts && degreeLabel)) && (
                         <Section title="Your next steps">
+                            {/* Round 10: the student's own degree already leads here */}
+                            {entry.degreeCounts && degreeLabel && (
+                                <p className="pc-line">Your <strong>{degreeLabel}</strong> already counts towards this — no need to start again.</p>
+                            )}
                             {/* Worth-the-switch shows its cost beside the fit (DECISIONS §5). */}
                             {switchCost > 0 && (
                                 <p className="pc-small">About {switchCost} years of what you've done so far would be left behind.</p>
@@ -288,10 +299,10 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                 <dl className="pc-facts">
                                     <dt>Subjects in Class 11–12</dt>
                                     <dd>{subjects || "Any stream"}</dd>
-                                    {DEGREE_WORDS[detail.degreeDependency] && (
+                                    {(entryRoute(detail) || DEGREE_WORDS[detail.degreeDependency]) && (
                                         <>
                                             <dt>Degree needed</dt>
-                                            <dd>{DEGREE_WORDS[detail.degreeDependency]}</dd>
+                                            <dd>{entryRoute(detail) || DEGREE_WORDS[detail.degreeDependency]}</dd>
                                         </>
                                     )}
                                     {laterStage && MID_STREAM_WORDS[detail.midStreamEntry] && (

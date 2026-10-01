@@ -24,3 +24,30 @@ export const STREAM_SUBJECTS = [
     { value: "english", label: "English" },
     { value: "other", label: "Other" },
 ]
+
+// DEGREES (Round 10) — asked of college students (the degree they are doing or joining, and its
+// subject) and working students (their degree and their field). Matching uses it so a degree that
+// already leads to a career is not counted as switching cost. Same list as
+// Backend/data/degree_options.json; a fixture keeps the two identical.
+export const DEGREE_FAMILIES = [
+    { id: "btech", label: "B.Tech / B.E.", bachelor: true, subjects: [{ id: "cse_it", label: "Computer Science / IT" }, { id: "ece", label: "Electronics & Communication" }, { id: "electrical", label: "Electrical" }, { id: "mechanical", label: "Mechanical" }, { id: "civil", label: "Civil" }, { id: "chemical", label: "Chemical" }, { id: "aerospace", label: "Aerospace / Aeronautical" }, { id: "mining", label: "Mining" }, { id: "metallurgy", label: "Metallurgy & Materials" }, { id: "marine", label: "Marine" }, { id: "petroleum", label: "Petroleum" }, { id: "textile", label: "Textile" }, { id: "biomedical", label: "Biomedical" }, { id: "fire_safety", label: "Fire & Safety" }, { id: "agricultural", label: "Agricultural" }, { id: "food", label: "Food Technology" }, { id: "biotech", label: "Biotechnology" }, { id: "mechatronics", label: "Mechatronics / Robotics" }, { id: "other", label: "Another branch" }] },
+    { id: "bca", label: "BCA", bachelor: true, subjects: [] },
+    { id: "bsc", label: "B.Sc", bachelor: true, subjects: [{ id: "computer_science", label: "Computer Science" }, { id: "physics", label: "Physics" }, { id: "chemistry", label: "Chemistry" }, { id: "life_sciences", label: "Life Sciences / Zoology / Botany / Microbiology / Biotech" }, { id: "maths_stats", label: "Maths / Statistics" }, { id: "earth_env", label: "Geology / Geography / Environmental Science" }, { id: "agriculture", label: "Agriculture / Horticulture / Forestry / Fisheries / Dairy" }, { id: "nutrition", label: "Nutrition & Dietetics" }, { id: "other", label: "Another subject" }] },
+    { id: "bcom", label: "B.Com", bachelor: true, subjects: [] },
+    { id: "bba", label: "BBA / BMS", bachelor: true, subjects: [] },
+    { id: "ba", label: "BA", bachelor: true, subjects: [{ id: "economics", label: "Economics" }, { id: "psychology", label: "Psychology" }, { id: "english_media", label: "English / Journalism / Mass Communication" }, { id: "history", label: "History / Archaeology / Sanskrit or a classical language" }, { id: "social_sciences", label: "Sociology / Anthropology / Political Science" }, { id: "other", label: "Another subject" }] },
+    { id: "bsw", label: "BSW (Social Work)", bachelor: true, subjects: [] },
+    { id: "medical", label: "MBBS / BDS / BAMS / BHMS / B.V.Sc", bachelor: true, subjects: [] },
+    { id: "nursing_allied", label: "B.Sc Nursing / BPT / BOT / allied health", bachelor: true, subjects: [] },
+    { id: "bpharm", label: "B.Pharm", bachelor: true, subjects: [] },
+    { id: "bdes_bfa", label: "B.Des / BFA / Animation", bachelor: true, subjects: [] },
+    { id: "barch_bplan", label: "B.Arch / B.Plan", bachelor: true, subjects: [] },
+    { id: "llb", label: "LLB (3-year or integrated)", bachelor: true, subjects: [] },
+    { id: "bed", label: "B.Ed / D.El.Ed", bachelor: true, subjects: [] },
+    { id: "bped", label: "BPEd / Sports Science", bachelor: true, subjects: [] },
+    { id: "hotel", label: "Hotel Management / Tourism", bachelor: true, subjects: [] },
+    { id: "diploma", label: "Polytechnic diploma", bachelor: false, subjects: [] },
+    { id: "iti", label: "ITI trade", bachelor: false, subjects: [] },
+    { id: "other", label: "Another bachelor's degree", bachelor: true, subjects: [] },
+    { id: "none", label: "No degree", bachelor: false, subjects: [] },
+]

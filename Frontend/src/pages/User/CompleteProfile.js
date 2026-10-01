@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import DegreeFields from "../DegreeFields"
 import { useNavigate, Link } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { updateProfile } from "../../apiCall/userApi"
@@ -13,7 +14,7 @@ function CompleteProfile() {
     const { user } = useSelector((state) => state.user)
     const [age, setAge] = useState("")
     const [journey, setJourney] = useState("")
-    const [journeyDetail, setJourneyDetail] = useState({ class: "", stream: [], collegeStage: "", courseYear: "", experienceYears: "" })
+    const [journeyDetail, setJourneyDetail] = useState({ class: "", stream: [], collegeStage: "", courseYear: "", experienceYears: "", degree: "", subject: "", field: "" })
     // TEMPORARY (V1): self-declared parent permission for under-18 students
     const [parentConsentChecked, setParentConsentChecked] = useState(false)
     const [parentName, setParentName] = useState("")
@@ -73,7 +74,7 @@ function CompleteProfile() {
             })
         )
 
-        navigate(userData.paid ? "/" : "/paywall")
+        navigate(userData.paid ? "/dashboard" : "/paywall")
     }
 
     return (
@@ -93,7 +94,7 @@ function CompleteProfile() {
                 <div>
                     <label>Where are you right now?</label>
                     <br />
-                    <select value={journey} onChange={(e) => setJourney(e.target.value)} required>
+                    <select value={journey} onChange={(e) => { setJourney(e.target.value); setJourneyDetail({ class: "", stream: [], collegeStage: "", courseYear: "", experienceYears: "", degree: "", subject: "", field: "" }) }} required>
                         <option value="">-- Select --</option>
                         {JOURNEY_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
@@ -168,6 +169,9 @@ function CompleteProfile() {
                         <input type="number" min="0" max="40" value={journeyDetail.experienceYears} onChange={(e) => handleDetailChange("experienceYears", e.target.value)} required />
                     </div>
                 )}
+
+                {/* Round 10: the degree, so the years already in it are not counted as switching cost */}
+                <DegreeFields journey={journey} detail={journeyDetail} onChange={handleDetailChange} />
 
                 {/* TEMPORARY (V1): parent permission for under-18 — a proper parental consent step comes in V2 */}
                 {isMinor && (

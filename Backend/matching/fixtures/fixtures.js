@@ -797,6 +797,62 @@ const fixtures = [
         ], 2).map((entry) => entry.id),
         expect: ["near", "far"],
     },
+
+    // ── Round 10: role groups and the student's own degree ───────────────────────────────────────
+    {
+        name: "role groups: a student who fits a role group better gets that group, and the fit only rises",
+        run: () => {
+            const { runProgramThree } = require("../program3")
+            const rating = { id: "rg-x", factors: { openness: 5, conscientiousness: 5 }, weights: { openness: 1, conscientiousness: 1 } }
+            const wide = { id: "rg-x", profession: "Wide", mid_stream_entry: "open", role_spread: { spread: "wide", deviating_roles: [{ roles: ["Role A"], higher: ["openness"], lower: [], why: "needs more openness" }] } }
+            const narrow = { ...wide, role_spread: { spread: "narrow", deviating_roles: [] } }
+            const run = (profession, vector) => runProgramThree({
+                candidates: [{ professionId: "rg-x" }], studentVector: vector, professions: [profession],
+                baselineById: { "rg-x": rating }, journey: { stage: "class9_10", stream: [] },
+            }).ranked[0]
+            const open = run(wide, { openness: 7, conscientiousness: 5 })
+            const plain = run(narrow, { openness: 7, conscientiousness: 5 })
+            const away = run(wide, { openness: 3, conscientiousness: 5 })
+            if (!open.bestRoles || open.bestRoles.roles[0] !== "Role A") return "the matching role group was not named"
+            if (!(open.comfortScore > plain.comfortScore)) return "the role group should lift the fit above the whole career's"
+            if (plain.bestRoles !== null) return "a narrow career has no role groups"
+            if (away.bestRoles !== null || away.comfortScore !== run(narrow, { openness: 3, conscientiousness: 5 }).comfortScore) return "a group that fits worse must change nothing"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "degree: a B.Tech Civil student pays no switching cost for Civil Engineer; a B.Com student still does",
+        run: () => {
+            const { wasteFor, degreeCounts } = require("../journey")
+            const civil = { id: "eng-civil-engineer", mid_stream_entry: "restart_undergrad", class12_prerequisite: ["physics", "chemistry", "maths"] }
+            const journey = (degree, subject) => ({ stage: "college", stream: [], preAdmission: false, courseYear: 2, degree, subject })
+            const own = wasteFor(civil, journey("btech", "civil"))
+            const other = wasteFor(civil, journey("bcom", null))
+            if (!degreeCounts(civil, journey("btech", "civil"))) return "B.Tech Civil should count for Civil Engineer"
+            if (own.years !== 0) return `own degree should cost nothing, got ${own.years}`
+            if (!(other.years > 0)) return "an unrelated degree should still cost years"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "degree: every career id in degree_families.json exists, and every key is a real degree option",
+        run: () => {
+            const families = require("../../data/degree_families.json")
+            const options = require("../../data/degree_options.json")
+            const ids = new Set(require("../../data/ALL-professions.json").professions.map((profession) => profession.id))
+            const unknown = [...families.any_bachelors, ...Object.values(families.by_degree).flat()].filter((id) => !ids.has(id))
+            if (unknown.length > 0) return `unknown career ids: ${[...new Set(unknown)].join(", ")}`
+            const badKeys = Object.keys(families.by_degree).filter((key) => {
+                const [family, subject] = key.split(":")
+                const option = options.families.find((entry) => entry.id === family)
+                return !option || (subject && !option.subjects.some((entry) => entry.id === subject))
+            })
+            return badKeys.length > 0 ? `keys that are not degree options: ${badKeys.join(", ")}` : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

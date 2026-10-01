@@ -34,7 +34,9 @@ const constants = require("./constants")
 // 1.1.0 (Round 10): undergrad switching cost rises with every year (1, 2, 2.5, 3); the age limit
 // reads the student's real age. A different ranking from the same answers, hence the bump — a stored
 // report on 1.0.0 shows as stale and rebuilds itself.
-const MATCHING_VERSION = "matching@1.1.0"
+// 1.2.0 (Round 10): a career's fit is the better of the whole career and its best role group
+// (role_spread); a student's own degree waives switching cost for the careers it leads to.
+const MATCHING_VERSION = "matching@1.2.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort }) => {
     if (!profile) throw new Error("matchProfile: profile is required")
@@ -88,6 +90,8 @@ const matchProfile = ({ profile, interest, user, professions, baseline, resolved
             courseYear: journey.courseYear,
             experienceYears: journey.experienceYears,
             preAdmission: journey.preAdmission,
+            degree: journey.degree,
+            subject: journey.subject,
         },
 
         programOne: {

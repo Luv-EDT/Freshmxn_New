@@ -2778,6 +2778,65 @@ const fixtures = [
         expect: null,
     },
     {
+        name: "DATA — an any-stream career never names a PCM- or PCB-gated degree without the open route beside it",
+        // Round 10 (owner spotted it on Software Developer): "any stream" in Class 12, then "B.Tech
+        // CSE" as if a commerce student could walk into it. B.Tech needs PCM and an entrance exam.
+        run: () => {
+            const professions = require("../../data/ALL-professions.json").professions
+            const GATED = /B\.Tech|B\.E\.|MBBS|BDS|B\.Arch|B\.Pharm|B\.Sc Nursing/
+            const OPEN = /BCA|B\.Sc|BA\b|B\.Com|diploma|any (bachelor|degree|stream)|Any bachelor/i
+            const problems = []
+            professions.forEach((profession) => {
+                const prerequisite = profession.class12_prerequisite
+                const anyStream = prerequisite === "any" || (Array.isArray(prerequisite) && prerequisite.includes("any"))
+                if (!anyStream) return
+                ;(profession.path_to_entry || []).forEach((step) => {
+                    const text = String(step.requirement || "")
+                    if (GATED.test(text) && !OPEN.test(text.replace(GATED, ""))) problems.push(`${profession.id}: "${text.slice(0, 60)}"`)
+                    if (/B\.Tech/.test(text) && !/Physics|PCM|JEE|CET|engineering/i.test(text) && !/any (bachelor|degree)/i.test(text)) problems.push(`${profession.id}: B.Tech without its gate`)
+                })
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "DEGREES — the forms and the server offer exactly the same degree list",
+        run: () => {
+            const { DEGREE_FAMILIES } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "journeyOptions.js"))
+            const server = require("../../data/degree_options.json").families
+            const shape = (list) => JSON.stringify(list.map((family) => [family.id, family.label, family.bachelor, family.subjects.map((subject) => [subject.id, subject.label])]))
+            return shape(DEGREE_FAMILIES) === shape(server) ? null : "Frontend/src/pages/journeyOptions.js and Backend/data/degree_options.json disagree"
+        },
+        expect: null,
+    },
+    {
+        name: "SUPPORT — a test skipped for a declared difficulty is not measured, never low",
+        run: () => {
+            const { buildSubmission } = require("../../scoring/fixtures/buildSubmission")
+            const submission = buildSubmission()
+            const taken = scoreProfile(submission)
+            const skipped = scoreProfile({ ...submission, accommodations: { needs: ["attention"], skipped: { sartRaw: true } } })
+            if (taken.raw_scores.processing_speed === null) return "the fixture's SART should score"
+            if (skipped.raw_scores.processing_speed !== null) return "a skipped SART must leave processing speed unmeasured, not scored"
+            if (!(skipped.flags.not_measured_for_support || []).includes("sartRaw")) return "the skip is not recorded in the flags"
+            if (skipped.raw_scores.focus === null) return "focus should still score from its other inputs"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "SUPPORT — the disability support facts stay hidden until the owner has checked them",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "reportsRouter.js"), "utf8")
+            const data = require("../../data/disability_support.json")
+            if (!/verified_by_owner/.test(router)) return "getMyReport no longer checks verified_by_owner"
+            if (data.rows.some((row) => !row.source || !row.url)) return "every support line needs its official source"
+            return null
+        },
+        expect: null,
+    },
+    {
         name: "MODULES — sartMeta is savable and is not something the scorer reads",
         // A refused session still records why, and that record must never be mistaken for data.
         run: () => {

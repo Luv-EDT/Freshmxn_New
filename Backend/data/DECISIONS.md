@@ -1320,3 +1320,12 @@ must still be manufacturable, safe and to cost — the engineering constraint is
 its tags were already CGSC, FFSC and ASDC. The counter-argument is recorded rather than buried: its
 entrances are NID DAT and UCEED, design examinations, and Sector 8 keeps a `routed_elsewhere` entry
 pointing here because that is where a student will look for it.
+
+## Round 10 data patch (owner, 2026-10-01) — "any stream" careers that name B.Tech
+
+Four careers have `class12_prerequisite: any` and a path step that named B.Tech without saying B.Tech
+needs Physics, Chemistry and Maths plus JEE or a state CET: Software Developer, AI & ML Engineer,
+Data Engineer, VFX & Graphics Technical Developer. "Any stream" stays right for the career itself
+(BCA / B.Sc take most streams), so only the step text changed, to name the open route first and the
+PCM-gated one with its gate. A worker fixture now fails any any-stream career whose path names a
+PCM- or PCB-gated degree without naming a non-gated route in the same step.

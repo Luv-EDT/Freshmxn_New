@@ -17,7 +17,7 @@ const router = express.Router()
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const JOURNEYS = ["class9_10", "class11_12", "college", "early_professional"]
-const POLICY_VERSION = "v1.0"
+const POLICY_VERSION = "v1.1"   // 1 October 2026: the sensitive-answers section; email-verified parental consent
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phoneRegex = /^[0-9]{10}$/
 
@@ -80,18 +80,53 @@ const signToken = (userId) => {
     )
 }
 
-// keep only the journeyDetail keys we know about, with the right types
-const cleanJourneyDetail = (journeyDetail) => {
-    const detail = journeyDetail || {}
+// KEEP ONLY WHAT BELONGS TO THIS STAGE, WITH THE RIGHT TYPES AND RANGES (Round 10). Before, every
+// key was kept whatever the stage — a stream ticked under Class 11-12 stayed on a student who then
+// chose College, and quietly changed their switching cost — and a non-numeric value reached Mongoose
+// as a cast error and a 500. Now a value that does not fit is dropped, and changing stage starts the
+// detail afresh. Degrees come from the same list the forms show (data/degree_options.json).
+const DEGREE_OPTIONS = require("../data/degree_options.json")
+const STREAMS = ["physics", "chemistry", "maths", "biology", "computer_science", "accountancy", "business_studies", "economics", "history", "political_science", "geography", "psychology", "english", "other"]
 
-    return {
-        class: detail.class ? Number(detail.class) : undefined,
-        stream: Array.isArray(detail.stream) ? detail.stream.filter((s) => typeof s === "string" && s.trim() !== "") : [],
-        collegeStage: detail.collegeStage || undefined,
-        preAdmission: detail.collegeStage === "pre_admission",
-        courseYear: detail.courseYear ? Number(detail.courseYear) : undefined,
-        experienceYears: detail.experienceYears !== undefined && detail.experienceYears !== "" ? Number(detail.experienceYears) : undefined,
+const numberIn = (value, low, high) => {
+    const number = Number(value)
+    return value !== undefined && value !== null && value !== "" && Number.isInteger(number) && number >= low && number <= high ? number : undefined
+}
+
+const cleanDegree = (detail) => {
+    const family = DEGREE_OPTIONS.families.find((option) => option.id === detail.degree)
+    if (!family) return {}
+    const subject = family.subjects.find((option) => option.id === detail.subject)
+    return { degree: family.id, subject: subject ? subject.id : undefined }
+}
+
+const cleanJourneyDetail = (journeyDetail, journey) => {
+    const detail = journeyDetail || {}
+    const clean = { stream: [], preAdmission: false }
+
+    if (journey === "class9_10") {
+        clean.class = [9, 10].includes(Number(detail.class)) ? Number(detail.class) : undefined
     }
+
+    if (journey === "class11_12") {
+        clean.class = [11, 12].includes(Number(detail.class)) ? Number(detail.class) : undefined
+        clean.stream = Array.isArray(detail.stream) ? [...new Set(detail.stream.filter((subject) => STREAMS.includes(subject)))] : []
+    }
+
+    if (journey === "college") {
+        clean.collegeStage = ["pre_admission", "enrolled"].includes(detail.collegeStage) ? detail.collegeStage : undefined
+        clean.preAdmission = detail.collegeStage === "pre_admission"
+        clean.courseYear = clean.collegeStage === "enrolled" ? numberIn(detail.courseYear, 1, 4) : undefined
+        Object.assign(clean, cleanDegree(detail))
+    }
+
+    if (journey === "early_professional") {
+        clean.experienceYears = numberIn(detail.experienceYears, 0, 40)
+        Object.assign(clean, cleanDegree(detail))
+        clean.field = typeof detail.field === "string" && detail.field.trim() !== "" ? detail.field.trim().slice(0, 80) : undefined
+    }
+
+    return clean
 }
 
 // issue a fresh "confirm your email" link and send it. Any older unused link stops working, so a
@@ -224,7 +259,7 @@ router.post("/register", async (req, res) => {
             password: hashedPassword,
             age: ageNumber,
             journey,
-            journeyDetail: cleanJourneyDetail(journeyDetail),
+            journeyDetail: cleanJourneyDetail(journeyDetail, journey),
             role: "student",        // never taken from the body
             paid: false,
             currentTier: 0,
@@ -659,7 +694,7 @@ router.put("/updateProfile", authMiddleware, async (req, res) => {
                 })
             }
             updates.journey = journey
-            updates.journeyDetail = cleanJourneyDetail(journeyDetail)
+            updates.journeyDetail = cleanJourneyDetail(journeyDetail, journey)
         }
 
         if (preferredLanguage === "en" || preferredLanguage === "hi") {
@@ -811,7 +846,7 @@ router.put("/updateForAdmin/:id", authMiddleware, adminAuthMiddleware, async (re
                 })
             }
             updates.journey = journey
-            updates.journeyDetail = cleanJourneyDetail(journeyDetail)
+            updates.journeyDetail = cleanJourneyDetail(journeyDetail, journey)
         }
 
         const updatedUser = await User.findByIdAndUpdate(

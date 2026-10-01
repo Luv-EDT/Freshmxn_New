@@ -1,7 +1,7 @@
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
 
-export const LAST_UPDATED = "24 September 2026"
+export const LAST_UPDATED = "1 October 2026"
 
 export const COMPANY = {
     name: "Freshmxn Education India Private Limited",

@@ -2,6 +2,8 @@ import { TOTAL_MINUTES } from "./assessmentModules"
 import { reviewLabel } from "./moduleLabels"
 import { factorCoverage } from "./factorFeeds"
 import { ResearchBox, ModuleWhy, ReportProblem } from "./ResearchBox"
+import AccommodationsBox from "./AccommodationsBox"
+import { affectedModules } from "./accommodations"
 
 // the tests a student can raise a technical problem about (and the admin can reopen)
 const PERFORMANCE_TESTS = ["storyRecall", "digitSpan", "sartRaw", "reasoning", "extReasoning", "extVerbal"]
@@ -52,17 +54,21 @@ const storyNote = (module, storyState) => {
 //
 // So the list says nothing about which sections gate submission. A student who finishes everything
 // gets the best report; a student who cannot finish one is not stuck.
-function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {} }) {
+function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, accommodations = null, onSaveAccommodations }) {
     const built = modules.filter((module) => module.built)
     const comingSoon = modules.filter((module) => !module.built)
     const unfinished = built.filter((module) => !completed.includes(module.key))
-    const coverage = factorCoverage(completed)
+    // a section skipped for a declared difficulty is finished, but it measured nothing
+    const skipped = (accommodations && accommodations.skipped) || {}
+    const coverage = factorCoverage(completed.filter((key) => !skipped[key]))
+    const skippable = affectedModules(accommodations && accommodations.needs)
 
     // One renderer for both lists. They differ in what the heading above them says, not in how a
     // section behaves — and having two copies of this is how "Continue" stopped matching the story's
     // clock the first time.
     const renderModule = (module) => {
-        const isDone = completed.includes(module.key)
+        const isSkipped = Boolean(skipped[module.key])
+        const isDone = completed.includes(module.key) && !isSkipped
         const isStarted = started.includes(module.key)
         const note = storyNote(module, storyState)
 
@@ -108,7 +114,21 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                     </p>
                 )}
                 {note && <p><em>{note}</em></p>}
-                <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
+                {isSkipped ? (
+                    <p className="retake-note">
+                        Skipped because of the difficulty you told us about — <strong>not measured</strong>, never counted as low.{" "}
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: false } })}>Take it after all</button>
+                    </p>
+                ) : (
+                    <>
+                        <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
+                        {!isDone && skippable.includes(module.key) && (
+                            <button type="button" className="btn btn-ghost btn-sm skip-btn" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: true } })}>
+                                Skip this — mark it not measured
+                            </button>
+                        )}
+                    </>
+                )}
                 {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && <ReportProblem moduleKey={module.key} />}
             </div>
         )
@@ -129,6 +149,8 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
             </p>
 
             <ResearchBox />
+
+            <AccommodationsBox saved={accommodations} onSave={onSaveAccommodations} />
 
             {/* how much of the picture the finished sections already measure (owner, Round 10) */}
             <p className="coverage-line">

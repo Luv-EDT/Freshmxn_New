@@ -109,8 +109,10 @@ const isModuleComplete = (key, block) => {
 
 export const completedModules = (psychometric) => {
     const saved = psychometric || {}
+    const skipped = (saved.accommodations && saved.accommodations.skipped) || {}
     // retired modules count when they were completed — a student's old reasoning upload still measures
-    return ASSESSMENT_MODULES.filter((module) => module.built && isModuleComplete(module.key, saved[module.key])).map((module) => module.key)
+    // A test skipped because of a declared difficulty is finished too — as "not measured" (Round 10).
+    return ASSESSMENT_MODULES.filter((module) => module.built && (isModuleComplete(module.key, saved[module.key]) || skipped[module.key])).map((module) => module.key)
 }
 
 // Started but not finished — the state that needs "Continue", not "Review answers".

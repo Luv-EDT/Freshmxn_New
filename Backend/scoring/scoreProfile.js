@@ -217,7 +217,15 @@ const callPerspective = (perspective, sart, traits) => {
     )
 }
 
-const scoreProfile = (psychometric = {}) => {
+const scoreProfile = (submitted = {}) => {
+    // A TEST SKIPPED FOR A DECLARED DIFFICULTY IS NOT MEASURED (Round 10). Its block — if any — is
+    // set aside before anything is scored, so the factors it feeds are dropped and renormalised the
+    // way a section never taken is: never read as low. accommodations.skipped is written by the
+    // student's own choice on the assessment page.
+    const skippedForSupport = Object.keys((submitted.accommodations && submitted.accommodations.skipped) || {})
+        .filter((key) => submitted.accommodations.skipped[key] === true)
+    const psychometric = Object.fromEntries(Object.entries(submitted || {}).filter(([key]) => !skippedForSupport.includes(key)))
+
     const raw_scores = {}
     const data_quality = {}
     const flags = {}
@@ -509,6 +517,9 @@ const scoreProfile = (psychometric = {}) => {
 
     if (modules_missing.length > 0) {
         flags.modules_missing = modules_missing
+    }
+    if (skippedForSupport.length > 0) {
+        flags.not_measured_for_support = skippedForSupport
     }
 
     const countScored = (factors) => factors.filter((factor) => raw_scores[factor] !== null && raw_scores[factor] !== undefined).length

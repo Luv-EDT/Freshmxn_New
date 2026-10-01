@@ -3,6 +3,7 @@ const User = require("../model/userModel")
 const Mentor = require("../model/mentorsModel")
 const MentorWaitlist = require("../model/mentorWaitlistModel")
 const Recommendation = require("../model/recommendationsModel")
+const Submission = require("../model/submissionsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 
@@ -200,9 +201,20 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 
         const rowByUser = new Map(rows.map((row) => [String(row.user), row]))
 
+        // Support needs a student declared on the assessment page AND agreed their mentor may know
+        // (Round 10). Nothing is shown for anyone who did not tick that box.
+        const NEED_LABELS = { vision: "seeing the screen", hearing: "hearing", motor: "movement / fine motor", reading: "reading (e.g. dyslexia)", attention: "attention" }
+        const submissions = await Submission.find({ user: { $in: students.map((s) => s._id) }, "psychometric.accommodations.shareWithMentor": true })
+            .select("user psychometric.accommodations")
+            .lean()
+        const supportByUser = new Map(submissions.map((submission) => [
+            String(submission.user),
+            (submission.psychometric.accommodations.needs || []).map((need) => NEED_LABELS[need] || need),
+        ]))
+
         const data = students.map((student) => {
             const row = rowByUser.get(String(student._id)) || { matchStatus: "awaiting_choice" }
-            return { student, ...row, user: student._id, dueBy: dueByFor(row) }
+            return { student, ...row, user: student._id, dueBy: dueByFor(row), sharedSupportNeeds: supportByUser.get(String(student._id)) || [] }
         })
 
         return res.status(200).json({

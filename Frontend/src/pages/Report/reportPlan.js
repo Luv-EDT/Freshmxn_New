@@ -243,3 +243,21 @@ export const journeyHeadline = (journey, ranked, details = {}) => {
     }
     return null
 }
+
+// CAN YOU GET IN WITHOUT A DEGREE? (owner, Round 10) — one line, from the two fields the data already
+// has: degree_dependency (what stops you getting the first job — DECISIONS §3) and mid_stream_entry
+// (the door from where you stand — §4). No third field: a career the owner thinks is skills-based
+// but the data marks "undergrad" is fixed in the data, so the two can never disagree.
+export const entryRoute = (detail) => {
+    if (!detail) return null
+    const degree = detail.degreeDependency
+    const door = detail.midStreamEntry
+    if (degree === "none") return "No degree needed — you're hired on what you can show"
+    if (degree === "certificate") return "No degree needed — a short course or certificate"
+    if (degree === "undergrad" && door === "open") return "A degree is common, not required — many employers filter on one, but you can start building now"
+    if (degree === "undergrad" && door === "after_any_degree") return "Any bachelor's degree opens this"
+    if (degree === "undergrad" && door === "restart_undergrad") return "Needs this specific degree"
+    if (degree === "undergrad") return "A bachelor's degree"
+    if (degree === "professional") return "A licence is required — this degree is the only way in"
+    return null
+}

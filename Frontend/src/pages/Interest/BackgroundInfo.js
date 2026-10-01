@@ -49,11 +49,16 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
     }, [localFormData])
 
     // text inputs, selects and radios all store by name
+    // An answer moved off "Yes" takes its "specify" text with it — otherwise the detail a student
+    // typed and then took back would still be saved (Round 10).
+    const SPECIFY_FOR = { disability: "disabilitySpecify", familyTrauma: "familyTraumaSpecify", personalTrauma: "personalTraumaSpecify" }
+
     const handleInputChange = (e) => {
         const { name, value } = e.target
         setLocalFormData((prev) => ({
             ...prev,
             [name]: value,
+            ...(SPECIFY_FOR[name] && value !== "Yes" ? { [SPECIFY_FOR[name]]: "" } : {}),
         }))
     }
 
@@ -137,9 +142,10 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
                     <h3>📋 Why this matters</h3>
                     <p>Your background helps us provide more personalized and relevant guidance for your unique situation.</p>
                     <p>
-                        <strong>All the questions on this page are required</strong> — every one of them feeds
-                        your results. The only exceptions are the "specify if comfortable" boxes, which stay
-                        entirely up to you. You can still press Save and finish this page later.
+                        <strong>All the questions on this page are required</strong>, except the "specify if
+                        comfortable" boxes, which stay entirely up to you. Some answers shape your guidance today;
+                        others we keep, unused, for support features we are still building — our Privacy Policy
+                        says exactly which. You can still press Save and finish this page later.
                     </p>
                 </div>
             </div>

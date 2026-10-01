@@ -523,6 +523,7 @@ function ReportPage() {
                             topRank={topRank}
                             switchCost={primary === "noCost" ? entry.wastedYears : 0}
                             showAi={secondary === "ai"}
+                            degreeLabel={data.degree || null}
                         />
                     )
                 })}
@@ -534,6 +535,23 @@ function ReportPage() {
                     AI-proof careers are among them.{" "}
                     <button type="button" className="link-button" onClick={() => setExcludeBlueCollar(false)}>Show them again</button>
                 </p>
+            )}
+
+            {/* SUPPORT FOR YOUR EXAMS (Round 10) — only for a student who told us about a difficulty,
+                and only once the owner has checked every line against its official source. */}
+            {data.support && (
+                <details className="report-details">
+                    <summary className="report-summary"><strong>Support you are entitled to</strong></summary>
+                    <ul className="support-list">
+                        {data.support.rows.map((row) => (
+                            <li key={row.id}>
+                                <strong>{row.title}.</strong> {row.text}{" "}
+                                <a href={row.url} target="_blank" rel="noreferrer">{row.source}</a>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="report-small">Checked {data.support.checkedOn}. Rules change — confirm with the exam body when you apply.</p>
+                </details>
             )}
 
             {/* WHAT TO DO NEXT — the report-level plan (owner: both a report-level plan and per-card

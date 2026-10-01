@@ -115,6 +115,35 @@ const SECTIONS = [
         ),
     },
     {
+        id: "sensitive",
+        title: "Sensitive answers: disability and difficult experiences",
+        body: (
+            <>
+                <p>
+                    The interest form asks whether you have a disability and whether you or your family have been
+                    through difficult or traumatic experiences. Every one of these questions has a "Prefer not to
+                    say" answer, and the details box is always up to you.
+                </p>
+                <p>
+                    <strong>Disability.</strong> If you tell us about a difficulty that would make a timed or
+                    on-screen test harder, we use it to let you skip that test — it is then marked "not measured",
+                    never counted as low — and, once our team has checked it, to show you the support you are
+                    entitled to (reserved seats, a scribe, extra exam time). We share it with your mentor only if
+                    you tick the box that says they can know. It is <strong>never used to rank or remove a
+                    career</strong>.
+                </p>
+                <p>
+                    <strong>Difficult experiences (trauma).</strong> These answers are kept, and are{" "}
+                    <strong>not used for anything today</strong> — not in your scores, not in your matches, not in
+                    your report, and they are never sent to the AI services we use. We keep them because we intend
+                    to build support features around them, and only after those have been reviewed; we will update
+                    this policy, and tell you, before they are used for anything. They are never shared, and you can
+                    ask us to delete them at any time without deleting the rest of your account.
+                </p>
+            </>
+        ),
+    },
+    {
         id: "children",
         title: "Children and parental consent",
         body: (

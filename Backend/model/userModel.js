@@ -58,6 +58,19 @@ const userSchema = new mongoose.Schema(
             experienceYears: {
                 type: Number,
             },
+            // Round 10: the degree a college student is doing (or joining) and a working student
+            // holds — a family from data/degree_options.json, and its subject where it has one —
+            // plus a working student's field in their own words. Matching uses the degree so it is
+            // not counted as switching cost for careers it already leads to (degree_families.json).
+            degree: {
+                type: String,
+            },
+            subject: {
+                type: String,
+            },
+            field: {
+                type: String,
+            },
         },
         preferredLanguage: {
             type: String,

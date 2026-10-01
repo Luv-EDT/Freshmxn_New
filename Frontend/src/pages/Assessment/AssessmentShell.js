@@ -196,6 +196,18 @@ function AssessmentShell() {
         }
     }
 
+    // The support answer (and any skips it opens) is saved straight away — it changes what the list
+    // below it offers, so it must not wait for the student to leave a section.
+    const handleSaveAccommodations = async (block) => {
+        try {
+            await savePsychometric({ module: "accommodations", block })
+            await loadSaved()
+            message.success("Saved")
+        } catch (error) {
+            message.error("Could not save — check your connection and try again")
+        }
+    }
+
     const handleModuleDone = async () => {
         const saved = await saveModule()
         if (saved) navigate("/assessment/start")
@@ -279,6 +291,8 @@ function AssessmentShell() {
                     hasNewAnswers={hasNewAnswers}
                     onReadReport={() => navigate("/report")}
                     retakeGranted={psychometric.retakeGranted || {}}
+                    accommodations={psychometric.accommodations || null}
+                    onSaveAccommodations={handleSaveAccommodations}
                 />
             </div>
         )
