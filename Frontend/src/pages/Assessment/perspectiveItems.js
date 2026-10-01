@@ -10,6 +10,9 @@
 //     P31–P32  narrative              report colour, plus the social-desirability flag
 //     P33      intrapersonal          with P7's revisability
 //     U1–U6    uncertainty_tolerance  U7 is a calibration check, deliberately NOT scored
+//     PS1–PS4  persistence            consistency/grit, at 0.20 (04_Item_Bank.md §4c). Added in
+//                                     Round 10 — the scorer always took them, but they were never
+//                                     asked, so grit was built from C, focus and IDM alone
 //
 // THE ANSWER KEYS LIVE IN perspectiveScoring.js, NOT HERE. Options are listed in their scored
 // order by coincidence of drafting, never as a hint — several items score two options equally
@@ -289,6 +292,51 @@ export const PERSPECTIVE_MCQ = [
             "Put in what I could afford to lose",
             "Put in a significant amount — chances like this don't come often",
             "Decline immediately without asking",
+        ]),
+    },
+    // ── persistence — 04_Item_Bank.md §4c, verbatim. Situational, not self-rating ─────────────────
+    {
+        id: "PS1",
+        text: "You started something two months ago that you were excited about. The excitement has gone. The reasons you started still hold. What usually happens?",
+        options: opts([
+            "I keep going — the excitement was never the reason",
+            "I keep going, but I look for a way to make it interesting again",
+            "I slow down and come back to it in bursts",
+            "I move to something new and tell myself I'll return",
+            "It quietly stops",
+        ]),
+    },
+    {
+        id: "PS2",
+        text: "A project you care about reaches the boring part — the repetitive work that has to be done before anything visible happens. What do you do?",
+        options: opts([
+            "Work through it in fixed daily chunks until it's done",
+            "Push through in one long stretch to get past it",
+            "Do it when I feel like it; it eventually gets finished",
+            "Look for a shortcut, or someone else to do it",
+            "This is usually where I stop",
+        ]),
+    },
+    {
+        id: "PS3",
+        text: "Something outside your control — illness, exams, a family situation — stops you for three weeks. How do you come back?",
+        options: opts([
+            "Pick up where I left off within a few days",
+            "Restart, though it takes a week or two to get going",
+            "Restart, at lower intensity than before",
+            "I mean to restart, and often don't",
+            "A three-week gap usually ends it",
+        ]),
+    },
+    {
+        id: "PS4",
+        text: "Something you want is four years away, with no visible progress for the first two. Which is closest to how you would handle it?",
+        options: opts([
+            "Break it into smaller markers so I can see movement",
+            "Just work at it and check progress occasionally",
+            "Work at it while keeping other options open",
+            "I'd want a shorter path to the same place",
+            "Four years with nothing to show isn't something I'd start",
         ]),
     },
 ]

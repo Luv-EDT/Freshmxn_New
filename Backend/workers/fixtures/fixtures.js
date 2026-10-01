@@ -876,11 +876,14 @@ const fixtures = [
             })
 
             // The block has to survive the trip through the real scorer, not merely look plausible.
-            const scored = scoreReasoning(outcome.block)
+            // Once the student confirms the numbers it counts in full; before that it is used but
+            // marked partial (backend review #11, Round 10 — owner-approved change).
+            const scored = scoreReasoning({ ...outcome.block, studentConfirmedAt: new Date() })
+            const unconfirmed = scoreReasoning(outcome.block)
 
-            return { accepted: outcome.accepted, queue: outcome.queue, score: scored.score, quality: scored.quality }
+            return { accepted: outcome.accepted, queue: outcome.queue, score: scored.score, quality: scored.quality, unconfirmed: unconfirmed.quality }
         },
-        expect: { accepted: true, queue: null, score: 7.2, quality: "full" },
+        expect: { accepted: true, queue: null, score: 7.2, quality: "full", unconfirmed: "partial" },
     },
     {
         name: "EXTERNAL — a percentile outside 0-100 is rejected and NOT stored",

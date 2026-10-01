@@ -230,7 +230,11 @@ function func(
       if (v !== null && v !== undefined && !isNaN(v)) { total += v * w; used += w; }
     }
     if (used < 0.6) return null;
-    return { value: total / used, complete: (used > 0.999) };
+    return { value: total / used, complete: (used > 0.999), used: used };
+  }
+
+  function usedOf(c) {
+    return (c === null || c === undefined) ? null : Math.round(Math.min(c.used, 1) * 100) / 100;
   }
 
   /* Confidence must travel downstream. If belief_bank is only "partial"
@@ -735,6 +739,15 @@ function func(
       belief_bank: cBelief, emotion_bank: cEmotion, clm: cClm,
       ei: cEi, firmness: cFirm, focus: cFocus,
       idm: cIdm, consistency: cCons, intrapersonal: cIntra
+    },
+
+    /* COVERAGE - the share of each factor's weight whose input was present,
+       0-1. Added (Round 10) so the profile can say "Partial - 70%" instead
+       of only "partial". Additive: nothing above reads it. */
+    coverage: {
+      ei: usedOf(eiC), firmness: usedOf(firmnessC), focus: usedOf(focusC),
+      idm: usedOf(idmC), consistency: usedOf(consistencyC),
+      intrapersonal: usedOf(intrapersonalC)
     },
 
     /* --- store these: you need them when weights change --- */

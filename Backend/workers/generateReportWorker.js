@@ -127,13 +127,48 @@ const runOne = async (userId) => {
         resolvedActivities,
     })
 
+    // ── the prose, FIRST ─────────────────────────────────────────────────────────────────────
+    // Composed before anything is written, so a compose that fails can never leave a new ranking
+    // live beside the old prose. Nothing below this block runs until the words exist.
+    const release = (profile.completeness && profile.completeness.release) || "withhold"
+
+    // NO MODEL CALL FOR A WITHHELD REPORT. Below the release threshold the page shows the
+    // completion prompt instead of findings, so prose written here is never read by anyone — and a
+    // student who abandons after one module is exactly the student most likely to trigger this.
+    // Paying to write a report for every dropout is a cost that scales with the wrong thing.
+    //
+    // The row is still written, with the reason. That matters: it keeps one report per student
+    // rather than an absent row that looks like a failed pipeline, and the moment they finish more
+    // of the assessment a re-run replaces it with the real thing.
+    let composed
+    let composeFailed = false
+
+    if (release === "withhold") {
+        composed = { sections: { withheld: "Not enough of the assessment is complete to say anything useful yet." }, report_version: REPORT_VERSION }
+    } else {
+        try {
+            composed = await composeReport({ profile, match, user, callLlm: createReportClient() })
+        } catch (error) {
+            // A transient fault (network, rate limit) is thrown on, and the job retries. A
+            // PERMANENT one — the model broke a rule twice — will not get better by retrying, and
+            // the report stands on its data without the three lines, so the student gets it now.
+            if (!error.permanent) throw error
+            console.error(`${QUEUE_NAME} ${userId}: prose could not be written (${error.message.slice(0, 160)}) — report saved without it`)
+            composed = { sections: {}, report_version: REPORT_VERSION }
+            composeFailed = true
+        }
+    }
+
+    const { sections, report_version } = composed
+    const now = new Date()
+
     await Recommendation.findOneAndUpdate(
         { user: userId },
         {
             $set: {
                 user: userId,
                 sessionId: submission ? submission.sessionId : null,
-                generatedAt: new Date(),
+                generatedAt: now,
                 scoring_version: profile.scoring_version,
                 norm_set_id: profile.norm_set_id || null,
                 taxonomy_version: professions.generated_on || null,
@@ -141,6 +176,7 @@ const runOne = async (userId) => {
                 matching_version: match.matching_version,
                 ranked_professions: match.ranked,
                 worth_the_switch: match.worthTheSwitch,
+                combined_careers: match.combined || [],
                 filtered: match.filtered,
                 aspiration_signals: match.aspirationSignals,
                 readiness_layer: {
@@ -157,35 +193,23 @@ const runOne = async (userId) => {
         { upsert: true, returnDocument: "after" }
     )
 
-    // ── the prose ────────────────────────────────────────────────────────────────────────────
-    const release = (profile.completeness && profile.completeness.release) || "withhold"
-
-    // NO MODEL CALL FOR A WITHHELD REPORT. Below the release threshold the page shows the
-    // completion prompt instead of findings, so prose written here is never read by anyone — and a
-    // student who abandons after one module is exactly the student most likely to trigger this.
-    // Paying to write a report for every dropout is a cost that scales with the wrong thing.
-    //
-    // The row is still written, with the reason. That matters: it keeps one report per student
-    // rather than an absent row that looks like a failed pipeline, and the moment they finish more
-    // of the assessment a re-run replaces it with the real thing.
-    const composed = release === "withhold"
-        ? { sections: { withheld: "Not enough of the assessment is complete to say anything useful yet." }, report_version: REPORT_VERSION }
-        : await composeReport({ profile, match, user, callLlm: createReportClient() })
-
-    const { sections, report_version } = composed
-
+    // generatedAt is the FIRST report's date and is never overwritten (it anchors the 6- and
+    // 12-month follow-up), so it lives only in $setOnInsert; each rebuild moves lastGeneratedAt.
     await Report.findOneAndUpdate(
         { user: userId },
         {
+            $setOnInsert: { generatedAt: now },
             $set: {
                 user: userId,
-                generatedAt: new Date(),
+                lastGeneratedAt: now,
+                sourceSubmittedAt: profile.sourceSubmittedAt || null,
                 report_version,
                 matching_version: match.matching_version,
                 scoring_version: profile.scoring_version,
                 journey: user.journey || null,
                 release,
                 sections,
+                composeFailed,
                 model: process.env.REPORT_MODEL || "claude-sonnet-5",
                 reviewStatus: "unreviewed",
             },
@@ -216,8 +240,25 @@ const start = async () => {
     // attempt. One compact line per problem, so a completed job stays visible.
     attachConnectionLogging(worker, QUEUE_NAME)
 
-    worker.on("completed", (job, result) => {
+    worker.on("completed", async (job, result) => {
         console.log(`${QUEUE_NAME} ${job.id} — ${result.ranked} professions ranked, release ${result.release}`)
+
+        // A re-score that finished while this job ran could not queue a new report (this one was
+        // still active). If the profile moved on, build again from the newer one.
+        try {
+            const [profile, report] = await Promise.all([
+                Profile.findOne({ user: job.data.userId }, { sourceSubmittedAt: 1 }).lean(),
+                Report.findOne({ user: job.data.userId }, { sourceSubmittedAt: 1 }).lean(),
+            ])
+            const scored = profile && profile.sourceSubmittedAt && new Date(profile.sourceSubmittedAt).getTime()
+            const built = report && report.sourceSubmittedAt && new Date(report.sourceSubmittedAt).getTime()
+            if (scored && (!built || built < scored)) {
+                console.log(`${QUEUE_NAME} ${job.data.userId} — the profile changed while the report was being built, building again`)
+                await enqueueGenerateReport(job.data.userId)
+            }
+        } catch (error) {
+            console.error(`${QUEUE_NAME} ${job.data.userId}: could not check for a newer profile — ${error.message}`)
+        }
     })
 
     worker.on("failed", async (job, error) => {

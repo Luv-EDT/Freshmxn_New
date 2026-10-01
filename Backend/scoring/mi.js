@@ -39,6 +39,7 @@ const scoreMi = (block) => {
     const answers = (block && block.answers) || {}
     const scores = {}
     const quality = {}
+    const coverage = {}
     const flags = {}
     const means = []
     const allItemIds = []
@@ -49,6 +50,7 @@ const scoreMi = (block) => {
 
         const ratio = coverageOf(answers, itemIds)
         const itemQuality = qualityFromCoverage(ratio)
+        coverage[intelligence] = itemQuality === null ? null : round2(ratio)
 
         if (itemQuality === null) {
             scores[intelligence] = null
@@ -82,7 +84,7 @@ const scoreMi = (block) => {
         flags.straightline_mi = true
     }
 
-    return { scores, quality, flags }
+    return { scores, quality, coverage, flags }
 }
 
 module.exports = scoreMi

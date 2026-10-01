@@ -118,22 +118,37 @@ const scoreStoryRecall = (block, freeRecallResult) => {
     // ── Part A: free recall, already scored 0–2 per fact by the LLM ──────────
     let freeRecallPoints = 0
     let freeRecallQuality = "full"
+    // Out of how many points the student is marked. A free recall that was GRADED counts in full,
+    // including a real 0. A free recall that could not be graded — the model failed or declared it
+    // unscoreable — is missing data, not an absent memory, so it is left out of the denominator
+    // rather than scored as 0 out of 5 (backend review #7: 7/7 structured with no grade used to read
+    // as 5.83). ALL THREE LEFT BLANK is different: blank answers never reach the model, but the
+    // rubric scores an absent fact 0, and a student who recalled nothing at all has a real result.
+    let outOf = TOTAL_POINTS
+    const freeText = block.freeText || {}
+    const allBlank = ["LR1", "LR2", "LR3"].every((id) => typeof freeText[id] !== "string" || freeText[id].trim() === "")
+    const submitted = Boolean(block.submittedAt) || Object.keys(structured).length > 0
 
     if (freeRecallResult && freeRecallResult.score !== null && freeRecallResult.score !== undefined) {
         freeRecallPoints = (freeRecallResult.score / FREE_RECALL_RAW_MAX) * FREE_RECALL_SLOTS
+    } else if (allBlank && submitted && block.freeText) {
+        // a genuine 0: they answered the recall and wrote nothing for the three facts
+        freeRecallPoints = 0
     } else {
-        // the LLM could not score it — the structured half still stands, marked partial
+        // the structured half still stands on its own, marked partial
         freeRecallQuality = "partial"
         flags.llm_unscoreable = true
+        outOf = TOTAL_POINTS - FREE_RECALL_SLOTS
     }
 
     const total = structuredPoints + freeRecallPoints
 
     return {
-        score: round2((total / TOTAL_POINTS) * 10),
+        score: round2((total / outOf) * 10),
         quality: freeRecallQuality,
+        coverage: round2(outOf / TOTAL_POINTS),
         numeric_recall: round2(numericPoints * 10),
-        verbal_recall: round2(((structuredPoints - numericPoints + freeRecallPoints) / (TOTAL_POINTS - 1)) * 10),
+        verbal_recall: round2(((structuredPoints - numericPoints + freeRecallPoints) / (outOf - 1)) * 10),
         structured_points: structuredPoints,
         free_recall_points: round2(freeRecallPoints),
         flags,

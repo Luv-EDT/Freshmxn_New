@@ -62,11 +62,24 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
             })
         }
 
-        const row = await MentorWaitlist.findOneAndUpdate(
+        let row = await MentorWaitlist.findOneAndUpdate(
             { user: req.user._id },
             { $setOnInsert: { user: req.user._id, matchStatus: "awaiting_choice" } },
             { upsert: true, returnDocument: "after" }
         )
+
+        // A row closed when the student left Tier 2 (paymentsRouter closeMentorWaitlist) belongs to
+        // that earlier place. Being on Tier 2 again means a new place: fresh choice, fresh clock.
+        if (row.resolution === "left_tier2") {
+            row = await MentorWaitlist.findOneAndUpdate(
+                { _id: row._id },
+                {
+                    $set: { matchStatus: "awaiting_choice", resolution: null, adminNote: "Re-opened on a new Tier 2 place" },
+                    $unset: { chosenProfessionId: "", chosenProfessionName: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                },
+                { returnDocument: "after" }
+            )
+        }
 
         return res.status(200).json({
             success: true,

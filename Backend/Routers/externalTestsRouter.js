@@ -220,6 +220,12 @@ router.post("/confirmResult", authMiddleware, requirePaid, async (req, res) => {
         // Clearing the block instead would also hand anyone a way to erase a low score by pressing
         // "no", so the honest version is: it stays, it is flagged, and it is re-uploadable.
         if (agrees === false) {
+            // marked on the block too, so the scorer — which never reads Verification — can see it
+            await Submission.findOneAndUpdate(
+                { user: req.user._id },
+                { $set: { [`psychometric.${moduleKey}.disputedAt`]: new Date(), lastSavedAt: new Date() } }
+            )
+
             await Verification.create({
                 user: req.user._id,
                 module: moduleKey,
@@ -239,7 +245,7 @@ router.post("/confirmResult", authMiddleware, requirePaid, async (req, res) => {
 
         await Submission.findOneAndUpdate(
             { user: req.user._id },
-            { $set: { [`psychometric.${moduleKey}.studentConfirmedAt`]: new Date(), lastSavedAt: new Date() } }
+            { $set: { [`psychometric.${moduleKey}.studentConfirmedAt`]: new Date(), [`psychometric.${moduleKey}.disputedAt`]: null, lastSavedAt: new Date() } }
         )
 
         return res.status(200).json({ success: true, message: "Confirmed", data: { locked: true, disputed: false } })

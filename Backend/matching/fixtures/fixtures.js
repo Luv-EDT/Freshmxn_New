@@ -328,9 +328,27 @@ const fixtures = [
         expect: { years: 2 },
     },
     {
-        name: "undergrad year 3 is waste at 0.5 a year — close to done, skills carry",
+        name: "undergrad year 3 adds 0.5 on top of years 1-2 — close to done, skills carry",
+        // Round 10 (owner-approved fix, backend review #16): the late rate applies to the years
+        // from 3 on, not to all of them, so a later year never counts as less invested.
         run: () => wasteFor(professions[0], { stage: "college", stream: [], preAdmission: false, courseYear: 3 }),
-        expect: { years: 1.5 },
+        expect: { years: 2.5 },
+    },
+    {
+        name: "undergrad switching cost never falls as the years go up",
+        run: () => {
+            const years = [1, 2, 3, 4].map((courseYear) => wasteFor(professions[0], { stage: "college", stream: [], preAdmission: false, courseYear }).years)
+            return years.every((value, index) => index === 0 || value >= years[index - 1]) ? null : `not monotonic: ${years.join(", ")}`
+        },
+        expect: null,
+    },
+    {
+        name: "the age limit reads the student's own age",
+        run: () => {
+            const { readJourney } = require("../journey")
+            return readJourney({ journey: "early_professional", age: 66, journeyDetail: {} }).age
+        },
+        expect: 66,
     },
     {
         name: "after_any_degree waives study waste entirely — finish, then switch",

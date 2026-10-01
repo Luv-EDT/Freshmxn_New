@@ -163,7 +163,10 @@ function ReportPage() {
                 const data = response.data.data
                 setState({ loading: false, data, error: "" })
 
+                // "stale" polls too: the server has just queued the fresh version, and the page swaps
+                // to it the moment it lands. A slower poll, because the old report is still readable.
                 if (data.status === "generating") timer = setTimeout(load, 5000)
+                if (data.status === "stale") timer = setTimeout(load, 15000)
             } catch (error) {
                 if (!cancelled) setState({ loading: false, data: null, error: "Could not load your report" })
             }

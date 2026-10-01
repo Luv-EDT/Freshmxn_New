@@ -148,7 +148,34 @@ router.post("/saveInterest", authMiddleware, requirePaid, async (req, res) => {
 // A session whose timing check failed writes `sartMeta` and NO `sartRaw`, which is the honest
 // outcome: processing speed resolves to null rather than to a confident number produced by a
 // browser that was dropping frames. scoreProfile reads named keys only, so this one passes it by.
-const MODULE_KEYS = ["ipip50", "mi", "rosenberg", "confidence", "perspective", "digitSpan", "sartRaw", "sartMeta", "extReasoning", "extVerbal", "storyRecall"]
+// WHAT THE BROWSER MAY WRITE, module by module (backend review #9). Before this, any module key was
+// accepted and the whole block overwritten, which let a save do three bad things:
+//   - wipe server-owned results — a perspective save without `open` erased the written-answer
+//     grades (and re-billed all four), and a save landing mid-scoring overwrote the worker's write;
+//   - overwrite blocks only the server writes — the digit span's marked trials, the story recall's
+//     facts, an external test's extracted score — with anything at all;
+//   - replace a SART run, whose "one attempt" rule lived only in the UI.
+//
+// `null` means the whole block belongs to the browser (a questionnaire's answers). A list means
+// only those fields do, and each is written by its own dotted path so everything else on the block
+// — including grades the worker is writing right now — is left exactly where it is. Modules the
+// server owns are not listed, and are refused.
+const CLIENT_OWNED = {
+    "ipip50": null,
+    "mi": null,
+    "rosenberg": null,
+    "confidence": null,
+    "interests60": null,
+    "accommodations": null,
+    "perspective": ["answers", "narrative", "openText"],
+    "sartMeta": null,
+    "sartRaw": null,
+}
+const MODULE_KEYS = Object.keys(CLIENT_OWNED)
+
+// Written ONCE. A second SART run only replaces the first through a sanctioned retry — the
+// automatic one for a run that did not record properly, or one an admin grants (retakeGrants).
+const WRITE_ONCE = ["sartRaw"]
 
 router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) => {
     try {
@@ -168,9 +195,40 @@ router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) =
             })
         }
 
+        const fields = CLIENT_OWNED[module]
+        if (fields && (typeof block !== "object" || Array.isArray(block))) {
+            return res.status(400).json({ success: false, message: "Assessment answers are in the wrong shape" })
+        }
+
+        const changes = { lastSavedAt: new Date() }
+        const unset = {}
+
+        if (WRITE_ONCE.includes(module)) {
+            const existing = await Submission.findOne({ user: req.user._id }).select(`psychometric.${module} psychometric.retakeGrants`).lean()
+            const psychometric = (existing && existing.psychometric) || {}
+            const already = psychometric[module]
+            const granted = psychometric.retakeGrants && psychometric.retakeGrants[module]
+
+            if (already && !granted) {
+                return res.status(409).json({ success: false, message: "This test has already been recorded" })
+            }
+            if (granted) unset[`psychometric.retakeGrants.${module}`] = ""
+        }
+
+        if (fields) {
+            fields.forEach((field) => {
+                if (block[field] !== undefined) changes[`psychometric.${module}.${field}`] = block[field]
+            })
+        } else {
+            changes[`psychometric.${module}`] = block
+        }
+
+        const update = { $set: changes }
+        if (Object.keys(unset).length > 0) update.$unset = unset
+
         const updatedSubmission = await Submission.findOneAndUpdate(
             { user: req.user._id },
-            { $set: { [`psychometric.${module}`]: block, lastSavedAt: new Date() } },
+            update,
             { returnDocument: "after", upsert: true }
         )
 
@@ -262,6 +320,16 @@ router.post("/digitSpanNext", authMiddleware, requirePaid, async (req, res) => {
 
         if (length === null) {
             return res.status(200).json({ success: true, message: "Digit span complete", data: { done: true, trials: trials.length } })
+        }
+
+        // A sequence already shown and not yet answered is shown AGAIN, not replaced. Otherwise a
+        // refresh after seeing a hard sequence deals a fresh one at the same length — a free reroll.
+        if (block.pending && block.pending.length === length && block.pending.digits) {
+            return res.status(200).json({
+                success: true,
+                message: "Next sequence",
+                data: { done: false, length, digits: block.pending.digits },
+            })
         }
 
         const digits = makeSequence(length)
@@ -377,7 +445,17 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
         // machine with no REDIS_URL must still be able to load this router and serve every other
         // route on it.
         const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
-        await enqueueScoreProfile(req.user._id)
+        const { withTimeout } = require("../workers/queueHelpers")
+
+        try {
+            await withTimeout(enqueueScoreProfile(req.user._id), "queueing the report")
+        } catch (queueError) {
+            // The answers and "done" are committed, but nothing is working on them. Without this the
+            // student's page would say "generating" forever (backend review #17); marked as failed,
+            // it offers "Try again" instead, which re-queues.
+            await User.findByIdAndUpdate(req.user._id, { reportFailedAt: new Date() })
+            throw queueError
+        }
 
         return res.status(201).json({
             success: true,
@@ -401,14 +479,43 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
 // Get My Submission
 // ========================
 
+// What the student's own browser gets back. Grades, the graders' notes and answer keys stay on the
+// server: they are not the student's to see, and a page that never receives the written-answer
+// grades can never send them back in a save (backend review #9, the root of that round-trip).
+const forStudent = (submission) => {
+    if (!submission || !submission.psychometric) return submission
+    const psychometric = { ...submission.psychometric }
+
+    if (psychometric.perspective) {
+        const { open, openMeta, ...perspective } = psychometric.perspective
+        psychometric.perspective = perspective
+    }
+    if (psychometric.storyRecall) {
+        const { free, freeMeta, facts, ...story } = psychometric.storyRecall
+        psychometric.storyRecall = story
+    }
+    if (psychometric.digitSpan) {
+        const { pending, ...span } = psychometric.digitSpan
+        psychometric.digitSpan = { ...span, trials: (span.trials || []).map(({ correct, ...trial }) => trial) }
+    }
+    if (psychometric.reasoning) {
+        const { items, pending, ...reasoning } = psychometric.reasoning
+        psychometric.reasoning = { ...reasoning, answered: (reasoning.responses || []).length }
+        delete psychometric.reasoning.responses
+    }
+    delete psychometric.history
+
+    return { ...submission, psychometric }
+}
+
 router.get("/getMySubmission", authMiddleware, requirePaid, async (req, res) => {
     try {
-        const submission = await Submission.findOne({ user: req.user._id })  // ← filter by logged in user
+        const submission = await Submission.findOne({ user: req.user._id }).lean()  // ← filter by logged in user
 
         return res.status(200).json({
             success: true,
             message: "Submission fetched successfully",
-            data: submission,
+            data: forStudent(submission),
         })
 
     } catch (error) {

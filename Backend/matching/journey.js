@@ -33,7 +33,9 @@ const readJourney = (user) => {
         preAdmission: Boolean(detail.preAdmission) || detail.collegeStage === "pre_admission",
         courseYear: typeof detail.courseYear === "number" ? detail.courseYear : null,
         experienceYears: typeof detail.experienceYears === "number" ? detail.experienceYears : null,
-        age: typeof detail.age === "number" ? detail.age : null,
+        // Age lives on the user, not in journeyDetail — reading it from journeyDetail meant the
+        // age limit could never fire (backend review #15). Both are accepted, user first.
+        age: typeof (user && user.age) === "number" ? user.age : (typeof detail.age === "number" ? detail.age : null),
         yearsSinceClass12: typeof detail.yearsSinceClass12 === "number" ? detail.yearsSinceClass12 : null,
     }
 }
@@ -81,10 +83,14 @@ const wasteFor = (profession, journey) => {
     if (journey.stage === "college" && !waived) {
         // Nothing has been invested yet, so there is nothing to abandon.
         if (!journey.preAdmission) {
+            // PER YEAR, by the year it is: years 1-2 at the early rate, each year from 3 on at the
+            // late one (DECISIONS §5's table read as marginal rates). Applying the late rate to ALL
+            // years made a third-year student look less invested than a second-year one — 1.5
+            // against 2 (backend review #16). Now it only ever rises: 1, 2, 2.5, 3.
             const year = journey.courseYear || 0
-            breakdown.undergrad = year >= 3
-                ? year * WASTE_WEIGHTS.undergrad_late
-                : year * WASTE_WEIGHTS.undergrad_early
+            const early = Math.min(year, 2)
+            const late = Math.max(year - 2, 0)
+            breakdown.undergrad = early * WASTE_WEIGHTS.undergrad_early + late * WASTE_WEIGHTS.undergrad_late
         }
     }
 
@@ -126,8 +132,10 @@ const hardFilterReason = (profession, journey) => {
     const window = profession.entry_window
     if (!window || !window.is_hard_block) return null
 
-    // A bypass named on the record is the record saying the door is not actually shut.
-    if (Array.isArray(window.bypass) && window.bypass.length > 0) return null
+    // A bypass named on the record is the record saying the door is not actually shut. Three
+    // records store it as a sentence rather than a list; a non-empty sentence is a bypass too.
+    const bypass = Array.isArray(window.bypass) ? window.bypass : (typeof window.bypass === "string" && window.bypass.trim() !== "" ? [window.bypass] : [])
+    if (bypass.length > 0) return null
 
     if (typeof window.max_age === "number" && typeof journey.age === "number" && journey.age > window.max_age) {
         return `entry closes at age ${window.max_age}`

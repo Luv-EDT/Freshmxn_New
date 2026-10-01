@@ -31,7 +31,10 @@ const { buildAspirationSignals } = require("./aspirationSignal")
 const { readJourney } = require("./journey")
 const constants = require("./constants")
 
-const MATCHING_VERSION = "matching@1.0.0"
+// 1.1.0 (Round 10): undergrad switching cost rises with every year (1, 2, 2.5, 3); the age limit
+// reads the student's real age. A different ranking from the same answers, hence the bump — a stored
+// report on 1.0.0 shows as stale and rebuilds itself.
+const MATCHING_VERSION = "matching@1.1.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort }) => {
     if (!profile) throw new Error("matchProfile: profile is required")

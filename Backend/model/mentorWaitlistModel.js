@@ -38,7 +38,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
             type: Date,
         },
         resolution: {
-            type: String, // matched | rolled_over | refunded — recorded here; money still moves through the refund tooling
+            type: String, // matched | rolled_over | refunded | left_tier2 (set automatically when the student moves off Tier 2) — recorded here; money still moves through the refund tooling
         },
         adminNote: {
             type: String,

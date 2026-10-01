@@ -58,6 +58,10 @@ const recommendationSchema = new mongoose.Schema(
             type: Array,
             default: [], // the §5 second list. Ranked on RAW fit, cost shown but not applied — shown BESIDE the ranking, never instead of it
         },
+        combined_careers: {
+            type: Array,
+            default: [], // hand-checked careers joining two of the student's areas (combined_careers.json) — shown beside the list, never ranked into it
+        },
         filtered: {
             type: Array,
             default: [], // professions removed because entry is genuinely impossible, with the reason

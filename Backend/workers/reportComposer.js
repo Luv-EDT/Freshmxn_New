@@ -206,31 +206,68 @@ const buildPayload = ({ profile, match, user }) => ({
     dominantReasons: match.programOne.dominantReasons,
 })
 
-const composeReport = async ({ profile, match, user, callLlm }) => {
-    const payload = buildPayload({ profile, match, user })
+// The three keys a 3.x reply carries. Anything else the model adds is dropped rather than stored,
+// so a stray key can never reach the page, and a non-string value — which the page would try to
+// render as a React child — fails the reply instead of crashing the report.
+const SECTION_KEYS = ["opening", "yourMatches", "readiness"]
 
-    const raw = await callLlm({
-        system: SYSTEM_PROMPT,
-        user: `<data>\n${JSON.stringify(payload, null, 1)}\n</data>\n\nWrite this student's report.`,
-    })
+// A reply that breaks a rule is not a transient fault: asking again with the same prompt mostly
+// buys the same reply and another bill. So it is asked ONCE more with the rule restated, and then
+// the failure is marked permanent and the worker stops retrying it.
+const REMINDER = "\n\nYour previous reply was rejected: it either used an internal term the student must never see, or did not return the three string keys. Return only the JSON object with opening, yourMatches and readiness as plain strings."
 
+const permanent = (message) => {
+    const error = new Error(message)
+    error.permanent = true
+    return error
+}
+
+const checkReply = (raw, studentText) => {
     const text = typeof raw === "string" ? raw : JSON.stringify(raw)
     const start = text.indexOf("{")
     const end = text.lastIndexOf("}")
 
-    if (start === -1 || end === -1) throw new Error(`report: no JSON object in reply — ${text.slice(0, 200)}`)
+    if (start === -1 || end === -1) return { problem: `report: no JSON object in reply — ${text.slice(0, 200)}` }
 
-    const sections = JSON.parse(text.slice(start, end + 1))
+    let parsed
+    try {
+        parsed = JSON.parse(text.slice(start, end + 1))
+    } catch (error) {
+        return { problem: `report: reply is not valid JSON — ${error.message}` }
+    }
 
-    // The rule is enforced here, not hoped for. Neither term is ever put in the prompt, so seeing
-    // one come back means something upstream changed and a student is about to be shown a number
-    // that is explicitly not for them.
+    const sections = {}
+    for (const key of SECTION_KEYS) {
+        if (parsed[key] === undefined || parsed[key] === null) continue
+        if (typeof parsed[key] !== "string") return { problem: `report: section ${key} is not a string` }
+        sections[key] = parsed[key]
+    }
+    if (Object.keys(sections).length === 0) return { problem: "report: none of the expected sections came back" }
+
+    // The rule is enforced here, not hoped for. The identifiers are never in the prompt, so seeing
+    // one come back means something upstream changed. The spaced spellings are different: a student
+    // can write "data quality checks" as an activity, and a model quoting the student's own words is
+    // not a leak — so a spaced phrase fails only when it is not already in what the student wrote.
     const body = Object.values(sections).join(" ").toLowerCase()
-    const leaked = FORBIDDEN.filter((term) => body.includes(term))
+    const leaked = FORBIDDEN.filter((term) => body.includes(term) && (term.includes("_") || !studentText.includes(term)))
 
-    if (leaked.length > 0) throw new Error(`report leaked forbidden terms: ${leaked.join(", ")}`)
+    if (leaked.length > 0) return { problem: `report leaked forbidden terms: ${leaked.join(", ")}` }
 
-    return { sections, report_version: REPORT_VERSION }
+    return { sections }
+}
+
+const composeReport = async ({ profile, match, user, callLlm }) => {
+    const payload = buildPayload({ profile, match, user })
+    const studentText = JSON.stringify(payload).toLowerCase()
+    const prompt = `<data>\n${JSON.stringify(payload, null, 1)}\n</data>\n\nWrite this student's report.`
+
+    const first = checkReply(await callLlm({ system: SYSTEM_PROMPT, user: prompt }), studentText)
+    if (first.sections) return { sections: first.sections, report_version: REPORT_VERSION }
+
+    const second = checkReply(await callLlm({ system: SYSTEM_PROMPT, user: prompt + REMINDER }), studentText)
+    if (second.sections) return { sections: second.sections, report_version: REPORT_VERSION }
+
+    throw permanent(second.problem)
 }
 
 const MAX_RETRIES = 4
@@ -245,9 +282,31 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 // recover from a dropped TCP connection — and it waits ten seconds first. A caught ECONNRESET
 // during the very first live run is what prompted this: transient network faults are the common
 // case for a long single request, and they deserve a two-second retry, not a whole job cycle.
+// Which failures are worth repeating. A 400 means the request is wrong and will be wrong again —
+// Day 3 learned that the expensive way, retrying a deterministic failure nine times. A 429 (rate
+// limit), 408/409 and any 5xx are the service being busy, and a network error is the network. A
+// reply cut off at max_tokens will be cut off again, so it is permanent.
+const isTransient = (error) => {
+    if (error.permanent) return false
+    const status = error.status
+    if (typeof status !== "number") return true
+    return status === 408 || status === 409 || status === 429 || status >= 500
+}
+
+const REQUEST_TIMEOUT_MS = 120000
+
+// The concrete client, written the way Day 3 learned it has to be: NO temperature parameter —
+// claude-sonnet-5 rejects it outright with a 400.
+//
+// IT RETRIES HERE AS WELL AS AT THE JOB LEVEL, and the two are not redundant. BullMQ will retry the
+// whole `generate_report` job, but that means re-resolving activities and re-running the match to
+// recover from a dropped TCP connection — and it waits ten seconds first. A caught ECONNRESET
+// during the very first live run is what prompted this: transient network faults are the common
+// case for a long single request, and they deserve a two-second retry, not a whole job cycle.
 const createReportClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = process.env.REPORT_MODEL || "claude-sonnet-5" } = {}) => (
     async ({ system, user }) => {
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+            let waitMs = Math.min(2000 * 2 ** (attempt - 1), 15000)
             try {
                 const response = await fetch(ANTHROPIC_ENDPOINT, {
                     method: "POST",
@@ -258,24 +317,28 @@ const createReportClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = pr
                         system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
                         messages: [{ role: "user", content: user }],
                     }),
+                    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
                 })
 
-                if (!response.ok) throw new Error(`Anthropic HTTP ${response.status} — ${(await response.text()).slice(0, 300)}`)
+                if (!response.ok) {
+                    const error = new Error(`Anthropic HTTP ${response.status} — ${(await response.text()).slice(0, 300)}`)
+                    error.status = response.status
+                    // a rate limit says how long to wait; honour it, within reason
+                    const retryAfter = Number(response.headers.get("retry-after"))
+                    if (retryAfter > 0) waitMs = Math.min(retryAfter * 1000, 60000)
+                    throw error
+                }
 
                 const payload = await response.json()
 
-                if (payload.stop_reason === "max_tokens") throw new Error("report reply hit max_tokens")
+                if (payload.stop_reason === "max_tokens") throw permanent("report reply hit max_tokens")
+                if (!Array.isArray(payload.content)) throw new Error("report reply had no content")
 
                 return payload.content.map((block) => block.text || "").join("")
             } catch (error) {
-                // A 400 means the request is wrong and will be wrong again; only transient faults
-                // are worth repeating. Day 3 learned this the expensive way — retrying a
-                // deterministic failure nine times bought nine identical failures and a bill.
-                const transient = !error.message.includes("HTTP 4")
+                if (attempt === MAX_RETRIES || !isTransient(error)) throw error
 
-                if (attempt === MAX_RETRIES || !transient) throw error
-
-                await sleep(Math.min(2000 * 2 ** (attempt - 1), 15000))
+                await sleep(waitMs)
             }
         }
     }
@@ -284,4 +347,4 @@ const createReportClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = pr
 // FACTOR_LABELS is exported so reportsRouter can translate the same slugs on the way to the page.
 // One map, two consumers — the prose the model writes and the list beside it name a factor the same
 // way, and there is a single place to change it.
-module.exports = { composeReport, createReportClient, buildPayload, SYSTEM_PROMPT, REPORT_VERSION, FORBIDDEN, FACTOR_LABELS }
+module.exports = { composeReport, createReportClient, buildPayload, isTransient, SYSTEM_PROMPT, REPORT_VERSION, FORBIDDEN, SECTION_KEYS, FACTOR_LABELS }

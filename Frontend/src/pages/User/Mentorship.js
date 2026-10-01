@@ -170,7 +170,7 @@ function Mentorship() {
                         <h3>We couldn't match you in time</h3>
                         <p>
                             {waitlist.resolution === "refunded"
-                                ? "We've arranged your full refund."
+                                ? "We've moved you back to Career Discovery and arranged the refund of the difference."
                                 : "Your payment has rolled over — we're still searching, or you can redirect it. We'll be in touch."}
                         </p>
                     </section>
