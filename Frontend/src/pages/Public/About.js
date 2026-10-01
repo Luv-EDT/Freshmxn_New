@@ -33,8 +33,8 @@ function About() {
                                     src={FOUNDER_PHOTO}
                                     alt="Luv Goel, founder of Freshmxn's Lab"
                                     className="founder-photo"
-                                    width="200"
-                                    height="200"
+                                    width="260"
+                                    height="260"
                                     onError={() => setPhotoOk(false)}
                                 />
                             )}

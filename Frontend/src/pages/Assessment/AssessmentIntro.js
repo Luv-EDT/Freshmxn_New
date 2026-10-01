@@ -1,4 +1,5 @@
 import { TOTAL_MINUTES } from "./assessmentModules"
+import { reviewLabel } from "./moduleLabels"
 
 // The assessment's landing page — every section, what is done, what is still to come.
 //
@@ -62,7 +63,7 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
         // Three states, not two. "Review answers" on a module the student has barely begun tells
         // them they have finished something they have not, and they stop returning to it. A
         // started-but-unfinished module says Continue.
-        let label = isDone ? "Review answers" : isStarted ? "Continue" : "Start"
+        let label = isDone ? reviewLabel(module) : isStarted ? "Continue" : "Start"
 
         // The story's button follows its clock, not its answers. "Continue" during the 24-hour wait
         // invites a student to open a section that can only tell them to come back later — and
@@ -74,14 +75,12 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 waiting: "Check the time left",
                 recall: "Answer the questions",
                 expired: "See what happened",
-                submitted: "Review answers",
+                submitted: reviewLabel(module),
             }
             label = byPhase[storyState.phase] || label
         }
 
-        // "Review answers" is wrong for a one-attempt test: there is nothing to change, and
-        // offering it invites a student to go looking for an edit button that does not exist.
-        if (isDone && (module.external || module.key === "sartRaw")) label = "See what was saved"
+        // The finished label itself says whether anything can still be changed — see reviewLabel.
 
         return (
             <div key={module.key} className={`module-row${isDone ? " is-done" : ""}`}>

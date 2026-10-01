@@ -522,6 +522,7 @@ function ReportPage() {
                             journey={journey}
                             topRank={topRank}
                             switchCost={primary === "noCost" ? entry.wastedYears : 0}
+                            showAi={secondary === "ai"}
                         />
                     )
                 })}

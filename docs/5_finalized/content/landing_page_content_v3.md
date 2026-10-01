@@ -20,10 +20,10 @@ highlight only.** All statistics verified to a citable source — cite inline on
 **Eyebrow:** FRESHMXN'S LAB
 **Headline (Orelega One):** Explore. Get clarity. Take action.  *(the company tagline — owner, 2026-09-24)*
 **Closing statement (end of the page, before About):** Careers that fit *you*. And the future.
-**Body:** Everybody is different — so why does everyone get similar career advice? Stuck between what
-you love, what you're studying, and what the market wants? Scared AI will take your job? Freshmxn's
-Lab matches your story and strengths to careers that are **in demand and AI-resilient** — then helps
-you get there, with mentors who've already done it.
+**Body (as on the site, owner Round 10):** We match your story and strengths to careers that are
+**in demand and AI-resilient**, then help you get there with mentors who've done it.
+**Hero picture:** an illustration of a happy student (inline SVG, brand colours) — it replaced the
+"Your ranked matches" preview card, which the owner found text-heavy.
 **Primary CTA (teal):** Let's figure out your career →
 **Secondary CTA (ghost):** See how it works
 

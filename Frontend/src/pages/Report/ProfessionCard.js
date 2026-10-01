@@ -72,6 +72,13 @@ const DEMAND_WORDS = {
     declining: "Declining — shrinking over time",
 }
 
+// "53/100 (medium)" — the value behind the band, shown on the card and beside each row when the
+// list is sorted by AI exposure (owner, Round 10). Higher means more of the work is exposed.
+export const aiExposureText = (detail) => {
+    if (!detail || !detail.aiExposure || typeof detail.aiExposure.raw !== "number") return null
+    return `${Math.round(detail.aiExposure.raw)}/100${detail.aiExposure.band ? ` (${detail.aiExposure.band})` : ""}`
+}
+
 const AI_WORDS = {
     low: "Low — the core of this work is hard to automate",
     medium: "Medium — parts of it are already changing",
@@ -130,7 +137,7 @@ const monthYear = (iso) => {
         : null
 }
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank }) {
+function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi }) {
     const [open, setOpen] = useState(false)
 
     const toggle = () => {
@@ -171,6 +178,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
         : null
     const laterStage = journey === "college" || journey === "early_professional"
     const blueCollar = Boolean(detail && detail.blueCollar)
+    const aiValue = aiExposureText(detail)
 
     return (
         <div className={`profession-card${topRank ? ` is-top is-top-${topRank}` : ""}${open ? " is-open" : ""}`}>
@@ -186,6 +194,13 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                     {topRank > 0 && <span className="pc-top">Top match</span>}
                     {entry.profession}
                     {blueCollar && <span className="pc-tag">Blue-collar</span>}
+                    {/* Round 10 (owner): when a career's picture is incomplete, say how much of what
+                        it needs was measured — and say nothing when it is complete */}
+                    {typeof entry.measuredPct === "number" && (
+                        <span className="pc-partial">Partial · {entry.measuredPct}% measured</span>
+                    )}
+                    {/* the AI sub-sort shows the number it is sorting by */}
+                    {showAi && aiValue && <span className="pc-ai">AI exposure {aiValue}</span>}
                 </span>
                 <span className="pc-sign" aria-hidden="true">{open ? "−" : "+"}</span>
             </button>
@@ -391,6 +406,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                     {detail.aiExposure && (
                                         <Section title="How AI affects this">
                                             <p className="pc-line">{AI_WORDS[detail.aiExposure.band] || detail.aiExposure.band}</p>
+                                            {aiValue && <p className="pc-small">AI exposure: <strong>{aiValue}</strong> — higher means more of the work is exposed to AI.</p>}
                                             {detail.aiExposure.workMostly && detail.aiExposure.workMostly.length > 0 && (
                                                 <p className="pc-small">The work is mostly {detail.aiExposure.workMostly.join(" and ")}.</p>
                                             )}

@@ -4,6 +4,7 @@ import { getMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
 import { whyFits } from "./reportPlan"
+import { aiExposureText } from "./ProfessionCard"
 
 // Compare careers side by side (owner, 2026-09-29): its own page, reached from the top of the
 // report. The student picks 2-3 careers from THEIR OWN list — the ranking plus the worth-the-switch
@@ -34,7 +35,8 @@ const ROWS = [
     ["Starting pay", (entry, detail) => (detail.economics ? `₹${detail.economics.earlyEarningsLpa}L a year` : "—")],
     ["Mid-career pay", (entry, detail) => (detail.economics && detail.economics.midCareerLpa ? `₹${detail.economics.midCareerLpa}L a year${detail.economics.checked ? "" : " (estimate)"}` : "—")],
     ["Demand", (entry, detail) => (detail.demand ? DEMAND[detail.demand.india] || detail.demand.india : "—")],
-    ["AI exposure", (entry, detail) => (detail.aiExposure ? AI[detail.aiExposure.band] || detail.aiExposure.band : "—")],
+    ["AI exposure", (entry, detail) => aiExposureText(detail) || (detail.aiExposure ? AI[detail.aiExposure.band] || detail.aiExposure.band : "—")],
+    ["How much was measured", (entry) => (typeof entry.measuredPct === "number" ? `Partial · ${entry.measuredPct}%` : "Complete")],
     ["Working for yourself", (entry, detail) => (detail.selfEmployment ? SELF[detail.selfEmployment.likelihood] || "—" : "—")],
     ["Years of what you've done left behind", (entry) => (entry.wastedYears > 0 ? `About ${entry.wastedYears}` : "None")],
     ["Licence", (entry, detail) => detail.licensingBody || "None"],

@@ -2612,6 +2612,28 @@ const fixtures = [
         expect: null,
     },
     {
+        name: "MODULES — a finished module's button says whether it can still be changed",
+        // Owner, Round 10 (item 22): "Review and edit" only where answers can be edited; the
+        // one-attempt tests say "Review answers", the screenshot uploads "Review scores".
+        run: () => {
+            const { reviewLabel } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "moduleLabels.js"))
+            const external = ["extReasoning", "extVerbal"]
+            const label = (key) => reviewLabel({ key, external: external.includes(key) })
+            const problems = []
+            ;["ipip50", "mi", "rosenberg", "confidence", "perspective"].forEach((key) => {
+                if (label(key) !== "Review and edit") problems.push(`${key}: ${label(key)}`)
+            })
+            ;["digitSpan", "sartRaw", "storyRecall"].forEach((key) => {
+                if (label(key) !== "Review answers") problems.push(`${key}: ${label(key)}`)
+            })
+            ;["extVerbal"].forEach((key) => {
+                if (label(key) !== "Review scores") problems.push(`${key}: ${label(key)}`)
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
         name: "MODULES — sartMeta is savable and is not something the scorer reads",
         // A refused session still records why, and that record must never be mistaken for data.
         run: () => {
