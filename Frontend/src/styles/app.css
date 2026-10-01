@@ -1335,3 +1335,29 @@ button.link-button:hover:not(:disabled) {
     border-color: var(--teal);
     background: var(--teal-tint);
 }
+
+/* ── combined careers (Round 10) — the same card as the list, as a native <details> ─────────── */
+.combined-careers {
+    margin: var(--space-6) 0 var(--space-4);
+}
+
+.combined-card > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    cursor: pointer;
+}
+
+.combined-card > summary::-webkit-details-marker {
+    display: none;
+}
+
+.combined-card .pc-sign::before {
+    content: "+";
+}
+
+.combined-card[open] .pc-sign::before {
+    content: "−";
+}

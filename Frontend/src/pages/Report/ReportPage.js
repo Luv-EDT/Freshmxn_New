@@ -12,6 +12,7 @@ import { studentTags } from "./reportTags"
 import { buildList } from "./reportFilters"
 import { journeyHeadline } from "./reportPlan"
 import ReportHeadline from "./ReportHeadline"
+import CombinedCareers from "./CombinedCareers"
 
 // Stage 3 — the report.
 //
@@ -536,6 +537,9 @@ function ReportPage() {
                     <button type="button" className="link-button" onClick={() => setExcludeBlueCollar(false)}>Show them again</button>
                 </p>
             )}
+
+            {/* COMBINED CAREERS (Round 10) — beside the list, never in it */}
+            <CombinedCareers combined={data.combined} details={details} showFirst={showFirst} />
 
             {/* SUPPORT FOR YOUR EXAMS (Round 10) — only for a student who told us about a difficulty,
                 and only once the owner has checked every line against its official source. */}

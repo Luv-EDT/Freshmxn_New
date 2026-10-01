@@ -853,6 +853,42 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "combined: shown only when both sides are lit, ordered by how high the sides sit, at most five",
+        run: () => {
+            const { findCombined } = require("../combined")
+            const data = {
+                groups: { photo: { label: "photography", careers: ["p1", "p2"] }, nature: { label: "nature", careers: ["n1"] }, law: { label: "law", careers: ["l1"] } },
+                careers: [
+                    { id: "cmb-wild", name: "Wildlife Photographer", sideA: "photo", sideB: "nature" },
+                    { id: "cmb-legal", name: "Legal Photographer", sideA: "photo", sideB: "law" },
+                ],
+            }
+            const entry = (id, comfortScore) => ({ professionId: id, profession: id, comfortScore, supportingFactors: [] })
+            const found = findCombined({ ranked: [entry("p2", 0.8), entry("x", 0.7), entry("n1", 0.6)], universe: null, data })
+            if (found.length !== 1 || found[0].combinedId !== "cmb-wild") return `expected only the wildlife one, got ${found.map((item) => item.combinedId).join(", ")}`
+            if (found[0].sideA.via !== "p2" || found[0].comfortScore !== 0.7) return `wrong side or fit: ${JSON.stringify(found[0])}`
+            if (findCombined({ ranked: [entry("p1", 0.9)], universe: null, data }).length !== 0) return "one lit side must not be enough"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "combined: every career in combined_careers.json names real groups whose careers all exist",
+        run: () => {
+            const data = require("../../data/combined_careers.json")
+            const ids = new Set(require("../../data/ALL-professions.json").professions.map((profession) => profession.id))
+            const problems = []
+            Object.entries(data.groups).forEach(([key, group]) => group.careers.filter((id) => !ids.has(id)).forEach((id) => problems.push(`${key}: ${id}`)))
+            data.careers.forEach((career) => {
+                if (!data.groups[career.sideA] || !data.groups[career.sideB]) problems.push(`${career.id}: unknown side`)
+                if (career.sideA === career.sideB) problems.push(`${career.id}: both sides are the same group`)
+            })
+            if (new Set(data.careers.map((career) => career.id)).size !== data.careers.length) problems.push("duplicate ids")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

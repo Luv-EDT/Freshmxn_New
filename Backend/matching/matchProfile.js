@@ -29,16 +29,18 @@ const { runProgramThree } = require("./program3")
 const { sortIntoTiers, worthTheSwitch, applySort } = require("./tiers")
 const { buildAspirationSignals } = require("./aspirationSignal")
 const { readJourney } = require("./journey")
+const { findCombined } = require("./combined")
+const COMBINED_CAREERS = require("../data/combined_careers.json")
 const constants = require("./constants")
 
 // 1.1.0 (Round 10): undergrad switching cost rises with every year (1, 2, 2.5, 3); the age limit
 // reads the student's real age. A different ranking from the same answers, hence the bump — a stored
 // report on 1.0.0 shows as stale and rebuilds itself.
-// 1.2.0 (Round 10): a career's fit is the better of the whole career and its best role group
+// 1.2.0 (Round 10): combined careers are found beside the ranking; a career's fit is the better of the whole career and its best role group
 // (role_spread); a student's own degree waives switching cost for the careers it leads to.
 const MATCHING_VERSION = "matching@1.2.0"
 
-const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort }) => {
+const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")
     if (!Array.isArray(professions) || professions.length === 0) throw new Error("matchProfile: professions is required")
     if (!baseline || !Array.isArray(baseline.ratings)) throw new Error("matchProfile: baseline.ratings is required")
@@ -111,6 +113,9 @@ const matchProfile = ({ profile, interest, user, professions, baseline, resolved
         // "Worth the switch" — top 3 by raw fit, cost shown but not applied. §5 insists both lists
         // are always shown, because fit × cost alone will never advise the hard change.
         worthTheSwitch: worthTheSwitch(programThree.universe, rankedIds),
+
+        // Careers that join two of the student's areas (combined.js) — beside the ranking, never in it.
+        combined: findCombined({ ranked, universe: programThree.universe, data: combinedCareers }),
 
         // Removed because entry is genuinely impossible, not because it ranked badly.
         filtered: programThree.filtered,
