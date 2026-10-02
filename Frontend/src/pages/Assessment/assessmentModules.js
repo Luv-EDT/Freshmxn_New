@@ -28,11 +28,13 @@ export const ASSESSMENT_MODULES = [
     { key: "confidence", title: "Confidence in six situations", minutes: 4, built: true },
     { key: "perspective", title: "How you think", minutes: 20, built: true },
     { key: "digitSpan", title: "Remembering numbers", minutes: 5, built: true },
+    { key: "wordRecall", title: "Remembering words", minutes: 5, built: true, note: "Two lists of fifteen words, each shown once. One attempt." },
     { key: "reasoning", title: "Reasoning puzzles", minutes: 15, built: true, note: "Sixteen puzzles of four kinds. One attempt — take it somewhere quiet." },
     // RETIRED (Round 10): the in-house puzzles replaced this upload. It stays registered so a student
     // who already took it still sees it and keeps their result; nobody new is asked to take it.
     { key: "extReasoning", title: "Reasoning test (other website)", minutes: 15, built: true, retired: true, external: true, note: "Taken on another website before our own puzzles existed. Your result still counts." },
-    { key: "extVerbal", title: "Word memory test", minutes: 10, built: true, external: true, note: "Taken on another website while ours is being built. One attempt only — you upload a screenshot of the result." },
+    // RETIRED (Round 11): our own word test replaced this upload. Kept for students who already took it.
+    { key: "extVerbal", title: "Word memory test (other website)", minutes: 10, built: true, retired: true, external: true, note: "Taken on another website before our own word test existed. Your result still counts." },
     { key: "sartRaw", title: "Staying focused", minutes: 6, built: true, note: "A fast, timed task. One attempt only." },
 ]
 
@@ -87,7 +89,7 @@ const isModuleComplete = (key, block) => {
 
     // The in-house reasoning puzzles are done when the server stamps the sixteenth answer; the
     // activity checklist when the student presses Done (an unticked box only means "no" then).
-    if (key === "reasoning" || key === "interests60") return Boolean(block.completedAt)
+    if (key === "reasoning" || key === "interests60" || key === "wordRecall") return Boolean(block.completedAt)
 
     // SART saves the PsyToolkit rows as a plain string, and saves NOTHING when the device failed
     // its timing check. So a non-empty string here means a session that is actually scoreable, and

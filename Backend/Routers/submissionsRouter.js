@@ -556,6 +556,106 @@ router.post("/reasoningAnswer", authMiddleware, requirePaid, async (req, res) =>
 
 
 // ========================
+// Word memory — the in-house test (Round 11)
+// ========================
+
+// Same shape as the reasoning test, one difference forced by the task: the answer key IS the word
+// list, and the student has to see it. So it is hidden by TIME instead. A list is handed over once,
+// at the moment it is shown, and recorded as shown; asking again before writing it down returns
+// "write what you remember", never the words — a refresh mid-list is not a second look.
+// The page shows each word for wordBank.WORD_MS; the recall is typed, any order, and marked here.
+const wordBank = require("../assessment/wordBank")
+
+router.post("/wordRecallNext", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.wordRecall) || {}
+        const trials = block.trials || []
+
+        if (block.completedAt || trials.length >= wordBank.LIST_COUNT) {
+            return res.status(200).json({ success: true, message: "Word memory complete", data: { done: true } })
+        }
+
+        const index = trials.length
+
+        // already shown and not yet written down: straight to writing, no second look
+        if (block.pending && block.pending.index === index) {
+            return res.status(200).json({ success: true, message: "Write what you remember", data: { done: false, phase: "recall", number: index + 1, of: wordBank.LIST_COUNT } })
+        }
+
+        const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
+
+        await Submission.findOneAndUpdate(
+            { user: req.user._id },
+            { $set: {
+                "psychometric.wordRecall.seed": seed,
+                "psychometric.wordRecall.startedAt": block.startedAt || new Date(),
+                "psychometric.wordRecall.trials": trials,
+                "psychometric.wordRecall.pending": { index, shownAt: new Date() },
+                lastSavedAt: new Date(),
+            } },
+            { upsert: true }
+        )
+
+        if (req.user.progress.psychometric === "not_started") {
+            await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Next list",
+            data: { done: false, phase: "study", number: index + 1, of: wordBank.LIST_COUNT, words: wordBank.listsFor(seed)[index], msPerWord: wordBank.WORD_MS },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not load the list", error: error.message })
+    }
+})
+
+router.post("/wordRecallAnswer", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const text = typeof req.body.text === "string" ? req.body.text.slice(0, 600) : ""
+
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.wordRecall) || {}
+        const trials = block.trials || []
+        const pending = block.pending
+
+        if (!pending || typeof block.seed !== "number" || pending.index !== trials.length) {
+            return res.status(400).json({ success: false, message: "No list is waiting to be written down" })
+        }
+
+        // Marked HERE, against the list rebuilt from the seed. Nothing about the result goes back.
+        const marked = wordBank.markRecall(text, wordBank.listsFor(block.seed)[pending.index])
+        const trial = {
+            list: pending.index + 1,
+            text,
+            correct: marked.correct,
+            recalled: marked.recalled,
+            intrusions: marked.intrusions,
+            ms: Math.max(Date.now() - new Date(pending.shownAt).getTime(), 0),
+        }
+
+        const all = [...trials, trial]
+        const finished = all.length >= wordBank.LIST_COUNT
+        const changes = {
+            "psychometric.wordRecall.trials": all,
+            "psychometric.wordRecall.pending": null,
+            lastSavedAt: new Date(),
+        }
+        if (finished) changes["psychometric.wordRecall.completedAt"] = new Date()
+
+        await Submission.findOneAndUpdate({ user: req.user._id }, { $set: changes })
+
+        return res.status(200).json({ success: true, message: "Saved", data: { done: finished, written: all.length } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not save what you wrote", error: error.message })
+    }
+})
+
+
+// ========================
 // Submit the assessment — starts the pipeline
 // ========================
 
@@ -579,6 +679,12 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
         const span = submission.psychometric.digitSpan
         if (span && (span.trials || []).length > 0 && !span.completedAt) {
             await raiseIssue({ user: req.user._id, module: "digitSpan", kind: "digit_span_unfinished", detail: `${span.trials.length} sequences answered, then stopped` })
+        }
+
+        // the same for the word lists (Round 11)
+        const words = submission.psychometric.wordRecall
+        if (words && words.startedAt && !words.completedAt) {
+            await raiseIssue({ user: req.user._id, module: "wordRecall", kind: "word_recall_unfinished", detail: `${(words.trials || []).length} of 2 lists written down, then stopped` })
         }
 
         // Stamped so the report page can tell a FRESH report from a stale one. Without it, a
@@ -654,6 +760,11 @@ const forStudent = (submission) => {
         // the seed rebuilds every item WITH its answer, so it never leaves the server either
         const { seed, pending, responses, ...reasoning } = psychometric.reasoning
         psychometric.reasoning = { ...reasoning, answered: (responses || []).length }
+    }
+    if (psychometric.wordRecall) {
+        // the seed rebuilds the lists, and the marked trials say which words they held
+        const { seed, pending, trials, ...words } = psychometric.wordRecall
+        psychometric.wordRecall = { ...words, written: (trials || []).length }
     }
     delete psychometric.history
 

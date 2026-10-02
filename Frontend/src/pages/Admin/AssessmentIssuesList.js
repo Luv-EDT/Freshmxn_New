@@ -14,6 +14,7 @@ import { getAllIssuesForAdmin, grantRetakeForAdmin, dismissIssueForAdmin } from 
 const KIND_LABELS = {
     sart_invalid: "Focus test did not record",
     digit_span_unfinished: "Number test abandoned",
+    word_recall_unfinished: "Word test abandoned",
     reasoning_timeouts: "Reasoning items timed out",
     grading_failed: "Written answers not graded",
     report_failed: "Report failed",

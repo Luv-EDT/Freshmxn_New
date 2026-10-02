@@ -309,4 +309,4 @@ const publicItem = (item) => {
     return visible
 }
 
-module.exports = { ITEM_COUNT, TYPES, itemFor, publicItem, isTurnOf, mirror, VERBAL }
+module.exports = { ITEM_COUNT, TYPES, itemFor, publicItem, isTurnOf, mirror, VERBAL, rng, shuffle }

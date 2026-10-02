@@ -14,7 +14,7 @@ const GROUPS = {
     ipip: ["ipip50"],
     mi: ["mi"],
     reasoning: ["reasoning", "extReasoning"],
-    stm: ["digitSpan", "extVerbal"],
+    stm: ["digitSpan", "wordRecall", "extVerbal"],
     story: ["storyRecall"],
     sart: ["sartRaw"],
     conf: ["rosenberg", "confidence"],

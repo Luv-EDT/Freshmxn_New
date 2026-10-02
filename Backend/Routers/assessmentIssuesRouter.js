@@ -21,14 +21,15 @@ const router = express.Router()
 // The API prefix is /assessmentIssues; no page lives at that address, so a refresh cannot 404.
 
 // The tests a retake can apply to. The questionnaires are editable until Submit, so they never need one.
-const RETAKEABLE = ["sartRaw", "digitSpan", "storyRecall", "reasoning", "extReasoning", "extVerbal"]
+const RETAKEABLE = ["sartRaw", "digitSpan", "storyRecall", "reasoning", "wordRecall", "extReasoning", "extVerbal"]
 const MODULE_NAMES = {
     sartRaw: "Staying focused",
     digitSpan: "Remembering numbers",
     storyRecall: "A short story",
     reasoning: "Reasoning",
     extReasoning: "Reasoning test (other website)",
-    extVerbal: "Word memory test",
+    wordRecall: "Word memory",
+    extVerbal: "Word memory test (other website)",
     report: "Your report",
 }
 

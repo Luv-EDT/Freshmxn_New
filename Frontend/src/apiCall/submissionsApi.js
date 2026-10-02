@@ -72,3 +72,13 @@ export async function reasoningAnswer(payload) {
     const response = await axiosInstance.post("/submissions/reasoningAnswer", payload)
     return response
 }
+
+export async function wordRecallNext() {
+    const response = await axiosInstance.post("/submissions/wordRecallNext", {})
+    return response
+}
+
+export async function wordRecallAnswer(payload) {
+    const response = await axiosInstance.post("/submissions/wordRecallAnswer", payload)
+    return response
+}

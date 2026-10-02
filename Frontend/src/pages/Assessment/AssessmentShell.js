@@ -14,6 +14,7 @@ import StoryRecall from "./StoryRecall"
 import ExternalTest from "./ExternalTest"
 import Sart from "./Sart"
 import ReasoningTest from "./ReasoningTest"
+import WordRecallTest from "./WordRecallTest"
 import InterestsModule from "./InterestsModule"
 import LikertModule from "./LikertModule"
 import {
@@ -49,7 +50,7 @@ const DRAFT_DEBOUNCE_MS = 400
 // student would see "Could not save" on a section that had in fact saved everything already, which
 // is the worst possible thing to tell someone about their own data. Each of these has its own way
 // out, and "← All sections" is always there.
-const SELF_SAVING = ["digitSpan", "storyRecall", "extReasoning", "extVerbal", "sartRaw", "reasoning", "interests60"]
+const SELF_SAVING = ["digitSpan", "wordRecall", "storyRecall", "extReasoning", "extVerbal", "sartRaw", "reasoning", "interests60"]
 
 function AssessmentShell() {
     const navigate = useNavigate()
@@ -379,6 +380,13 @@ function AssessmentShell() {
             {(moduleKey === "extReasoning" || moduleKey === "extVerbal") && (
                 <ExternalTest
                     moduleKey={moduleKey}
+                    onDone={handleServerSavedDone}
+                />
+            )}
+
+            {moduleKey === "wordRecall" && (
+                <WordRecallTest
+                    alreadyTaken={Boolean(psychometric.wordRecall && psychometric.wordRecall.completedAt)}
                     onDone={handleServerSavedDone}
                 />
             )}

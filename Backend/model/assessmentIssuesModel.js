@@ -16,12 +16,12 @@ const assessmentIssueSchema = new mongoose.Schema(
         },
         module: {
             type: String,
-            required: true, // the psychometric block: sartRaw, digitSpan, storyRecall, reasoning, extReasoning, extVerbal — or "report"
+            required: true, // the psychometric block: sartRaw, digitSpan, storyRecall, reasoning, wordRecall, extReasoning, extVerbal — or "report"
         },
         kind: {
             type: String,
             required: true,
-            // sart_invalid | digit_span_unfinished | reasoning_timeouts | grading_failed | report_failed |
+            // sart_invalid | digit_span_unfinished | word_recall_unfinished | reasoning_timeouts | grading_failed | report_failed |
             // report_prose_failed | result_disputed | student_reported
         },
         detail: {

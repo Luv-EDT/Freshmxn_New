@@ -6,6 +6,7 @@ const scoreRosenberg = require("./rosenberg")
 const scoreConfidenceItems = require("./confidenceItems")
 const scoreDigitSpan = require("./digitSpan")
 const scoreVerbalMemory = require("./verbalMemory")
+const scoreWordRecall = require("./wordRecall")
 const scoreReasoning = require("./reasoning")
 const scoreReasoningInHouse = require("./reasoningInHouse")
 const scoreInterests60 = require("./interests60")
@@ -46,7 +47,8 @@ const { combine, worstQuality, round2 } = require("./scoringHelpers")
      digitSpan:   { trials: [{ length, presented, response, correct, ms }] },
      sartRaw:     "<tab-separated PsyToolkit text>",
      extReasoning:{ percentile, score_raw, seconds_per_question, extraction_confidence },
-     extVerbal:   { your_score, peer_average, extraction_confidence },
+     extVerbal:   { your_score, peer_average, extraction_confidence },   // retired upload (Round 11)
+     wordRecall:  { trials: [{ list, correct, intrusions, ms }], completedAt },
      storyRecall: { storyId, delayHours, facts: {…}, structured: {…},
                     free: { score, subScores } },   // free already LLM-scored
    }
@@ -60,7 +62,9 @@ const { combine, worstQuality, round2 } = require("./scoringHelpers")
 // 1.1.0 (Round 10): an abandoned digit span is not measured (it was a full-quality 0); an ungraded
 // free recall renormalises over the structured points; an unconfirmed or disputed external result is
 // partial; PS1-PS4 are now asked, so grit has its persistence input; factor_coverage is reported.
-const SCORING_VERSION = "profile@1.2.0"
+// 1.3.0 (Round 11): the in-house word-memory test (provisional, raw share) replaces the outside upload
+// as the verbal half of short-term memory when present.
+const SCORING_VERSION = "profile@1.3.0"
 
 const COMPONENT_VERSIONS = {
     perspective: "perspective@5.0.0",
@@ -254,7 +258,11 @@ const scoreProfile = (submitted = {}) => {
     const rosenberg = scoreRosenberg(psychometric.rosenberg)
     const ownConfidence = scoreConfidenceItems(psychometric.confidence)
     const digitSpan = scoreDigitSpan(psychometric.digitSpan)
-    const verbalMemory = scoreVerbalMemory(psychometric.extVerbal)
+    // The in-house word test wins when it is finished (Round 11); the outside upload is kept for
+    // students who took it before ours existed. Same rule as reasoning.
+    const wordRecall = scoreWordRecall(psychometric.wordRecall)
+    const externalVerbal = scoreVerbalMemory(psychometric.extVerbal)
+    const verbalMemory = wordRecall.score !== null ? wordRecall : externalVerbal
     // The in-house test wins when it is finished; the external upload is kept for students who took
     // it before the in-house one existed.
     const inHouseReasoning = scoreReasoningInHouse(psychometric.reasoning)
@@ -274,14 +282,14 @@ const scoreProfile = (submitted = {}) => {
     if (!psychometric.rosenberg) modules_missing.push("rosenberg")
     if (!psychometric.confidence) modules_missing.push("confidence")
     if (!psychometric.digitSpan) modules_missing.push("digitSpan")
-    if (!psychometric.extVerbal) modules_missing.push("extVerbal")
+    if (!psychometric.extVerbal && !psychometric.wordRecall) modules_missing.push("wordRecall")
     if (!psychometric.extReasoning && !psychometric.reasoning) modules_missing.push("reasoning")
     if (!psychometric.interests60) modules_missing.push("interests60")
     if (!psychometric.storyRecall) modules_missing.push("storyRecall")
     if (!psychometric.sartRaw) modules_missing.push("sart")
     if (!psychometric.perspective) modules_missing.push("perspective")
 
-    ;[ipip, mi, rosenberg, ownConfidence, digitSpan, verbalMemory, inHouseReasoning, externalReasoning, interests, storyRecall].forEach((result) => {
+    ;[ipip, mi, rosenberg, ownConfidence, digitSpan, wordRecall, externalVerbal, inHouseReasoning, externalReasoning, interests, storyRecall].forEach((result) => {
         mergeFlags(result.flags)
     })
 
@@ -556,6 +564,7 @@ const scoreProfile = (submitted = {}) => {
             ...perspective.components,
             digit_span: digitSpan.score,
             verbal_memory: verbalMemory.score,
+            verbal_memory_source: wordRecall.score !== null ? "in_house" : (externalVerbal.score !== null ? "external" : null),
             rosenberg: rosenberg.score,
             own_confidence_items: ownConfidence.score,
             persistence_raw: perspective.persistence_raw,

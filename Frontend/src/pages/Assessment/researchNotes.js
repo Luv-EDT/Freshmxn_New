@@ -131,6 +131,15 @@ export const MODULE_RESEARCH = {
         ],
         oneAttempt: true,
     },
+    wordRecall: {
+        measures: "Verbal memory — how many words you can recall from two lists of fifteen, each shown once.",
+        why: "Remembering words is the half of short-term memory that numbers do not cover. The format follows the word-list tests psychologists have used for decades. Our scores are provisional until we have enough Indian students to compare with.",
+        references: [
+            "Rey, A. (1964). L'examen clinique en psychologie. Presses Universitaires de France.",
+            "Schmidt, M. (1996). Rey Auditory Verbal Learning Test: A handbook. Western Psychological Services.",
+        ],
+        oneAttempt: true,
+    },
     extVerbal: {
         measures: "Verbal memory — how many words you can recall from a list.",
         why: "Remembering words is the half of short-term memory that numbers do not cover.",

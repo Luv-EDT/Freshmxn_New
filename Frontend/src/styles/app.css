@@ -1708,3 +1708,31 @@ button.link-button:hover:not(:disabled) {
     font-weight: 700;
     white-space: nowrap;
 }
+
+/* ── the word-memory test (Round 11): one large word at a time, nothing else on screen ───────────── */
+
+.word-recall-progress {
+    color: var(--navy-soft);
+    font-weight: 700;
+}
+
+.word-recall-stage {
+    min-height: 45vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.word-recall-stage span {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 11vw, 4rem);
+    color: var(--navy);
+    overflow-wrap: anywhere;
+}
+
+.app-header ~ * textarea.word-recall-input {
+    width: 100%;
+    max-width: 560px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}

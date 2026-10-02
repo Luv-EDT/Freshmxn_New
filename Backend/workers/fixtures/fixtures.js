@@ -263,8 +263,8 @@ const fixtures = [
             // Modules whose answers are not a simple id→letter map (digit span, SART, the external
             // tests, story recall) are exempt: they have their own shapes and their own checks.
             // The reasoning puzzles and the activity checklist (Round 10) are covered by the
-            // REASONING and INTERESTS fixtures below.
-            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "interests60"]
+            // REASONING and INTERESTS fixtures below; the word-memory test (Round 11) by WORD MEMORY.
+            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "interests60", "wordRecall"]
             const uncovered = built.filter((key) => !covered.includes(key) && !SHAPED_DIFFERENTLY.includes(key))
 
             return uncovered.length > 0 ? `built but untested: ${uncovered.join(", ")}` : null
@@ -3309,6 +3309,62 @@ const fixtures = [
             if (option.jobRoles.length !== all.length) problems.push("the job roles are not all offered exactly once")
             if (!/jobRolesById\.get\(String\(match\.professionId\)\)/.test(fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "mentorWaitlistRouter.js"), "utf8"))) problems.push("chooseProfession does not check the role against the career's job roles")
             return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WORD MEMORY — lists are fixed by the seed, never overlap, and the bank has no near-twins",
+        run: () => {
+            const wordBank = require("../../assessment/wordBank")
+            const problems = []
+            const [first, second] = wordBank.listsFor(12345)
+            if (JSON.stringify(wordBank.listsFor(12345)) !== JSON.stringify([first, second])) problems.push("the same seed gave different lists")
+            if (first.length !== 15 || second.length !== 15) problems.push("a list is not fifteen words")
+            if (first.some((word) => second.includes(word))) problems.push("the two lists share a word")
+            const words = wordBank.WORDS
+            if (new Set(words).size !== words.length) problems.push("the bank repeats a word")
+            for (let i = 0; i < words.length; i += 1) {
+                for (let j = i + 1; j < words.length; j += 1) {
+                    if ((words[i].length >= 5 || words[j].length >= 5) && wordBank.withinOneEdit(words[i], words[j])) problems.push(`"${words[i]}" and "${words[j]}" are one typo apart`)
+                }
+            }
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WORD MEMORY — marking forgives typos and plurals, credits each word once, never subtracts",
+        run: () => {
+            const { markRecall } = require("../../assessment/wordBank")
+            const list = ["tiger", "umbrella", "mango", "wizard", "chair", "comb"]
+            const marked = markRecall("Tigers, umbrela; MANGO mango wizzard banana hcair cmob", list)
+            return { correct: marked.correct, intrusions: marked.intrusions }
+        },
+        // "cmob" is a swap in a 4-letter word — short words must be spelt right, or "comb"/"come"
+        // would blur; "banana" was never shown
+        expect: { correct: 5, intrusions: ["banana", "cmob"] },
+    },
+    {
+        name: "WORD MEMORY — an unfinished run is not measured; a finished one is a provisional share",
+        run: () => {
+            const scoreWordRecall = require("../../scoring/wordRecall")
+            const half = scoreWordRecall({ trials: [{ correct: 9, intrusions: [] }] })
+            const full = scoreWordRecall({ completedAt: new Date(), trials: [{ correct: 9, intrusions: [] }, { correct: 12, intrusions: ["kite"] }] })
+            return [half.score, Boolean(half.flags.word_recall_unfinished), full.score, Boolean(full.flags.word_recall_provisional_norms)]
+        },
+        expect: [null, true, 7, true],
+    },
+    {
+        name: "WORD MEMORY — the in-house test wins over an old upload, and the lists never reach the page",
+        run: () => {
+            const problems = []
+            const base = buildSubmission({ ipip50: fillIpip({ default: 3 }), perspective: fillPerspective({}) }).psychometric
+            const withBoth = scoreProfile({ ...base, digitSpan: undefined, extVerbal: { your_score: 36, studentConfirmedAt: new Date() }, wordRecall: { completedAt: new Date(), trials: [{ correct: 0 }, { correct: 0 }] } }, {})
+            if (withBoth.components.verbal_memory !== 0 || withBoth.components.verbal_memory_source !== "in_house") problems.push(`in-house did not win: ${withBoth.components.verbal_memory} ${withBoth.components.verbal_memory_source}`)
+            const router = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "submissionsRouter.js"), "utf8")
+            if (!/const \{ seed, pending, trials, \.\.\.words \} = psychometric\.wordRecall/.test(router)) problems.push("getMySubmission does not strip the word lists")
+            if (/"wordRecall"\s*:/.test(router.slice(router.indexOf("const CLIENT_OWNED"), router.indexOf("const MODULE_KEYS")))) problems.push("the page may write its own word-test block")
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },

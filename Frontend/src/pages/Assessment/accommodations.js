@@ -19,8 +19,8 @@ export const AFFECTS = {
     vision: ["sartRaw", "digitSpan", "reasoning"],
     hearing: [],
     motor: ["sartRaw", "digitSpan"],
-    reading: ["storyRecall", "reasoning", "extVerbal"],
-    attention: ["sartRaw"],
+    reading: ["storyRecall", "reasoning", "wordRecall", "extVerbal"],
+    attention: ["sartRaw", "wordRecall"],
 }
 
 export const affectedModules = (needs) => [...new Set((needs || []).flatMap((need) => AFFECTS[need] || []))]

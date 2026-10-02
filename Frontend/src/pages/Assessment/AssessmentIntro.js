@@ -6,7 +6,7 @@ import AccommodationsBox from "./AccommodationsBox"
 import { affectedModules } from "./accommodations"
 
 // the tests a student can raise a technical problem about (and the admin can reopen)
-const PERFORMANCE_TESTS = ["storyRecall", "digitSpan", "sartRaw", "reasoning", "extReasoning", "extVerbal"]
+const PERFORMANCE_TESTS = ["storyRecall", "digitSpan", "wordRecall", "sartRaw", "reasoning", "extReasoning", "extVerbal"]
 
 // The assessment's landing page — every section, what is done, what is still to come.
 //
