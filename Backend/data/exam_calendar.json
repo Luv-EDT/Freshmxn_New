@@ -1,0 +1,1405 @@
+{
+  "schema_version": "exam_calendar@1.0.0",
+  "generated_on": "2026-10-02",
+  "note": "One row per real exam. Windows and months are what USUALLY happens, never this year's exact dates — a student is always sent to the official site. A 'checked' row was compared with published reporting of the official notice on checked_on; a 'draft' row shows only its name and official link until it is checked. The monthly study bot (housekeeping/studyRefresh.js) re-checks rows on their official sites and the admin approves any change. A fixture fails if a checked row is older than 13 months.",
+  "review": {
+    "reviewed_by_owner": false,
+    "note": "Owner gate (Round 11): read the rows once."
+  },
+  "exams": [
+    {
+      "id": "jee-main",
+      "name": "JEE Main",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://jeemain.nta.nic.in",
+      "level": "ug",
+      "usual_application_window": "November (for the January session) and February (for the April session)",
+      "usual_exam_month": "January and April",
+      "eligibility": "Class 12 (or appearing), with Physics and Maths for engineering",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://news.careers360.com/jee-main-2026-exam-dates-out-session-1-january-21-30-april-10-nta-nic-in-registration-link-increase-exam-centres-wider-reach/amp"
+    },
+    {
+      "id": "jee-advanced",
+      "name": "JEE Advanced",
+      "conducting_body": "IITs (organising IIT rotates)",
+      "official_url": "https://jeeadv.ac.in",
+      "level": "ug",
+      "usual_application_window": "late April to early May — only for the top JEE Main candidates",
+      "usual_exam_month": "May",
+      "eligibility": "Among the top JEE Main candidates, Class 12 with Physics, Chemistry and Maths",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://engineering.careers360.com/articles/jee-advanced-2026"
+    },
+    {
+      "id": "bitsat",
+      "name": "BITSAT",
+      "conducting_body": "BITS Pilani",
+      "official_url": "https://www.bitsadmission.com",
+      "level": "ug",
+      "usual_application_window": "December to March",
+      "usual_exam_month": "April and May (two sessions)",
+      "eligibility": "Class 12 with Physics, Chemistry and Maths (Biology for B.Pharm)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://www.shiksha.com/engineering/bitsat-exam-dates"
+    },
+    {
+      "id": "viteee",
+      "name": "VITEEE",
+      "conducting_body": "VIT",
+      "official_url": "https://viteee.vit.ac.in",
+      "level": "ug",
+      "usual_application_window": "November to March",
+      "usual_exam_month": "late April",
+      "eligibility": "Class 12 with Physics, Chemistry and Maths or Biology",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://www.collegepravesh.com/articles/viteee-exam-date/"
+    },
+    {
+      "id": "comedk-uget",
+      "name": "COMEDK UGET",
+      "conducting_body": "Consortium of Medical, Engineering and Dental Colleges of Karnataka",
+      "official_url": "https://www.comedk.org",
+      "level": "ug",
+      "usual_application_window": "February to March",
+      "usual_exam_month": "May",
+      "eligibility": "Class 12 with Physics, Chemistry and Maths",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://news.careers360.com/comedk-uget-2026-registration-begins-application-last-date-march-16-cbt-exam-may-9-eligibility-karnataka-engineering-colleges/amp"
+    },
+    {
+      "id": "srmjeee",
+      "name": "SRMJEEE",
+      "conducting_body": "SRM Institute of Science and Technology",
+      "official_url": "https://www.srmist.edu.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 with Physics, Chemistry and Maths",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "neet-ug",
+      "name": "NEET UG",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://neet.nta.nic.in",
+      "level": "ug",
+      "usual_application_window": "February to March",
+      "usual_exam_month": "May",
+      "eligibility": "Class 12 with Physics, Chemistry, Biology and English",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://medicine.careers360.com/article/30808"
+    },
+    {
+      "id": "cuet-ug",
+      "name": "CUET UG",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://cuet.nta.nic.in",
+      "level": "ug",
+      "usual_application_window": "January to February",
+      "usual_exam_month": "May to June",
+      "eligibility": "Class 12 — the subjects you need depend on the course and university",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://news.careers360.com/cuet-ug-2026-exam-date-registration-begins-nta-hold-exams-from-may-11-31-admission-central-state-universities-cbt-link/amp"
+    },
+    {
+      "id": "clat",
+      "name": "CLAT",
+      "conducting_body": "Consortium of National Law Universities",
+      "official_url": "https://consortiumofnlus.ac.in",
+      "level": "ug",
+      "usual_application_window": "August to October",
+      "usual_exam_month": "December",
+      "eligibility": "Class 12 with 45% (40% for SC/ST)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://law.careers360.com/articles/clat-2026-dates-application-syllabus-preparation-tips-nlus"
+    },
+    {
+      "id": "ailet",
+      "name": "AILET",
+      "conducting_body": "National Law University Delhi",
+      "official_url": "https://nationallawuniversitydelhi.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "slat",
+      "name": "SLAT",
+      "conducting_body": "Symbiosis International University",
+      "official_url": "https://www.set-test.org",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "lsat-india",
+      "name": "LSAT India",
+      "conducting_body": "LSAC Global",
+      "official_url": "https://www.lsatindia.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "nata",
+      "name": "NATA",
+      "conducting_body": "Council of Architecture",
+      "official_url": "https://www.nata.in",
+      "level": "ug",
+      "usual_application_window": "from March, before each test date",
+      "usual_exam_month": "April to June (with a later phase in August)",
+      "eligibility": "Class 12 with Physics, Chemistry and Maths, for B.Arch",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://theaarchnews.com/education-academia/admission-exams/nata-2026-exam-schedule-dates-phase-timeline/"
+    },
+    {
+      "id": "nid-dat",
+      "name": "NID DAT",
+      "conducting_body": "National Institute of Design",
+      "official_url": "https://admissions.nid.edu",
+      "level": "ug",
+      "usual_application_window": "September to early December",
+      "usual_exam_month": "December (prelims)",
+      "eligibility": "Class 12 in any stream for B.Des; a bachelor's degree for M.Des",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://collegedunia.com/exams/nid"
+    },
+    {
+      "id": "uceed",
+      "name": "UCEED",
+      "conducting_body": "IIT Bombay",
+      "official_url": "https://www.uceed.iitb.ac.in",
+      "level": "ug",
+      "usual_application_window": "October to early November",
+      "usual_exam_month": "January",
+      "eligibility": "Class 12 in any stream (an age limit applies)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://www.uceed.iitb.ac.in/2026/important-dates.html"
+    },
+    {
+      "id": "ceed",
+      "name": "CEED",
+      "conducting_body": "IIT Bombay",
+      "official_url": "https://www.ceed.iitb.ac.in",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree in design, engineering, architecture or a related field",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "nift",
+      "name": "NIFT Entrance",
+      "conducting_body": "National Institute of Fashion Technology (exam run by NTA)",
+      "official_url": "https://www.nift.ac.in",
+      "level": "ug",
+      "usual_application_window": "December to January",
+      "usual_exam_month": "February",
+      "eligibility": "Class 12 in any stream for B.Des",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://testbook.com/news/nift-2026-entrance-exam-registration-begun/"
+    },
+    {
+      "id": "fddi-aist",
+      "name": "FDDI AIST",
+      "conducting_body": "Footwear Design and Development Institute",
+      "official_url": "https://fddiindia.com",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 in any stream",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "nchm-jee",
+      "name": "NCHM JEE",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://exams.nta.nic.in/nchm-jee",
+      "level": "ug",
+      "usual_application_window": "late December to January",
+      "usual_exam_month": "April",
+      "eligibility": "Class 12 in any stream, with English",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://news.careers360.com/nchm-jee-2026-exam-date-april-25-registration-begins-for-bsc-hospitality-hotel-management-admissions-exams-nta-nic-in/amp"
+    },
+    {
+      "id": "imu-cet",
+      "name": "IMU CET",
+      "conducting_body": "Indian Maritime University",
+      "official_url": "https://www.imu.edu.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 with Physics, Chemistry and Maths for most courses",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "ftii-jet",
+      "name": "FTII / SRFTI JET",
+      "conducting_body": "Film and Television Institute of India with SRFTI",
+      "official_url": "https://www.ftii.ac.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree for most courses",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "nsd",
+      "name": "National School of Drama entrance",
+      "conducting_body": "National School of Drama",
+      "official_url": "https://nsd.gov.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree and theatre experience",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "cmi",
+      "name": "CMI Entrance",
+      "conducting_body": "Chennai Mathematical Institute",
+      "official_url": "https://www.cmi.ac.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 with Maths",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "isi-admission",
+      "name": "ISI Admission Test",
+      "conducting_body": "Indian Statistical Institute",
+      "official_url": "https://www.isical.ac.in",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 with Maths for B.Stat/B.Math; a degree for M.Stat",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "iimc",
+      "name": "IIMC entrance",
+      "conducting_body": "Indian Institute of Mass Communication",
+      "official_url": "https://www.iimc.gov.in",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "symbiosis-set",
+      "name": "Symbiosis SET",
+      "conducting_body": "Symbiosis International University",
+      "official_url": "https://www.set-test.org",
+      "level": "ug",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "cuet-pg",
+      "name": "CUET PG",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://exams.nta.nic.in/cuet-pg",
+      "level": "pg",
+      "usual_application_window": "December to January",
+      "usual_exam_month": "March",
+      "eligibility": "A bachelor's degree (final-year students can apply)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://news.careers360.com/cuet-pg-2026-registration-begins-apply-by-january-14-application-correction-dates-exams-nta-nic-in-subjects-cities/amp"
+    },
+    {
+      "id": "iit-jam",
+      "name": "IIT JAM",
+      "conducting_body": "IITs (organising IIT rotates)",
+      "official_url": "https://jam2026.iitb.ac.in",
+      "level": "pg",
+      "usual_application_window": "September to October",
+      "usual_exam_month": "February",
+      "eligibility": "A bachelor's degree in science (final-year students can apply)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://university.careers360.com/exams/JAM"
+    },
+    {
+      "id": "gate",
+      "name": "GATE",
+      "conducting_body": "IISc and the IITs (organising institute rotates)",
+      "official_url": "https://gate2026.iitg.ac.in",
+      "level": "pg",
+      "usual_application_window": "late August to early October",
+      "usual_exam_month": "February",
+      "eligibility": "From the third year of a bachelor's degree in engineering, science, architecture, commerce or arts",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://engineering.careers360.com/articles/gate-2026"
+    },
+    {
+      "id": "cat",
+      "name": "CAT",
+      "conducting_body": "Indian Institutes of Management",
+      "official_url": "https://iimcat.ac.in",
+      "level": "pg",
+      "usual_application_window": "August to September",
+      "usual_exam_month": "late November",
+      "eligibility": "A bachelor's degree with 50% (45% for SC/ST/PwD); final-year students can apply",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://bschool.careers360.com/articles/cat-2025-exam-dates-announced"
+    },
+    {
+      "id": "xat",
+      "name": "XAT",
+      "conducting_body": "XLRI Jamshedpur",
+      "official_url": "https://xatonline.in",
+      "level": "pg",
+      "usual_application_window": "July to early December",
+      "usual_exam_month": "early January",
+      "eligibility": "A bachelor's degree (final-year students can apply)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://www.collegedekho.com/exam/xat"
+    },
+    {
+      "id": "nmat",
+      "name": "NMAT",
+      "conducting_body": "GMAC",
+      "official_url": "https://www.mba.com/exams/nmat",
+      "level": "pg",
+      "usual_application_window": "August to October",
+      "usual_exam_month": "November to December (you pick the slot)",
+      "eligibility": "A bachelor's degree with 50%",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://bschool.careers360.com/articles/nmat-2015-important-dates"
+    },
+    {
+      "id": "cmat",
+      "name": "CMAT",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://exams.nta.nic.in/cmat",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "mat",
+      "name": "MAT",
+      "conducting_body": "All India Management Association",
+      "official_url": "https://mat.aima.in",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "snap",
+      "name": "SNAP",
+      "conducting_body": "Symbiosis International University",
+      "official_url": "https://www.snaptest.org",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree with 50%",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "micat",
+      "name": "MICAT",
+      "conducting_body": "MICA Ahmedabad",
+      "official_url": "https://www.mica.ac.in",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "iift",
+      "name": "IIFT admission",
+      "conducting_body": "Indian Institute of Foreign Trade",
+      "official_url": "https://www.iift.ac.in",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "ugc-net",
+      "name": "UGC NET",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://ugcnet.nta.nic.in",
+      "level": "pg",
+      "usual_application_window": "April to May (June exam) and September to October (December exam)",
+      "usual_exam_month": "June and December",
+      "eligibility": "A master's degree with 55% (50% for reserved categories)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://www.deccanherald.com/education/nta-to-conduct-ugc-net-2026-june-session-between-june-22-to-30-check-key-dates-here-3986427"
+    },
+    {
+      "id": "csir-net",
+      "name": "CSIR-UGC NET",
+      "conducting_body": "National Testing Agency (NTA)",
+      "official_url": "https://csirnet.nta.nic.in",
+      "level": "pg",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A master's degree in science (or an integrated/BS-4-year degree)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "ctet",
+      "name": "CTET",
+      "conducting_body": "Central Board of Secondary Education",
+      "official_url": "https://ctet.nic.in",
+      "level": "professional",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A teacher-education qualification (D.El.Ed or B.Ed)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "ca-foundation",
+      "name": "CA Foundation",
+      "conducting_body": "Institute of Chartered Accountants of India",
+      "official_url": "https://www.icai.org",
+      "level": "professional",
+      "usual_application_window": "register at least four months before the exam",
+      "usual_exam_month": "January, May and September",
+      "eligibility": "After Class 12 (you can register after Class 10)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://www.caclubindia.com/news/icai-ca-foundation-exam-september-2026-26620.asp"
+    },
+    {
+      "id": "cseet",
+      "name": "CSEET",
+      "conducting_body": "Institute of Company Secretaries of India",
+      "official_url": "https://www.icsi.edu",
+      "level": "professional",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 (or appearing)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "acet",
+      "name": "ACET",
+      "conducting_body": "Institute of Actuaries of India",
+      "official_url": "https://www.actuariesindia.org",
+      "level": "professional",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 with Maths or Statistics",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "aibe",
+      "name": "AIBE",
+      "conducting_body": "Bar Council of India",
+      "official_url": "https://www.allindiabarexamination.com",
+      "level": "professional",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "An LLB, enrolled with a State Bar Council",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "patent-agent",
+      "name": "Patent Agent Examination",
+      "conducting_body": "Indian Patent Office",
+      "official_url": "https://ipindia.gov.in",
+      "level": "professional",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A degree in science or engineering",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "upsc-cse",
+      "name": "UPSC Civil Services",
+      "conducting_body": "Union Public Service Commission",
+      "official_url": "https://upsc.gov.in",
+      "level": "recruitment",
+      "usual_application_window": "February",
+      "usual_exam_month": "Prelims in May to June",
+      "eligibility": "A bachelor's degree, age 21–32 (relaxations apply)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://www.insightsonindia.com/2026/02/04/upsc-2026-notification/"
+    },
+    {
+      "id": "upsc-ifos",
+      "name": "UPSC Indian Forest Service",
+      "conducting_body": "Union Public Service Commission",
+      "official_url": "https://upsc.gov.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree in a science, agriculture, forestry or engineering subject",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "upsc-ies-iss",
+      "name": "UPSC Indian Economic / Statistical Service",
+      "conducting_body": "Union Public Service Commission",
+      "official_url": "https://upsc.gov.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A master's degree in economics or statistics (subject rules apply)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "nda",
+      "name": "NDA",
+      "conducting_body": "Union Public Service Commission",
+      "official_url": "https://upsc.gov.in",
+      "level": "recruitment",
+      "usual_application_window": "December to January (April exam) and May to June (September exam)",
+      "usual_exam_month": "April and September",
+      "eligibility": "Age 16.5–19.5, Class 12 (Physics and Maths for the Air Force and Navy)",
+      "status": "checked",
+      "checked_on": "2026-10-02",
+      "checked_via": "https://pwonlyias.com/upsc-nda-notification/"
+    },
+    {
+      "id": "cds",
+      "name": "CDS",
+      "conducting_body": "Union Public Service Commission",
+      "official_url": "https://upsc.gov.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree (engineering for some academies)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "afcat",
+      "name": "AFCAT",
+      "conducting_body": "Indian Air Force",
+      "official_url": "https://afcat.cdac.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree (subject rules by branch)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "army-tech-entries",
+      "name": "Army technical entries (TES / TGC / SSC Tech)",
+      "conducting_body": "Indian Army",
+      "official_url": "https://joinindianarmy.nic.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Class 12 with PCM (TES) or an engineering degree (TGC / SSC Tech)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "ibps-po",
+      "name": "IBPS PO / Clerk",
+      "conducting_body": "Institute of Banking Personnel Selection",
+      "official_url": "https://www.ibps.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "sbi-po",
+      "name": "SBI PO / Clerk",
+      "conducting_body": "State Bank of India",
+      "official_url": "https://sbi.co.in/web/careers",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "rbi-grade-b",
+      "name": "RBI Grade B",
+      "conducting_body": "Reserve Bank of India",
+      "official_url": "https://opportunities.rbi.org.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree with 60% (a master's in economics or finance for DEPR)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "nabard-grade-a",
+      "name": "NABARD Grade A",
+      "conducting_body": "NABARD",
+      "official_url": "https://www.nabard.org",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree (subject rules by post)",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "ssc-cpo",
+      "name": "SSC CPO",
+      "conducting_body": "Staff Selection Commission",
+      "official_url": "https://ssc.gov.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A bachelor's degree, age 20–25",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "rrb",
+      "name": "Railway Recruitment Board exams",
+      "conducting_body": "Railway Recruitment Boards",
+      "official_url": "https://indianrailways.gov.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "Depends on the post — Class 10 + ITI to a degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "icar-ars",
+      "name": "ASRB ARS / NET",
+      "conducting_body": "Agricultural Scientists Recruitment Board",
+      "official_url": "https://www.asrb.org.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A master's degree in an agricultural science",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "barc-oces",
+      "name": "BARC OCES / DGFS",
+      "conducting_body": "Bhabha Atomic Research Centre",
+      "official_url": "https://www.barc.gov.in",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "An engineering degree or a master's in science",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    },
+    {
+      "id": "aai-atc",
+      "name": "AAI Junior Executive (ATC)",
+      "conducting_body": "Airports Authority of India",
+      "official_url": "https://www.aai.aero",
+      "level": "recruitment",
+      "usual_application_window": null,
+      "usual_exam_month": null,
+      "eligibility": "A B.Sc with Physics and Maths, or an engineering degree",
+      "status": "draft",
+      "checked_on": null,
+      "checked_via": null
+    }
+  ],
+  "aliases": {
+    "AAI Junior Executive (Air Traffic Control) recruitment examination": {
+      "exam": "aai-atc"
+    },
+    "ACET (Institute of Actuaries of India)": {
+      "exam": "acet"
+    },
+    "AFCAT": {
+      "exam": "afcat"
+    },
+    "AIBE (after enrolment)": {
+      "exam": "aibe"
+    },
+    "AIISH entrance": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "AILET": {
+      "exam": "ailet"
+    },
+    "Accessibility and sign language certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Agri-business management entrances (IIM Ahmedabad PGP-FABM, IRMA)": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "Airline cabin crew recruitment (DGCA-approved training)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Akashvani music audition (grading, not entry)": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "BARC OCES / DGFS": {
+      "exam": "barc-oces"
+    },
+    "BITSAT": {
+      "exam": "bitsat"
+    },
+    "CA Foundation (ICAI)": {
+      "exam": "ca-foundation"
+    },
+    "CAT": {
+      "exam": "cat"
+    },
+    "CDS (UPSC)": {
+      "exam": "cds"
+    },
+    "CEED": {
+      "exam": "ceed"
+    },
+    "CLAT": {
+      "exam": "clat"
+    },
+    "CMAT": {
+      "exam": "cmat"
+    },
+    "CMI Entrance": {
+      "exam": "cmi"
+    },
+    "COMEDK": {
+      "exam": "comedk-uget"
+    },
+    "CSEET (ICSI)": {
+      "exam": "cseet"
+    },
+    "CSIR-UGC NET": {
+      "exam": "csir-net"
+    },
+    "CSIR-UGC NET / JRF (PhD)": {
+      "exam": "csir-net"
+    },
+    "CSIR-UGC NET Mathematical Sciences": {
+      "exam": "csir-net"
+    },
+    "CTET": {
+      "exam": "ctet"
+    },
+    "CTET (for school posts)": {
+      "exam": "ctet"
+    },
+    "CUET": {
+      "exam": "cuet-ug"
+    },
+    "CUET (B.A./B.Sc)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (B.Sc)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (B.Sc/BA)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (BA/B.Sc Economics)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (BBA)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (BBA/B.Com)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (BCA/B.Sc)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (ICAR-UG)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (LLB)": {
+      "exam": "cuet-ug"
+    },
+    "CUET (for any bachelor's)": {
+      "exam": "cuet-ug"
+    },
+    "CUET PG": {
+      "exam": "cuet-pg"
+    },
+    "CUET UG": {
+      "exam": "cuet-ug"
+    },
+    "CUET UG (BA Dance)": {
+      "exam": "cuet-ug"
+    },
+    "CUET UG (BA Music)": {
+      "exam": "cuet-ug"
+    },
+    "Career counselling certifications (private providers)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Company-sponsored cadet schemes": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "Counselling and psychotherapy diplomas (private providers)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Craft Instructor Training Scheme (CITS)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "DG Shipping approved pre-sea training admissions": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "DGCA AME module examinations": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "DGCA RPTO written and practical assessment": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "DGCA ground examinations": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "DSE / ISI / JNU entrance (MA)": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "Development fellowships (Gandhi Fellowship, PMRDF and others)": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "FDDI AIST": {
+      "exam": "fddi-aist"
+    },
+    "FTII JET": {
+      "exam": "ftii-jet"
+    },
+    "Federation coaching licences (AIFF, BCCI and others)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Federation officiating examinations (BCCI, AIFF and others)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Franchise league drafts": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "GATE": {
+      "exam": "gate"
+    },
+    "GATE (Architecture and Planning)": {
+      "exam": "gate"
+    },
+    "GATE (Ecology and Evolution)": {
+      "exam": "gate"
+    },
+    "GATE (Geomatics)": {
+      "exam": "gate"
+    },
+    "GATE (ISRO Scientist/Engineer + M.Tech/PhD)": {
+      "exam": "gate"
+    },
+    "GATE (M.Tech/PhD)": {
+      "exam": "gate"
+    },
+    "GATE (PSU recruitment)": {
+      "exam": "gate"
+    },
+    "Heritage management master's admissions": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "Higher Judicial Services Examination": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "Home healthcare agency training programmes": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Hospital and private institute GDA training programmes": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "IATA and travel agency certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "IBPS PO": {
+      "exam": "ibps-po"
+    },
+    "IBPS PO / Clerk": {
+      "exam": "ibps-po"
+    },
+    "ICAR ARS examination (Agricultural Research Service)": {
+      "exam": "icar-ars"
+    },
+    "IIFT": {
+      "exam": "iift"
+    },
+    "IIMC entrance": {
+      "exam": "iimc"
+    },
+    "IIRS and state remote sensing centre courses": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "IIT JAM (M.Sc)": {
+      "exam": "iit-jam"
+    },
+    "IMU CET": {
+      "exam": "imu-cet"
+    },
+    "IRMA and rural management entrances": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "ISI Admission Test": {
+      "exam": "isi-admission"
+    },
+    "Indian Economic Service (UPSC)": {
+      "exam": "upsc-ies-iss"
+    },
+    "Indian Statistical Service (UPSC)": {
+      "exam": "upsc-ies-iss"
+    },
+    "Institute entrances (IIPH, AIIMS, TISS)": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "Institute entrances (NLS, TISS, Ashoka, IIM public policy)": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "Institute of Archaeology (ASI) PGDA admission": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "JEE Advanced": {
+      "exam": "jee-advanced"
+    },
+    "JEE Main": {
+      "exam": "jee-main"
+    },
+    "JEE Main (B.Tech)": {
+      "exam": "jee-main"
+    },
+    "JEE Main Paper 1": {
+      "exam": "jee-main"
+    },
+    "JEE Main Paper 2A": {
+      "exam": "jee-main"
+    },
+    "JEE Main Paper 2B (B.Planning)": {
+      "exam": "jee-main"
+    },
+    "KVS and NVS recruitment": {
+      "exam": null,
+      "reason": "a central recruitment with its own notice each cycle — no fixed yearly calendar"
+    },
+    "LSAT India": {
+      "exam": "lsat-india"
+    },
+    "M.Phil Clinical Psychology entrance (RCI-recognised institutions)": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "MAT": {
+      "exam": "mat"
+    },
+    "MICAT (MICA Ahmedabad)": {
+      "exam": "micat"
+    },
+    "Master's in economics and public policy admissions": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "Ministry of Tourism regional guide training and licensing": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Mountaineering course admission (NIM, HMI and state institutes)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Municipal corporation recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "NABARD Grade A": {
+      "exam": "nabard-grade-a"
+    },
+    "NABET/QCI EIA accreditation": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "NATA": {
+      "exam": "nata"
+    },
+    "NCHMCT JEE": {
+      "exam": "nchm-jee"
+    },
+    "NDA (UPSC)": {
+      "exam": "nda"
+    },
+    "NEET UG": {
+      "exam": "neet-ug"
+    },
+    "NID DAT": {
+      "exam": "nid-dat"
+    },
+    "NIFT Entrance Examination": {
+      "exam": "nift"
+    },
+    "NMAT": {
+      "exam": "nmat"
+    },
+    "NSNIS Patiala coaching diploma": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "National Museum Institute admission": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "National School of Drama entrance": {
+      "exam": "nsd"
+    },
+    "Patent Agent Examination (Indian Patent Office)": {
+      "exam": "patent-agent"
+    },
+    "Personal training certifications (SPEFL-SC, ACE, ACSM and others)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Private aviation academy courses": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Private beauty academy certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Private hairdressing academy certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Private makeup academy certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Private spa and massage academy certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "RBI Grade B": {
+      "exam": "rbi-grade-b"
+    },
+    "RBI Grade B (DEPR)": {
+      "exam": "rbi-grade-b"
+    },
+    "RRB Assistant Loco Pilot (CEN 01/2026)": {
+      "exam": "rrb"
+    },
+    "RRB Non-Technical Popular Categories (Station Master)": {
+      "exam": "rrb"
+    },
+    "RRB Technician": {
+      "exam": "rrb"
+    },
+    "RTR(A)": {
+      "exam": null,
+      "reason": "no single national exam — see the career's path for how entry works"
+    },
+    "SBI PO / Clerk": {
+      "exam": "sbi-po"
+    },
+    "SLAT": {
+      "exam": "slat"
+    },
+    "SNAP": {
+      "exam": "snap"
+    },
+    "SRFTI entrance": {
+      "exam": "ftii-jet"
+    },
+    "SRMJEEE": {
+      "exam": "srmjeee"
+    },
+    "SSC CPO": {
+      "exam": "ssc-cpo"
+    },
+    "Scuba and paragliding certifications (PADI, SSI and equivalents)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Sector Skill Council trainer certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Sports quota recruitment (Railways, police, banks, PSUs)": {
+      "exam": null,
+      "reason": "a central recruitment with its own notice each cycle — no fixed yearly calendar"
+    },
+    "State Anganwadi Worker recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State District Child Protection Unit recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State Eligibility Tests (SET/SLET)": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State Forest Range Officer and Forest Guard recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State Forest Service examinations": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State ITI instructor recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State Judicial Services Examination (Civil Judge)": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State Public Service Commission examinations": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State Teacher Eligibility Tests": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State agricultural university admissions": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State agriculture department recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State allied-health entrance exams": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State and central library recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State animal husbandry department recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State engineering entrance examinations": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State fire service recruitment examinations": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State fisheries department recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State hotel management institute admissions": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State nursing entrance exams": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State pharmacy entrance exams": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State planning entrance examinations": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State police recruitment examinations": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State public service commissions": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State recruitment for Probation and Child Welfare Officer posts": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State rural livelihoods mission recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State teacher recruitment examinations": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "State transport corporation driver recruitment": {
+      "exam": null,
+      "reason": "a state-level or local recruitment — each state runs its own, with no single calendar"
+    },
+    "Sustainability and GHG accounting certifications": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    },
+    "Symbiosis SET (Mass Communication)": {
+      "exam": "symbiosis-set"
+    },
+    "TES / TGC / SSC technical entries": {
+      "exam": "army-tech-entries"
+    },
+    "TISS and central university MSW admissions": {
+      "exam": null,
+      "reason": "an institute-specific admission — each institute sets its own dates"
+    },
+    "UCEED": {
+      "exam": "uceed"
+    },
+    "UGC NET": {
+      "exam": "ugc-net"
+    },
+    "UGC NET (Library & Information Science)": {
+      "exam": "ugc-net"
+    },
+    "UGC NET (PhD/JRF)": {
+      "exam": "ugc-net"
+    },
+    "UGC NET Computer Science": {
+      "exam": "ugc-net"
+    },
+    "UPSC Civil Services Examination": {
+      "exam": "upsc-cse"
+    },
+    "UPSC Civil Services Examination (IPS)": {
+      "exam": "upsc-cse"
+    },
+    "UPSC Indian Forest Service Examination": {
+      "exam": "upsc-ifos"
+    },
+    "VITEEE": {
+      "exam": "viteee"
+    },
+    "XAT": {
+      "exam": "xat"
+    },
+    "YCB level examinations (Ministry of AYUSH)": {
+      "exam": null,
+      "reason": "a course or certification route, not a single entrance exam"
+    }
+  }
+}

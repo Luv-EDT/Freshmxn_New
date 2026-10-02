@@ -12,6 +12,7 @@ const entranceGates = require("../data/entrance_gates.json")
 const filterRules = require("../data/filter_rules.json")
 const blueCollar = require("../data/blue_collar.json")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
+const { examsFor } = require("../utils/examCalendar")
 
 // The full records, for /getProfession. The slim projection below is what /search walks.
 const fullById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
@@ -168,7 +169,9 @@ const NUANCE_SECTION = {
 // is student-facing, and an endpoint that serves the whole object leaks all of it the first time
 // somebody adds a field. Where the report needs something from them it gets a DERIVED value only:
 // `checked` (verified or estimate), `payCaution` (from `filter`), never the record itself.
-const studentFacing = (profession) => {
+const studentFacing = (profession, examOverrides) => {
+    // a Map or nothing — `.map(studentFacing)` passes the array index here
+    const calendarExams = examsFor(profession, examOverrides instanceof Map ? examOverrides : undefined)
     const gate = profession.entry_competition && entranceGates.gates
         ? entranceGates.gates[profession.entry_competition.primary_gate]
         : null
@@ -202,6 +205,12 @@ const studentFacing = (profession) => {
                 note: profession.entrance_exams.note || null,
             }
             : null,
+
+        // The same exams from the exam calendar (Round 11): who runs each, its official site, and —
+        // once checked — when it USUALLY opens. `otherRoutes` are the spellings with no calendar row
+        // (a state recruitment, an institute's own admission), shown as plain text.
+        exams: calendarExams.exams,
+        otherRoutes: calendarExams.unlisted,
 
         // Only the facing numbers off the gate record — how hard it is to get in, which is what a
         // student is asking. Not its verification block or its internal next_stage wiring.

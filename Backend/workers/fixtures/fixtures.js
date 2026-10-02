@@ -3482,6 +3482,91 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "EXAM CALENDAR — every exam spelling in the data is mapped to a row or carries a reason",
+        run: () => {
+            const calendar = require("../../data/exam_calendar.json")
+            const professions = require("../../data/ALL-professions.json").professions
+            const ids = new Set(calendar.exams.map((exam) => exam.id))
+            const problems = []
+            const spellings = new Set(professions.flatMap((profession) => {
+                const routes = profession.entrance_exams || {}
+                return [...(routes.public_routes || []), ...(routes.private_entrances || [])]
+            }))
+            spellings.forEach((spelling) => {
+                const alias = calendar.aliases[spelling]
+                if (!alias) problems.push(`"${spelling}" is not in the alias map`)
+                else if (alias.exam && !ids.has(alias.exam)) problems.push(`"${spelling}" points at unknown exam ${alias.exam}`)
+                else if (!alias.exam && !(typeof alias.reason === "string" && alias.reason.length > 10)) problems.push(`"${spelling}" has no exam and no reason`)
+            })
+            if (ids.size !== calendar.exams.length) problems.push("two exam rows share an id")
+            if (spellings.size < 150) problems.push(`only ${spellings.size} spellings found — the fixture is reading the wrong field`)
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "EXAM CALENDAR — checked rows are fresh, every link is https, and no row gives an exact date",
+        // "usually in May", never "on 4 May 2027": a student is always sent to the official site. A
+        // checked row older than 13 months fails here, so the calendar cannot quietly go stale.
+        run: () => {
+            const calendar = require("../../data/exam_calendar.json")
+            const problems = []
+            const now = Date.now()
+            const EXACT = /\b\d{1,2}(st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}(st|nd|rd|th)?\b|\b20\d\d\b|\d{4}-\d{2}-\d{2}/i
+            calendar.exams.forEach((exam) => {
+                if (!/^https:\/\/[^\s/]+\.[a-z]{2,}/i.test(exam.official_url || "")) problems.push(`${exam.id}: official link is not https`)
+                if (!["ug", "pg", "professional", "recruitment"].includes(exam.level)) problems.push(`${exam.id}: unknown level ${exam.level}`)
+                ;["usual_application_window", "usual_exam_month", "eligibility"].forEach((field) => {
+                    if (exam[field] && EXACT.test(exam[field])) problems.push(`${exam.id}.${field} reads like an exact date: "${exam[field]}"`)
+                })
+                if (exam.status === "checked") {
+                    const age = (now - new Date(exam.checked_on).getTime()) / (24 * 60 * 60 * 1000)
+                    if (!(age >= -1 && age <= 396)) problems.push(`${exam.id}: checked ${exam.checked_on} — older than 13 months, re-check it`)
+                    if (!exam.usual_application_window || !exam.usual_exam_month) problems.push(`${exam.id}: checked but has no window or month`)
+                } else if (exam.status !== "draft") {
+                    problems.push(`${exam.id}: status must be checked or draft`)
+                }
+            })
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "EXAM CALENDAR — a draft row reaches the page as a name and a link only; overrides apply",
+        run: () => {
+            const { examsFor, examById } = require("../../utils/examCalendar")
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+
+            let served = 0
+            professions.forEach((profession) => {
+                const facing = studentFacing(profession)
+                facing.exams.forEach((exam) => {
+                    served += 1
+                    const row = examById.get(exam.id)
+                    if (row.status === "draft" && (exam.window || exam.examMonth || exam.eligibility || exam.checkedOn)) problems.push(`${exam.id}: a draft row carried a window`)
+                })
+                const listed = facing.exams.length + facing.otherRoutes.public.length + facing.otherRoutes.private.length
+                const routes = profession.entrance_exams || {}
+                if (listed === 0 && ((routes.public_routes || []).length + (routes.private_entrances || []).length) > 0) problems.push(`${profession.profession}: its exams vanished`)
+            })
+            if (served < 100) problems.push(`only ${served} calendar exams served across the careers`)
+
+            const engineer = professions.find((profession) => (profession.entrance_exams && (profession.entrance_exams.public_routes || []).some((name) => /JEE Main/.test(name))))
+            const draftId = [...examById.values()].find((exam) => exam.status === "draft").id
+            const fake = { entrance_exams: { public_routes: [...engineer.entrance_exams.public_routes, ...engineer.entrance_exams.public_routes] } }
+            const once = examsFor(fake).exams.filter((exam) => exam.id === "jee-main")
+            if (once.length !== 1) problems.push("an exam listed twice was served twice")
+
+            const spelling = Object.entries(require("../../data/exam_calendar.json").aliases).find(([, alias]) => alias.exam === draftId)[0]
+            const approved = examsFor({ entrance_exams: { public_routes: [spelling] } }, new Map([[draftId, { values: { usual_application_window: "March to April" }, approvedAt: new Date() }]])).exams[0]
+            if (!approved || approved.window !== "March to April" || !approved.checkedOn) problems.push("an approved exam change did not reach the page")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

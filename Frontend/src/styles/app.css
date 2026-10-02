@@ -192,6 +192,23 @@ button.pc-toggle:hover:not(:disabled) {
     margin: 2px 0;
 }
 
+/* the exam calendar rows inside "Exams" (Round 11) */
+.pc-exams {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 8px;
+}
+
+.pc-exams li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line, #e6e6e6);
+    overflow-wrap: anywhere;
+}
+
+.pc-exams li:last-child {
+    border-bottom: 0;
+}
+
 .pc-group {
     margin: 8px 0;
 }

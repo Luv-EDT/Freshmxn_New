@@ -327,12 +327,28 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
 
                                 {detail.entranceExams && (detail.entranceExams.publicRoutes.length > 0 || detail.entranceExams.note) && (
                                     <Section title="Exams">
-                                        {detail.entranceExams.publicRoutes.length > 0 && (
-                                            <p className="pc-line">{detail.entranceExams.publicRoutes.join(" · ")}</p>
+                                        {/* the exam calendar (Round 11): what USUALLY happens, and the official site — never this year's dates */}
+                                        {(detail.exams || []).length > 0 && (
+                                            <ul className="pc-exams">
+                                                {detail.exams.map((exam) => (
+                                                    <li key={exam.id}>
+                                                        <strong>{exam.name}</strong>
+                                                        {" · "}
+                                                        <a href={exam.officialUrl} target="_blank" rel="noopener noreferrer">official site ↗</a>
+                                                        {exam.window && <span className="pc-small"><br />Applications usually: {exam.window}.</span>}
+                                                        {exam.examMonth && <span className="pc-small"> Exam usually: {exam.examMonth}.</span>}
+                                                        {exam.eligibility && <span className="pc-small"><br />Who can sit it: {exam.eligibility}.</span>}
+                                                        {exam.checkedOn && <span className="pc-small"> Checked {monthYear(exam.checkedOn)}.</span>}
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         )}
-                                        {detail.entranceExams.privateEntrances.length > 0 && (
+                                        {(detail.otherRoutes ? detail.otherRoutes.public : detail.entranceExams.publicRoutes).length > 0 && (
+                                            <p className="pc-line">{(detail.otherRoutes ? detail.otherRoutes.public : detail.entranceExams.publicRoutes).join(" · ")}</p>
+                                        )}
+                                        {(detail.otherRoutes ? detail.otherRoutes.private : detail.entranceExams.privateEntrances).length > 0 && (
                                             <p className="pc-small">
-                                                Private: {detail.entranceExams.privateEntrances.join(" · ")}
+                                                Private: {(detail.otherRoutes ? detail.otherRoutes.private : detail.entranceExams.privateEntrances).join(" · ")}
                                             </p>
                                         )}
                                         {detail.entranceExams.note && <p className="pc-small"><em>{detail.entranceExams.note}</em></p>}
