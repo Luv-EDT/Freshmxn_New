@@ -158,10 +158,10 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 router.post("/runHousekeepingForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const { job } = req.body
-        const { runNow, JOBS } = require("../workers/housekeepingWorker")
+        const { runNow, RUNNABLE } = require("../workers/housekeepingWorker")
         const { withTimeout } = require("../workers/queueHelpers")
 
-        if (!JOBS[job]) {
+        if (!RUNNABLE.includes(job)) {
             return res.status(400).json({ success: false, message: "Unknown job" })
         }
 

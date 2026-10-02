@@ -1,11 +1,16 @@
-// THE WEEKLY EMERGING-CAREERS SCOUT (owner, Round 10) — run by the housekeeping worker on Mondays.
+// THE WEEKLY EMERGING-CAREERS SCOUT (owner, Round 10; Round 11) — run by the housekeeping worker on
+// Mondays.
 //
-//   1. Candidates, from two places:
+//   1. Candidates, from three places, each tagged with every source it came from:
 //        job board        this week's Adzuna India postings — titles seen at least MIN_POSTINGS times
 //        students         aspirations that matched none of our 223 careers (aspiration_signals,
 //                         outcome "unmatched"), counted by how many students wrote them
-//      The same title from both is tagged "both".
-//   2. Each is embedded (Voyage, the vectors matching already uses) and compared with our careers:
+//        reports          roles the official sources name as new or fast-growing (one search a run)
+//   2. Anything that is ALREADY ONE OF OUR JOB TITLES is dropped — first by name (all ~1,700 titles
+//      across the 223 careers, normalised the same way), then by meaning (each title's vector,
+//      cached in roleEmbeddingsModel). "Unity Developer" is a job title under Game Developer, not a
+//      new career.
+//   3. What is left is compared with our careers as a whole:
 //        new        nothing we hold is close
 //        between    it sits between two careers in DIFFERENT sectors — a combined career
 //      Anything close to one career we already hold is dropped.
@@ -34,6 +39,8 @@ const DAY = 24 * 60 * 60 * 1000
 const newBelow = () => Number(process.env.SCOUT_NEW_BELOW) || 0.55
 const betweenGap = () => Number(process.env.SCOUT_BETWEEN_GAP) || 0.03
 const maxCandidates = () => Number(process.env.SCOUT_MAX_CANDIDATES) || 25
+// a title this close in meaning to one of our job titles IS that job title (INVENTED, tunable)
+const roleKnownAt = () => Number(process.env.SCOUT_ROLE_KNOWN) || 0.8
 
 const SENIORITY = /\b(senior|sr|junior|jr|lead|principal|head|chief|associate|assistant|trainee|intern|internship|fresher|freshers|entry level|executive|i{1,3}|iv|[0-9]+\+? ?(years?|yrs?))\b/g
 
@@ -85,22 +92,55 @@ const countAspirations = (recommendations) => {
     return [...byKey.values()]
 }
 
-const mergeSources = (board, students) => {
+// One row per normalised title, with every source it came from.
+const mergeSources = (board, students, reports = []) => {
     const merged = new Map()
-    board.forEach((row) => merged.set(row.key, { key: row.key, title: row.title, postings: row.count, aspirations: 0 }))
-    students.forEach((row) => {
-        const existing = merged.get(row.key)
-        if (existing) existing.aspirations = row.count
-        else merged.set(row.key, { key: row.key, title: row.title, postings: 0, aspirations: row.count })
+    const row = (key, title) => {
+        if (!merged.has(key)) merged.set(key, { key, title, postings: 0, aspirations: 0, sources: [], reportUrl: null })
+        return merged.get(key)
+    }
+    board.forEach((entry) => {
+        const item = row(entry.key, entry.title)
+        item.postings = entry.count
+        item.sources.push("job_board")
     })
-    return [...merged.values()].map((row) => ({
-        ...row,
-        source: row.postings > 0 && row.aspirations > 0 ? "both" : row.postings > 0 ? "job_board" : "student_aspirations",
-    }))
+    students.forEach((entry) => {
+        const item = row(entry.key, entry.title)
+        item.aspirations = entry.count
+        item.sources.push("student_aspirations")
+    })
+    reports.forEach((entry) => {
+        const item = row(entry.key, entry.title)
+        if (!item.sources.includes("reports")) item.sources.push("reports")
+        item.reportUrl = item.reportUrl || entry.url || null
+    })
+    return [...merged.values()]
 }
 
-// Students first — an unmatched wish is a gap in what we can tell someone — then postings.
-const byPriority = (left, right) => right.aspirations - left.aspirations || right.postings - left.postings || left.key.localeCompare(right.key)
+// Students first — an unmatched wish is a gap in what we can tell someone — then titles more sources
+// agree on, then postings.
+const byPriority = (left, right) => right.aspirations - left.aspirations
+    || right.sources.length - left.sources.length
+    || right.postings - left.postings
+    || left.key.localeCompare(right.key)
+
+// Every job title we already list, by its normalised key.
+const jobRoleIndex = (professions) => {
+    const index = new Map()
+    professions.forEach((profession) => {
+        ;[profession.profession, ...(profession.job_roles || [])].forEach((role) => {
+            const key = normaliseTitle(role)
+            if (key.length >= 3 && !index.has(key)) index.set(key, { professionId: profession.id, role })
+        })
+    })
+    return index
+}
+
+// The closest of our job titles by meaning, best first.
+const nearestRoles = (vector, roleVectors, limit = 3) => roleVectors
+    .map((entry) => ({ role: entry.role, professionId: entry.professionId, similarity: Math.round(cosine(vector, entry.vector) * 1000) / 1000 }))
+    .sort((left, right) => right.similarity - left.similarity)
+    .slice(0, limit)
 
 const sectorById = new Map(taxonomy.professions.map((profession) => [profession.id, profession.professional_sector]))
 
@@ -145,15 +185,68 @@ const promptFor = (candidate, previousCounts) => [
     candidate.kind === "between" ? "It sits between the first two of those — it may be a combination of them." : "None of them is close.",
     `Job-board postings this week: ${candidate.postings}${previousCounts.length ? `; earlier weeks: ${previousCounts.map((row) => row.count).join(", ")}` : ""}`,
     `Students who named it as the career they want: ${candidate.aspirations}`,
-].join("\n")
+    candidate.sources.includes("reports") ? `Named as new or growing by: ${candidate.reportUrl || "an official report"}` : null,
+].filter(Boolean).join("\n")
 
 const checkAssessment = (json) => LEVELS.includes(json.aiResilience) && GROWTH.includes(json.growth)
+
+// ONE search a run for roles the official sources call new or growing — the third source.
+const REPORTS_SYSTEM = `You look for NEW or FAST-GROWING job roles in India for a career-guidance service used by students
+aged 14 to 25. Search the allowed public sources (government labour statistics, the National Career
+Service, the India Skills Report, Naukri JobSpeak, LinkedIn's published Economic Graph reports).
+
+List up to 15 specific job roles that a source from the last 12 months names as new, emerging or
+growing fast in India. A job title, not an industry ("Drone Pilot", not "aviation"). Only roles a
+source actually names — never your own guesses.
+
+Reply with ONLY this JSON object:
+{"roles": [{"title": "...", "source_url": "https://..."}]}`
+
+const reportTitles = async (research) => {
+    if (!research) return []
+    const reply = await research.askJson({
+        system: REPORTS_SYSTEM,
+        user: "Which job roles do the sources name as new or fast-growing in India this year?",
+        check: (json) => Array.isArray(json.roles),
+        maxUses: 5,
+    })
+    if (!reply.json) return []
+    return reply.json.roles
+        .filter((role) => role && typeof role.title === "string")
+        .slice(0, 15)
+        .map((role) => ({ key: normaliseTitle(role.title), title: role.title.trim().slice(0, 120), url: typeof role.source_url === "string" && role.source_url.startsWith("http") ? role.source_url : null }))
+        .filter((role) => role.key.length >= 3)
+}
+
+// Our job titles' vectors, from the cache; only titles not cached yet are embedded (Round 11, R11-L).
+const roleVectorsFor = async (professions, embed, model) => {
+    const RoleEmbedding = require("../model/roleEmbeddingsModel")
+    const wanted = []
+    professions.forEach((profession) => (profession.job_roles || []).forEach((role) => wanted.push({ key: `${model}::${normaliseTitle(role)}`, professionId: profession.id, role })))
+    const unique = [...new Map(wanted.map((entry) => [entry.key, entry])).values()]
+
+    const cached = await RoleEmbedding.find({ key: { $in: unique.map((entry) => entry.key) } }).lean()
+    const have = new Set(cached.map((entry) => entry.key))
+    const missing = unique.filter((entry) => !have.has(entry.key))
+
+    for (let start = 0; start < missing.length; start += 128) {
+        const batch = missing.slice(start, start + 128)
+        const vectors = await embed(batch.map((entry) => entry.role))
+        // these keys were not in the cache a moment ago, so a plain insert; a duplicate from a run
+        // racing this one is harmless and ignored
+        await RoleEmbedding.insertMany(batch.map((entry, index) => ({ key: entry.key, professionId: entry.professionId, role: entry.role, vector: vectors[index] })), { ordered: false })
+            .catch((error) => { if (!/duplicate key|E11000/.test(error.message)) throw error })
+        batch.forEach((entry, index) => cached.push({ ...entry, vector: vectors[index] }))
+    }
+    return cached
+}
+
+const embeddingModel = () => process.env.Embedding_Model || professionEmbeddings.model
 
 const voyageEmbed = () => {
     const apiKey = process.env.VOYAGE_API_KEY
     if (!apiKey) return null
-    const model = process.env.Embedding_Model || professionEmbeddings.model
-    return (texts) => embedQuery(texts, { apiKey, model, dimensions: professionEmbeddings.dimensions })
+    return (texts) => embedQuery(texts, { apiKey, model: embeddingModel(), dimensions: professionEmbeddings.dimensions })
 }
 
 const runCareerScout = async ({
@@ -161,6 +254,7 @@ const runCareerScout = async ({
     adzuna = createAdzuna(),
     embed = voyageEmbed(),
     embeddings = professionEmbeddings.embeddings,
+    professions = taxonomy.professions,
     now = new Date(),
 } = {}) => {
     if (!embed) return { skipped: "VOYAGE_API_KEY is not set" }
@@ -178,24 +272,45 @@ const runCareerScout = async ({
     }
 
     const recommendations = await Recommendation.find({ "aspiration_signals.outcome": "unmatched" }).select("aspiration_signals").limit(5000).lean()
-    const pool = mergeSources(countTitles(titles), countAspirations(recommendations)).sort(byPriority).slice(0, MAX_EMBEDDED)
 
-    const result = { postingsRead: titles.length, adzuna: adzuna ? "used" : "skipped (no keys)", considered: pool.length, listed: 0, assessed: 0, refused: [], failed: [] }
+    let reports = []
+    try {
+        reports = await reportTitles(research)
+    } catch (error) {
+        console.error(`career_scout: the reports search failed — ${error.message}`)
+    }
+
+    // already one of our job titles, by name → not a candidate at all
+    const known = jobRoleIndex(professions)
+    const merged = mergeSources(countTitles(titles), countAspirations(recommendations), reports)
+    const pool = merged.filter((row) => !known.has(row.key)).sort(byPriority).slice(0, MAX_EMBEDDED)
+
+    const result = { postingsRead: titles.length, adzuna: adzuna ? "used" : "skipped (no keys)", reportsNamed: reports.length, considered: merged.length, knownByName: merged.length - merged.filter((row) => !known.has(row.key)).length, knownByMeaning: 0, listed: 0, assessed: 0, refused: [], failed: [] }
     if (pool.length === 0) return result
 
+    const roleVectors = await roleVectorsFor(professions, embed, embeddingModel())
     const vectors = await embed(pool.map((row) => row.title))
-    const candidates = pool
-        .map((row, index) => ({ ...row, ...classifyAgainstCareers(vectors[index], embeddings) }))
-        .filter((row) => row.kind !== "known")
-        .slice(0, maxCandidates())
+    const candidates = []
+    pool.forEach((row, index) => {
+        const roles = nearestRoles(vectors[index], roleVectors)
+        if (roles.length > 0 && roles[0].similarity >= roleKnownAt()) {
+            result.knownByMeaning += 1     // already one of our job titles, by meaning
+            return
+        }
+        const placed = classifyAgainstCareers(vectors[index], embeddings)
+        if (placed.kind !== "known") candidates.push({ ...row, ...placed, nearestRoles: roles })
+    })
+    candidates.splice(maxCandidates())
 
     for (const candidate of candidates) {
         const existing = await ScoutCandidate.findOne({ key: candidate.key }).lean()
         const previousCounts = existing && Array.isArray(existing.postingCounts) ? existing.postingCounts.slice(-6) : []
-        const source = existing && existing.source !== candidate.source ? "both" : candidate.source
+        // the sources build up across weeks: a title the job board showed last month and students
+        // ask for now carries both tags
+        const sources = [...new Set([...((existing && existing.sources) || []), ...candidate.sources])]
 
         const update = {
-            $set: { title: candidate.title, source, kind: candidate.kind, nearest: candidate.nearest, aspirationCount: candidate.aspirations, lastSeenAt: now },
+            $set: { title: candidate.title, sources, reportUrl: candidate.reportUrl || (existing && existing.reportUrl) || null, kind: candidate.kind, nearest: candidate.nearest, nearestRoles: candidate.nearestRoles, aspirationCount: candidate.aspirations, lastSeenAt: now },
         }
         if (candidate.postings > 0) update.$push = { postingCounts: { $each: [{ at: now, count: candidate.postings }], $slice: -26 } }
 
@@ -233,4 +348,4 @@ const runCareerScout = async ({
     return result
 }
 
-module.exports = { runCareerScout, normaliseTitle, countTitles, countAspirations, mergeSources, classifyAgainstCareers, byPriority, MIN_POSTINGS }
+module.exports = { runCareerScout, normaliseTitle, countTitles, countAspirations, mergeSources, classifyAgainstCareers, byPriority, jobRoleIndex, nearestRoles, reportTitles, MIN_POSTINGS }

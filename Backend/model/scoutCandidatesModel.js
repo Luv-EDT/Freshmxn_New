@@ -3,13 +3,15 @@ const mongoose = require("mongoose")
 // THE EMERGING-CAREERS WATCHLIST (owner, Round 10) — written by the weekly scout
 // (housekeeping/careerScout.js), read in the admin "Emerging careers" tab.
 //
-// ONE LIST, TWO SOURCES. A title gets here from new job-board postings, from careers students said
-// they wanted but that matched none of our 223, or both — and the tag says which, because "students
-// keep asking for it" and "employers keep hiring for it" are different reasons to add a career.
+// ONE LIST, THREE SOURCES. A title gets here from new job-board postings, from careers students said
+// they wanted but that matched none of our 223, or from the official reports naming it as new or
+// growing (Round 11) — and the tags say which, because "students keep asking for it", "employers
+// keep hiring for it" and "the reports call it emerging" are different reasons to add a career.
 //
 // One row per normalised title, updated every week it shows up, so the posting counts build a trend.
-// Approving records the decision only; the career itself is then built through the normal data
-// process (combined: combined_careers.json; new: a full record), never generated here.
+// Approving as a new or combined career queues a draft built the way the 223 were
+// (housekeeping/draftCareer.js, careerDraftsModel); it reaches students only through an accepted
+// draft, an exported patch, a commit and a deploy.
 
 const scoutCandidateSchema = new mongoose.Schema(
     {
@@ -22,10 +24,13 @@ const scoutCandidateSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        source: {
+        sources: {
+            type: [{ type: String, enum: ["job_board", "student_aspirations", "reports"] }],
+            default: [],
+        },
+        reportUrl: {
             type: String,
-            enum: ["job_board", "student_aspirations", "both"],
-            required: true,
+            default: null, // where the reports source named it
         },
         kind: {
             type: String,
@@ -35,6 +40,10 @@ const scoutCandidateSchema = new mongoose.Schema(
         nearest: {
             type: [{ id: String, name: String, similarity: Number }],
             default: [],
+        },
+        nearestRoles: {
+            type: [{ role: String, professionId: String, similarity: Number }],
+            default: [], // the closest of our job titles — why it was not dropped as already known
         },
         postingCounts: {
             type: [{ at: Date, count: Number }],

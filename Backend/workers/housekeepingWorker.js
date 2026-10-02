@@ -3,6 +3,7 @@
 //     followup_scan    the 1st of each month, 09:00 IST   housekeeping/followUpScan.js
 //     data_refresh     the 1st of each month       housekeeping/dataRefresh.js
 //     career_scout     every Monday                housekeeping/careerScout.js
+//     draft_career     on demand — the admin approved a scout row (housekeeping/draftCareer.js)
 //
 // ONE QUEUE, ONE WORKER, three job names — each extra worker costs idle Redis commands (see
 // queueHelpers idleTimings), and these jobs are rare and small. BullMQ's job schedulers keep the
@@ -35,7 +36,11 @@ const JOBS = {
     followup_scan: () => require("../housekeeping/followUpScan").runFollowUpScan(),
     data_refresh: () => require("../housekeeping/dataRefresh").runDataRefresh(),
     career_scout: () => require("../housekeeping/careerScout").runCareerScout(),
+    draft_career: (data) => require("../housekeeping/draftCareer").runDraftCareer({ candidateId: data && data.candidateId }),
 }
+
+// jobs the admin may start from "Run now" — draft_career is started only by approving a scout row
+const RUNNABLE = ["followup_scan", "data_refresh", "career_scout"]
 
 const connectionOptions = () => {
     const url = process.env.REDIS_URL
@@ -51,9 +56,9 @@ const housekeepingQueue = () => {
 
 // The admin's "Run now". A hyphenated id with the time, so it never collides with a scheduled run
 // (BullMQ rejects ":" in custom ids).
-const runNow = async (name) => {
+const runNow = async (name, data = {}) => {
     if (!JOBS[name]) throw new Error(`unknown housekeeping job ${name}`)
-    return housekeepingQueue().add(name, {}, { jobId: `${name}-manual-${Date.now()}`, attempts: 2, backoff: { type: "exponential", delay: 60000 }, removeOnComplete: { count: 50 }, removeOnFail: { count: 50 } })
+    return housekeepingQueue().add(name, data, { jobId: `${name}-manual-${Date.now()}`, attempts: 2, backoff: { type: "exponential", delay: 60000 }, removeOnComplete: { count: 50 }, removeOnFail: { count: 50 } })
 }
 
 const registerSchedules = async () => {
@@ -76,7 +81,7 @@ const start = async () => {
     const worker = new Worker(QUEUE_NAME, async (job) => {
         const run = JOBS[job.name]
         if (!run) throw new Error(`unknown housekeeping job ${job.name}`)
-        return run()
+        return run(job.data)
     }, { connection: connectionOptions(), concurrency: 1, ...idleTimings() })
 
     attachConnectionLogging(worker, QUEUE_NAME)
@@ -114,4 +119,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { QUEUE_NAME, SCHEDULES, JOBS, start, runNow, registerSchedules }
+module.exports = { QUEUE_NAME, SCHEDULES, JOBS, RUNNABLE, start, runNow, registerSchedules }

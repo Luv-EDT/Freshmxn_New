@@ -24,3 +24,8 @@ export async function decideScoutForAdmin(id, decision, adminNote) {
     const response = await axiosInstance.put(`/dataUpdates/decideScoutForAdmin/${id}`, { decision, adminNote })
     return response
 }
+
+export async function decideDraftForAdmin(candidateId, decision, adminNote) {
+    const response = await axiosInstance.put(`/dataUpdates/decideDraftForAdmin/${candidateId}`, { decision, adminNote })
+    return response
+}

@@ -2,7 +2,7 @@
 // See model/professionOverridesModel.js. Read by professionsRouter only — the matching engine never
 // imports this file, so an approved number can change a card but never a ranking (fixture).
 
-const DEMAND_LEVELS = ["low", "moderate", "high"]
+const DEMAND_LEVELS = ["declining", "low", "moderate", "high"]
 const RANGE = /^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/
 
 // "3.5-8.0" — a pay range in lakh a year, low before high, within reason

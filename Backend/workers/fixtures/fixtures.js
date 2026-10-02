@@ -3181,17 +3181,32 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "SCOUT — one list: job board, students, or both; students first; one vote per student",
+        name: "SCOUT — one list from three sources, a tag for each; students first, then agreement; one vote per student",
+        // Round 11 (owner): the official reports became a third source, so "both" became one tag per source
         run: () => {
             const { countAspirations, mergeSources, byPriority } = require("../../housekeeping/careerScout")
             const students = countAspirations([
                 { aspiration_signals: [{ outcome: "unmatched", professionText: "Drone Pilot" }, { outcome: "unmatched", professionText: "drone pilot" }, { outcome: "ranked", professionText: "Chef" }] },
                 { aspiration_signals: [{ outcome: "unmatched", professionText: "Esports Coach" }, { outcome: "unmatched", professionText: "Drone Pilot" }] },
             ])
-            const merged = mergeSources([{ key: "drone pilot", title: "Drone Pilot", count: 12 }, { key: "prompt engineer", title: "Prompt Engineer", count: 40 }], students).sort(byPriority)
-            return merged.map((row) => `${row.key}:${row.source}:${row.aspirations}:${row.postings}`).join(",")
+            const board = [{ key: "drone pilot", title: "Drone Pilot", count: 12 }, { key: "prompt engineer", title: "Prompt Engineer", count: 40 }, { key: "ev technician", title: "EV Technician", count: 5 }]
+            const reports = [{ key: "ev technician", title: "EV Technician", url: "https://wheebox.com/x" }]
+            const merged = mergeSources(board, students, reports).sort(byPriority)
+            return merged.map((row) => `${row.key}:${row.sources.join("+")}:${row.aspirations}:${row.postings}`).join(",")
         },
-        expect: "drone pilot:both:2:12,esports coach:student_aspirations:1:0,prompt engineer:job_board:0:40",
+        expect: "drone pilot:job_board+student_aspirations:2:12,esports coach:student_aspirations:1:0,ev technician:job_board+reports:0:5,prompt engineer:job_board:0:40",
+    },
+    {
+        name: "SCOUT — a title that is already one of our job titles is not a new career",
+        run: () => {
+            const { jobRoleIndex, nearestRoles, normaliseTitle } = require("../../housekeeping/careerScout")
+            const index = jobRoleIndex(require("../../data/ALL-professions.json").professions)
+            const byName = index.get(normaliseTitle("Senior Unity Developer - Bangalore"))
+            const near = nearestRoles([1, 0], [{ role: "A", professionId: "x", vector: [0, 1] }, { role: "B", professionId: "y", vector: [1, 0.01] }])
+            return [byName ? byName.professionId : null, index.has("drone pilot") || index.has(normaliseTitle("Drone Pilot")), near[0].role]
+        },
+        // Drone Pilot IS one of our careers (eng-drone-pilot), so it is known by name too
+        expect: ["swc-game-developer", true, "B"],
     },
     {
         name: "SCOUT — far from everything is new, between two sectors is a combination, near one career is dropped",
@@ -3412,6 +3427,58 @@ const fixtures = [
             const monthly = /^\S+ \S+ \d+ \* \*$/.test(scan.pattern)
             const gapDays = monthly ? 31 : 1
             return CATCH_UP_DAYS > gapDays ? null : `window ${CATCH_UP_DAYS} days, runs up to ${gapDays} days apart — a student could be skipped`
+        },
+        expect: null,
+    },
+    {
+        name: "CAREER DRAFTS — the checks a drafted career must pass are ones all 223 already pass",
+        // if a check here rejected a real record, the drafter would be held to a rule the data never followed
+        run: () => {
+            const { validateDraftRecord, deriveFilter } = require("../../housekeeping/draftCareer")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            professions.forEach((profession) => {
+                const others = new Set(professions.filter((other) => other.id !== profession.id).map((other) => other.id))
+                const checks = validateDraftRecord(profession, others)
+                if (checks.blocking.length > 0) problems.push(`${profession.id}: ${checks.blocking[0]}`)
+                if (deriveFilter(profession) !== profession.filter) problems.push(`${profession.id}: the derived filter disagrees with the data`)
+            })
+            const broken = validateDraftRecord({ ...professions[0], id: professions[1].id, ai_exposure: { ...professions[0].ai_exposure, work_composition: { ...professions[0].ai_exposure.work_composition, clarity: 99 } } })
+            if (!broken.blocking.some((text) => /already exists/.test(text))) problems.push("a duplicate id was not caught")
+            if (!broken.blocking.some((text) => /sums to/.test(text))) problems.push("a work composition that does not sum to 100 was not caught")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "CAREER DRAFTS — embedded from the exact text the 223 were, and rated the way they were merged",
+        run: () => {
+            const { sourceTextOf, contentHash, mergePasses, decisionsText, DECISION_SECTIONS, validateCombined } = require("../../housekeeping/draftCareer")
+            const professions = require("../../data/ALL-professions.json").professions
+            const stored = require("../../data/profession_embeddings.json").embeddings
+            const problems = []
+            const drift = stored.filter((entry) => contentHash(sourceTextOf(professions.find((profession) => profession.id === entry.id))) !== entry.content_hash)
+            if (drift.length > 0) problems.push(`${drift.length} stored hashes do not reproduce — the draft would be embedded from different text`)
+
+            const merged = mergePasses({ id: "x", profession: "X", driving_reasons: ["curiosityDriven", "notAReason"] }, [
+                { factors: { openness: 4, focus: 2 }, weights: { openness: 0.5, focus: 0.2 } },
+                { factors: { openness: 4, focus: 8 }, weights: { openness: 0.5, focus: 0.4 } },
+                { factors: { openness: 5, focus: 5 }, weights: { openness: 0.6, focus: 0.3 } },
+            ])
+            if (merged.factors.openness !== 4.33 || merged.weights.focus !== 0.3) problems.push(`the passes are not averaged: ${JSON.stringify(merged.factors)}`)
+            if (!merged.admin_review.required || !/focus/.test(merged.admin_review.reason)) problems.push("a 6-point disagreement was not sent for review")
+            if (merged.review_status !== "unreviewed") problems.push("a drafted rating must start unreviewed")
+            if (merged.drivingReasons.join() !== "curiosityDriven") problems.push("a driving reason outside the vocabulary was kept")
+
+            const rules = decisionsText()
+            ;["## 1. Profession schema", "## 3. `degree_dependency`", "## 8.95 What makes something a profession", "## 8.6 AI exposure"].forEach((heading) => {
+                if (!rules.includes(heading)) problems.push(`the drafter is not given "${heading}"`)
+            })
+            if (DECISION_SECTIONS.length < 10) problems.push("too few rule sections")
+
+            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "photo_film" }).blocking.length === 0) problems.push("a combined career with the same group on both sides was accepted")
+            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "no_such_group" }).blocking.length === 0) problems.push("an unknown side group was accepted")
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },

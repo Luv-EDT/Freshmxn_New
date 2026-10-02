@@ -2,6 +2,7 @@ const express = require("express")
 const DataProposal = require("../model/dataProposalsModel")
 const ProfessionOverride = require("../model/professionOverridesModel")
 const ScoutCandidate = require("../model/scoutCandidatesModel")
+const CareerDraft = require("../model/careerDraftsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
@@ -94,10 +95,12 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
 // built (a combined career's two sides, or a full new record) before they can ship.
 router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const [overrides, approvedScout] = await Promise.all([
+        const [overrides, approvedScout, accepted] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
+            CareerDraft.find({ status: "accepted" }).lean(),
         ])
+        const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
         const patch = {
             kind: "freshmxn-data-patch",
@@ -108,7 +111,11 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                 checkedOn: row.approvedAt ? new Date(row.approvedAt).toISOString().slice(0, 10) : null,
                 sources: (row.sources || []).map((source) => source.url),
             })),
-            newCareerDrafts: approvedScout.map((row) => ({
+            // accepted drafts, complete — tools/applyDataPatch.js writes them into the data files
+            newCareers: accepted.filter((draft) => draft.kind === "new").map((draft) => ({ record: draft.record, rating: draft.rating, embedding: draft.embedding })),
+            newCombined: accepted.filter((draft) => draft.kind === "combined").map((draft) => draft.record),
+            // approved but not yet accepted as a finished draft — listed so nothing is forgotten
+            newCareerDrafts: approvedScout.filter((row) => !acceptedFor.has(String(row._id))).map((row) => ({
                 title: row.title,
                 as: row.status === "approved_combined" ? "combined" : "new",
                 nearest: row.nearest,
@@ -138,7 +145,15 @@ router.get("/getScoutForAdmin", authMiddleware, adminAuthMiddleware, async (req,
             .limit(300)
             .lean()
 
-        return res.status(200).json({ success: true, message: "Watchlist fetched successfully", data: { candidates } })
+        // the career drafted from each approved row, if any (Round 11)
+        const drafts = await CareerDraft.find({ candidate: { $in: candidates.map((candidate) => candidate._id) } }).lean()
+        const draftFor = new Map(drafts.map((draft) => [String(draft.candidate), draft]))
+
+        return res.status(200).json({
+            success: true,
+            message: "Watchlist fetched successfully",
+            data: { candidates: candidates.map((candidate) => ({ ...candidate, draft: draftFor.get(String(candidate._id)) || null })) },
+        })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to fetch the watchlist", error: error.message })
@@ -163,7 +178,70 @@ router.put("/decideScoutForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             return res.status(404).json({ success: false, message: "Not found" })
         }
 
-        return res.status(200).json({ success: true, message: "Saved", data: { candidate } })
+        // Approving builds the career the way the 223 were built (housekeeping/draftCareer.js) —
+        // queued, because drafting and three rating passes take a few minutes.
+        let drafting = false
+        if (decision === "approved_new" || decision === "approved_combined") {
+            const { runNow } = require("../workers/housekeepingWorker")
+            const { withTimeout } = require("../workers/queueHelpers")
+            await withTimeout(runNow("draft_career", { candidateId: String(candidate._id) }), "queueing the draft")
+            drafting = true
+        }
+
+        return res.status(200).json({ success: true, message: drafting ? "Saved — the career is being drafted; it appears here in a few minutes" : "Saved", data: { candidate, drafting } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to save the decision", error: error.message })
+    }
+})
+
+
+// ========================
+// Career Drafts For Admin (Round 11)
+// ========================
+
+// Accept: the draft goes into Export patch, and from there into the data files by a commit.
+// Send back: drafted again with the admin's note. A draft with a MUST FIX warning cannot be accepted.
+router.put("/decideDraftForAdmin/:candidateId", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { decision, adminNote } = req.body
+
+        if (!["accept", "send_back"].includes(decision)) {
+            return res.status(400).json({ success: false, message: "Decision must be accept or send_back" })
+        }
+
+        const draft = await CareerDraft.findOne({ candidate: req.params.candidateId })
+
+        if (!draft || !["ready", "sent_back", "failed", "accepted"].includes(draft.status)) {
+            return res.status(400).json({ success: false, message: "There is no finished draft to decide on" })
+        }
+
+        if (decision === "accept") {
+            if (draft.status !== "ready") {
+                return res.status(400).json({ success: false, message: "Only a ready draft can be accepted" })
+            }
+            if (draft.warnings.some((warning) => warning.startsWith("MUST FIX"))) {
+                return res.status(400).json({ success: false, message: "This draft breaks a rule (MUST FIX) — send it back with a note" })
+            }
+            draft.status = "accepted"
+            draft.adminNote = typeof adminNote === "string" ? adminNote.trim().slice(0, 1000) : draft.adminNote
+            await draft.save()
+            return res.status(200).json({ success: true, message: "Accepted — it is in Export patch now", data: { status: draft.status } })
+        }
+
+        const note = typeof adminNote === "string" ? adminNote.trim().slice(0, 1000) : ""
+        if (!note) {
+            return res.status(400).json({ success: false, message: "Say what to change, so the next draft can fix it" })
+        }
+        draft.status = "sent_back"
+        draft.adminNote = note
+        await draft.save()
+
+        const { runNow } = require("../workers/housekeepingWorker")
+        const { withTimeout } = require("../workers/queueHelpers")
+        await withTimeout(runNow("draft_career", { candidateId: String(draft.candidate) }), "queueing the redraft")
+
+        return res.status(200).json({ success: true, message: "Sent back — a new draft appears here in a few minutes", data: { status: "drafting" } })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to save the decision", error: error.message })

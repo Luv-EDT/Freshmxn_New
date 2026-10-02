@@ -168,7 +168,23 @@ const createResearchClient = ({
         return { unreadable: true }
     }
 
-    return { ask, askJson, model }
+    // NO web search — for work that must not look anything up (the rating passes judge the record
+    // they are given against the anchors, exactly as tools/rateProfessions.js did).
+    const askPlain = async ({ system, user, maxTokens = 6000, plainModel = model }) => {
+        const payload = await post({
+            model: plainModel,
+            max_tokens: maxTokens,
+            fallbacks: "default",
+            system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
+            messages: [{ role: "user", content: user }],
+        })
+        if (payload.stop_reason === "refusal") return { text: "", refused: true }
+        if (payload.stop_reason === "max_tokens") throw permanent("reply hit max_tokens")
+        if (!Array.isArray(payload.content)) throw new Error("reply had no content")
+        return { text: payload.content.filter((block) => block.type === "text").map((block) => block.text || "").join(""), refused: false }
+    }
+
+    return { ask, askJson, askPlain, model }
 }
 
 module.exports = { createResearchClient, sourcesOf, parseJsonReply, isTransient, SOURCE_DOMAINS }

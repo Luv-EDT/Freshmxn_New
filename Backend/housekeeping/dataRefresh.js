@@ -68,7 +68,7 @@ const validateProposal = (change, current, sources) => {
 
 const SYSTEM = `You check career data for an Indian career-guidance service used by students aged 14 to 25.
 
-For ONE career you are given what we currently show: India demand (low / moderate / high), early-career
+For ONE career you are given what we currently show: India demand (declining / low / moderate / high), early-career
 pay and mid-career pay (5–8 years, employed only), both as ranges in lakh rupees a year written "a-b".
 You may also be given live job-board figures.
 
