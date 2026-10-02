@@ -135,216 +135,229 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
             />
 
             {/* Brief section header */}
-            <div>
+            <div className="if-step-head">
                 <h2>📝 Background Information</h2>
-                <p>Help us understand your context and preferences for better guidance</p>
-                <div>
-                    <h3>📋 Why this matters</h3>
-                    <p>Your background helps us provide more personalized and relevant guidance for your unique situation.</p>
+                <p>
+                    A little about your family and you, so the guidance fits your situation. <strong>Every question
+                    needs an answer</strong>, except the "only if you're comfortable" boxes, which are entirely up to
+                    you. You can press Save and finish this page later.
+                </p>
+                <details className="if-examples">
+                    <summary>Why we ask</summary>
                     <p>
-                        <strong>All the questions on this page are required</strong>, except the "specify if
-                        comfortable" boxes, which stay entirely up to you. Some answers shape your guidance today;
-                        others we keep, unused, for support features we are still building — our Privacy Policy
-                        says exactly which. You can still press Save and finish this page later.
+                        Some answers shape your guidance today; others we keep, unused, for support features we are
+                        still building — our Privacy Policy says exactly which.
                     </p>
-                </div>
+                </details>
             </div>
 
             <form onSubmit={handleContinue}>
-                {/* Competition Preference */}
-                <div>
-                    <label><strong>How You Approach Success</strong></label>
-                    <p>How do you prefer to achieve recognition and stand out? Choose the approach that feels most natural to you.</p>
-                    {renderRadioGroup("competitionPreference", COMPETITION_OPTIONS)}
-                    {localFormData.competitionPreference === "recognition" && (
-                        <div>
-                            <label>Please describe what actions you take for this:</label>
-                            <br />
-                            <textarea
-                                name="competitionActions"
-                                value={localFormData.competitionActions}
-                                onChange={handleInputChange}
-                                rows="3"
-                                placeholder="Describe your approach..."
-                                required
-                            />
-                        </div>
-                    )}
-                </div>
+                <section className="if-card">
+                    <h3 className="if-card-title">Your family</h3>
+                    {/* Family Educational Background */}
+                    <div>
+                        <label><strong>Parent Education</strong></label>
+                        {["parentEducation1", "parentEducation2"].map((name, idx) => (
+                            <div key={name}>
+                                <label>Parent {idx + 1}:</label>{" "}
+                                <select name={name} value={localFormData[name]} onChange={handleInputChange} required>
+                                    <option value="">Select education level</option>
+                                    {PARENT_EDUCATION_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ))}
+                    </div>
 
-                {/* Family Educational Background */}
-                <div>
-                    <label><strong>Parent Education</strong></label>
-                    {["parentEducation1", "parentEducation2"].map((name, idx) => (
-                        <div key={name}>
-                            <label>Parent {idx + 1}:</label>{" "}
-                            <select name={name} value={localFormData[name]} onChange={handleInputChange} required>
-                                <option value="">Select education level</option>
-                                {PARENT_EDUCATION_OPTIONS.map((option) => (
-                                    <option key={option.value} value={option.value}>{option.label}</option>
-                                ))}
-                            </select>
-                        </div>
-                    ))}
-                </div>
+                    {/* Family Professions */}
+                    <div>
+                        <label><strong>Parent Professions</strong></label>
+                        {["parentProfession1", "parentProfession2"].map((name, idx) => (
+                            <div key={name}>
+                                <label>Parent {idx + 1}:</label>{" "}
+                                <input
+                                    type="text"
+                                    name={name}
+                                    value={localFormData[name]}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Teacher, Engineer, Business Owner"
+                                    required
+                                />
+                            </div>
+                        ))}
+                    </div>
 
-                {/* Family Professions */}
-                <div>
-                    <label><strong>Parent Professions</strong></label>
-                    {["parentProfession1", "parentProfession2"].map((name, idx) => (
-                        <div key={name}>
-                            <label>Parent {idx + 1}:</label>{" "}
-                            <input
-                                type="text"
-                                name={name}
-                                value={localFormData[name]}
-                                onChange={handleInputChange}
-                                placeholder="e.g., Teacher, Engineer, Business Owner"
-                                required
-                            />
-                        </div>
-                    ))}
-                </div>
+                    {/* Family Financial Background */}
+                    <div>
+                        <label><strong>Financial Background</strong></label>
+                        {[["financialSituationGrowingUp", "Growing up:"], ["financialSituationCurrent", "Currently:"]].map(([name, label]) => (
+                            <div key={name}>
+                                <label>{label}</label>{" "}
+                                <select name={name} value={localFormData[name]} onChange={handleInputChange} required>
+                                    <option value="">Select financial situation</option>
+                                    {FINANCIAL_OPTIONS.map((option) => (
+                                        <option key={option} value={option}>{option}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ))}
+                    </div>
 
-                {/* Family Financial Background */}
-                <div>
-                    <label><strong>Financial Background</strong></label>
-                    {[["financialSituationGrowingUp", "Growing up:"], ["financialSituationCurrent", "Currently:"]].map(([name, label]) => (
-                        <div key={name}>
-                            <label>{label}</label>{" "}
-                            <select name={name} value={localFormData[name]} onChange={handleInputChange} required>
-                                <option value="">Select financial situation</option>
-                                {FINANCIAL_OPTIONS.map((option) => (
-                                    <option key={option} value={option}>{option}</option>
-                                ))}
-                            </select>
-                        </div>
-                    ))}
-                </div>
+                    {/* Geographic Information */}
+                    <div>
+                        <label><strong>Where your parents are from</strong></label>
+                        {["parentsNativePlace1", "parentsNativePlace2"].map((name, idx) => (
+                            <div key={name}>
+                                <label>Parent {idx + 1}'s native place:</label>{" "}
+                                <input
+                                    type="text"
+                                    name={name}
+                                    value={localFormData[name]}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Mumbai, India"
+                                    required
+                                />
+                            </div>
+                        ))}
 
-                {/* Geographic Information */}
-                <div>
-                    <label><strong>Cultural Background</strong></label>
-                    {["parentsNativePlace1", "parentsNativePlace2"].map((name, idx) => (
-                        <div key={name}>
-                            <label>Parent {idx + 1}'s native place:</label>{" "}
-                            <input
-                                type="text"
-                                name={name}
-                                value={localFormData[name]}
-                                onChange={handleInputChange}
-                                placeholder="e.g., Mumbai, India"
-                                required
-                            />
-                        </div>
-                    ))}
+                    </div>
 
                     <div>
-                        <label>Places you feel culturally connected to:</label>
-                        <p>Add one place per box</p>
-                        {localFormData.culturalIdentity.map((val, idx) => (
-                            <div key={`culturalIdentity${idx}`}>
+                        <div>
+                            <label>Has your family experienced any past trauma?</label>
+                            <p>Examples include belonging to a minority group that faced discrimination</p>
+                            {renderRadioGroup("familyTrauma", YES_NO_OPTIONS)}
+                            {localFormData.familyTrauma === "Yes" && (
+                                <div>
+                                    <label>Tell us more, only if you're comfortable:</label>{" "}
+                                    <input
+                                        type="text"
+                                        name="familyTraumaSpecify"
+                                        value={localFormData.familyTraumaSpecify}
+                                        onChange={handleInputChange}
+                                        placeholder="Only if you're comfortable"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                </section>
+
+                <section className="if-card">
+                    <h3 className="if-card-title">You</h3>
+                    {/* Competition Preference */}
+                    <div>
+                        <label><strong>How You Approach Success</strong></label>
+                        <p>How do you prefer to achieve recognition and stand out? Choose the approach that feels most natural to you.</p>
+                        {renderRadioGroup("competitionPreference", COMPETITION_OPTIONS)}
+                        {localFormData.competitionPreference === "recognition" && (
+                            <div>
+                                <label>Please describe what actions you take for this:</label>
+                                <br />
+                                <textarea
+                                    name="competitionActions"
+                                    value={localFormData.competitionActions}
+                                    onChange={handleInputChange}
+                                    rows="3"
+                                    placeholder="Describe your approach..."
+                                    required
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                        <div>
+                            <label><strong>Places you feel culturally connected to</strong></label>
+                            <p>Add one place per box</p>
+                            {localFormData.culturalIdentity.map((val, idx) => (
+                                <div key={`culturalIdentity${idx}`}>
+                                    <input
+                                        id={`culturalIdentity${idx + 1}`}
+                                        value={val}
+                                        onChange={(e) => handleListChange("culturalIdentity", idx, e.target.value)}
+                                        placeholder={idx === 0 ? "e.g., Mumbai" : "Another place"}
+                                        required={idx === 0}
+                                    />
+                                </div>
+                            ))}
+                            <button type="button" onClick={() => handleAddMore("culturalIdentity")}>Add More Places</button>
+                        </div>
+
+                    {/* Disability Status */}
+                    <div>
+                        <label><strong>Disability Status</strong></label>
+                        {renderRadioGroup("disability", YES_NO_OPTIONS)}
+                        {localFormData.disability === "Yes" && (
+                            <div>
+                                <label>Tell us more, only if you're comfortable:</label>{" "}
                                 <input
-                                    id={`culturalIdentity${idx + 1}`}
+                                    type="text"
+                                    name="disabilitySpecify"
+                                    value={localFormData.disabilitySpecify}
+                                    onChange={handleInputChange}
+                                    placeholder="Only if you're comfortable"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Academic Self-Classification — only for students who have made the school → college transition */}
+                    {showAcademicClassification && (
+                        <div>
+                            <label><strong>Your Academic Journey from High School to College</strong></label>
+                            <p>How did you approach your transition from school to college? This helps us understand your decision-making style.</p>
+                            {renderRadioGroup("academicClassification", ACADEMIC_OPTIONS)}
+                        </div>
+                    )}
+
+                    <div>
+                        <div>
+                            <label>Have you personally experienced childhood or recent trauma?</label>
+                            <p>Trauma refers to deeply distressing experiences that overwhelmed your ability to cope</p>
+                            {renderRadioGroup("personalTrauma", YES_NO_OPTIONS)}
+                            {localFormData.personalTrauma === "Yes" && (
+                                <div>
+                                    <label>Tell us more, only if you're comfortable:</label>{" "}
+                                    <input
+                                        type="text"
+                                        name="personalTraumaSpecify"
+                                        value={localFormData.personalTraumaSpecify}
+                                        onChange={handleInputChange}
+                                        placeholder="Only if you're comfortable"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                </section>
+
+                <section className="if-card">
+                    <h3 className="if-card-title">Support</h3>
+                    {/* Support Network */}
+                    <div>
+                        <label><strong>People You Turn To for Support</strong></label>
+                        <p>Who are the people in your life that you immediately feel close to and can rely on for guidance?</p>
+                        {localFormData.supportNetwork.map((val, idx) => (
+                            <div key={`supportNetwork${idx}`}>
+                                <input
+                                    id={`supportNetwork${idx + 1}`}
                                     value={val}
-                                    onChange={(e) => handleListChange("culturalIdentity", idx, e.target.value)}
-                                    placeholder={idx === 0 ? "e.g., Mumbai" : "Another place"}
+                                    onChange={(e) => handleListChange("supportNetwork", idx, e.target.value)}
+                                    placeholder={`Person ${idx + 1} (e.g., mother, best friend, mentor)`}
                                     required={idx === 0}
                                 />
                             </div>
                         ))}
-                        <button type="button" onClick={() => handleAddMore("culturalIdentity")}>Add More Places</button>
+                        <button type="button" onClick={() => handleAddMore("supportNetwork")}>Add More People</button>
                     </div>
-                </div>
 
-                {/* Education is not asked here — the student's stage is already captured at signup */}
-
-                {/* Disability Status */}
-                <div>
-                    <label><strong>Disability Status</strong></label>
-                    {renderRadioGroup("disability", YES_NO_OPTIONS)}
-                    {localFormData.disability === "Yes" && (
-                        <div>
-                            <label>Please specify if comfortable:</label>{" "}
-                            <input
-                                type="text"
-                                name="disabilitySpecify"
-                                value={localFormData.disabilitySpecify}
-                                onChange={handleInputChange}
-                                placeholder="Optional - describe if you're comfortable"
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* Academic Self-Classification — only for students who have made the school → college transition */}
-                {showAcademicClassification && (
-                    <div>
-                        <label><strong>Your Academic Journey from High School to College</strong></label>
-                        <p>How did you approach your transition from school to college? This helps us understand your decision-making style.</p>
-                        {renderRadioGroup("academicClassification", ACADEMIC_OPTIONS)}
-                    </div>
-                )}
-
-                {/* Personal History */}
-                <div>
-                    <label><strong>Personal History</strong></label>
-                    <div>
-                        <label>Has your family experienced any past trauma?</label>
-                        <p>Examples include belonging to a minority group that faced discrimination</p>
-                        {renderRadioGroup("familyTrauma", YES_NO_OPTIONS)}
-                        {localFormData.familyTrauma === "Yes" && (
-                            <div>
-                                <label>Please specify if comfortable:</label>{" "}
-                                <input
-                                    type="text"
-                                    name="familyTraumaSpecify"
-                                    value={localFormData.familyTraumaSpecify}
-                                    onChange={handleInputChange}
-                                    placeholder="Optional - describe if you're comfortable"
-                                />
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <label>Have you personally experienced childhood or recent trauma?</label>
-                        <p>Trauma refers to deeply distressing experiences that overwhelmed your ability to cope</p>
-                        {renderRadioGroup("personalTrauma", YES_NO_OPTIONS)}
-                        {localFormData.personalTrauma === "Yes" && (
-                            <div>
-                                <label>Please specify if comfortable:</label>{" "}
-                                <input
-                                    type="text"
-                                    name="personalTraumaSpecify"
-                                    value={localFormData.personalTraumaSpecify}
-                                    onChange={handleInputChange}
-                                    placeholder="Optional - describe if you're comfortable"
-                                />
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Support Network */}
-                <div>
-                    <label><strong>People You Turn To for Support</strong></label>
-                    <p>Who are the people in your life that you immediately feel close to and can rely on for guidance?</p>
-                    {localFormData.supportNetwork.map((val, idx) => (
-                        <div key={`supportNetwork${idx}`}>
-                            <input
-                                id={`supportNetwork${idx + 1}`}
-                                value={val}
-                                onChange={(e) => handleListChange("supportNetwork", idx, e.target.value)}
-                                placeholder={`Person ${idx + 1} (e.g., mother, best friend, mentor)`}
-                                required={idx === 0}
-                            />
-                        </div>
-                    ))}
-                    <button type="button" onClick={() => handleAddMore("supportNetwork")}>Add More People</button>
-                </div>
+                </section>
 
                 {/* Navigation Buttons */}
-                <div>
+                <div className="if-nav">
                     <button type="button" onClick={handleContinuePrevious} disabled={isSaving}>Previous</button>
                     {" "}
                     <button type="button" onClick={handleSaveForLater} disabled={isSaving}>Save</button>

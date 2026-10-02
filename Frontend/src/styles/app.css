@@ -1361,3 +1361,295 @@ button.link-button:hover:not(:disabled) {
 .combined-card[open] .pc-sign::before {
     content: "−";
 }
+
+/* ── the interest form (Round 10, S10): cards, plain questions, chips ─────────────────────────── */
+
+.if-progress {
+    max-width: 720px;
+    margin-bottom: var(--space-5);
+}
+
+.if-progress-label {
+    margin: 0 0 var(--space-2);
+    color: var(--navy-soft);
+}
+
+.if-progress-bar {
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    overflow: hidden;
+}
+
+.if-progress-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+    border-radius: var(--radius-pill);
+}
+
+.if-steps {
+    margin-top: var(--space-2);
+}
+
+.if-steps summary,
+.if-examples summary {
+    cursor: pointer;
+    color: var(--teal-dark);
+    font-weight: 700;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.if-steps ol {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.app-header ~ * button.if-step-link {
+    margin: 0;
+    padding: 8px 14px;
+    min-height: 40px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--navy);
+    font-weight: 400;
+}
+
+.app-header ~ * button.if-step-link.is-current {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #ffffff;
+    opacity: 1;
+}
+
+.if-intro,
+.if-step-head {
+    max-width: 720px;
+}
+
+.if-lead {
+    font-size: var(--text-lead);
+}
+
+.if-step-head p {
+    color: var(--navy-soft);
+}
+
+.if-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-5) var(--space-4);
+    margin: 0 0 var(--space-5);
+    max-width: 720px;
+}
+
+@media (min-width: 640px) {
+    .if-card {
+        padding: var(--space-5) var(--space-6);
+    }
+}
+
+.if-card > div + div {
+    margin-top: var(--space-5);
+}
+
+.if-card-title {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    color: var(--navy);
+}
+
+.if-question {
+    padding: var(--space-4) 0;
+    border-top: 1px solid var(--line);
+}
+
+.if-card-title + .if-question,
+.if-card-title + .if-examples + .if-question,
+.if-card-title + .if-question-prompt + .if-question {
+    border-top: 0;
+}
+
+.if-question-title {
+    display: block;
+    margin: 0 0 var(--space-1);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--navy);
+}
+
+.if-question-prompt {
+    margin: 0 0 var(--space-2);
+    color: var(--navy-soft);
+    font-size: 0.95rem;
+}
+
+.if-examples {
+    margin: 0 0 var(--space-2);
+}
+
+.if-examples > :not(summary) {
+    color: var(--navy-soft);
+    font-size: 0.95rem;
+}
+
+.if-examples[open] {
+    padding-bottom: var(--space-2);
+}
+
+.if-reference ul {
+    columns: 2 180px;
+    padding-left: 1.1em;
+}
+
+.if-small-label {
+    display: block;
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--navy-soft);
+}
+
+.if-problem {
+    border-left: 3px solid var(--teal-tint);
+    padding: var(--space-1) 0 var(--space-2) var(--space-3);
+    margin: var(--space-3) 0;
+}
+
+.if-problem.has-error {
+    border-left-color: var(--pink);
+}
+
+.if-pair {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+@media (min-width: 640px) {
+    .if-pair {
+        grid-template-columns: 1fr 1fr;
+        max-width: 640px;
+    }
+}
+
+.if-aspiration {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+/* the chips: what has been added, then one box to add the next */
+.chip-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.chip-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 100%;
+    padding: 4px 4px 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    color: var(--navy);
+    overflow-wrap: anywhere;
+}
+
+.app-header ~ * button.chip-remove {
+    margin: 0;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--teal-dark);
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.chip-entry {
+    display: flex;
+    gap: var(--space-2);
+    max-width: 560px;
+}
+
+.app-header ~ * .chip-entry input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.app-header ~ * button.chip-add {
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.app-header ~ * button.if-add,
+.app-header ~ * button.if-link-button {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 8px 0;
+    min-height: 44px;
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+.if-prompt-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.app-header ~ * button.if-prompt-chip {
+    margin: 0;
+    text-align: left;
+    border-radius: var(--radius-pill);
+    padding: 8px 14px;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    font-weight: 400;
+}
+
+.app-header ~ * button.if-prompt-chip.is-used {
+    background: var(--teal-tint);
+}
+
+.if-error {
+    max-width: 720px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius);
+    background: var(--pink-tint);
+    color: var(--navy);
+    font-weight: 700;
+}
+
+.if-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-4) 0 var(--space-7);
+}
+
+.if-done h1 {
+    margin-top: 0;
+}

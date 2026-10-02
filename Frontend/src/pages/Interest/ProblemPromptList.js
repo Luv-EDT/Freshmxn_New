@@ -5,26 +5,29 @@ function ProblemPromptList({ prompts, usedProblems, onPick }) {
     const [isExpanded, setIsExpanded] = useState(false)
 
     return (
-        <div>
-            <button type="button" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="if-prompts">
+            <button type="button" className="if-link-button" onClick={() => setIsExpanded(!isExpanded)} aria-expanded={isExpanded}>
                 {isExpanded ? "Hide examples ▴" : "Can't think of any? See some examples ▾"}
             </button>
             {isExpanded && (
                 <div>
-                    <p>Click one that sounds familiar — you can edit the words after adding it.</p>
-                    {prompts.map((prompt) => {
-                        const isUsed = usedProblems.includes(prompt)
-                        return (
-                            <button
-                                type="button"
-                                key={prompt}
-                                disabled={isUsed}
-                                onClick={() => onPick(prompt)}
-                            >
-                                {isUsed ? "✓ " : "+ "}{prompt}
-                            </button>
-                        )
-                    })}
+                    <p className="if-question-prompt">Tap one that sounds familiar — you can edit the words after adding it.</p>
+                    <div className="if-prompt-chips">
+                        {prompts.map((prompt) => {
+                            const isUsed = usedProblems.includes(prompt)
+                            return (
+                                <button
+                                    type="button"
+                                    key={prompt}
+                                    className={`if-prompt-chip${isUsed ? " is-used" : ""}`}
+                                    disabled={isUsed}
+                                    onClick={() => onPick(prompt)}
+                                >
+                                    {isUsed ? "✓ " : "+ "}{prompt}
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
             )}
         </div>

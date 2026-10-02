@@ -1,27 +1,29 @@
 import { useState, useEffect } from "react"
 import ActivityReferenceList from "./ActivityReferenceList"
 import InterestProgressBar from "./InterestProgressBar"
-import HelpIcon from "./HelpIcon"
 import ProblemPromptList from "./ProblemPromptList"
+import QuestionCard from "./QuestionCard"
+import ChipListInput from "./ChipListInput"
 
 // One life-stage section (Pre-High School / High School / College / Post-College).
 // The four original files were identical except for their text, so the fields live here once and
 // each stage file passes its own `stage` copy (heading, help text, placeholders, reference list, prompts).
+//
+// LAID OUT AS THREE CARDS (Round 10, S10): what you did, what got in your way, anything else. Each
+// question is asked in plain words, its first help line shows under it and the rest folds under
+// "See examples". Same fields, same data — only the page changed.
 
-const SIMPLE_GROUPS = [
-    { key: "personalGrowth", label: "Personal Growth Activities" },
-    { key: "curiosityDriven", label: "Curiosity-Driven Activities" },
+const ACTIVITY_GROUPS = [
+    { key: "personalGrowth", title: "What helped you grow?" },
+    { key: "curiosityDriven", title: "What did you explore just because you were curious?" },
+    { key: "socialRecognition", title: "When did people notice or praise you?" },
+    { key: "effortlessEngagement", title: "What felt effortless — where time just flew?" },
 ]
 
-const PROBLEM_GROUP_LABELS = {
-    individualInternalProblems: "Individual Internal Problems",
-    interpersonalInternalProblems: "Interpersonal Problems",
-    externalProblems: "External Problems",
-}
-
-const LATER_SIMPLE_GROUPS = [
-    { key: "socialRecognition", label: "Social Recognition Activities" },
-    { key: "effortlessEngagement", label: "Effortless Engagement Activities" },
+const PROBLEM_GROUPS = [
+    { key: "individualInternalProblems", title: "Struggles inside you" },
+    { key: "interpersonalInternalProblems", title: "Struggles with people around you" },
+    { key: "externalProblems", title: "Problems you saw around you" },
 ]
 
 function LifeStageSection({ stage, formData, updateFormData, handleNext, handlePrevious, isFirstStep, steps, currentStepIndex, goToStep, isSaving, requestSave, reportDraft }) {
@@ -38,42 +40,11 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
         setLocalFormData(formData)
     }, [formData])
 
-    // ── simple activity lists ────────────────────────────────────────────────
-    const handleInputChange = (group, index, value) => {
-        setLocalFormData((prev) => ({
-            ...prev,
-            [group]: prev[group].map((item, i) => (i === index ? value : item)),
-        }))
-    }
-
-    const handleAddMore = (group) => {
-        setLocalFormData((prev) => ({
-            ...prev,
-            [group]: [...prev[group], ""],
-        }))
-    }
-
     // ── problems ─────────────────────────────────────────────────────────────
     const handleProblemChange = (group, index, value) => {
         setLocalFormData((prev) => ({
             ...prev,
             [group]: prev[group].map((row, i) => (i === index ? { ...row, problem: value } : row)),
-        }))
-    }
-
-    const handleProblemActivitiesChange = (group, index, idx, value) => {
-        setLocalFormData((prev) => ({
-            ...prev,
-            [group]: prev[group].map((row, i) =>
-                i === index ? { ...row, activities: row.activities.map((act, j) => (j === idx ? value : act)) } : row
-            ),
-        }))
-    }
-
-    const handleAddMoreActivities = (group, index) => {
-        setLocalFormData((prev) => ({
-            ...prev,
-            [group]: prev[group].map((row, i) => (i === index ? { ...row, activities: [...row.activities, ""] } : row)),
         }))
     }
 
@@ -152,40 +123,30 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
     }
 
     // ── render helpers ───────────────────────────────────────────────────────
-    const renderHelp = (key, title) => (
-        <HelpIcon title={title}>
-            {stage.help[key].map((line, i) => (
-                <p key={i}>{line.strong && <strong>{line.strong} </strong>}{line.text || line}</p>
-            ))}
-        </HelpIcon>
+    // a help list's first line is the prompt shown under the question; the rest are examples
+    const promptOf = (key) => {
+        const line = stage.help[key][0]
+        return line.strong ? `${line.strong} ${line.text}` : line
+    }
+    const examplesOf = (key) => stage.help[key].slice(1)
+
+    const renderActivityGroup = ({ key, title }) => (
+        <QuestionCard key={key} title={title} prompt={promptOf(key)} examples={examplesOf(key)} htmlFor={`${key}-input`}>
+            <ChipListInput
+                id={`${key}-input`}
+                label={title}
+                values={localFormData[key]}
+                onChange={(list) => setLocalFormData((prev) => ({ ...prev, [key]: list }))}
+                placeholder={stage.placeholders[key]}
+            />
+        </QuestionCard>
     )
 
-    const renderSimpleGroup = ({ key, label }) => (
-        <div key={key}>
-            <label><strong>{label}</strong></label> {renderHelp(key, label)}
-            {localFormData[key].map((val, idx) => (
-                <div key={`${key}${idx}`}>
-                    <input
-                        id={`${key}${idx + 1}`}
-                        name={`${key}${idx + 1}`}
-                        value={val}
-                        onChange={(e) => handleInputChange(key, idx, e.target.value)}
-                        placeholder={stage.placeholders[key]}
-                    />
-                </div>
-            ))}
-            <button type="button" onClick={() => handleAddMore(key)}>Add More Activities</button>
-        </div>
-    )
-
-    const renderProblemGroup = (group) => {
-        const label = PROBLEM_GROUP_LABELS[group]
+    const renderProblemGroup = ({ key: group, title }) => {
         const usedProblems = localFormData[group].map((row) => row.problem)
 
         return (
-            <div key={group}>
-                <label><strong>{label}</strong></label> {renderHelp(group, label)}
-
+            <QuestionCard key={group} title={title} prompt={promptOf(group)} examples={examplesOf(group)}>
                 <ProblemPromptList
                     prompts={stage.prompts[group]}
                     usedProblems={usedProblems}
@@ -193,37 +154,31 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                 />
 
                 {localFormData[group].map((row, index) => (
-                    <div key={`${group}-${index}`}>
-                        <div>
-                            <label>Problem:</label>
-                            <br />
-                            <input
-                                type="text"
-                                value={row.problem}
-                                onChange={(e) => handleProblemChange(group, index, e.target.value)}
-                                placeholder={stage.placeholders[group][0]}
-                            />
-                            {" "}
-                            <button type="button" onClick={() => handleRemoveProblem(group, index)}>Remove</button>
-                        </div>
-                        <div>
-                            <label>Activities that helped:</label>
-                            {row.activities.map((activity, idx) => (
-                                <div key={`${group}-activity-${index}-${idx}`}>
-                                    <input
-                                        type="text"
-                                        value={activity}
-                                        onChange={(e) => handleProblemActivitiesChange(group, index, idx, e.target.value)}
-                                        placeholder={stage.placeholders[group][1]}
-                                    />
-                                </div>
-                            ))}
-                            <button type="button" onClick={() => handleAddMoreActivities(group, index)}>Add More Activities</button>
-                        </div>
+                    <div key={`${group}-${index}`} className="if-problem">
+                        <label htmlFor={`${group}-${index}-problem`} className="if-small-label">The problem</label>
+                        <input
+                            type="text"
+                            id={`${group}-${index}-problem`}
+                            value={row.problem}
+                            onChange={(e) => handleProblemChange(group, index, e.target.value)}
+                            placeholder={stage.placeholders[group][0]}
+                        />
+                        <label htmlFor={`${group}-${index}-helped`} className="if-small-label">What helped</label>
+                        <ChipListInput
+                            id={`${group}-${index}-helped`}
+                            label="What helped"
+                            values={row.activities}
+                            onChange={(list) => setLocalFormData((prev) => ({
+                                ...prev,
+                                [group]: prev[group].map((item, i) => (i === index ? { ...item, activities: list } : item)),
+                            }))}
+                            placeholder={stage.placeholders[group][1]}
+                        />
+                        <button type="button" className="if-link-button" onClick={() => handleRemoveProblem(group, index)}>Remove this problem</button>
                     </div>
                 ))}
-                <button type="button" onClick={() => handleAddMoreProblems(group)}>Add More Problems</button>
-            </div>
+                <button type="button" className="if-add" onClick={() => handleAddMoreProblems(group)}>+ Add another problem</button>
+            </QuestionCard>
         )
     }
 
@@ -239,18 +194,14 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                 }}
             />
 
-            <div>
+            <div className="if-step-head">
                 <h2>{stage.heading}</h2>
-                <p>{stage.subtitle}</p>
-                <div>
-                    <h3>📋 What are "activities"?</h3>
-                    <p>Activities include both completed achievements (like winning competitions) and ongoing pursuits (like playing cricket, reading books).</p>
-                </div>
+                <p>{stage.subtitle} Anything counts — finished or ongoing, like winning a competition, playing cricket or reading.</p>
             </div>
 
-            {/* Change 2 — Pre-High School can be skipped */}
+            {/* Pre-High School can be skipped */}
             {stage.isSkippable && (
-                <div>
+                <div className="if-card if-skip">
                     <label>
                         <input
                             type="checkbox"
@@ -259,48 +210,54 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                         />
                         {" "}I can't clearly recall this period — skip it
                     </label>
-                    <p><em>If you can't recall, just answer everything in the High School section instead.</em></p>
+                    <p className="if-question-prompt">If you can't recall, just answer everything in the High School section instead.</p>
                 </div>
             )}
 
             <form onSubmit={handleContinue}>
                 {!localFormData.skipped && (
                     <>
-                        <ActivityReferenceList activities={stage.referenceList} />
+                        <section className="if-card">
+                            <h3 className="if-card-title">What you did</h3>
+                            <ActivityReferenceList activities={stage.referenceList} />
+                            {ACTIVITY_GROUPS.map(renderActivityGroup)}
+                        </section>
 
-                        {SIMPLE_GROUPS.map(renderSimpleGroup)}
+                        <section className="if-card">
+                            <h3 className="if-card-title">What got in your way</h3>
+                            <p className="if-question-prompt">For each problem, add what you did that helped.</p>
+                            {PROBLEM_GROUPS.map(renderProblemGroup)}
+                        </section>
 
-                        {["individualInternalProblems", "interpersonalInternalProblems", "externalProblems"].map(renderProblemGroup)}
-
-                        {LATER_SIMPLE_GROUPS.map(renderSimpleGroup)}
-
-                        {/* Additional Interests */}
-                        <div>
-                            <label><strong>Additional Interests</strong></label> {renderHelp("additionalInterests", "Additional Interests")}
-                            {localFormData.additionalInterests.map((row, idx) => (
-                                <div key={`additionalInterests${idx}`}>
-                                    <input
-                                        placeholder="Activity"
-                                        id={`additionalInterests${idx + 1}-activity`}
-                                        value={row.activity}
-                                        onChange={(e) => handleAdditionalChange(idx, "activity", e.target.value)}
-                                    />
-                                    {" "}
-                                    <input
-                                        placeholder="Why you liked it"
-                                        id={`additionalInterests${idx + 1}-reason`}
-                                        value={row.reason}
-                                        onChange={(e) => handleAdditionalChange(idx, "reason", e.target.value)}
-                                    />
-                                </div>
-                            ))}
-                            <button type="button" onClick={handleAddMoreAdditional}>Add More Activities</button>
-                        </div>
+                        <section className="if-card">
+                            <h3 className="if-card-title">Anything else</h3>
+                            <QuestionCard title="Anything else you enjoyed?" prompt={promptOf("additionalInterests")} examples={examplesOf("additionalInterests")}>
+                                {localFormData.additionalInterests.map((row, idx) => (
+                                    <div key={`additionalInterests${idx}`} className="if-pair">
+                                        <input
+                                            placeholder="Activity"
+                                            aria-label="Activity"
+                                            id={`additionalInterests${idx + 1}-activity`}
+                                            value={row.activity}
+                                            onChange={(e) => handleAdditionalChange(idx, "activity", e.target.value)}
+                                        />
+                                        <input
+                                            placeholder="Why you liked it"
+                                            aria-label="Why you liked it"
+                                            id={`additionalInterests${idx + 1}-reason`}
+                                            value={row.reason}
+                                            onChange={(e) => handleAdditionalChange(idx, "reason", e.target.value)}
+                                        />
+                                    </div>
+                                ))}
+                                <button type="button" className="if-add" onClick={handleAddMoreAdditional}>+ Add another</button>
+                            </QuestionCard>
+                        </section>
                     </>
                 )}
 
                 {/* Navigation Buttons */}
-                <div>
+                <div className="if-nav">
                     {!isFirstStep && (
                         <button type="button" onClick={handleContinuePrevious} disabled={isSaving}>Previous</button>
                     )}

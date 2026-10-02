@@ -11,22 +11,24 @@ function InterestSubmit({ handlePrevious, isSubmitting, isSubmitted, onGoHome, s
                 goToStep={goToStep}
             />
 
-            <h1>Thank You!</h1>
+            <div className="if-card if-done">
+            <h1>Thank you!</h1>
 
             {isSubmitting ? (
                 <p>Saving your answers...</p>
             ) : (
                 <>
                     <p>Your responses have been saved.</p>
-                    <p>Next up is the psychometric assessment — it will unlock here soon.</p>
+                    <p>Next up is the assessment — open it from your dashboard whenever you're ready.</p>
                     <p>You can still come back and edit your answers until your report is generated.</p>
                 </>
             )}
 
-            <div>
+            <div className="if-nav">
                 <button type="button" onClick={handlePrevious} disabled={isSubmitting}>Go back and review</button>
                 {" "}
-                <button type="button" onClick={onGoHome} disabled={isSubmitting}>Go to Home</button>
+                <button type="button" className="btn btn-primary" onClick={onGoHome} disabled={isSubmitting}>Go to my dashboard</button>
+            </div>
             </div>
         </div>
     )
