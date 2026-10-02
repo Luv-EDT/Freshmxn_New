@@ -54,8 +54,8 @@ function MentorWaitlistPublic() {
                                 </p>
                             </div>
                             <div className="card">
-                                <h3>2. Choose a career and send it to us.</h3>
-                                <p>Pick the profession from your matches that you'd genuinely like to move toward, and let us know.</p>
+                                <h3>2. Choose a job role and send it to us.</h3>
+                                <p>Open a career from your matches and pick the one job role you'd genuinely like to move toward, and let us know.</p>
                             </div>
                             <div className="card">
                                 <h3>3. We find your best-fit mentor — within 20 business days.</h3>

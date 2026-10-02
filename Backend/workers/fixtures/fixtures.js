@@ -3287,6 +3287,31 @@ const fixtures = [
         },
         expect: [true, true],
     },
+    {
+        name: "MENTOR PICKER — every career offers its own job roles, the ones that suit you first, nothing invented",
+        // Round 11: the student chooses ONE job role. The page's list and the server's check are the
+        // same list, so a role-group role that is not a job role could be shown and then refused.
+        run: () => {
+            const { pickerOptions } = require("../../Routers/mentorWaitlistRouter")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const problems = []
+            taxonomy.professions.forEach((profession) => {
+                ;((profession.role_spread && profession.role_spread.deviating_roles) || []).forEach((group) => {
+                    ;(group.roles || []).forEach((role) => {
+                        if (!(profession.job_roles || []).includes(role)) problems.push(`${profession.id}: role-group role "${role}" is not a job role`)
+                    })
+                })
+            })
+            const [option] = pickerOptions([{ professionId: "swc-game-developer", profession: "Game Developer", bestRoles: { roles: ["VR Developer", "Not A Real Role"] } }])
+            const all = taxonomy.professions.find((profession) => profession.id === "swc-game-developer").job_roles
+            if (option.jobRoles[0] !== "VR Developer") problems.push("the role that suits the student is not first")
+            if (option.jobRoles.includes("Not A Real Role")) problems.push("a role outside the data file was offered")
+            if (option.jobRoles.length !== all.length) problems.push("the job roles are not all offered exactly once")
+            if (!/jobRolesById\.get\(String\(match\.professionId\)\)/.test(fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "mentorWaitlistRouter.js"), "utf8"))) problems.push("chooseProfession does not check the role against the career's job roles")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures
