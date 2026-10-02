@@ -1,0 +1,26 @@
+import axiosInstance from "./axiosInstance"
+
+export async function getProposalsForAdmin(status) {
+    const response = await axiosInstance.get("/dataUpdates/getProposalsForAdmin", { params: { status } })
+    return response
+}
+
+export async function decideProposalForAdmin(id, decision, adminNote) {
+    const response = await axiosInstance.put(`/dataUpdates/decideProposalForAdmin/${id}`, { decision, adminNote })
+    return response
+}
+
+export async function exportPatchForAdmin() {
+    const response = await axiosInstance.get("/dataUpdates/exportPatchForAdmin")
+    return response
+}
+
+export async function getScoutForAdmin(status) {
+    const response = await axiosInstance.get("/dataUpdates/getScoutForAdmin", { params: { status } })
+    return response
+}
+
+export async function decideScoutForAdmin(id, decision, adminNote) {
+    const response = await axiosInstance.put(`/dataUpdates/decideScoutForAdmin/${id}`, { decision, adminNote })
+    return response
+}

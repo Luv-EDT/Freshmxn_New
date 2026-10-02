@@ -3082,6 +3082,211 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "DATA REFRESH — never-checked careers first, then the longest since checked, then the oldest hand check",
+        run: () => {
+            const { pickCareersToCheck } = require("../../housekeeping/dataRefresh")
+            const career = (id, checkedOn) => ({ id, economics: { verification: { checked_on: checkedOn } } })
+            const professions = [career("a", "2026-08-01"), career("b", "2026-01-01"), career("c", "2026-05-01"), career("d", null)]
+            const overrides = new Map([["a", { lastCheckedAt: "2026-09-01" }], ["c", { lastCheckedAt: "2026-07-01" }]])
+            return pickCareersToCheck(professions, overrides, 3).map((profession) => profession.id).join(",")
+        },
+        expect: "d,b,c",
+    },
+    {
+        name: "DATA REFRESH — only well-formed, sourced, real changes to the three display fields reach the admin",
+        run: () => {
+            const { validateProposal } = require("../../housekeeping/dataRefresh")
+            const current = { india_demand: "moderate", early_earnings_lpa: "3.0-6.0", mid_career_lpa: "8.0-20.0" }
+            const sources = [{ url: "https://mospi.gov.in/x" }]
+            const problems = []
+            if (!validateProposal({ field: "india_demand", proposed: "high", confidence: "medium" }, current, sources)) problems.push("a sourced demand change was dropped")
+            if (validateProposal({ field: "india_demand", proposed: "high" }, current, [])) problems.push("a change with no source was kept")
+            if (validateProposal({ field: "openness", proposed: "7" }, current, sources)) problems.push("a matching factor was accepted as a field")
+            if (validateProposal({ field: "early_earnings_lpa", proposed: "9-3" }, current, sources)) problems.push("a backwards range was accepted")
+            if (validateProposal({ field: "early_earnings_lpa", proposed: "lots" }, current, sources)) problems.push("a non-range was accepted")
+            if (validateProposal({ field: "mid_career_lpa", proposed: "8-20" }, current, sources)) problems.push("8-20 against 8.0-20.0 is no change, but was kept")
+            if (validateProposal({ field: "india_demand", proposed: "Moderate" }, current, sources)) problems.push("the same demand in other case was kept")
+            const kept = validateProposal({ field: "mid_career_lpa", proposed: "9 - 22", confidence: "certain" }, current, sources)
+            if (!kept || kept.proposedValue !== "9-22" || kept.confidence !== "low") problems.push(`a kept change is not cleaned: ${JSON.stringify(kept)}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "DATA REFRESH — an approved value changes the career page only: demand and pay, marked checked, midpoint recomputed",
+        run: () => {
+            const { applyOverride } = require("../../utils/professionOverrides")
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const profession = taxonomy.professions.find((record) => record.id === "swc-software-developer")
+            const before = JSON.stringify(profession)
+            const after = applyOverride(profession, { values: { india_demand: "moderate", mid_career_lpa: "10-30" }, approvedAt: "2026-10-01", sources: [{ url: "https://ncs.gov.in/x" }] })
+            const facing = studentFacing(after)
+            const problems = []
+            if (JSON.stringify(profession) !== before) problems.push("the file's record was mutated")
+            if (facing.demand.india !== "moderate") problems.push("demand not applied")
+            if (facing.economics.midCareerLpa !== "10-30" || facing.economics.midCareerMidpoint !== 20) problems.push("mid-career pay or midpoint wrong")
+            if (!facing.economics.checked || facing.economics.checkedOn !== "2026-10-01") problems.push("approved pay is not marked checked")
+            if (facing.economics.earlyEarningsLpa !== profession.economics.early_earnings_lpa) problems.push("an unapproved field changed")
+            if (applyOverride(profession, null) !== profession) problems.push("no override should return the record untouched")
+            if (applyOverride(profession, { values: { india_demand: "huge" } }).demand_signal.india_demand !== profession.demand_signal.india_demand) problems.push("a bad stored value was applied")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "DATA REFRESH — overrides reach the career pages and never the matching engine",
+        run: () => {
+            const read = (...parts) => fs.readFileSync(path.join(__dirname, "..", "..", ...parts), "utf8")
+            const problems = []
+            if (!/applyOverride\(profession, overrides\.get\(profession\.id\)\)/.test(read("Routers", "professionsRouter.js"))) problems.push("getProfessions does not apply the overrides")
+            if (!/app\.use\("\/dataUpdates", dataUpdatesRouter\)/.test(read("server.js"))) problems.push("the data-updates router is not mounted")
+            fs.readdirSync(path.join(__dirname, "..", "..", "matching")).filter((file) => file.endsWith(".js")).forEach((file) => {
+                if (/professionOverrides|professionOverridesModel/.test(read("matching", file))) problems.push(`matching/${file} reads the overrides`)
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ADZUNA — a median only with enough salaried postings, in lakh a year",
+        run: () => {
+            const { medianLpaFromHistogram } = require("../../housekeeping/adzuna")
+            return [
+                medianLpaFromHistogram({ 200000: 5, 400000: 5 }),
+                medianLpaFromHistogram({ 200000: 10, 400000: 10, 600000: 5 }),
+                medianLpaFromHistogram({ 300000: 1, 900000: 30 }),
+                medianLpaFromHistogram(null),
+            ]
+        },
+        expect: [null, 4, 9, null],
+    },
+    {
+        name: "SCOUT — titles are normalised and only recurring ones count",
+        run: () => {
+            const { normaliseTitle, countTitles } = require("../../housekeeping/careerScout")
+            const problems = []
+            const cases = [
+                ["Sr. Drone Pilot (Agri) - Pune | Urgent", "drone pilot"],
+                ["Senior Software Engineer II", "software engineer"],
+                ["Trainee 3+ years EV Technician", "ev technician"],
+                ["Sports Data Analyst", "sports data analyst"],
+            ]
+            cases.forEach(([raw, want]) => { if (normaliseTitle(raw) !== want) problems.push(`"${raw}" → "${normaliseTitle(raw)}"`) })
+            const counted = countTitles(["Drone Pilot", "Sr Drone Pilot", "Drone Pilot - Pune", "Chef", "Chef"])
+            if (counted.length !== 1 || counted[0].key !== "drone pilot" || counted[0].count !== 3 || counted[0].title !== "Drone Pilot") problems.push(`counted: ${JSON.stringify(counted)}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "SCOUT — one list: job board, students, or both; students first; one vote per student",
+        run: () => {
+            const { countAspirations, mergeSources, byPriority } = require("../../housekeeping/careerScout")
+            const students = countAspirations([
+                { aspiration_signals: [{ outcome: "unmatched", professionText: "Drone Pilot" }, { outcome: "unmatched", professionText: "drone pilot" }, { outcome: "ranked", professionText: "Chef" }] },
+                { aspiration_signals: [{ outcome: "unmatched", professionText: "Esports Coach" }, { outcome: "unmatched", professionText: "Drone Pilot" }] },
+            ])
+            const merged = mergeSources([{ key: "drone pilot", title: "Drone Pilot", count: 12 }, { key: "prompt engineer", title: "Prompt Engineer", count: 40 }], students).sort(byPriority)
+            return merged.map((row) => `${row.key}:${row.source}:${row.aspirations}:${row.postings}`).join(",")
+        },
+        expect: "drone pilot:both:2:12,esports coach:student_aspirations:1:0,prompt engineer:job_board:0:40",
+    },
+    {
+        name: "SCOUT — far from everything is new, between two sectors is a combination, near one career is dropped",
+        run: () => {
+            const { classifyAgainstCareers } = require("../../housekeeping/careerScout")
+            const embeddings = [
+                { id: "a", profession: "A", embedding: [1, 0, 0] },
+                { id: "b", profession: "B", embedding: [0, 1, 0] },
+                { id: "c", profession: "C", embedding: [0.9, -0.43, 0] },
+            ]
+            const sectors = new Map([["a", "Sport"], ["b", "Data"], ["c", "Sport"]])
+            const options = { below: 0.55, gap: 0.03, sectors }
+            return [
+                classifyAgainstCareers([0, 0, 1], embeddings, options).kind,
+                classifyAgainstCareers([1, 1, 0], embeddings, options).kind,
+                classifyAgainstCareers([1, 0.05, 0], embeddings, options).kind,
+                classifyAgainstCareers([1, -0.2, 0], embeddings, { ...options, gap: 0.5 }).kind,
+            ]
+        },
+        // the last: near A and C, but both are Sport — the same field, not a combination
+        expect: ["new", "between", "known", "known"],
+    },
+    {
+        name: "RESEARCH CLIENT — named sources only, server-side fallback on, no structured-output mode, pause_turn resumed",
+        run: async () => {
+            const { createResearchClient, SOURCE_DOMAINS } = require("../../housekeeping/claudeResearch")
+            const bodies = []
+            const headers = []
+            const replies = [
+                { stop_reason: "pause_turn", content: [{ type: "server_tool_use", id: "s1", name: "web_search", input: {} }] },
+                {
+                    stop_reason: "end_turn",
+                    content: [
+                        { type: "web_search_tool_result", tool_use_id: "s1", content: [{ type: "web_search_result", url: "https://ncs.gov.in/a", title: "NCS" }] },
+                        { type: "web_search_tool_result", tool_use_id: "s2", content: { type: "web_search_tool_result_error", error_code: "unavailable" } },
+                        { type: "text", text: "Found it. {\"changes\": []}", citations: [{ url: "https://mospi.gov.in/b", title: "PLFS" }] },
+                    ],
+                },
+            ]
+            const fetchImpl = async (url, options) => {
+                bodies.push(JSON.parse(options.body))
+                headers.push(options.headers)
+                return { ok: true, json: async () => replies.shift() }
+            }
+            const client = createResearchClient({ apiKey: "test", fetchImpl })
+            const reply = await client.askJson({ system: "s", user: "u", check: (json) => Array.isArray(json.changes) })
+
+            const problems = []
+            if (bodies.length !== 2) problems.push(`expected a resumed second request, saw ${bodies.length}`)
+            const first = bodies[0]
+            if (first.fallbacks !== "default" || headers[0]["anthropic-beta"] !== "server-side-fallback-2026-07-01") problems.push("server-side fallback is not on")
+            if (first.output_config) problems.push("output_config is sent — the API rejects it alongside web-search citations")
+            const tool = first.tools && first.tools[0]
+            if (!tool || tool.type !== "web_search_20260209" || JSON.stringify(tool.allowed_domains) !== JSON.stringify(SOURCE_DOMAINS)) problems.push("web search is not limited to the named sources")
+            if (bodies[1] && (bodies[1].messages.length !== 2 || bodies[1].messages[1].role !== "assistant")) problems.push("pause_turn was not resumed by sending the turn back")
+            if (!reply.json || reply.sources.map((source) => source.url).join(",") !== "https://ncs.gov.in/a,https://mospi.gov.in/b") problems.push(`reply/sources wrong: ${JSON.stringify(reply)}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "RESEARCH CLIENT — a refusal is skipped, max_tokens is permanent, no key means no client",
+        run: async () => {
+            const { createResearchClient } = require("../../housekeeping/claudeResearch")
+            const problems = []
+            if (createResearchClient({ apiKey: "" }) !== null) problems.push("a client was built without a key")
+
+            let calls = 0
+            const refusing = createResearchClient({ apiKey: "t", fetchImpl: async () => { calls += 1; return { ok: true, json: async () => ({ stop_reason: "refusal", content: [] }) } } })
+            const refused = await refusing.askJson({ system: "s", user: "u", check: () => true })
+            if (!refused.refused || calls !== 1) problems.push(`refusal not skipped cleanly (calls ${calls})`)
+
+            calls = 0
+            const cut = createResearchClient({ apiKey: "t", fetchImpl: async () => { calls += 1; return { ok: true, json: async () => ({ stop_reason: "max_tokens", content: [{ type: "text", text: "{" }] }) } } })
+            try {
+                await cut.ask({ system: "s", user: "u" })
+                problems.push("max_tokens did not throw")
+            } catch (error) {
+                if (!error.permanent || calls !== 1) problems.push(`max_tokens retried or not permanent (calls ${calls})`)
+            }
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "HOUSEKEEPING — without keys the refresh and the scout say skipped instead of failing",
+        run: async () => {
+            const { runDataRefresh } = require("../../housekeeping/dataRefresh")
+            const { runCareerScout } = require("../../housekeeping/careerScout")
+            const refresh = await runDataRefresh({ research: null })
+            const scout = await runCareerScout({ embed: null })
+            return [Boolean(refresh.skipped), Boolean(scout.skipped)]
+        },
+        expect: [true, true],
+    },
 ]
 
 module.exports = fixtures

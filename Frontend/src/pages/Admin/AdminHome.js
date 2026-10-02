@@ -11,6 +11,8 @@ import MentorsList from "./MentorsList"
 import MentorMatchesList from "./MentorMatchesList"
 import AssessmentIssuesList from "./AssessmentIssuesList"
 import FollowUpsList from "./FollowUpsList"
+import DataUpdatesList from "./DataUpdatesList"
+import EmergingCareersList from "./EmergingCareersList"
 import { getAllIssuesForAdmin } from "../../apiCall/assessmentIssuesApi"
 
 function AdminHome() {
@@ -69,6 +71,16 @@ function AdminHome() {
             key: "followUps",
             label: "Follow-ups",
             children: <FollowUpsList dataVersion={dataVersion} />,
+        },
+        {
+            key: "dataUpdates",
+            label: "Data updates",
+            children: <DataUpdatesList />,
+        },
+        {
+            key: "emergingCareers",
+            label: "Emerging careers",
+            children: <EmergingCareersList />,
         },
         {
             key: "coupons",

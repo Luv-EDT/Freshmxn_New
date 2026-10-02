@@ -11,6 +11,7 @@ const industrialSectors = require("../data/industrial_sectors.json")
 const entranceGates = require("../data/entrance_gates.json")
 const filterRules = require("../data/filter_rules.json")
 const blueCollar = require("../data/blue_collar.json")
+const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 
 // The full records, for /getProfession. The slim projection below is what /search walks.
 const fullById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
@@ -384,10 +385,13 @@ router.post("/getProfessions", authMiddleware, requirePaid, async (req, res) => 
 
         // BATCHED ON PURPOSE. One row per profession expanded one at a time is an N+1 over a
         // 40-entry list on a phone connection. The report asks once, for everything it ranked.
+        // Admin-approved demand and pay from the monthly refresh (utils/professionOverrides.js) are
+        // laid over the file here — display only; the ranking was built from the file.
+        const overrides = await getOverrides()
         const found = ids
             .map((id) => fullById.get(String(id)))
             .filter(Boolean)
-            .map(studentFacing)
+            .map((profession) => studentFacing(applyOverride(profession, overrides.get(profession.id))))
 
         return res.status(200).json({
             success: true,

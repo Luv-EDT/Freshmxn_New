@@ -424,6 +424,7 @@ module.exports = {
     canonicalise,
     cosine,
     topProfessionsByVector,
+    embedQuery,    // also used by the weekly careers scout (housekeeping/careerScout.js)
     DEDUP_COSINE,
     RETRIEVE_K,
     RERANK_KEEP,
