@@ -3368,6 +3368,53 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "FOLLOW-UP CLOCK — the first submit starts it; afterwards only 'something new' moves it",
+        run: () => {
+            const { directionUpdate } = require("../../utils/direction")
+            const now = new Date("2026-10-02T00:00:00Z")
+            const first = directionUpdate({ via: "resubmit", direction: undefined, firstTime: true, now })
+            const same = directionUpdate({ via: "update", direction: "same", firstTime: false, now })
+            const fresh = directionUpdate({ via: "update", direction: "new", firstTime: false, now })
+            const missing = directionUpdate({ via: "resubmit", direction: "maybe", firstTime: false, now })
+            return [
+                Boolean(first.$set && first.$set.followUpAnchorAt),
+                Boolean(same.$set),
+                same.$push.directionChanges.$each[0].choice,
+                Boolean(fresh.$set && fresh.$set.followUpAnchorAt),
+                missing,
+            ]
+        },
+        expect: [true, false, "same", true, null],
+    },
+    {
+        name: "REPORT — never rebuilt behind the student's back; 'Update my report' only on their word",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "reportsRouter.js"), "utf8")
+            const getMyReport = router.slice(router.indexOf('router.get("/getMyReport"'), router.indexOf("// Retry My Report") > 0 ? router.indexOf("// Retry My Report") : router.indexOf('router.post("/retryMyReport"'))
+            const update = router.slice(router.indexOf('router.post("/updateMyReport"'), router.indexOf('router.get("/getMyScores"'))
+            const problems = []
+            if (/enqueue/.test(getMyReport)) problems.push("getMyReport queues a rebuild")
+            if (!/updateIsAvailable\(report, recommendation\)/.test(update)) problems.push("updateMyReport does not check there is something to update")
+            if (!/directionUpdate\(\{ via: "update"/.test(update)) problems.push("updateMyReport does not ask which way the student is heading")
+            const page = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            if (/status === "stale"/.test(page)) problems.push("the page still waits for an automatic rebuild")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "FOLLOW-UP — the catch-up window is longer than the gap between runs",
+        run: () => {
+            const { SCHEDULES } = require("../housekeepingWorker")
+            const { CATCH_UP_DAYS } = require("../../housekeeping/followUpScan")
+            const scan = SCHEDULES.find((schedule) => schedule.name === "followup_scan")
+            const monthly = /^\S+ \S+ \d+ \* \*$/.test(scan.pattern)
+            const gapDays = monthly ? 31 : 1
+            return CATCH_UP_DAYS > gapDays ? null : `window ${CATCH_UP_DAYS} days, runs up to ${gapDays} days apart — a student could be skipped`
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

@@ -5,6 +5,7 @@ const authMiddleware = require("../middlewares/authMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
 
 const { raiseIssue } = require("../utils/assessmentIssues")
+const { directionUpdate } = require("../utils/direction")
 
 const router = express.Router()
 
@@ -687,6 +688,17 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
             await raiseIssue({ user: req.user._id, module: "wordRecall", kind: "word_recall_unfinished", detail: `${(words.trials || []).length} of 2 lists written down, then stopped` })
         }
 
+        // A RESUBMIT says which way the student is heading (Round 11, utils/direction.js): only "new"
+        // restarts the follow-up clock. The first submit starts it and asks nothing.
+        const firstTime = !submission.psychometricSubmittedAt
+        const direction = directionUpdate({ via: "resubmit", direction: req.body.direction, firstTime })
+        if (!direction) {
+            return res.status(400).json({
+                success: false,
+                message: "Tell us whether you're heading the same way or looking for something new",
+            })
+        }
+
         // Stamped so the report page can tell a FRESH report from a stale one. Without it, a
         // student who completes more modules and resubmits keeps seeing the old report — including
         // an old "not enough to go on yet" — with no sign that a new one is on its way, which reads
@@ -697,7 +709,10 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
         )
 
         // A new submit starts a fresh attempt, so any earlier "your report failed" is cleared.
-        await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "done", reportFailedAt: null })
+        await User.findByIdAndUpdate(req.user._id, {
+            ...direction,
+            $set: { ...(direction.$set || {}), "progress.psychometric": "done", reportFailedAt: null },
+        })
 
         // Required here rather than at the top of the file: the queue is built lazily, and a
         // machine with no REDIS_URL must still be able to load this router and serve every other

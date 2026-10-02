@@ -5,6 +5,8 @@ const Submission = require("../model/submissionsModel")
 const Profile = require("../model/profilesModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
+const User = require("../model/userModel")
+const { directionUpdate } = require("../utils/direction")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
 const DEGREE_OPTIONS = require("../data/degree_options.json")
 const DISABILITY_SUPPORT = require("../data/disability_support.json")
@@ -28,6 +30,17 @@ const degreeLabelFor = (detail) => {
 }
 
 const router = express.Router()
+
+// Round 11: what "Update my report" can improve — a report built by scoring or matching older than
+// the code now running, or prose written before the ranking beside it was re-run.
+const { SCORING_VERSION } = require("../scoring/scoreProfile")
+const { MATCHING_VERSION } = require("../matching/matchProfile")
+
+const updateIsAvailable = (report, recommendation) => Boolean(report) && (
+    report.scoring_version !== SCORING_VERSION
+    || report.matching_version !== MATCHING_VERSION
+    || (Boolean(recommendation) && recommendation.matching_version !== report.matching_version)
+)
 
 
 // ========================
@@ -126,6 +139,8 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
         const submittedAt = submission && submission.psychometricSubmittedAt
         const builtFrom = report && (report.sourceSubmittedAt || report.lastGeneratedAt || report.generatedAt)
         const isRegenerating = Boolean(report && submittedAt && builtFrom && new Date(builtFrom).getTime() < new Date(submittedAt).getTime())
+            // ...or the student pressed "Update my report" and the new one is not written yet
+            || Boolean(report && req.user.reportUpdateRequestedAt && new Date(report.lastGeneratedAt || report.generatedAt).getTime() < new Date(req.user.reportUpdateRequestedAt).getTime())
 
         // THE PIPELINE GAVE UP (see userModel `reportFailedAt`). Without this a first-time student
         // saw "generating" and a resubmitter "being rebuilt" — forever, with the page polling every
@@ -159,29 +174,17 @@ router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
             })
         }
 
-        // Generated from a different ranking than the one we hold: the match was re-run after this
-        // prose was written. Say so rather than showing prose that describes professions the
-        // student can no longer see in the list beside it.
-        const stale = Boolean(recommendation) && recommendation.matching_version !== report.matching_version
-
-        // ...and actually start the fresh one, which nothing did before — the page promised "a
-        // fresh version is on the way" and none ever came. addOnce makes repeated polls harmless:
-        // while the rebuild is queued or running, asking again returns the same job.
-        if (stale) {
-            try {
-                const { enqueueGenerateReport } = require("../workers/generateReportWorker")
-                const { withTimeout } = require("../workers/queueHelpers")
-                await withTimeout(enqueueGenerateReport(req.user._id), "queueing a rebuild")
-            } catch (queueError) {
-                console.error(`getMyReport: could not queue a rebuild for a stale report — ${queueError.message}`)
-            }
-        }
+        // A REPORT CHANGES ONLY WHEN THE STUDENT ACTS (owner, Round 11). Built by older scoring or
+        // matching than the code now runs — or prose older than the ranking beside it — it is still
+        // their report, shown as it is, with an offer: "Update my report". Nothing is queued here.
+        const updateAvailable = updateIsAvailable(report, recommendation)
 
         return res.status(200).json({
             success: true,
             message: "Report fetched successfully",
             data: {
-                status: stale ? "stale" : "ready",
+                status: "ready",
+                updateAvailable,
                 rebuildFailed: failed,
                 release: report.release,
                 journey: report.journey,
@@ -323,6 +326,47 @@ router.post("/retryMyReport", authMiddleware, requirePaid, async (req, res) => {
             message: "Could not restart your report — please try again in a minute",
             error: error.message,
         })
+    }
+})
+
+
+// ========================
+// Update My Report — only ever on the student's word (Round 11)
+// ========================
+
+// Re-scores from the answers already saved (written answers already graded are not sent again) and
+// rebuilds the report with today's scoring and matching. Allowed only when there is something to
+// update, so it cannot be used to spend model calls on demand. The direction answer decides whether
+// the 6/12-month follow-up clock restarts (utils/direction.js).
+router.post("/updateMyReport", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const [report, recommendation] = await Promise.all([
+            Report.findOne({ user: req.user._id }).lean(),
+            Recommendation.findOne({ user: req.user._id }).select("matching_version").lean(),
+        ])
+
+        if (!report || req.user.progress.psychometric !== "done" || !updateIsAvailable(report, recommendation)) {
+            return res.status(400).json({ success: false, message: "Your report is already up to date" })
+        }
+
+        const direction = directionUpdate({ via: "update", direction: req.body.direction, firstTime: false })
+        if (!direction) {
+            return res.status(400).json({ success: false, message: "Tell us whether you're heading the same way or looking for something new" })
+        }
+
+        const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
+        const { withTimeout } = require("../workers/queueHelpers")
+        await withTimeout(enqueueScoreProfile(req.user._id), "queueing the update")
+
+        await User.updateOne({ _id: req.user._id }, {
+            ...direction,
+            $set: { ...(direction.$set || {}), reportUpdateRequestedAt: new Date(), reportFailedAt: null },
+        })
+
+        return res.status(200).json({ success: true, message: "Your report is being updated", data: { status: "generating" } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not start the update — please try again in a minute", error: error.message })
     }
 })
 

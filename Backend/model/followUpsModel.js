@@ -17,7 +17,11 @@ const followUpSchema = new mongoose.Schema(
         },
         wave: {
             type: Number,
-            required: true, // 6 | 12 (months after the first report)
+            required: true, // 6 | 12 (months after the student's follow-up clock started)
+        },
+        anchorAt: {
+            type: Date,
+            default: null, // the clock this wave counts from (User.followUpAnchorAt, Round 11)
         },
         tokenHash: {
             type: String,
@@ -53,8 +57,9 @@ const followUpSchema = new mongoose.Schema(
     }
 )
 
-// one of each wave per student
-followUpSchema.index({ user: 1, wave: 1 }, { unique: true })
+// one of each wave per student PER CLOCK — a student who says they are heading somewhere new starts a
+// new clock and is asked again (Round 11)
+followUpSchema.index({ user: 1, wave: 1, anchorAt: 1 }, { unique: true })
 followUpSchema.index({ tokenHash: 1 })
 followUpSchema.index({ respondedAt: 1, sentAt: 1 })
 

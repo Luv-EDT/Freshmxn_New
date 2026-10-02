@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { getMyReport, retryMyReport } from "../../apiCall/reportsApi"
+import { getMyReport, retryMyReport, updateMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
 import JourneyProgress from "../JourneyProgress"
@@ -13,6 +13,7 @@ import { buildList } from "./reportFilters"
 import { journeyHeadline } from "./reportPlan"
 import ReportHeadline from "./ReportHeadline"
 import CombinedCareers from "./CombinedCareers"
+import DirectionModal from "../DirectionModal"
 
 // Stage 3 — the report.
 //
@@ -147,6 +148,8 @@ function ReportPage() {
     // Bumped after a retry so the polling effect below starts again.
     const [reloadKey, setReloadKey] = useState(0)
     const [retrying, setRetrying] = useState(false)
+    const [updateOpen, setUpdateOpen] = useState(false)
+    const [updating, setUpdating] = useState(false)
 
     // Polls while the pipeline is running, and stops the moment it is not. A student who has just
     // pressed Submit is looking at this page NOW — telling them to come back later and leaving it
@@ -164,10 +167,9 @@ function ReportPage() {
                 const data = response.data.data
                 setState({ loading: false, data, error: "" })
 
-                // "stale" polls too: the server has just queued the fresh version, and the page swaps
-                // to it the moment it lands. A slower poll, because the old report is still readable.
+                // Only "generating" polls. A report built by older scoring or matching is NOT rebuilt
+                // behind the student's back (owner, Round 11) — it offers "Update my report" instead.
                 if (data.status === "generating") timer = setTimeout(load, 5000)
-                if (data.status === "stale") timer = setTimeout(load, 15000)
             } catch (error) {
                 if (!cancelled) setState({ loading: false, data: null, error: "Could not load your report" })
             }
@@ -194,6 +196,21 @@ function ReportPage() {
             window.alert("We could not restart it just now. Please try again in a minute, or message us on WhatsApp.")
         }
         setRetrying(false)
+    }
+
+    // "Update my report" — only on the student's word, after "same way or something new?"
+    const startUpdate = async (direction) => {
+        setUpdating(true)
+        try {
+            const response = await updateMyReport(direction)
+            if (response && response.data && response.data.success === false) throw new Error(response.data.message)
+            setUpdateOpen(false)
+            setState({ loading: false, data: { status: "generating" }, error: "" })
+            setReloadKey((key) => key + 1)
+        } catch (error) {
+            window.alert("We could not start the update just now. Please try again in a minute, or message us on WhatsApp.")
+        }
+        setUpdating(false)
     }
 
     // ONE REQUEST FOR EVERY PROFESSION IN THE REPORT, fired once the ranking arrives rather than on
@@ -425,10 +442,26 @@ function ReportPage() {
                 </div>
             )}
 
-            {status === "stale" && (
-                <p><em>Your matches have been recalculated since this was written. A fresh version is
-                   on the way.</em></p>
+            {data.updateAvailable && !data.rebuildFailed && (
+                <div className="report-banner">
+                    <p>
+                        <strong>We've improved how we match careers.</strong> Your report stays exactly as it is
+                        unless you choose to update it.
+                    </p>
+                    <button type="button" className="btn btn-primary btn-sm tap" onClick={() => setUpdateOpen(true)}>
+                        Update my report
+                    </button>
+                </div>
             )}
+
+            <DirectionModal
+                open={updateOpen}
+                title="Update your report"
+                okText="Update my report"
+                busy={updating}
+                onCancel={() => setUpdateOpen(false)}
+                onConfirm={startUpdate}
+            />
 
             {release === "release_with_note" && (
                 <p>

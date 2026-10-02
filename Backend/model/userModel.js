@@ -129,6 +129,25 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        // Round 11: WHEN THE 6/12-MONTH FOLLOW-UP CLOCK STARTED. Set at the first assessment submit,
+        // and moved only when the student says they are heading somewhere NEW (asked on a resubmit
+        // and on "Update my report"). A report rebuilt for any other reason never moves it.
+        followUpAnchorAt: {
+            type: Date,
+            default: null,
+            index: true,
+        },
+        // every answer to "same way, or something new?" — outcome data in its own right
+        directionChanges: {
+            type: [{ at: Date, via: String, choice: String }],   // via: resubmit | update · choice: same | new
+            default: [],
+        },
+        // Round 11: the student pressed "Update my report" — the page shows "being updated" until a
+        // report newer than this exists
+        reportUpdateRequestedAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

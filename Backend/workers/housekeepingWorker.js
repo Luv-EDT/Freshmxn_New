@@ -1,6 +1,6 @@
 // THE HOUSEKEEPING WORKER (Round 10) — the jobs that run on a calendar rather than on a click:
 //
-//     followup_scan    every morning, 09:00 IST    housekeeping/followUpScan.js
+//     followup_scan    the 1st of each month, 09:00 IST   housekeeping/followUpScan.js
 //     data_refresh     the 1st of each month       housekeeping/dataRefresh.js
 //     career_scout     every Monday                housekeeping/careerScout.js
 //
@@ -26,7 +26,7 @@ const QUEUE_NAME = "housekeeping"
 const TZ = "Asia/Kolkata"
 
 const SCHEDULES = [
-    { name: "followup_scan", pattern: "0 9 * * *" },
+    { name: "followup_scan", pattern: "0 9 1 * *" },   // monthly (owner, Round 11) — the scan's 45-day window covers the gap
     { name: "data_refresh", pattern: "0 4 1 * *" },
     { name: "career_scout", pattern: "0 5 * * 1" },
 ]

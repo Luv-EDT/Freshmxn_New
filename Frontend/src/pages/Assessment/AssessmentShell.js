@@ -17,6 +17,7 @@ import ReasoningTest from "./ReasoningTest"
 import WordRecallTest from "./WordRecallTest"
 import InterestsModule from "./InterestsModule"
 import LikertModule from "./LikertModule"
+import DirectionModal from "../DirectionModal"
 import {
     ROSENBERG_ITEMS, ROSENBERG_SCALE, ROSENBERG_ATTRIBUTION,
     CONFIDENCE_ITEMS,
@@ -237,11 +238,24 @@ function AssessmentShell() {
         }
     }
 
-    const handleSubmit = async () => {
+    // A RESUBMIT asks "same way, or something new?" first (Round 11, DirectionModal); the first
+    // submit asks nothing.
+    const [directionOpen, setDirectionOpen] = useState(false)
+
+    const requestSubmit = () => {
+        if (user.progress.psychometric === "done") {
+            setDirectionOpen(true)
+            return
+        }
+        handleSubmit(null)
+    }
+
+    const handleSubmit = async (direction) => {
         setIsSubmitting(true)
 
         try {
-            await submitPsychometric()
+            await submitPsychometric(direction)
+            setDirectionOpen(false)
             setDirtySinceSubmit(false)
             setStamps((previous) => ({ ...previous, psychometricSubmittedAt: new Date().toISOString() }))
             dispatch(setUser({ ...user, progress: { ...user.progress, psychometric: "done" } }))
@@ -285,7 +299,7 @@ function AssessmentShell() {
                     started={startedModules(psychometric)}
                     storyState={storyState}
                     onOpen={(key) => navigate(`/assessment/${key}`)}
-                    onSubmit={handleSubmit}
+                    onSubmit={requestSubmit}
                     canSubmit={canSubmit(psychometric)}
                     isSubmitting={isSubmitting}
                     alreadySubmitted={user.progress.psychometric === "done"}
@@ -294,6 +308,14 @@ function AssessmentShell() {
                     retakeGranted={psychometric.retakeGranted || {}}
                     accommodations={psychometric.accommodations || null}
                     onSaveAccommodations={handleSaveAccommodations}
+                />
+                <DirectionModal
+                    open={directionOpen}
+                    title="Submit again"
+                    okText="Submit and rebuild my report"
+                    busy={isSubmitting}
+                    onCancel={() => setDirectionOpen(false)}
+                    onConfirm={handleSubmit}
                 />
             </div>
         )
