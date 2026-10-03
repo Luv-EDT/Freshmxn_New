@@ -98,11 +98,33 @@ function CareerRolePicker({ value, onChange, multiIndustry = false, allowAnyCare
                 </>
             )}
 
-            <label htmlFor="career-industry">{industryLabel}</label>
+            {multiIndustry ? <p className="mentor-form-label">{industryLabel}</p> : <label htmlFor="career-industry">{industryLabel}</label>}
             {multiIndustry ? (
-                <select id="career-industry" multiple size={6} value={current.industryCodes || []} onChange={(event) => set({ industryCodes: [...event.target.selectedOptions].map((option) => option.value) })}>
-                    {options.industries.map((row) => <option key={row.code} value={row.code}>{row.name}</option>)}
-                </select>
+                // tick boxes, not a multi-select: "hold Ctrl" means nothing on a phone
+                <details className="career-picker-industries" id="career-industry">
+                    <summary className="tap">
+                        {(current.industryCodes || []).length > 0
+                            ? options.industries.filter((row) => (current.industryCodes || []).includes(row.code)).map((row) => row.name).join(", ")
+                            : "Choose industries"}
+                    </summary>
+                    <div className="career-picker-roles">
+                        {options.industries.map((row) => (
+                            <label key={row.code} className="choice">
+                                <input
+                                    type="checkbox"
+                                    value={row.code}
+                                    checked={(current.industryCodes || []).includes(row.code)}
+                                    onChange={(event) => set({
+                                        industryCodes: event.target.checked
+                                            ? [...(current.industryCodes || []), row.code]
+                                            : (current.industryCodes || []).filter((code) => code !== row.code),
+                                    })}
+                                />
+                                <span>{row.name}</span>
+                            </label>
+                        ))}
+                    </div>
+                </details>
             ) : (
                 <select id="career-industry" value={current.industryCode || ""} onChange={(event) => set({ industryCode: event.target.value || null })}>
                     <option value="">No particular industry</option>

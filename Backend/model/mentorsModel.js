@@ -26,6 +26,25 @@ const mentorSchema = new mongoose.Schema(
             type: String,
             required: true, // 3. with country code, e.g. +91 9876543210
         },
+        // 4–6 (Round 12): chosen from OUR lists, so a mentor matches a student's choice exactly
+        professionId: {
+            type: String, // one of the 223 careers (ALL-professions.json)
+        },
+        professionName: {
+            type: String,
+        },
+        jobRole: {
+            type: String, // one of that career's job_roles, or the mentor's own words when jobRoleOther is set
+        },
+        jobRoleOther: {
+            type: String, // "something else in this career", in their words
+        },
+        industryCodes: {
+            type: [String],
+            default: [], // codes from utils/industries.js
+        },
+        // the readable forms of the three above, kept so every screen that showed them still does
+        // (and so profiles written before Round 12, which only have these, keep working)
         currentRole: {
             type: String,
             required: true, // 4. role / title

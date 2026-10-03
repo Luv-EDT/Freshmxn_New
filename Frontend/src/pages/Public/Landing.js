@@ -198,6 +198,25 @@ function Landing() {
                     </div>
                 </section>
 
+                {/* 6. FOR WORKING PROFESSIONALS (owner, Round 12) — near the bottom but above the
+                    footer, where it gets noticed. Visitors only: a logged-in student isn't the audience. */}
+                {!localStorage.getItem("token") && (
+                    <section className="section mentor-band">
+                        <div className="page">
+                            <div className="card">
+                                <div>
+                                    <h2>Working professional? Mentor a student who's where you once were.</h2>
+                                    <p>
+                                        Two short conversations — an hour and a 20-minute follow-up — can save a student years
+                                        of guessing. Tell us about your work; we'll match you with students heading your way.
+                                    </p>
+                                </div>
+                                <Link to="/mentor/register" className="btn btn-primary tap">Become a mentor →</Link>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
             </main>
 
             <PublicFooter />
