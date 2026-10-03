@@ -9,7 +9,7 @@ import { StepIcon } from "./illustrations"
 // moved here VERBATIM from the landing page (landing_page_content_v3.md §3–5, §7); prices still
 // come from the server.
 function HowItWorks() {
-    const { tier1, tier2, upgrade } = usePricing()
+    const { tier1, tier2, tier3, upgrade, names } = usePricing()
 
     return (
         <div>
@@ -76,7 +76,7 @@ function HowItWorks() {
                                 <div className="step-art"><StepIcon name="mentor" /></div>
                                 <div className="step-body">
                                     <span className="step-num">04</span>
-                                    <h3>Meet someone who's been there. (Mentor tier)</h3>
+                                    <h3>Meet someone who's been there. (Mentor plans)</h3>
                                     <p>
                                         A 1-on-1 with a working professional in your matched field — someone who was
                                         once exactly where you are.
@@ -115,7 +115,7 @@ function HowItWorks() {
                         </div>
                         <div className="pricing">
                             <div className="price-card">
-                                <h3>Career Discovery + Full Profile</h3>
+                                <h3>{names[1]}</h3>
                                 <div className="price">{formatInr(tier1)}</div>
                                 <p>
                                     The complete experience, your detailed profile, and your ranked career matches with a
@@ -124,7 +124,7 @@ function HowItWorks() {
                                 <Link to="/register" className="btn btn-primary tap">Let's figure out your career →</Link>
                             </div>
                             <div className="price-card featured">
-                                <h3>Mentor Connection</h3>
+                                <h3>{names[2]}</h3>
                                 <div className="price">{formatInr(tier2)}</div>
                                 <p>
                                     Everything above plus two sessions with a working professional in your matched field
@@ -132,10 +132,19 @@ function HowItWorks() {
                                 </p>
                                 <Link to="/mentor-waitlist" className="btn btn-primary tap">Join the waitlist →</Link>
                             </div>
+                            <div className="price-card">
+                                <h3>{names[3]}</h3>
+                                <div className="price">{formatInr(tier3)}</div>
+                                <p>
+                                    Already know the field you want? Skip the assessment — choose a career and job role, and
+                                    we match you with a mentor (the same two sessions).
+                                </p>
+                                <Link to="/mentor-waitlist" className="btn btn-ghost tap">See how it works →</Link>
+                            </div>
                         </div>
                         <p className="upgrade-note">
                             <em>
-                                Did the {formatInr(tier1)} profile first? Upgrade to mentorship for just{" "}
+                                Did {names[1]} first? Add a mentor for just{" "}
                                 <strong>{formatInr(upgrade)} more</strong> after you see your matches — no paying twice.
                             </em>
                         </p>

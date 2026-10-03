@@ -20,8 +20,8 @@ function Navbar() {
                         <NavLink to="/dashboard" className={navClass}>Home</NavLink>
                         {/* the interest form is reached from the dashboard's journey, not from here */}
                         {!user.paid && <NavLink to="/paywall" className={navClass}>Get Access</NavLink>}
-                        {/* Mentorship is what Tier 2 buys, so the waitlist page only exists for them */}
-                        {user.currentTier === 2 && <NavLink to="/mentorship" className={navClass}>Mentorship</NavLink>}
+                        {/* Mentorship comes with Discovery + Mentor and Mentor Only, so the waitlist page only exists for them */}
+                        {user.paid && (user.currentTier === 2 || user.currentTier === 3) && <NavLink to="/mentorship" className={navClass}>Mentorship</NavLink>}
                     </>
                 )}
 

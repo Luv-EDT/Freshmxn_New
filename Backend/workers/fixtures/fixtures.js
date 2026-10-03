@@ -3933,6 +3933,54 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "PLANS — three plans, priced from one place; each addition costs the difference; nothing is bought twice",
+        run: () => {
+            const { TIER_PRICE_INR, PLAN_NAMES, grants, owns, isUpgrade, upgradePrice, purchaseProblem } = require("../../utils/plans")
+            const problems = []
+            if (JSON.stringify(TIER_PRICE_INR) !== JSON.stringify({ 1: 2499, 2: 5499, 3: 2999 })) problems.push(`prices ${JSON.stringify(TIER_PRICE_INR)} — owner set ₹2,499 / ₹5,499 / ₹2,999`)
+            if (PLAN_NAMES[1] !== "Career Discovery" || PLAN_NAMES[2] !== "Discovery + Mentor" || PLAN_NAMES[3] !== "Mentor Only") problems.push("plan names drifted")
+            if (!grants(2).discovery || !grants(2).mentor || grants(3).discovery || !grants(3).mentor || grants(1).mentor) problems.push("what a plan gives is wrong")
+            if (upgradePrice(1, 2) !== 3000 || upgradePrice(3, 2) !== 2500) problems.push("an addition does not cost the difference")
+            if (!isUpgrade(1, 2) || !isUpgrade(3, 2) || isUpgrade(0, 2) || isUpgrade(1, 3)) problems.push("the upgrades are wrong")
+            if (!owns(2, 3) || !owns(2, 1) || owns(3, 1) || owns(1, 3) || owns(2, 1, false)) problems.push("ownership is wrong")
+            if (!purchaseProblem(1, 3, true) || !purchaseProblem(3, 1, true)) problems.push("buying the other single plan on top of one was allowed — it must be the upgrade")
+            if (purchaseProblem(0, 3, false) || purchaseProblem(3, 2, true) || purchaseProblem(1, 2, true)) problems.push("a valid purchase was refused")
+            if (purchaseProblem(0, 4, false) !== "Invalid plan") problems.push("an unknown plan was accepted")
+
+            // the price lives in one place: no router keeps its own copy
+            const payments = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            if (/TIER_PRICE_INR\s*=\s*\{/.test(payments)) problems.push("paymentsRouter defines its own prices")
+            if (/currentTier\s*>=/.test(payments)) problems.push("paymentsRouter still treats plans as an ordered number")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "PLANS — Mentor Only never reaches the assessment or report; every Discovery route checks for it",
+        run: async () => {
+            const requireDiscovery = require("../../middlewares/requireDiscovery")
+            const problems = []
+            const call = async (user) => {
+                let status = 200
+                const res = { status: (code) => { status = code; return { json: () => null } } }
+                let passed = false
+                await requireDiscovery({ user }, res, () => { passed = true })
+                return passed ? 200 : status
+            }
+            if (await call({ paid: true, currentTier: 3 }) !== 403) problems.push("Mentor Only passed the Discovery gate")
+            if (await call({ paid: false, currentTier: 0 }) !== 401) problems.push("an unpaid student passed")
+            if (await call({ paid: true, currentTier: 1 }) !== 200 || await call({ paid: true, currentTier: 2 }) !== 200) problems.push("a Discovery plan was refused")
+            ;["submissionsRouter", "reportsRouter", "storyRouter", "externalTestsRouter", "studyAbroadRouter", "assessmentIssuesRouter"].forEach((name) => {
+                const source = fs.readFileSync(path.join(__dirname, `../../Routers/${name}.js`), "utf8")
+                if (/requirePaid/.test(source)) problems.push(`${name} still uses requirePaid, which lets Mentor Only in`)
+            })
+            const route = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/ProtectedRoute.js"), "utf8")
+            if (!/currentTier === 3/.test(route)) problems.push("the page gate lets Mentor Only into the Discovery pages")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

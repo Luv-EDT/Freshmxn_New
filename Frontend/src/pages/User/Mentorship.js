@@ -6,8 +6,12 @@ import dayjs from "dayjs"
 import Navbar from "../Navbar"
 import MentorRolloverPolicy from "../Public/MentorRolloverPolicy"
 import { getMyWaitlist, chooseProfession } from "../../apiCall/mentorWaitlistApi"
+import CareerRolePicker, { pickerComplete, pickerSummary } from "../CareerRolePicker"
+import { hasMentor } from "../plans"
 
-// Tier 2's mentor waitlist, after payment (mentor_waitlist_page.md):
+// The mentor waitlist, after payment (mentor_waitlist_page.md). Discovery + Mentor students choose
+// from their own matches; Mentor Only students (Round 12) have no report, so they choose from all
+// our careers, or describe one we don't list. For Discovery + Mentor:
 //   1. complete Step 1 → 2. choose ONE JOB ROLE inside one of YOUR OWN MATCHES and send it →
 //   3. we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE (not of payment).
 // The choice is sent once: it starts the clock and our search. Changing it goes through WhatsApp,
@@ -24,7 +28,8 @@ function Mentorship() {
     const [selected, setSelected] = useState(null)   // { professionId, profession, jobRole }
     const [loading, setLoading] = useState(true)
 
-    const isTier2 = user && user.currentTier === 2
+    const isTier2 = hasMentor(user)   // Discovery + Mentor or Mentor Only — the name is kept from before
+    const [ownChoice, setOwnChoice] = useState({})   // Mentor Only: the picker's value
 
     useEffect(() => {
         if (!isTier2) {
@@ -43,7 +48,12 @@ function Mentorship() {
     }, [isTier2])
 
     const sendChoice = async () => {
-        const response = await chooseProfession({ professionId: selected.professionId, jobRole: selected.jobRole })
+        const payload = waitlist && waitlist.mentorOnly
+            ? (typeof ownChoice.other === "string"
+                ? { other: ownChoice.other, industryCode: ownChoice.industryCode || null }
+                : { professionId: ownChoice.professionId, jobRole: ownChoice.jobRole, jobRoleOther: ownChoice.jobRoleOther, industryCode: ownChoice.industryCode || null })
+            : { professionId: selected.professionId, jobRole: selected.jobRole }
+        const response = await chooseProfession(payload)
 
         if (!response || response.data.success === false) {
             message.error(response?.data?.message || "Could not send your choice")
@@ -55,10 +65,11 @@ function Mentorship() {
     }
 
     const confirmChoice = () => {
-        if (!selected) return
+        const mentorOnly = waitlist && waitlist.mentorOnly
+        if (mentorOnly ? !pickerComplete(ownChoice) : !selected) return
 
         Modal.confirm({
-            title: `Send "${selected.jobRole}" (${selected.profession}) as your choice?`,
+            title: mentorOnly ? `Send "${pickerSummary(ownChoice)}" as your choice?` : `Send "${selected.jobRole}" (${selected.profession}) as your choice?`,
             content: "This starts your 20-business-day mentor match. You can't change it here afterwards — if you need to, message us on WhatsApp.",
             okText: "Send my choice",
             cancelText: "Not yet",
@@ -74,7 +85,7 @@ function Mentorship() {
                 <Navbar />
                 <main className="page">
                     <h2>Mentorship</h2>
-                    <p>Mentorship comes with Tier 2. Upgrade to join the waitlist.</p>
+                    <p>Mentorship comes with the Discovery + Mentor and Mentor Only plans.</p>
                     <button type="button" className="tap" onClick={() => navigate("/paywall")}>See plans</button>
                 </main>
             </div>
@@ -90,7 +101,25 @@ function Mentorship() {
 
                 {loading && <p>Loading...</p>}
 
-                {!loading && waitlist && waitlist.matchStatus === "awaiting_choice" && (
+                {!loading && waitlist && waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
+                    <section>
+                        <h3>Choose the job role you'd like a mentor in</h3>
+                        <p>
+                            Find the career you're interested in and pick the <strong>one job role</strong> you'd like to
+                            move toward. If it isn't in our list, tell us in your own words. We'll confirm your mentor and
+                            schedule your two sessions within <strong>20 business days</strong> of your choice.
+                        </p>
+                        <CareerRolePicker value={ownChoice} onChange={setOwnChoice} allowAnyCareer />
+                        <p>
+                            {pickerComplete(ownChoice) ? <>Your choice: <strong>{pickerSummary(ownChoice)}</strong>{" "}</> : ""}
+                            <button type="button" className="btn btn-primary" disabled={!pickerComplete(ownChoice)} onClick={confirmChoice}>
+                                Send my choice
+                            </button>
+                        </p>
+                    </section>
+                )}
+
+                {!loading && waitlist && !waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
                     <section>
                         <h3>Choose the job role you'd like a mentor in</h3>
                         <p>
@@ -146,7 +175,8 @@ function Mentorship() {
                     <section>
                         <h3>We're finding your mentor</h3>
                         <p>
-                            You chose <strong>{waitlist.chosenJobRole ? `${waitlist.chosenJobRole} (${waitlist.chosenProfessionName})` : waitlist.chosenProfessionName}</strong> on {formatDate(waitlist.choiceSentAt)}.
+                            You chose <strong>{waitlist.otherRequest ? waitlist.otherRequest : waitlist.chosenJobRole ? `${waitlist.chosenJobRole} (${waitlist.chosenProfessionName})` : waitlist.chosenProfessionName}</strong>
+                            {waitlist.chosenIndustry ? ` in ${waitlist.chosenIndustry}` : ""} on {formatDate(waitlist.choiceSentAt)}.
                             We'll confirm your mentor <strong>via WhatsApp</strong> by <strong>{formatDate(waitlist.dueBy)}</strong> — 20 business days
                             from your choice.
                         </p>
@@ -166,7 +196,7 @@ function Mentorship() {
                                 {waitlist.mentor.discipline ? `, ${waitlist.mentor.discipline}` : ""}
                             </p>
                         )}
-                        <p>Career: {waitlist.chosenProfessionName}{waitlist.chosenJobRole ? ` — ${waitlist.chosenJobRole}` : ""}. We'll contact you to schedule your two sessions.</p>
+                        <p>Career: {waitlist.otherRequest || `${waitlist.chosenProfessionName}${waitlist.chosenJobRole ? ` — ${waitlist.chosenJobRole}` : ""}`}. We'll contact you to schedule your two sessions.</p>
                     </section>
                 )}
 
@@ -175,13 +205,15 @@ function Mentorship() {
                         <h3>We couldn't match you in time</h3>
                         <p>
                             {waitlist.resolution === "refunded"
-                                ? "We've moved you back to Career Discovery and arranged the refund of the difference."
+                                ? waitlist.mentorOnly
+                                    ? "We've arranged your full refund."
+                                    : "We've moved you back to Career Discovery and arranged the refund of the difference."
                                 : "Your payment has rolled over — we're still searching, or you can redirect it. We'll be in touch."}
                         </p>
                     </section>
                 )}
 
-                <MentorRolloverPolicy />
+                <MentorRolloverPolicy mentorOnly={Boolean(waitlist && waitlist.mentorOnly)} />
 
                 <h3>Who your mentor will be</h3>
                 <p>

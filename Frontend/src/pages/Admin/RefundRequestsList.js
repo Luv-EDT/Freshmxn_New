@@ -9,6 +9,7 @@ import {
     getPricing,
 } from "../../apiCall/paymentsApi"
 import StudentEditForm from "./StudentEditForm"
+import { PLAN_NAMES } from "../plans"
 
 function RefundRequestsList({ dataVersion, onDataChanged }) {
     const [refundRequests, setRefundRequests] = useState([])
@@ -104,7 +105,7 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
     const columns = [
         { title: "Requested", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY, HH:mm") },
         { title: "Student", render: (_, record) => `${record.user?.name || "N/A"} (${record.user?.email || "N/A"})` },
-        { title: "Tier", dataIndex: "tierAtRequest" },
+        { title: "Tier", dataIndex: "tierAtRequest", render: (value) => `${value} · ${PLAN_NAMES[value] || ""}` },
         {
             title: "Type",
             render: (_, record) => (

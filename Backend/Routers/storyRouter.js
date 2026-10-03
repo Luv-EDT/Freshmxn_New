@@ -4,7 +4,7 @@ const express = require("express")
 const Submission = require("../model/submissionsModel")
 const User = require("../model/userModel")
 const authMiddleware = require("../middlewares/authMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 
 const router = express.Router()
 
@@ -91,7 +91,7 @@ const stateOf = (block) => {
 // Open a story — starts both clocks
 // ========================
 
-router.post("/openStory", authMiddleware, requirePaid, async (req, res) => {
+router.post("/openStory", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id })
         const existing = (submission && submission.psychometric && submission.psychometric.storyRecall) || {}
@@ -137,7 +137,7 @@ router.post("/openStory", authMiddleware, requirePaid, async (req, res) => {
 // Where am I? — the only source of truth for the clocks
 // ========================
 
-router.get("/storyState", authMiddleware, requirePaid, async (req, res) => {
+router.get("/storyState", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id })
         const block = (submission && submission.psychometric && submission.psychometric.storyRecall) || {}
@@ -184,7 +184,7 @@ router.get("/storyState", authMiddleware, requirePaid, async (req, res) => {
 // Submit recall
 // ========================
 
-router.post("/submitStoryRecall", authMiddleware, requirePaid, async (req, res) => {
+router.post("/submitStoryRecall", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { free, structured } = req.body
 

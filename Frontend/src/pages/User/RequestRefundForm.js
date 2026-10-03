@@ -80,7 +80,7 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
                         <Radio.Group onChange={(e) => setRefundType(e.target.value)}>
                             <Radio value="rollover" style={{ display: "block" }}>
                                 Move back to Career Discovery — get <strong>₹{options.rolloverAmountInr}</strong> back
-                                and keep your Tier 1 access
+                                and keep your Career Discovery access
                             </Radio>
                             <Radio value="full" style={{ display: "block" }}>
                                 Full refund — get <strong>₹{options.fullAmountInr}</strong> back, and your access ends

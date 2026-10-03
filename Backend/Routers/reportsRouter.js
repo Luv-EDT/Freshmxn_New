@@ -4,7 +4,7 @@ const Recommendation = require("../model/recommendationsModel")
 const Submission = require("../model/submissionsModel")
 const Profile = require("../model/profilesModel")
 const authMiddleware = require("../middlewares/authMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 const User = require("../model/userModel")
 const { directionUpdate } = require("../utils/direction")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
@@ -117,7 +117,7 @@ const cleanSignal = (signal) => ({
 // because they are regenerated independently, but a student asking for their report wants both,
 // and fetching them in one round trip means the page can never render prose against a ranking that
 // has since moved.
-router.get("/getMyReport", authMiddleware, requirePaid, async (req, res) => {
+router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const [report, recommendation, submission] = await Promise.all([
             Report.findOne({ user: req.user._id }).lean(),
@@ -295,7 +295,7 @@ const coveragePctOf = (coverage, score) => {
 // Offered only after the pipeline gave up (reportFailedAt is set), so it cannot be used to run up
 // model calls. It re-runs the whole pipeline from score_profile; grading only re-sends the written
 // answers that never got a grade, so a retry costs little.
-router.post("/retryMyReport", authMiddleware, requirePaid, async (req, res) => {
+router.post("/retryMyReport", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         if (!req.user.reportFailedAt || req.user.progress.psychometric !== "done") {
             return res.status(400).json({
@@ -338,7 +338,7 @@ router.post("/retryMyReport", authMiddleware, requirePaid, async (req, res) => {
 // rebuilds the report with today's scoring and matching. Allowed only when there is something to
 // update, so it cannot be used to spend model calls on demand. The direction answer decides whether
 // the 6/12-month follow-up clock restarts (utils/direction.js).
-router.post("/updateMyReport", authMiddleware, requirePaid, async (req, res) => {
+router.post("/updateMyReport", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const [report, recommendation] = await Promise.all([
             Report.findOne({ user: req.user._id }).lean(),
@@ -371,7 +371,7 @@ router.post("/updateMyReport", authMiddleware, requirePaid, async (req, res) => 
 })
 
 
-router.get("/getMyScores", authMiddleware, requirePaid, async (req, res) => {
+router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const profile = await Profile.findOne({ user: req.user._id }).select("raw_scores factor_coverage computed_at").lean()
 

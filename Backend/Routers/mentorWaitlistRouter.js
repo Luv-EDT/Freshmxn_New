@@ -59,7 +59,13 @@ const addBusinessDays = (start, days) => {
 
 const dueByFor = (row) => (row && row.choiceSentAt ? addBusinessDays(row.choiceSentAt, MATCH_BUSINESS_DAYS) : null)
 
-const isTier2 = (user) => user.paid === true && user.currentTier === 2
+// Discovery + Mentor (tier 2) or Mentor Only (tier 3) — utils/plans.js
+const { grants } = require("../utils/plans")
+const { industryByCode } = require("../utils/industries")
+const hasMentorPlan = (user) => user.paid === true && grants(Number(user.currentTier)).mentor
+const isMentorOnly = (user) => user.paid === true && Number(user.currentTier) === 3
+const professionById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
+const cleanText = (value, max) => (typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max) : "")
 
 // what a student may see about their assigned mentor — the profile-visible name and role only.
 // Contact details, currency and residence never leave the admin side.
@@ -76,10 +82,10 @@ const mentorSummary = async (mentorUserId) => {
 
 router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
     try {
-        if (!isTier2(req.user)) {
+        if (!hasMentorPlan(req.user)) {
             return res.status(403).json({
                 success: false,
-                message: "The mentor waitlist comes with Tier 2"
+                message: "The mentor waitlist comes with the Discovery + Mentor or Mentor Only plan"
             })
         }
 
@@ -96,15 +102,16 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 { _id: row._id },
                 {
                     $set: { matchStatus: "awaiting_choice", resolution: null, adminNote: "Re-opened on a new Tier 2 place" },
-                    $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                    $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
                 },
                 { returnDocument: "after" }
             )
         }
 
-        // the careers and their job roles to choose from — only needed before a choice is sent
+        // the careers and their job roles to choose from — only needed before a choice is sent.
+        // Mentor Only has no matches: the page loads every career from /professions/getOptions.
         let options = null
-        if (row.matchStatus === "awaiting_choice") {
+        if (row.matchStatus === "awaiting_choice" && !isMentorOnly(req.user)) {
             const recommendation = await Recommendation.findOne({ user: req.user._id }).select("ranked_professions").lean()
             options = pickerOptions(recommendation ? recommendation.ranked_professions || [] : [])
         }
@@ -117,6 +124,9 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 chosenProfessionId: row.chosenProfessionId,
                 chosenProfessionName: row.chosenProfessionName,
                 chosenJobRole: row.chosenJobRole || null,
+                chosenIndustry: row.chosenIndustryCode && industryByCode.get(row.chosenIndustryCode) ? industryByCode.get(row.chosenIndustryCode).name : null,
+                otherRequest: row.otherRequest || null,
+                mentorOnly: isMentorOnly(req.user),
                 options,
                 choiceSentAt: row.choiceSentAt,
                 dueBy: dueByFor(row),
@@ -144,38 +154,70 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
 // wants to change it asks us, and an admin resets it (resetChoiceForAdmin below).
 router.post("/chooseProfession", authMiddleware, async (req, res) => {
     try {
-        if (!isTier2(req.user)) {
+        if (!hasMentorPlan(req.user)) {
             return res.status(403).json({
                 success: false,
-                message: "The mentor waitlist comes with Tier 2"
+                message: "The mentor waitlist comes with the Discovery + Mentor or Mentor Only plan"
             })
         }
 
-        const { professionId, jobRole } = req.body
+        const { professionId, jobRole, jobRoleOther, industryCode, other } = req.body
 
-        // the choice must come from THIS student's own ranked matches — the id is checked against
-        // their recommendation and the name is read from there, never from the request body
-        const recommendation = await Recommendation.findOne({ user: req.user._id }).lean()
-        const ranked = recommendation ? recommendation.ranked_professions || [] : []
-        const match = ranked.find((entry) => String(entry.professionId) === String(professionId))
-
-        if (!match) {
-            return res.status(400).json({
-                success: false,
-                message: ranked.length === 0
-                    ? "Your matches aren't ready yet — finish your assessment first"
-                    : "Please choose a career from your matches"
-            })
+        // an industry is a nice-to-have on either plan; when given it must be one of ours
+        const industry = industryCode ? industryByCode.get(String(industryCode)) : null
+        if (industryCode && !industry) {
+            return res.status(400).json({ success: false, message: "Please choose an industry from the list" })
         }
 
-        // the role must be one of THIS career's job roles, exactly as the data file names it
-        const role = (jobRolesById.get(String(match.professionId)) || []).find((name) => name === jobRole)
+        let choice
+        if (isMentorOnly(req.user)) {
+            // MENTOR ONLY (Round 12): any of our careers, a role in it or their own words for one,
+            // or — if the career isn't in our list at all — a short description we act on by hand.
+            const otherText = cleanText(other, 300)
+            const profession = professionById.get(String(professionId))
+            if (!profession && otherText.length >= 3) {
+                choice = { chosenProfessionId: null, chosenProfessionName: null, chosenJobRole: null, jobRoleIsOther: false, otherRequest: otherText }
+            } else if (!profession) {
+                return res.status(400).json({ success: false, message: "Please choose a career from the list, or tell us what you're looking for" })
+            } else if (jobRole === "other") {
+                const ownRole = cleanText(jobRoleOther, 120)
+                if (ownRole.length < 2) {
+                    return res.status(400).json({ success: false, message: "Please tell us the job role you have in mind" })
+                }
+                choice = { chosenProfessionId: profession.id, chosenProfessionName: profession.profession, chosenJobRole: ownRole, jobRoleIsOther: true, otherRequest: null }
+            } else {
+                const role = (profession.job_roles || []).find((name) => name === jobRole)
+                if (!role) {
+                    return res.status(400).json({ success: false, message: "Please choose a job role from that career" })
+                }
+                choice = { chosenProfessionId: profession.id, chosenProfessionName: profession.profession, chosenJobRole: role, jobRoleIsOther: false, otherRequest: null }
+            }
+        } else {
+            // the choice must come from THIS student's own ranked matches — the id is checked against
+            // their recommendation and the name is read from there, never from the request body
+            const recommendation = await Recommendation.findOne({ user: req.user._id }).lean()
+            const ranked = recommendation ? recommendation.ranked_professions || [] : []
+            const match = ranked.find((entry) => String(entry.professionId) === String(professionId))
 
-        if (!role) {
-            return res.status(400).json({
-                success: false,
-                message: "Please choose a job role from that career"
-            })
+            if (!match) {
+                return res.status(400).json({
+                    success: false,
+                    message: ranked.length === 0
+                        ? "Your matches aren't ready yet — finish your assessment first"
+                        : "Please choose a career from your matches"
+                })
+            }
+
+            // the role must be one of THIS career's job roles, exactly as the data file names it
+            const role = (jobRolesById.get(String(match.professionId)) || []).find((name) => name === jobRole)
+
+            if (!role) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please choose a job role from that career"
+                })
+            }
+            choice = { chosenProfessionId: String(match.professionId), chosenProfessionName: match.profession, chosenJobRole: role, jobRoleIsOther: false, otherRequest: null }
         }
 
         const existing = await MentorWaitlist.findOne({ user: req.user._id })
@@ -191,9 +233,9 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
             { user: req.user._id },
             {
                 user: req.user._id,
-                chosenProfessionId: String(match.professionId),
-                chosenProfessionName: match.profession,
-                chosenJobRole: role,
+                ...choice,
+                chosenIndustryCode: industry ? industry.code : null,
+                planTier: Number(req.user.currentTier),
                 choiceSentAt: new Date(),
                 matchStatus: "matching",
             },
@@ -208,6 +250,7 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
                 chosenProfessionId: row.chosenProfessionId,
                 chosenProfessionName: row.chosenProfessionName,
                 chosenJobRole: row.chosenJobRole,
+                otherRequest: row.otherRequest || null,
                 choiceSentAt: row.choiceSentAt,
                 dueBy: dueByFor(row),
             },
@@ -227,12 +270,12 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
 // Get All For Admin
 // ========================
 
-// every Tier-2 student, with their row — or a virtual "awaiting_choice" one if they have never
+// every student on a mentor plan (Discovery + Mentor or Mentor Only), with their row — or a virtual "awaiting_choice" one if they have never
 // opened the page. Admin actions below are keyed on the STUDENT's user id for the same reason.
 router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const students = await User.find({ role: "student", paid: true, currentTier: 2 })
-            .select("name email phone createdAt")
+        const students = await User.find({ role: "student", paid: true, currentTier: { $in: [2, 3] } })
+            .select("name email phone createdAt currentTier")
             .sort({ createdAt: -1 })
             .lean()
 
@@ -255,7 +298,15 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 
         const data = students.map((student) => {
             const row = rowByUser.get(String(student._id)) || { matchStatus: "awaiting_choice" }
-            return { student, ...row, user: student._id, dueBy: dueByFor(row), sharedSupportNeeds: supportByUser.get(String(student._id)) || [] }
+            return {
+                student,
+                ...row,
+                user: student._id,
+                dueBy: dueByFor(row),
+                sharedSupportNeeds: supportByUser.get(String(student._id)) || [],
+                plan: Number(student.currentTier) === 3 ? "Mentor Only" : "Discovery + Mentor",
+                chosenIndustry: row.chosenIndustryCode && industryByCode.get(row.chosenIndustryCode) ? industryByCode.get(row.chosenIndustryCode).name : null,
+            }
         })
 
         return res.status(200).json({
@@ -386,7 +437,7 @@ router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             { user: id },
             {
                 $set: { matchStatus: "awaiting_choice", adminNote: (adminNote || "").trim() },
-                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", choiceSentAt: "", assignedMentor: "", matchedAt: "", resolution: "" },
+                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "", resolution: "" },
             },
             { returnDocument: "after" }
         )

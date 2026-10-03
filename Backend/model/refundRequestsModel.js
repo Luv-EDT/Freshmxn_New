@@ -15,7 +15,7 @@ const refundRequestSchema = new mongoose.Schema(
         },
         tierAtRequest: {
             type: Number,
-            required: true, // 1 | 2
+            required: true, // 1 | 2 | 3
         },
         refundType: {
             type: String,

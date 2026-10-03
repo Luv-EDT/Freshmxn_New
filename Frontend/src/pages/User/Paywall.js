@@ -150,7 +150,7 @@ function Paywall() {
             await new Promise((resolve) => setTimeout(resolve, 2000))
             const currentUserResponse = await getCurrentUser()
             const userData = currentUserResponse?.data?.userData
-            if (userData && userData.paid && userData.currentTier >= quote.tier) {
+            if (userData && userData.paid && userData.currentTier === quote.tier) {
                 dispatch(setUser({ user: userData }))
                 message.success("Access unlocked")
                 navigate("/dashboard")
@@ -174,7 +174,13 @@ function Paywall() {
         return <div>Loading...</div>
     }
 
-    const isOnTierTwo = user.paid && user.currentTier === 2
+    // Round 12: three plans, named not numbered. What a student can buy depends on what they have:
+    // nothing → any plan; Career Discovery → add a mentor; Mentor Only → add Career Discovery.
+    // Either addition IS the full plan (tier 2), priced at the difference.
+    const current = user.paid ? user.currentTier : 0
+    const isOnTierTwo = current === 2
+    const planName = (tier) => (pricing.tiers[tier] ? pricing.tiers[tier].name : `Plan ${tier}`)
+    const addPrice = current === 1 ? pricing.upgrades?.["1-2"] : current === 3 ? pricing.upgrades?.["3-2"] : null
     const pendingAid = aidRequests.find((request) => request.status === "pending")
     const approvedAid = aidRequests.find((request) => request.status === "approved" && !request.usedAt)
 
@@ -198,14 +204,14 @@ function Paywall() {
             )}
 
             {isOnTierTwo && (
-                <p>You already have the Mentor Connection plan — the highest tier. <button type="button" onClick={() => navigate("/dashboard")}>Go home</button></p>
+                <p>You already have {planName(2)} — everything we offer. <button type="button" onClick={() => navigate("/dashboard")}>Go home</button></p>
             )}
 
             {/* Pending request */}
             {pendingRequest && (
                 <div>
                     <p>
-                        <strong>Your request is pending.</strong> Tier {pendingRequest.requestedTier} —
+                        <strong>Your request is pending.</strong> {planName(pendingRequest.requestedTier)} —
                         ₹{pendingRequest.finalAmountInr}. We'll call you
                         ({formatCallback(pendingRequest.callbackDay, pendingRequest.callbackSlot)}) to complete the payment.
                     </p>
@@ -216,30 +222,55 @@ function Paywall() {
             {!isOnTierTwo && !pendingRequest && (
                 <div>
                     <div className="plan-grid">
-                    <div className={`plan-card${selectedTier === 1 ? " is-selected" : ""}`}>
-                        <h3>Tier 1 — {pricing.tiers[1].name}</h3>
-                        <p className="price">₹{pricing.tiers[1].amountInr}</p>
-                        <p>Full assessment, your psychometric profile, a journey-shaped profession report, readiness layer and values profile.</p>
-                        {user.paid && user.currentTier === 1 ? (
-                            <p><em>Your current plan</em></p>
-                        ) : (
-                            <button type="button" className={selectedTier === 1 ? "btn btn-ghost" : "btn btn-primary"} onClick={() => handleSelectTier(1, coupon)}>
-                                {selectedTier === 1 ? "Selected" : "Choose Tier 1"}
-                            </button>
-                        )}
-                    </div>
+                    {current !== 3 && (
+                        <div className={`plan-card${selectedTier === 1 ? " is-selected" : ""}`}>
+                            <h3>{planName(1)}</h3>
+                            <p className="price">₹{pricing.tiers[1].amountInr}</p>
+                            <p>The full assessment, your psychometric profile and your ranked career report, with next steps for your stage.</p>
+                            {current === 1 ? (
+                                <p><em>Your current plan</em></p>
+                            ) : (
+                                <button type="button" className={selectedTier === 1 ? "btn btn-ghost" : "btn btn-primary"} onClick={() => handleSelectTier(1, coupon)}>
+                                    {selectedTier === 1 ? "Selected" : `Choose ${planName(1)}`}
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     <div className={`plan-card${selectedTier === 2 ? " is-selected" : ""}`}>
-                        <h3>Tier 2 — {pricing.tiers[2].name}</h3>
+                        <h3>{planName(2)}</h3>
                         <p className="price">
                             ₹{pricing.tiers[2].amountInr}
-                            {user.paid && user.currentTier === 1 && ` — upgrade for ₹${pricing.upgradeAmountInr}`}
+                            {addPrice ? ` — add it for ₹${addPrice}` : ""}
                         </p>
-                        <p>Everything in Tier 1, plus a mentor matched to your chosen profession: a 1-hour clarity session and a 20-minute follow-up.</p>
+                        <p>
+                            {current === 3
+                                ? "Add the full assessment and your career report to your mentor plan."
+                                : `Everything in ${planName(1)}, plus a mentor matched to the job role you choose: a 1-hour clarity session and a 20-minute follow-up.`}
+                        </p>
                         <button type="button" className={selectedTier === 2 ? "btn btn-ghost" : "btn btn-primary"} onClick={() => handleSelectTier(2, coupon)}>
-                            {selectedTier === 2 ? "Selected" : user.paid && user.currentTier === 1 ? "Upgrade to Tier 2" : "Choose Tier 2"}
+                            {selectedTier === 2 ? "Selected" : current === 1 ? "Add a mentor" : current === 3 ? `Add ${planName(1)}` : `Choose ${planName(2)}`}
                         </button>
                     </div>
+
+                    {current !== 1 && (
+                        <div className={`plan-card${selectedTier === 3 ? " is-selected" : ""}`}>
+                            <h3>{planName(3)}</h3>
+                            <p className="price">₹{pricing.tiers[3].amountInr}</p>
+                            <p>
+                                Skip the assessment. Choose a career and a job role from our list — or tell us in your own
+                                words — and we match you with a mentor: a 1-hour session and a 20-minute follow-up. A full
+                                refund if we can't find one.
+                            </p>
+                            {current === 3 ? (
+                                <p><em>Your current plan</em></p>
+                            ) : (
+                                <button type="button" className={selectedTier === 3 ? "btn btn-ghost" : "btn btn-primary"} onClick={() => handleSelectTier(3, coupon)}>
+                                    {selectedTier === 3 ? "Selected" : `Choose ${planName(3)}`}
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     </div>
 
@@ -275,8 +306,8 @@ function Paywall() {
                     <hr />
                     {approvedAid ? (
                         <p>
-                            💙 <strong>Financial aid approved.</strong> Your price for Tier {approvedAid.requestedTier} is
-                            ₹{approvedAid.approvedAmountInr} — pick that tier above and it will be applied.
+                            💙 <strong>Financial aid approved.</strong> Your price for {planName(approvedAid.requestedTier)} is
+                            ₹{approvedAid.approvedAmountInr} — pick that plan above and it will be applied.
                         </p>
                     ) : pendingAid ? (
                         <p>💙 <strong>Your financial aid request is pending.</strong> We'll call you soon.</p>

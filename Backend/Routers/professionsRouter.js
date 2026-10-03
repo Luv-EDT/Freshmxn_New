@@ -1,6 +1,6 @@
 const express = require("express")
 const authMiddleware = require("../middlewares/authMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
 
 const router = express.Router()
@@ -407,16 +407,47 @@ router.get("/search", authMiddleware, async (req, res) => {
 
 
 // ========================
+// Options for the pickers (Round 12)
+// ========================
+
+// Every career with its job roles, and the industry list — what a Mentor Only student and a mentor
+// filling their profile choose from. Logged-in only, like /search: names and roles, nothing else
+// from the record (the full facts stay behind requireDiscovery on /getProfessions).
+const PICKER_PROFESSIONS = taxonomy.professions
+    .map((profession) => ({ id: profession.id, profession: profession.profession, jobRoles: profession.job_roles || [] }))
+    .sort((left, right) => left.profession.localeCompare(right.profession))
+
+router.get("/getOptions", authMiddleware, async (req, res) => {
+    try {
+        const { INDUSTRIES } = require("../utils/industries")
+
+        return res.status(200).json({
+            success: true,
+            message: "Options fetched successfully",
+            data: { professions: PICKER_PROFESSIONS, industries: INDUSTRIES },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch options",
+            error: error.message,
+        })
+    }
+})
+
+
+// ========================
 // One profession, in full
 // ========================
 
 // Fetched when a student expands a row in the report — the taxonomy is static and shared, so it is
 // served live rather than copied into every student's recommendations document.
 //
-// `requirePaid`, like every other report route. The ids are guessable slugs and the taxonomy is the
+// `requireDiscovery`, like every other report route (Round 12: paid AND a plan with Career Discovery). The ids are guessable slugs and the taxonomy is the
 // hand-built asset of the whole product; a route that serves all 223 to any free account is a
 // scrape surface, and the server's only rate limiter is on login.
-router.post("/getProfessions", authMiddleware, requirePaid, async (req, res) => {
+router.post("/getProfessions", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const ids = Array.isArray(req.body.ids) ? req.body.ids.slice(0, 60) : []
 

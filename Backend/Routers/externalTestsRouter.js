@@ -3,7 +3,7 @@ const Submission = require("../model/submissionsModel")
 const User = require("../model/userModel")
 const Verification = require("../model/verificationsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 const { extractTestResult, createExtractionClient, INSTRUMENTS } = require("../workers/extractTestResult")
 
 const { raiseIssue } = require("../utils/assessmentIssues")
@@ -67,7 +67,7 @@ const blockOf = (submission, moduleKey) => (submission && submission.psychometri
 // What has been uploaded so far
 // ========================
 
-router.get("/externalState", authMiddleware, requirePaid, async (req, res) => {
+router.get("/externalState", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id })
 
@@ -101,7 +101,7 @@ router.get("/externalState", authMiddleware, requirePaid, async (req, res) => {
 // Upload a screenshot
 // ========================
 
-router.post("/uploadResult", authMiddleware, requirePaid, async (req, res) => {
+router.post("/uploadResult", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { module: moduleKey, image, mediaType, secondsPerQuestion } = req.body
 
@@ -201,7 +201,7 @@ router.post("/uploadResult", authMiddleware, requirePaid, async (req, res) => {
 // The student confirms — or disputes — what was read
 // ========================
 
-router.post("/confirmResult", authMiddleware, requirePaid, async (req, res) => {
+router.post("/confirmResult", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { module: moduleKey, agrees } = req.body
 

@@ -4,7 +4,7 @@ const Submission = require("../model/submissionsModel")
 const AssessmentIssue = require("../model/assessmentIssuesModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 const { raiseIssue } = require("../utils/assessmentIssues")
 const { sendEmail, escapeHtml } = require("../utils/mailer")
 
@@ -38,7 +38,7 @@ const MODULE_NAMES = {
 // Report An Issue (student)
 // ========================
 
-router.post("/reportIssue", authMiddleware, requirePaid, async (req, res) => {
+router.post("/reportIssue", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { module, note } = req.body
 

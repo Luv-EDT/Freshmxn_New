@@ -4,12 +4,8 @@ import Navbar from "../Navbar"
 import JourneyProgress, { journeyStages } from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
 import ParentConsentBanner from "./ParentConsentBanner"
+import { PLAN_NAMES as TIER_NAMES, isMentorOnly } from "../plans"
 
-const TIER_NAMES = {
-    0: "No plan yet",
-    1: "Tier 1 — Career Recommendation + Psychometric Analysis",
-    2: "Tier 2 — Mentor Connection",
-}
 
 // Home is the journey. Money — payment history and refunds — lives on the profile page.
 function Home() {
@@ -80,7 +76,15 @@ function Home() {
                         </p>
                     )}
 
-                    {!assessmentOpen && (
+                    {/* Mentor Only (Round 12): no assessment to open — say what else exists, once */}
+                    {isMentorOnly(user) && (
+                        <div className="section-card">
+                            <p>Want to see which careers fit you, too? Add Career Discovery — the assessment and your ranked career report.</p>
+                            <button type="button" className="btn btn-ghost" onClick={() => navigate("/paywall")}>See what it adds</button>
+                        </div>
+                    )}
+
+                    {!assessmentOpen && !isMentorOnly(user) && (
                         <p><em>The assessment opens once the interest form is finished — it needs what you tell us there to match against.</em></p>
                     )}
 

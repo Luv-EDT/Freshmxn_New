@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux"
 import { getCurrentUser } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 
-// requirePaid: true → a student who hasn't paid is sent to the paywall
+// requirePaid: true → a student without Career Discovery (unpaid, or Mentor Only) is sent to the paywall
 function ProtectedRoute({ children, requirePaid }) {
     const dispatch = useDispatch()
     const navigate = useNavigate()
@@ -57,7 +57,9 @@ function ProtectedRoute({ children, requirePaid }) {
                     return
                 }
 
-                if (requirePaid && !userData.paid) {
+                // requirePaid guards the Career Discovery pages, which Mentor Only (tier 3) does not
+                // include — the plans page shows how to add it (Round 12)
+                if (requirePaid && (!userData.paid || userData.currentTier === 3)) {
                     navigate("/paywall")
                     return
                 }

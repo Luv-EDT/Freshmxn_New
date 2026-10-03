@@ -23,7 +23,14 @@ function usePricing() {
     return {
         tier1: pricing?.tiers?.[1]?.amountInr,
         tier2: pricing?.tiers?.[2]?.amountInr,
-        upgrade: pricing?.upgradeAmountInr,
+        tier3: pricing?.tiers?.[3]?.amountInr,
+        upgrade: pricing?.upgradeAmountInr,                       // Career Discovery → + mentor
+        addDiscovery: pricing?.upgrades?.["3-2"],                 // Mentor Only → + Career Discovery
+        names: {
+            1: pricing?.tiers?.[1]?.name || "Career Discovery",
+            2: pricing?.tiers?.[2]?.name || "Discovery + Mentor",
+            3: pricing?.tiers?.[3]?.name || "Mentor Only",
+        },
     }
 }
 

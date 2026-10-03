@@ -4,6 +4,7 @@ import dayjs from "dayjs"
 import { getAllUsersForAdmin } from "../../apiCall/userApi"
 import { downgradeUserForAdmin, getPricing } from "../../apiCall/paymentsApi"
 import StudentEditForm from "./StudentEditForm"
+import { PLAN_NAMES } from "../plans"
 
 function StudentsList({ dataVersion, onDataChanged }) {
     const [users, setUsers] = useState([])
@@ -75,7 +76,7 @@ function StudentsList({ dataVersion, onDataChanged }) {
         { title: "Parent consent", render: (_, record) => ({ verified: "Confirmed", waiting_for_parent: "Waiting for parent", missing: "Missing", not_needed: "—" }[record.parentConsent] || "—") },
         { title: "Journey", dataIndex: "journey" },
         { title: "Paid", render: (_, record) => (record.paid ? "Yes" : "No") },
-        { title: "Tier", dataIndex: "currentTier" },
+        { title: "Tier", dataIndex: "currentTier", render: (value) => `${value} · ${PLAN_NAMES[value] || ""}` },
         { title: "Interest form", render: (_, record) => record.progress?.interestForm || "N/A" },
         {
             title: "Action",

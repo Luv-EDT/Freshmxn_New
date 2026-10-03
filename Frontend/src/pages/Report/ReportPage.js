@@ -815,7 +815,7 @@ function ReportPage() {
             )}
 
             {/* Named from the student's own top matches, so the offer is about the thing they have
-                just read rather than a generic upsell. Renders nothing for Tier 2. */}
+                just read rather than a generic upsell. Renders nothing for the full plan. */}
             <UpgradeToMentorship user={user} professions={ranked.slice(0, 3).map((entry) => entry.profession)} />
         </div>
     )

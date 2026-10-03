@@ -3,7 +3,7 @@ const StudyAbroadLead = require("../model/studyAbroadLeadsModel")
 const Recommendation = require("../model/recommendationsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 const abroad = require("../data/abroad.json")
 const { POLICY_VERSION } = require("./userRouter")
 
@@ -23,7 +23,7 @@ const qualifies = (id) => Boolean(abroad.careers[id] && abroad.careers[id].need 
 // Express Interest
 // ========================
 
-router.post("/expressInterest", authMiddleware, requirePaid, async (req, res) => {
+router.post("/expressInterest", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         if (req.body.consent !== true) {
             return res.status(400).json({ success: false, message: "Please tick the box to agree before we share your details" })
@@ -58,7 +58,7 @@ router.post("/expressInterest", authMiddleware, requirePaid, async (req, res) =>
     }
 })
 
-router.get("/getMyInterest", authMiddleware, requirePaid, async (req, res) => {
+router.get("/getMyInterest", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const lead = await StudyAbroadLead.findOne({ user: req.user._id }).select("careers consentAt").lean()
 

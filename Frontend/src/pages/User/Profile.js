@@ -11,12 +11,8 @@ import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
 import PsychometricScores from "./PsychometricScores"
 import { JOURNEY_OPTIONS } from "../journeyOptions"
+import { PLAN_NAMES as TIER_NAMES } from "../plans"
 
-const TIER_NAMES = {
-    0: "No plan yet",
-    1: "Tier 1 — Career Recommendation + Psychometric Analysis",
-    2: "Tier 2 — Mentor Connection",
-}
 
 const OPEN_REFUND_STATUSES = ["pending", "refund_pending", "refund_failed"]
 
@@ -81,7 +77,7 @@ function Profile() {
     const columns = [
         { title: "Date", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
         { title: "What", dataIndex: "action" },
-        { title: "Tier after", dataIndex: "tier" },
+        { title: "Plan after", dataIndex: "tier", render: (value) => TIER_NAMES[value] || value },
         { title: "Amount (₹)", dataIndex: "amountInr" },
         { title: "Status", dataIndex: "status" },
     ]
@@ -93,10 +89,11 @@ function Profile() {
     const pendingAid = aidRequests.find((request) => request.status === "pending")
     const journeyLabel = JOURNEY_OPTIONS.find((option) => option.value === user.journey)
 
-    // refunds open only once all three Tier 1 steps have actually been delivered
-    const hasCompletedTierOne = user.progress?.interestForm === "done"
+    // refunds open only once all three Career Discovery steps have actually been delivered — and
+    // any time on Mentor Only, whose promise is a full refund if we can't match (Round 12)
+    const hasCompletedTierOne = user.currentTier === 3 || (user.progress?.interestForm === "done"
         && user.progress?.psychometric === "done"
-        && user.progress?.report !== "locked"
+        && user.progress?.report !== "locked")
 
     // Account carries the student's access state, so the refund controls belong beside the plan
     const accountPanel = (

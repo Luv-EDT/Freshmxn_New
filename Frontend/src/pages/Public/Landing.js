@@ -180,7 +180,7 @@ function Landing() {
                                 <h3>vs. AI Tools (LLMs)</h3>
                                 <ul>
                                     <li>
-                                        <strong>Human connection — via our mentorship tier.</strong> Real people in the
+                                        <strong>Human connection — via our mentor plans.</strong> Real people in the
                                         field, not generic chat. → <Link to="/mentor-waitlist">Join the mentor waitlist</Link>
                                     </li>
                                     <li><strong>Personalized tracking</strong> — guidance built on your profile.</li>
