@@ -32,7 +32,7 @@ site and both workers (`render.yaml`, deploys from `main`).
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
 node Backend/matching/fixtures/runFixtures.js    # 58/58
-node Backend/workers/fixtures/runFixtures.js     # 131/131
+node Backend/workers/fixtures/runFixtures.js     # 155/155
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

@@ -25,8 +25,8 @@ mentor match.
 | **Code** | `main` (after the Day 5 merge). The cloud work happened on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`): Tier 1 ₹3,500 · Tier 2 ₹6,500 · upgrade ₹3,000 |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment with SART, digit span, story recall, the in-house reasoning test and the O\*NET activities checklist · disability accommodations ("not measured", never low) · scoring (`profile@1.2.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, coverage line, compare page) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout (admin-approved) · admin dashboard incl. assessment issues and retakes |
-| **Tests** | fixtures 22 (scoring) / 58 (matching) / 131 (workers) — all offline, all green |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment with SART, digit span, story recall, the in-house reasoning test and the O\*NET activities checklist · disability accommodations ("not measured", never low) · our own word-memory test · scoring (`profile@1.3.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, coverage line, compare page) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes |
+| **Tests** | fixtures 22 (scoring) / 58 (matching) / 155 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -59,7 +59,7 @@ cd Backend && npm run seed:admin                  # once — the admin account
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
 node Backend/matching/fixtures/runFixtures.js    # 58/58
-node Backend/workers/fixtures/runFixtures.js     # 131/131 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 155/155 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -67,7 +67,7 @@ The fixtures read some frontend sources and two docs **as text** (the rubrics in
 `Backend/workers/gradeOpenItems.js`). Renaming those docs, or the strings the fixtures look for,
 breaks the pipeline — the fixtures say which.
 
-The browser suites (`uiFlow`, `round3`, `round5`, the Round 9 and Round 10 suites) and the API suite (42)
+The browser suites (`uiFlow`, `round3`, `round5`, the Round 9, 10 and 11 suites) and the API suite (46)
 ran in the cloud sessions against FerretDB + Playwright; they were scratch scripts and are **not in the
 repo** (a committed suite is in V2).
 To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.js` for screenshots.
@@ -79,7 +79,7 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 **Block real students (owner's call):**
 | Item | Notes |
 |---|---|
-| DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice (Privacy now has the sensitive-answers section and email-verified parental consent, policy `v1.1`). Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
+| DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice (Privacy now has the sensitive-answers section, email-verified parental consent and the study-abroad partner on opt-in, policy `v1.2`). Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
 | Report prompt `report@3.0.0` (`Backend/workers/reportComposer.js`) | Three short lines; approve against a live run before real students |
 | Human review of the 223 baseline ratings (`baseline_rating.json`) | All still `unreviewed`. They drive matching |
 | **Disability support facts** (`Backend/data/disability_support.json`) | `verified_by_owner: false` — the report's support section stays hidden until the owner checks each row against its official source and sets it to true (Round 10) |
@@ -90,7 +90,11 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 | Razorpay KYC | Then `PAYMENT_MODE=razorpay` |
 | SART on a real low-end Android | The 20 ms timing gate has never run on physical budget hardware |
 | External tests, P22 and LR_FREE_RECALL against the live API | Fixture-proven with stubs only |
-| First live run of the data refresh and the scout | Adzuna is unreachable from the cloud container, so both are proven with stubs. Use **Run now** in admin (Data updates / Emerging careers) and read the `housekeeping … done` line in the Render logs |
+| First live run of the data refresh, the scout and the study bot | Adzuna, NIRF and the exam sites are unreachable from the cloud container, so all three are proven with stubs. Use **Run now** in admin (Data updates / Emerging careers) and read the `housekeeping … done` line in the Render logs |
+| **Where to study** (`Backend/data/study_places.json`, Round 11) | 23 disciplines, 170 institutions, public and private. NIRF 2025 ranks where NIRF ranks the field; elsewhere "Suggested — check" (Claude's judgement, labelled). **The institution lists stay hidden** until the owner reads them and sets `review.reviewed_by_owner` to `true`; the official links show already. NIRF 2026 was not out on 3 Oct 2026 — the study bot proposes it when it is |
+| **Exam calendar** (`Backend/data/exam_calendar.json`, Round 11) | 61 exams; 23 checked against published reporting of the official notices, **38 still `draft`** (name and official link only). Read the rows once; the study bot re-checks 15 a month on their own sites. A fixture fails if a checked row is over 13 months old |
+| **Studying abroad** (`Backend/data/abroad.json`, Round 11) | 25 careers flagged "helps" or "often part of the route", drafted by Claude — read them once. **Name the study-abroad partner** and share leads from the admin "Study abroad" tab (consent and policy version are on each row) |
+| **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
 **Owner to know (Round 10):**
 - **Existing students** pick up the new scoring (persistence items, second calibration item, O\*NET
@@ -98,9 +102,13 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
   stays until then. The new questions show as unanswered on their assessment page.
 - **Refund wording** now promises the Tier 2 → Tier 1 difference (from `getPricing`), as the owner meant;
   the code already did exactly that.
-- **Claude calls in the refresh and the scout** use server-side fallbacks (`fallbacks: "default"`):
-  if the model declines, Anthropic's recommended fallback model answers instead. Default model
-  `claude-opus-5-5` (`REFRESH_MODEL` to change). Rough cost at the defaults: about $10–15 a month.
+- **Claude calls in the refresh, the scout, the study bot and career drafting** use server-side fallbacks
+  (`fallbacks: "default"`): if the model declines, Anthropic's recommended fallback model answers
+  instead. Default model `claude-opus-5-5` (`REFRESH_MODEL` to change).
+- **AI cost is now measured** (Round 11): every Claude call logs its tokens, and the admin dashboard's
+  "AI usage" card shows the month by job at list prices. The Round 11 estimate was about $1.45 per
+  student at launch, falling to $0.55–0.75, plus $15–40 a month of fixed jobs; compare it with the card
+  after the first month. The grading rubric and the research instructions are now cached.
 - **Adzuna**: India salary data is thin, so a median is shown only with 20+ salaried postings behind
   it. Calls are spaced to stay inside the free tier.
 
@@ -139,6 +147,10 @@ Everything not built yet is in `docs/4_v2/06_V2_and_Beyond.md` — future scope 
 - Prices are always read from the server, never from copy.
 - API route prefixes must not equal a page URL (a refresh would 404).
 - Parental consent: an under-18 needs a parent's email-verified code (`/parent-consent`) before paying; older accounts with the self-declared checkbox see a banner, and are never locked out.
+- **A report changes only when the student acts** (Round 11): a resubmit, or "Update my report" after a matching or scoring improvement. A deploy never rebuilds a report by itself, and data-refresh overrides change career pages, never reports.
+- **The follow-up clock** counts from the student's latest submission and moves only when they answer "something new" to the direction question; the scan runs monthly.
+- Exams are shown as what **usually** happens, with the official link — never this year's exact dates (fixture). Where-to-study rows always carry their basis; a judgement says "Suggested — check".
+- Study abroad is about whether a career needs it, never which university; a student's details go to the partner only after the consent box is ticked.
 
 ---
 
@@ -1651,3 +1663,38 @@ moved to V2, and IPIP-NEO-120 was dropped (below). Built in eleven slices on
   - round5's photo check went from 250 to 400 px (the owner's less-cropped photo).
 
 No test was weakened to pass: every other failure was fixed in the code.
+
+
+### Round 11 — the owner's follow-ups to Round 10 (2026-10-02 → 2026-10-03)
+Asked after Round 10: a job-role choice for mentors, a word test of our own, reports that change only
+when the student acts, a follow-up clock from the latest submission, a smarter scout, and much more on
+exams, colleges, master's and studying abroad — plus a measured AI cost. Built in eight commits.
+
+| Item | What shipped |
+|---|---|
+| **A** mentor picker (`64f0eae`) | The student opens each of their ranked careers and chooses **one job role** (roles that suit them first). The server checks the role belongs to that career; the admin sees "career — role" |
+| **M** word test (`d34c4c8`) | Our own word-memory test replaces the AssessmentDay screenshot: two lists of 15 words, 1.5 s each, typed recall, marked on the server (plurals and one-letter typos forgiven). Short-term memory = digit span + word recall. `profile@1.3.0`; old uploads still count |
+| **I + C** report updates and follow-up (`3821efe`) | A matching or scoring improvement shows a banner, "Update my report"; nothing rebuilds on its own. Update and resubmit ask "same way or something new?" — only "something new" restarts the 6/12-month follow-up clock (`followUpAnchorAt`). The scan runs monthly with a 45-day catch-up window |
+| **B + J** scout and drafts (`3bd4d31`) | Titles we already list are dropped by name (1,861 job titles) or by meaning (embedding ≥ 0.8). The official reports are a third source of new titles. Approving a title drafts the full career the way the 223 were built (DECISIONS.md, three rating passes, embedding, the data checks); the admin accepts or sends it back with a note; Export patch writes accepted ones into the data files |
+| **E** exam calendar (`40873ad`) | 61 real exams; all 174 exam spellings in the data mapped to a row or given a reason. The card shows who runs each exam, its official site, and — once checked — when applications usually open |
+| **F + G + D** study info (`432488f`) | Where to study (23 disciplines, NIRF first, public and private, lists hidden until reviewed). A monthly study bot proposes college and exam changes (exams checked on their own sites only); the admin approves in Data updates (Kind column). "Your master's options" for college and working students |
+| **K + L** abroad and AI cost (`e07260a`) | `abroad.json`: whether studying abroad is needed, per career. The report offers a study-abroad partner connection when a top-ten career needs it, behind a consent box; admin "Study abroad" tab; Privacy policy `v1.2`. Every Claude call logs its tokens; an "AI usage" card shows the month's cost; grading and research prompts are cached |
+| **H** docs | This record; Parts 1–4; `HOW_FRESHMXN_WORKS.md`; V2; `CLAUDE.md` |
+
+**Fixtures:** scoring 22, matching 58, workers 131 → 155. Changed because the owner changed the product:
+- the scoring version pins (`profile@1.2.0` → `1.3.0`, the word test);
+- the scout's sources fixture (one `source` became a `sources` list with reports);
+- the follow-up fixtures (the clock now runs from the student's own anchor, monthly).
+
+Every other failure along the way was fixed in the code. Browser and API checks ran in the cloud
+scratchpad (picker 8/8, word test 9/9, update banner 5/5, follow-up clock 5/5, scout and drafts 14/14,
+study info API 17/18 — the one was the test expecting 200 where the route answers 202 —, study info
+browser 10/12 — the two were the intended "Checked Oct 2026" labels —, study abroad API 11/11, study
+abroad browser 8/8).
+
+**Found and fixed while testing:** two AI calls finishing together could both try to create the day's
+usage row, and one lost its counts — the write now retries once.
+
+**Deferred (V2):** a one-time Sonnet-vs-Opus comparison on 20 careers before setting `REFRESH_MODEL`;
+the Batch API for the monthly jobs, only if web search works inside a batch; Haiku for simple grading
+after an eval; specific programmes and cut-offs.

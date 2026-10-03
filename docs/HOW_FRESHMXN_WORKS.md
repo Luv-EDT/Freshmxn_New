@@ -93,11 +93,13 @@ mentor), **₹3,000** to upgrade later.
 - **The assessment** has these parts: a short story you're asked about the next day, personality
   questions, what you're drawn to, a checklist of 60 everyday activities you'd enjoy (from the US
   government's free O\*NET list), how you rate yourself, confidence, how you think (with short written
-  answers), a number-memory game, a focus game (SART), and **our own 16 reasoning puzzles** — picture
+  answers), a number-memory game, **our own word-memory game** (two lists of 15 words, shown one at a time,
+  then you type the ones you remember), a focus game (SART), and **our own 16 reasoning puzzles** — picture
   patterns, letter-number series, word problems and 3D shapes (`Assessment/assessmentModules.js`).
 - **The puzzles' answers never reach your phone.** The server makes each puzzle from a secret seed,
   sends it without the answer, and marks your pick itself (`/submissions/reasoningNext`,
-  `/submissions/reasoningAnswer`). The number-memory game works the same way.
+  `/submissions/reasoningAnswer`). The number-memory and word-memory games work the same way — the
+  server marks your words itself, forgiving plurals and one-letter typos in longer words.
 - Answers are saved as you go (`POST /submissions/savePsychometric`). The server only accepts the
   parts the page is allowed to write — it never lets the page send its own marks.
 - Some parts time you in milliseconds, so they're built very carefully (for example the focus
@@ -170,9 +172,26 @@ they are, deadlines and the other ways in), **money** (pay ranges, marked "estim
 **the future** (demand, how AI affects it, working for yourself) and **more about the work**. None of
 those steps are written by AI: they are worked out from the career data (`Report/reportPlan.js`).
 
+Inside **the road** you also find, where they apply: each **exam** with who runs it, its official site and
+when it **usually** opens (`data/exam_calendar.json` — never this year's exact date; you always check the
+official site); **where to study** (`data/study_places.json` — the official ranking and regulator lists,
+and, once the owner has reviewed them, up to ten colleges, public and private, each saying why it is
+there: an NIRF rank, or "our suggestion — check it yourself"); and whether **studying abroad** helps for
+that career (`data/abroad.json`) — never which university.
+
 **"What to do next — your next 12 months"** starts with one picture for your stage: which Class 11
 stream keeps most of your careers open (Class 9–10), which exams matter (Class 11–12), or what you
-can move into from where you are (college and working).
+can move into from where you are (college and working). College and working students also get
+**"Your master's options"**: their top careers grouped by whether a master's is the way in, needed, or
+just helpful, with the master's step and the postgraduate exams for each.
+
+If studying abroad helps for one of your top ten careers, a small **"Studying abroad"** section offers to
+connect you with a study-abroad partner. Nothing is shared unless you tick the box agreeing to it and
+press "Connect me".
+
+**Your report only changes when you do something.** If we improve how we score or match, your report
+shows a banner, **"Update my report"** — it never rebuilds by itself. Updating (or resubmitting your
+assessment) asks one question: are you still heading the same way, or looking for something new?
 
 **"Sort your list"** switches between **Best match** (our ranking) and **Best fit, ignoring switching
 cost**, can then order by pay, demand, speed or AI exposure (with its value shown), can move **core engineering** careers to the
@@ -203,9 +222,13 @@ finds changes the website until the admin approves it.
 
 | When | Job | What it does |
 |---|---|---|
-| Every morning, 9:00 India time | **Follow-up** (`housekeeping/followUpScan.js`) | 6 and 12 months after your first report, emails you a link (`/follow-up/…`) to five quick questions: what you're doing now, which career, did a match help. One reminder, then never again. You can opt out. This is how we'll learn, one day, whether our matches really work |
+| The 1st of each month, 9:00 India time | **Follow-up** (`housekeeping/followUpScan.js`) | 6 and 12 months after your latest assessment, emails you a link (`/follow-up/…`) to five quick questions: what you're doing now, which career, did a match help. One reminder, then never again. You can opt out. This is how we'll learn, one day, whether our matches really work. The clock restarts only if you told us you're looking for something new |
 | The 1st of each month | **Data refresh** (`housekeeping/dataRefresh.js`) | For up to 60 careers, checks job-board numbers (Adzuna) and asks Claude to search a few official sources (government labour survey, National Career Service, India Skills Report, Naukri, LinkedIn's published reports). Suggested changes to **demand and pay** go to the admin's **Data updates** tab. Approved ones show on the career page at once; the ranking itself is never changed by them |
-| Every Monday | **Careers scout** (`housekeeping/careerScout.js`) | Collects new job titles from the job board and careers students asked for that we don't have, keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers** for the admin to approve as a new or combined career — or dismiss |
+| Every Monday | **Careers scout** (`housekeeping/careerScout.js`) | Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit |
+| The 1st of each month | **Study bot** (`housekeeping/studyRefresh.js`) | Re-checks 6 study disciplines (NIRF rankings first, then other published rankings and the regulators) and 15 exams (each on its own official site only). Suggested changes go to **Data updates**; nothing changes until the admin approves |
+
+**What the AI costs** is measured, not guessed: every Claude call writes down how many tokens it used
+(`utils/aiUsage.js`), and the admin dashboard's **AI usage** card adds up the month, job by job.
 
 ---
 
@@ -213,7 +236,8 @@ finds changes the website until the admin approves it.
 
 - Mentors sign up on their own page (`/mentor/register`) and fill a profile. The admin approves
   them.
-- A student on the mentor plan picks **one career from their own matches**. That starts a
+- A student on the mentor plan opens their matched careers and picks **one job role** inside one of
+  them (the roles that suit them best are listed first). That starts a
   **20-business-day** clock. The admin matches a mentor by hand in V1 and the student is told on
   WhatsApp. If no mentor can be found, the money rolls over — or, if you ask, you move back to
   Career Discovery and get **the difference between the two plans** refunded.
@@ -230,7 +254,7 @@ finds changes the website until the admin approves it.
 | **Cloudflare** | the address book that sends `www.freshmxn.com` to Render (DNS) |
 | **Resend** | sends emails |
 | **Google** | "Sign in with Google" |
-| **Anthropic (Claude)** | marks written answers, reads test screenshots, rates new activities, writes the report |
+| **Anthropic (Claude)** | marks written answers, rates new activities, writes the report, and runs the monthly and weekly checks (data refresh, scout, study bot, career drafts). It reads test screenshots only for older uploads |
 | **Voyage AI** | turns activities, careers and new job titles into comparable numbers (embeddings) |
 | **Adzuna** | a licensed job-board API: how many jobs and what they pay, for the monthly refresh and the scout |
 | **Razorpay** | online payments (switched off until KYC) |

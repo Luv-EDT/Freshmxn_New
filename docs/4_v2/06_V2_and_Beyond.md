@@ -14,19 +14,21 @@ are in git history.*
 
 # SOON — before or just after real students
 
-## Exam calendar
-An alias map from the 174 differently written exam names in the data ("JEE Main Paper 1", "JEE Main
-(B.Tech)", "CUET (B.Sc)"…) to about 55 real exams. For each exam:
-- conducting body and official link;
-- usual application window and exam month;
-- a one-line eligibility note;
-- `last_checked`.
+## Specific programmes and cut-offs
+Round 11 added the exam calendar, where to study (by discipline) and a master's summary. Still not
+built: the specific programme at each college, seat counts and last year's cut-offs or closing ranks.
+They change every year and differ by category and state quota, so they need a source that is checked
+every admission cycle — never a number from memory.
 
-Shown on the card as "Applications usually open Nov–Dec — check the official site", **never an exact
-date** unless verified for that year. A fixture fails if any row is older than 13 months, so it
-cannot go stale silently. About half a day of work.
-
-**Moved here by the owner in Round 10.**
+## AI cost — the measured next steps
+Every Claude call is now logged and the admin "AI usage" card shows the month. Once a month of real
+numbers exists:
+- **Model for the monthly jobs:** run the data refresh, scout and study bot on Sonnet 5.5 *once*,
+  side by side with Opus 5.5 on 20 careers, compare, then set `REFRESH_MODEL` for good. Nothing is
+  ever generated twice after that.
+- **Batch API** (half price, answers within hours) for the monthly jobs — only after confirming in
+  Anthropic's docs that web search works inside a batch. If it does not, those jobs stay as they are.
+- **Haiku for simple grading items**, only after an eval against the current grades.
 
 ## Parent consent by SMS
 Parent consent is verified by an emailed code today (`/parent-consent`). Add the same flow by SMS for
@@ -154,12 +156,6 @@ career ever expanded?".
 event is written**. Ship both halves in the same release, or every event in the gap is a per-child
 behavioural record that should never have existed.
 
-## Careers from the scout — drafting help
-The weekly scout lists emerging and combined careers, and the admin approves them. Building the
-record (combined: its two sides in `combined_careers.json`; new: a full `ALL-professions.json` entry,
-its baseline rating and its embedding) is still manual. A drafting tool could prepare those for human
-review. It must never publish one by itself.
-
 ## Data refresh into the source files
 The monthly refresh's approved values are a database layer, and are exported as a patch
 (`tools/applyDataPatch.js`). If the per-sector source files behind `ALL-professions.json` come back
@@ -169,7 +165,7 @@ into the repo, the patch should write to them instead.
 
 # V3 — AFTER OUTCOME DATA (18–24 MONTHS)
 
-The 6- and 12-month follow-up now runs (daily scan, emailed form). The first answers arrive six months
+The 6- and 12-month follow-up now runs (a monthly scan from each student's latest assessment, emailed form). The first answers arrive six months
 after the first real reports. Everything below waits for them.
 
 ## Fitted weights (machine learning)
