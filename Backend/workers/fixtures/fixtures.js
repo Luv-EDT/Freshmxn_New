@@ -3567,6 +3567,192 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "WHERE TO STUDY — every career maps to a known discipline or to none; links are official and https",
+        run: () => {
+            const { studyPlaces } = require("../../utils/studyPlaces")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            const ids = new Set(studyPlaces.disciplines.map((discipline) => discipline.id))
+            if (ids.size !== studyPlaces.disciplines.length) problems.push("two disciplines share an id")
+            professions.forEach((profession) => {
+                if (!(profession.id in studyPlaces.careers)) problems.push(`${profession.id} is not in the career map`)
+                else if (studyPlaces.careers[profession.id] !== null && !ids.has(studyPlaces.careers[profession.id])) problems.push(`${profession.id} → unknown discipline`)
+            })
+            const known = new Set(professions.map((profession) => profession.id))
+            Object.keys(studyPlaces.careers).forEach((id) => { if (!known.has(id)) problems.push(`${id} is mapped but is not a career`) })
+            const allowed = studyPlaces.allowed_link_domains
+            studyPlaces.disciplines.forEach((discipline) => {
+                if (!discipline.links || discipline.links.length === 0) problems.push(`${discipline.id} has no official link`)
+                ;(discipline.links || []).forEach((link) => {
+                    let host = ""
+                    try {
+                        const url = new URL(link.url)
+                        host = url.protocol === "https:" ? url.hostname : ""
+                    } catch (error) {
+                        host = ""
+                    }
+                    if (!host) problems.push(`${discipline.id}: ${link.url} is not an https link`)
+                    else if (!allowed.some((domain) => host === domain || host.endsWith(`.${domain}`))) problems.push(`${discipline.id}: ${host} is not an allowed official domain`)
+                })
+            })
+            if (Object.values(studyPlaces.careers).filter(Boolean).length < 100) problems.push("fewer than 100 careers have somewhere to study — the map is wrong")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WHERE TO STUDY — every institution has a basis, suggestions say so, at most ten, none listed twice",
+        run: () => {
+            const { studyPlaces, BASIS, MAX_INSTITUTIONS, keyOf } = require("../../utils/studyPlaces")
+            const problems = []
+            let ranked = 0
+            let privateRows = 0
+            studyPlaces.disciplines.forEach((discipline) => {
+                if (discipline.institutions.length > MAX_INSTITUTIONS) problems.push(`${discipline.id} lists ${discipline.institutions.length}`)
+                const keys = discipline.institutions.map(keyOf)
+                if (new Set(keys).size !== keys.length) problems.push(`${discipline.id} lists an institution twice`)
+                discipline.institutions.forEach((institution) => {
+                    if (!BASIS.test(institution.basis || "")) problems.push(`${discipline.id}: "${institution.name}" has basis "${institution.basis}"`)
+                    if (/^NIRF/.test(institution.basis)) ranked += 1
+                    if (institution.ownership === "private") privateRows += 1
+                    if (!institution.city) problems.push(`${discipline.id}: "${institution.name}" has no city`)
+                })
+            })
+            if (ranked < 80) problems.push(`only ${ranked} NIRF-ranked rows — NIRF is the main source`)
+            if (privateRows < 15) problems.push(`only ${privateRows} private institutions — the owner asked for private colleges too`)
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WHERE TO STUDY — the lists stay hidden until the owner has reviewed them; links show at once",
+        run: () => {
+            const sp = require("../../utils/studyPlaces")
+            const problems = []
+            const served = sp.studyPlacesFor("hlt-doctor")
+            if (!served || served.links.length === 0) problems.push("the official links are not served")
+            if (sp.studyPlaces.review.reviewed_by_owner === false && (served.institutions.length > 0 || served.listsPending !== true)) problems.push("an unreviewed institution list reached the page")
+            if (sp.studyPlacesFor("mgt-entrepreneur") !== null) problems.push("a career with no programme was given somewhere to study")
+
+            // the override layer: removal by name AND city, an update in place, an addition at the end
+            const list = sp.disciplineById.get("hotel_management").institutions
+            const after = sp.applyStudyOverride(list, {
+                removed: ["institute of hotel management · mumbai"],
+                updated: [{ name: "Institute of Hotel Management", city: "Kolkata", basis: "NIRF 2026 Hotel #1" }],
+                added: [{ name: "New Place", city: "Goa", basis: "Suggested — check" }],
+            })
+            const names = after.map(sp.keyOf)
+            if (names.includes("institute of hotel management · mumbai")) problems.push("a removal did not apply")
+            if (!names.includes("institute of hotel management · bengaluru")) problems.push("a removal took out a same-named institute in another city")
+            if (!after.some((row) => row.city === "Kolkata" && row.basis === "NIRF 2026 Hotel #1")) problems.push("an update did not apply")
+            if (names[names.length - 1] !== "new place · goa") problems.push("an addition is not at the end")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY BOT — only checkable, well-formed changes with a cited page reach the admin",
+        run: () => {
+            const { validateCollegeChange, validateExamChange, validateNewExam } = require("../../housekeeping/studyRefresh")
+            const sp = require("../../utils/studyPlaces")
+            const src = [{ url: "https://www.nirfindia.org/x" }]
+            const law = sp.disciplineById.get("law").institutions
+            const design = sp.disciplineById.get("design").institutions.slice(0, 9)
+            const problems = []
+            if (!validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "NIRF 2026 Engineering #40" } }, design, src)) problems.push("a well-formed addition was dropped")
+            if (validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "Top college" } }, design, src)) problems.push("an addition with no checkable basis was kept")
+            if (validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "NIRF 2026 Law #12" } }, law, src)) problems.push("an addition to a full list of ten was kept")
+            if (validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "NIRF 2026 Engineering #40" } }, design, [])) problems.push("a change with no source was kept")
+            if (validateCollegeChange({ action: "remove", institution: { name: "Nowhere", city: "X" } }, law, src)) problems.push("removing an institution not on the list was kept")
+            const update = validateCollegeChange({ action: "update", institution: { name: "Symbiosis Law School", city: "Pune", basis: "NIRF 2026 Law #6" } }, law, src)
+            if (!update || JSON.parse(update.proposedValue).ownership !== "private") problems.push("an update lost the institution's other fields")
+            if (validateExamChange({ field: "usual_exam_month", proposed: "4 May 2027" }, {}, src)) problems.push("an exact date was kept")
+            if (validateExamChange({ field: "official_url", proposed: "https://x.in" }, {}, src)) problems.push("an exam field outside the three was kept")
+            if (validateExamChange({ field: "usual_exam_month", proposed: "April" }, { usual_exam_month: "april" }, src)) problems.push("a no-op exam change was kept")
+            if (!validateExamChange({ field: "usual_exam_month", proposed: "May" }, { usual_exam_month: "April" }, src)) problems.push("a real exam change was dropped")
+            if (validateNewExam({ name: "JEE Main", conducting_body: "NTA", official_url: "https://jeemain.nta.nic.in", level: "ug" }, src)) problems.push("an exam the calendar already has was proposed as new")
+            if (!validateNewExam({ name: "Some New Test", conducting_body: "A Board", official_url: "https://board.gov.in", level: "pg" }, src)) problems.push("a well-formed new exam was dropped")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY BOT — an exam is searched on its own site only, colleges on NIRF first; nothing is written but proposals",
+        run: async () => {
+            const { runStudyRefresh, RANKING_DOMAINS } = require("../../housekeeping/studyRefresh")
+            const DataProposal = require("../../model/dataProposalsModel")
+            const ExamOverride = require("../../model/examOverridesModel")
+            const StudyPlaceOverride = require("../../model/studyPlaceOverridesModel")
+            const created = []
+            const stamped = []
+            const saved = { dp: [DataProposal.create, DataProposal.updateMany], eo: [ExamOverride.find, ExamOverride.updateOne], so: [StudyPlaceOverride.find, StudyPlaceOverride.updateOne] }
+            const lean = (rows) => ({ lean: async () => rows })
+            DataProposal.create = async (row) => { created.push(row); return row }
+            DataProposal.updateMany = async () => ({})
+            ExamOverride.find = () => lean([])
+            StudyPlaceOverride.find = () => lean([])
+            ExamOverride.updateOne = async (query) => { stamped.push(query.examId) }
+            StudyPlaceOverride.updateOne = async (query) => { stamped.push(query.disciplineId) }
+            const calls = []
+            const research = {
+                askJson: async ({ onlyDomains, user }) => {
+                    calls.push({ onlyDomains, user })
+                    if (/^Exam:/.test(user)) return { json: { changes: [{ field: "usual_exam_month", proposed: "June", reason: "the notice", confidence: "high" }] }, sources: [{ url: "https://jeemain.nta.nic.in/n" }] }
+                    return { json: { changes: [{ action: "remove", institution: { name: "IIT Roorkee", city: "Roorkee" } }], newExams: [] }, sources: [{ url: "https://www.nirfindia.org/r" }] }
+                },
+            }
+            const problems = []
+            try {
+                const { disciplineById } = require("../../utils/studyPlaces")
+                const { examById } = require("../../utils/examCalendar")
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1 })
+                if (result.disciplines !== 1 || result.exams !== 1 || result.proposals !== 2) problems.push(`unexpected result ${JSON.stringify(result)}`)
+                const examCall = calls.find((call) => /^Exam:/.test(call.user))
+                if (!examCall || JSON.stringify(examCall.onlyDomains) !== JSON.stringify(["jeemain.nta.nic.in"])) problems.push(`the exam was not searched on its own site: ${JSON.stringify(examCall && examCall.onlyDomains)}`)
+                const collegeCall = calls.find((call) => /^Discipline:/.test(call.user))
+                if (!collegeCall || collegeCall.onlyDomains[0] !== RANKING_DOMAINS[0] || RANKING_DOMAINS[0] !== "nirfindia.org") problems.push("colleges are not searched on NIRF first")
+                if (!created.some((row) => row.kind === "exam" && row.field === "usual_exam_month") || !created.some((row) => row.kind === "college" && row.field === "remove_institution")) problems.push(`proposals not filed by kind: ${JSON.stringify(created.map((row) => [row.kind, row.field]))}`)
+                if (stamped.join() !== "engineering,jee-main") problems.push(`checked stamps wrong: ${stamped.join()}`)
+            } finally {
+                ;[DataProposal.create, DataProposal.updateMany] = saved.dp
+                ;[ExamOverride.find, ExamOverride.updateOne] = saved.eo
+                ;[StudyPlaceOverride.find, StudyPlaceOverride.updateOne] = saved.so
+            }
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MASTER'S OPTIONS — every career lands in one group, and an exam is listed only if it is that career's own",
+        run: () => {
+            const { mastersOptions } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+            const details = Object.fromEntries(professions.map((profession) => [profession.id, studentFacing(profession)]))
+            const ranked = professions.map((profession) => ({ professionId: profession.id, profession: profession.profession }))
+            const problems = []
+
+            const all = mastersOptions(ranked, details, ranked.length)
+            const placed = all.groups.reduce((total, group) => total + group.careers.length, 0)
+            if (placed + all.notNeeded + all.unknown !== ranked.length) problems.push(`${placed} + ${all.notNeeded} + ${all.unknown} ≠ ${ranked.length}`)
+            const seen = all.groups.flatMap((group) => group.careers.map((career) => career.professionId))
+            if (new Set(seen).size !== seen.length) problems.push("a career is in two groups")
+            all.groups.forEach((group) => group.careers.forEach((career) => {
+                const own = details[career.professionId].exams.filter((exam) => exam.level === "pg").map((exam) => exam.name)
+                career.exams.forEach((name) => { if (!own.includes(name)) problems.push(`${career.profession}: exam ${name} is not in its own list`) })
+                if (career.step !== null && typeof career.step !== "string") problems.push(`${career.profession}: bad step`)
+            }))
+            if (!all.groups.some((group) => group.careers.some((career) => career.exams.length > 0))) problems.push("no career shows a postgraduate exam — the calendar's pg level is not being read")
+            const withStep = all.groups.flatMap((group) => group.careers).filter((career) => career.step).length
+            if (withStep < placed * 0.6) problems.push(`only ${withStep} of ${placed} careers name the degree step`)
+
+            const top = mastersOptions(ranked.slice(0, 5), {}, 20)
+            if (top.unknown !== 5 || top.groups.length !== 0) problems.push("careers without loaded details were placed in a group")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

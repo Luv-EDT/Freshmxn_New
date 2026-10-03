@@ -10,7 +10,7 @@ import ProfessionCard, { levelPath, JOURNEY_LEVEL } from "./ProfessionCard"
 import ReportSortMenu from "./ReportSortMenu"
 import { studentTags } from "./reportTags"
 import { buildList } from "./reportFilters"
-import { journeyHeadline } from "./reportPlan"
+import { journeyHeadline, mastersOptions } from "./reportPlan"
 import ReportHeadline from "./ReportHeadline"
 import CombinedCareers from "./CombinedCareers"
 import DirectionModal from "../DirectionModal"
@@ -612,6 +612,34 @@ function ReportPage() {
                         ))}
                     </ul>
                 )}
+
+                {/* Round 11: for college and working students, the master's picture across the top matches */}
+                {(journey === "college" || journey === "early_professional") && (() => {
+                    const masters = mastersOptions(ranked, details)
+                    if (masters.groups.length === 0) return null
+                    return (
+                        <details className="report-details report-nested">
+                            <summary className="report-summary"><strong>Your master's options</strong></summary>
+                            {masters.groups.map((group) => (
+                                <div key={group.key}>
+                                    <p><strong>{group.title}</strong></p>
+                                    <ul>
+                                        {group.careers.map((career) => (
+                                            <li key={career.professionId}>
+                                                {career.profession}
+                                                {career.step && <span className="report-small"> — {career.step}</span>}
+                                                {career.exams.length > 0 && <span className="report-small"> · Exams: {career.exams.join(", ")}</span>}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                            {masters.notNeeded > 0 && (
+                                <p className="report-small">For {masters.notNeeded} of your top matches a master's isn't needed — you can start working after your degree.</p>
+                            )}
+                        </details>
+                    )
+                })()}
 
                 <p className="report-small"><em>Each career above also has its own next steps — open it to see them.</em></p>
             </details>

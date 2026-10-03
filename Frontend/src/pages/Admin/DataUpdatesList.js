@@ -8,7 +8,28 @@ import { runHousekeepingForAdmin } from "../../apiCall/followUpsApi"
 // sources and on Adzuna. Nothing changes until it is approved here; approving shows the new value on
 // the career page at once. "Export patch" downloads every approved value as a file to commit
 // (node Backend/tools/applyDataPatch.js <file> --write).
-const FIELD_NAMES = { india_demand: "Demand in India", early_earnings_lpa: "Starting pay (LPA)", mid_career_lpa: "Mid-career pay (LPA)" }
+//
+// Round 11: the monthly study bot files here too — exam rows (checked on the exam's own site) and
+// college lists (NIRF first). The Kind column tells them apart.
+const FIELD_NAMES = {
+    india_demand: "Demand in India", early_earnings_lpa: "Starting pay (LPA)", mid_career_lpa: "Mid-career pay (LPA)",
+    usual_application_window: "Applications usually", usual_exam_month: "Exam usually", eligibility: "Who can sit it",
+    new_exam: "A new exam", add_institution: "Add an institution", remove_institution: "Remove an institution", update_institution: "Change a rank",
+}
+const KIND_NAMES = { career: "Career", exam: "Exam", college: "College" }
+
+// a college or new-exam proposal carries its institution or exam as JSON text
+const readable = (value) => {
+    try {
+        const parsed = JSON.parse(value)
+        if (parsed && typeof parsed === "object") {
+            return [parsed.name, parsed.city, parsed.ownership, parsed.basis || parsed.conducting_body, parsed.official_url].filter(Boolean).join(" · ")
+        }
+    } catch (error) {
+        // plain text
+    }
+    return value
+}
 
 function DataUpdatesList() {
     const [status, setStatus] = useState("open")
@@ -39,9 +60,9 @@ function DataUpdatesList() {
         }
     }
 
-    const runRefresh = async () => {
+    const runRefresh = async (job) => {
         try {
-            const response = await runHousekeepingForAdmin("data_refresh")
+            const response = await runHousekeepingForAdmin(job)
             message.success(response.data.message)
         } catch (error) {
             message.error(error.response?.data?.message || "Could not start the refresh")
@@ -64,10 +85,11 @@ function DataUpdatesList() {
 
     const columns = [
         { title: "Found", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Career", dataIndex: "profession" },
+        { title: "Kind", dataIndex: "kind", render: (value) => KIND_NAMES[value || "career"] },
+        { title: "Career / exam / discipline", dataIndex: "profession" },
         { title: "What", dataIndex: "field", render: (value) => FIELD_NAMES[value] || value },
-        { title: "Now", dataIndex: "currentValue", render: (value) => value || "—" },
-        { title: "Proposed", dataIndex: "proposedValue", render: (value) => <strong>{value}</strong> },
+        { title: "Now", dataIndex: "currentValue", render: (value) => (value ? readable(value) : "—") },
+        { title: "Proposed", dataIndex: "proposedValue", render: (value) => <strong>{readable(value)}</strong> },
         { title: "Confidence", dataIndex: "confidence" },
         { title: "Why", dataIndex: "reason" },
         {
@@ -87,7 +109,7 @@ function DataUpdatesList() {
             render: (_, record) => (record.status === "open"
                 ? (
                     <span>
-                        <Popconfirm title="Show this value on the career page?" onConfirm={() => decide(record._id, "approved")}>
+                        <Popconfirm title="Show this on the career pages?" onConfirm={() => decide(record._id, "approved")}>
                             <Button type="primary" size="small">Approve</Button>
                         </Popconfirm>{" "}
                         <Button size="small" onClick={() => decide(record._id, "rejected")}>Reject</Button>
@@ -101,7 +123,9 @@ function DataUpdatesList() {
         <div>
             <p>
                 {data.summary.open} waiting · {data.summary.careersChecked} careers checked so far{" "}
-                <Button onClick={runRefresh}>Run the refresh now</Button> <Button onClick={exportPatch}>Export patch</Button>{" "}
+                <Button onClick={() => runRefresh("data_refresh")}>Run the career refresh now</Button>{" "}
+                <Button onClick={() => runRefresh("study_refresh")}>Run the study bot now</Button>{" "}
+                <Button onClick={exportPatch}>Export patch</Button>{" "}
                 <Button onClick={fetchAll}>Refresh</Button>
             </p>
             <Segmented

@@ -119,7 +119,8 @@ const createResearchClient = ({
     }
 
     // { text, sources, refused } — refused is true when even the fallback declined
-    const ask = async ({ system, user, maxUses = 3, maxTokens = 4000 }) => {
+    // `onlyDomains` narrows the search for one call (the study bot checks an exam on its own site)
+    const ask = async ({ system, user, maxUses = 3, maxTokens = 4000, onlyDomains = domains }) => {
         const messages = [{ role: "user", content: user }]
         const content = []
 
@@ -131,7 +132,7 @@ const createResearchClient = ({
                 thinking: { type: "adaptive" },
                 system,
                 messages,
-                tools: [{ type: "web_search_20260209", name: "web_search", allowed_domains: domains, max_uses: maxUses }],
+                tools: [{ type: "web_search_20260209", name: "web_search", allowed_domains: onlyDomains, max_uses: maxUses }],
             })
 
             if (payload.stop_reason === "refusal") return { text: "", sources: [], refused: true }
@@ -154,13 +155,13 @@ const createResearchClient = ({
     }
 
     // ask, parse, check — and ask once more with the rule restated before giving up
-    const askJson = async ({ system, user, check, maxUses, maxTokens }) => {
-        const first = await ask({ system, user, maxUses, maxTokens })
+    const askJson = async ({ system, user, check, maxUses, maxTokens, onlyDomains }) => {
+        const first = await ask({ system, user, maxUses, maxTokens, onlyDomains })
         if (first.refused) return { refused: true }
         const parsed = parseJsonReply(first.text)
         if (parsed && check(parsed)) return { json: parsed, sources: first.sources }
 
-        const second = await ask({ system, user: `${user}\n\nYour previous reply could not be read. Reply with ONLY the JSON object described above.`, maxUses: 1, maxTokens })
+        const second = await ask({ system, user: `${user}\n\nYour previous reply could not be read. Reply with ONLY the JSON object described above.`, maxUses: 1, maxTokens, onlyDomains })
         if (second.refused) return { refused: true }
         const again = parseJsonReply(second.text)
         if (again && check(again)) return { json: again, sources: [...first.sources, ...second.sources] }

@@ -6,9 +6,23 @@ const mongoose = require("mongoose")
 // NOTHING CHANGES BY ITSELF. A proposal is only ever shown to the admin. Approving it writes the
 // value into professionOverrides, which the career pages read; rejecting it leaves the data alone.
 // Only three display fields can be proposed — demand and the two pay ranges. Matching inputs never.
+//
+// Round 11: the monthly study bot (housekeeping/studyRefresh.js) files proposals here too, told
+// apart by `kind`. For an exam, professionId/profession hold the exam's id and name; for colleges,
+// the discipline's. A college or new-exam proposal carries its institution or exam as JSON text in
+// proposedValue (a removal carries just the institution's name).
+
+const CAREER_FIELDS = ["india_demand", "early_earnings_lpa", "mid_career_lpa"]
+const EXAM_FIELDS = ["usual_application_window", "usual_exam_month", "eligibility", "new_exam"]
+const COLLEGE_FIELDS = ["add_institution", "remove_institution", "update_institution"]
 
 const dataProposalSchema = new mongoose.Schema(
     {
+        kind: {
+            type: String,
+            enum: ["career", "exam", "college"],
+            default: "career",
+        },
         professionId: {
             type: String,
             required: true,
@@ -19,7 +33,7 @@ const dataProposalSchema = new mongoose.Schema(
         },
         field: {
             type: String,
-            enum: ["india_demand", "early_earnings_lpa", "mid_career_lpa"],
+            enum: [...CAREER_FIELDS, ...EXAM_FIELDS, ...COLLEGE_FIELDS],
             required: true,
         },
         currentValue: {
@@ -73,3 +87,6 @@ dataProposalSchema.index({ professionId: 1, field: 1, status: 1 })
 const DataProposal = mongoose.model("DataProposal", dataProposalSchema)
 
 module.exports = DataProposal
+module.exports.CAREER_FIELDS = CAREER_FIELDS
+module.exports.EXAM_FIELDS = EXAM_FIELDS
+module.exports.COLLEGE_FIELDS = COLLEGE_FIELDS

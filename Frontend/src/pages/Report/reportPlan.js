@@ -261,3 +261,44 @@ export const entryRoute = (detail) => {
     if (degree === "professional") return "A licence is required — this degree is the only way in"
     return null
 }
+
+// YOUR MASTER'S OPTIONS (owner, Round 11) — college and working students only. The top matches
+// grouped by what the data says about a master's (after_undergrad), each with the step that names
+// the degree and the postgraduate exams from THAT career's own exam list (the exam calendar's
+// level "pg"). Nothing is added that the career's record does not say.
+const MASTERS_GROUPS = [
+    { key: "masters_is_the_entry", title: "The master's is the way in" },
+    { key: "masters_required", title: "You need a master's to practise" },
+    { key: "masters_advantage", title: "A master's helps later" },
+]
+const MASTERS_STAGES = ["masters", "post_graduate", "specialisation", "professional_qualification"]
+const MASTERS_WORDS = /\bM\.?\s?(Sc|A|Tech|Des|Pharm|Phil|Stat|Math|Ed|Lib|SW|PP|Arch|Plan|Com|B\.?A|D|S|Ch)\b|\bmaster'?s\b|\bMBA\b|\bPGD(M|BA)?\b|\bPG diploma\b|\bLL\.?M\b/i
+
+export const mastersOptions = (ranked, details = {}, topN = 20) => {
+    const groups = MASTERS_GROUPS.map((group) => ({ ...group, careers: [] }))
+    let notNeeded = 0
+    let unknown = 0
+
+    ;(ranked || []).slice(0, topN).forEach((entry) => {
+        const detail = details[entry.professionId]
+        if (!detail) {
+            unknown += 1
+            return
+        }
+        const group = groups.find((candidate) => candidate.key === detail.afterUndergrad)
+        if (!group) {
+            notNeeded += 1
+            return
+        }
+        const step = (detail.pathToEntry || []).find((row) => MASTERS_STAGES.includes(row.stage))
+            || (detail.pathToEntry || []).find((row) => MASTERS_WORDS.test(row.requirement || ""))
+        group.careers.push({
+            professionId: entry.professionId,
+            profession: entry.profession,
+            step: step && step.requirement ? step.requirement.trim().replace(/\.$/, "") : null,
+            exams: (detail.exams || []).filter((exam) => exam.level === "pg").map((exam) => exam.name),
+        })
+    })
+
+    return { groups: groups.filter((group) => group.careers.length > 0), notNeeded, unknown }
+}

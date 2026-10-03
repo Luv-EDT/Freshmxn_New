@@ -24,6 +24,12 @@
     padding: 0 var(--space-4) var(--space-2);
 }
 
+/* a collapsible inside a collapsible (Your master's options) — no second box, no second gutter */
+.report-details.report-nested {
+    margin: var(--space-3) 0;
+    border-style: dashed;
+}
+
 .report-page .app-header ~ details.report-details {
     padding-left: var(--space-4);
     padding-right: var(--space-4);

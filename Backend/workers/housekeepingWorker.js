@@ -3,6 +3,7 @@
 //     followup_scan    the 1st of each month, 09:00 IST   housekeeping/followUpScan.js
 //     data_refresh     the 1st of each month       housekeeping/dataRefresh.js
 //     career_scout     every Monday                housekeeping/careerScout.js
+//     study_refresh    the 1st of each month       housekeeping/studyRefresh.js (colleges and exams)
 //     draft_career     on demand — the admin approved a scout row (housekeeping/draftCareer.js)
 //
 // ONE QUEUE, ONE WORKER, three job names — each extra worker costs idle Redis commands (see
@@ -30,17 +31,19 @@ const SCHEDULES = [
     { name: "followup_scan", pattern: "0 9 1 * *" },   // monthly (owner, Round 11) — the scan's 45-day window covers the gap
     { name: "data_refresh", pattern: "0 4 1 * *" },
     { name: "career_scout", pattern: "0 5 * * 1" },
+    { name: "study_refresh", pattern: "0 6 1 * *" },
 ]
 
 const JOBS = {
     followup_scan: () => require("../housekeeping/followUpScan").runFollowUpScan(),
     data_refresh: () => require("../housekeeping/dataRefresh").runDataRefresh(),
     career_scout: () => require("../housekeeping/careerScout").runCareerScout(),
+    study_refresh: () => require("../housekeeping/studyRefresh").runStudyRefresh(),
     draft_career: (data) => require("../housekeeping/draftCareer").runDraftCareer({ candidateId: data && data.candidateId }),
 }
 
 // jobs the admin may start from "Run now" — draft_career is started only by approving a scout row
-const RUNNABLE = ["followup_scan", "data_refresh", "career_scout"]
+const RUNNABLE = ["followup_scan", "data_refresh", "career_scout", "study_refresh"]
 
 const connectionOptions = () => {
     const url = process.env.REDIS_URL

@@ -3,9 +3,13 @@ const DataProposal = require("../model/dataProposalsModel")
 const ProfessionOverride = require("../model/professionOverridesModel")
 const ScoutCandidate = require("../model/scoutCandidatesModel")
 const CareerDraft = require("../model/careerDraftsModel")
+const ExamOverride = require("../model/examOverridesModel")
+const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
+const { clearStudyOverrides } = require("../utils/studyPlaces")
+const { validateExamChange, validateNewExam, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
 
 const router = express.Router()
 
@@ -20,6 +24,63 @@ const SCOUT_DECISIONS = ["approved_combined", "approved_new", "dismissed", "watc
 // ========================
 // Data Proposals For Admin
 // ========================
+
+const parseJson = (text) => {
+    try {
+        return JSON.parse(text)
+    } catch (error) {
+        return null
+    }
+}
+
+// What approving an exam or college proposal writes (Round 11). Checked again here — the proposal
+// was valid when the bot filed it, and the admin's approval must not be the thing that lets a bad
+// value through. Returns an error message, or null once written.
+const approveStudyProposal = async (proposal) => {
+    const sources = { $each: proposal.sources.map((source) => ({ url: source.url, title: source.title })), $slice: -20 }
+
+    if (proposal.kind === "exam" && proposal.field === "new_exam") {
+        const exam = parseJson(proposal.proposedValue)
+        if (!validateNewExam({ ...exam, reason: "" }, [{ url: "checked" }])) return "The proposed exam is not well formed, or the calendar already has it"
+        await ExamOverride.updateOne(
+            { examId: proposal.professionId },
+            { $set: { newExam: exam, approvedAt: new Date() }, $push: { sources } },
+            { upsert: true }
+        )
+        return null
+    }
+
+    if (proposal.kind === "exam") {
+        const value = String(proposal.proposedValue || "").trim()
+        if (!value || value.length > 200 || EXACT_DATE.test(value) || !validateExamChange({ field: proposal.field, proposed: value }, {}, [{ url: "checked" }])) {
+            return "The proposed value is not well formed"
+        }
+        await ExamOverride.updateOne(
+            { examId: proposal.professionId },
+            { $set: { [`values.${proposal.field}`]: value, approvedAt: new Date() }, $push: { sources } },
+            { upsert: true }
+        )
+        return null
+    }
+
+    // college
+    if (proposal.field === "remove_institution") {
+        await StudyPlaceOverride.updateOne(
+            { disciplineId: proposal.professionId },
+            { $addToSet: { removed: String(proposal.proposedValue).toLowerCase() }, $set: { approvedAt: new Date() }, $push: { sources } },
+            { upsert: true }
+        )
+        return null
+    }
+    const institution = cleanInstitution(parseJson(proposal.proposedValue))
+    if (!institution) return "The proposed institution is not well formed"
+    await StudyPlaceOverride.updateOne(
+        { disciplineId: proposal.professionId },
+        { $push: { [proposal.field === "add_institution" ? "added" : "updated"]: institution, sources }, $set: { approvedAt: new Date() } },
+        { upsert: true }
+    )
+    return null
+}
 
 router.get("/getProposalsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
@@ -62,7 +123,13 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
             return res.status(400).json({ success: false, message: "This proposal has already been decided" })
         }
 
-        if (decision === "approved") {
+        if (decision === "approved" && proposal.kind && proposal.kind !== "career") {
+            const problem = await approveStudyProposal(proposal)
+            if (problem) {
+                return res.status(400).json({ success: false, message: problem })
+            }
+            clearStudyOverrides()
+        } else if (decision === "approved") {
             if (!isValidValue(proposal.field, proposal.proposedValue)) {
                 return res.status(400).json({ success: false, message: "The proposed value is not well formed" })
             }
@@ -95,10 +162,12 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
 // built (a combined career's two sides, or a full new record) before they can ship.
 router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const [overrides, approvedScout, accepted] = await Promise.all([
+        const [overrides, approvedScout, accepted, examRows, placeRows] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
             CareerDraft.find({ status: "accepted" }).lean(),
+            ExamOverride.find({ approvedAt: { $ne: null } }).lean(),
+            StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
         ])
         const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
@@ -114,6 +183,20 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
             // accepted drafts, complete — tools/applyDataPatch.js writes them into the data files
             newCareers: accepted.filter((draft) => draft.kind === "new").map((draft) => ({ record: draft.record, rating: draft.rating, embedding: draft.embedding })),
             newCombined: accepted.filter((draft) => draft.kind === "combined").map((draft) => draft.record),
+            // the study bot's approved changes (Round 11) — tools/applyDataPatch.js writes them into
+            // exam_calendar.json and study_places.json
+            exams: examRows.filter((row) => row.values && Object.values(row.values).some(Boolean)).map((row) => ({
+                id: row.examId,
+                values: row.values,
+                checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
+            })),
+            newExams: examRows.filter((row) => row.newExam).map((row) => ({ id: row.examId.replace(/^new:/, ""), ...row.newExam })),
+            studyPlaces: placeRows.map((row) => ({
+                discipline: row.disciplineId,
+                added: (row.added || []).map(({ _id, ...institution }) => institution),
+                removed: row.removed || [],
+                updated: (row.updated || []).map(({ _id, ...institution }) => institution),
+            })),
             // approved but not yet accepted as a finished draft — listed so nothing is forgotten
             newCareerDrafts: approvedScout.filter((row) => !acceptedFor.has(String(row._id))).map((row) => ({
                 title: row.title,

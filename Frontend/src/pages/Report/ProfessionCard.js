@@ -376,6 +376,33 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                         )}
                                     </Section>
                                 )}
+
+                                {/* Where to study (Round 11): NIRF first; a judgement is always labelled as one */}
+                                {detail.studyPlaces && (
+                                    <Section title="Where to study">
+                                        {detail.studyPlaces.institutions.length > 0 && (
+                                            <ul className="pc-exams">
+                                                {detail.studyPlaces.institutions.map((place) => (
+                                                    <li key={`${place.name}-${place.city}`}>
+                                                        <strong>{place.name}</strong>{place.city && <span>, {place.city}</span>}
+                                                        {place.private && <span className="pc-small"> · private</span>}
+                                                        <span className="pc-small"> · {place.suggested ? "our suggestion — check it yourself" : place.basis}</span>
+                                                        {place.note && <span className="pc-small"><br />{place.note}</span>}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        <p className="pc-small">
+                                            {detail.studyPlaces.institutions.length > 0 ? "Full lists: " : `For ${detail.studyPlaces.discipline.toLowerCase()}, see the official lists: `}
+                                            {detail.studyPlaces.links.map((link, position) => (
+                                                <span key={link.url}>
+                                                    {position > 0 && " · "}
+                                                    <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label} ↗</a>
+                                                </span>
+                                            ))}
+                                        </p>
+                                    </Section>
+                                )}
                             </More>
 
                             {/* 5. MONEY — ranges only (owner: no payback) */}

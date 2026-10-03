@@ -13,6 +13,7 @@ const filterRules = require("../data/filter_rules.json")
 const blueCollar = require("../data/blue_collar.json")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 const { examsFor } = require("../utils/examCalendar")
+const { studyPlacesFor, getStudyOverrides } = require("../utils/studyPlaces")
 
 // The full records, for /getProfession. The slim projection below is what /search walks.
 const fullById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
@@ -169,9 +170,10 @@ const NUANCE_SECTION = {
 // is student-facing, and an endpoint that serves the whole object leaks all of it the first time
 // somebody adds a field. Where the report needs something from them it gets a DERIVED value only:
 // `checked` (verified or estimate), `payCaution` (from `filter`), never the record itself.
-const studentFacing = (profession, examOverrides) => {
-    // a Map or nothing — `.map(studentFacing)` passes the array index here
-    const calendarExams = examsFor(profession, examOverrides instanceof Map ? examOverrides : undefined)
+const studentFacing = (profession, studyOverrides) => {
+    // { exams, places } Maps or nothing — `.map(studentFacing)` passes the array index here
+    const layers = studyOverrides && studyOverrides.exams instanceof Map ? studyOverrides : { exams: new Map(), places: new Map() }
+    const calendarExams = examsFor(profession, layers.exams)
     const gate = profession.entry_competition && entranceGates.gates
         ? entranceGates.gates[profession.entry_competition.primary_gate]
         : null
@@ -211,6 +213,10 @@ const studentFacing = (profession, examOverrides) => {
         // (a state recruitment, an institute's own admission), shown as plain text.
         exams: calendarExams.exams,
         otherRoutes: calendarExams.unlisted,
+
+        // Where to study (Round 11): official links always; the institution list once the owner has
+        // reviewed it. null for careers with no formal programme to point at.
+        studyPlaces: studyPlacesFor(profession.id, layers.places),
 
         // Only the facing numbers off the gate record — how hard it is to get in, which is what a
         // student is asking. Not its verification block or its internal next_stage wiring.
@@ -396,11 +402,12 @@ router.post("/getProfessions", authMiddleware, requirePaid, async (req, res) => 
         // 40-entry list on a phone connection. The report asks once, for everything it ranked.
         // Admin-approved demand and pay from the monthly refresh (utils/professionOverrides.js) are
         // laid over the file here — display only; the ranking was built from the file.
-        const overrides = await getOverrides()
+        // The exam and college changes from the monthly study bot are laid over their files the same way.
+        const [overrides, studyOverrides] = await Promise.all([getOverrides(), getStudyOverrides()])
         const found = ids
             .map((id) => fullById.get(String(id)))
             .filter(Boolean)
-            .map((profession) => studentFacing(applyOverride(profession, overrides.get(profession.id))))
+            .map((profession) => studentFacing(applyOverride(profession, overrides.get(profession.id)), studyOverrides))
 
         return res.status(200).json({
             success: true,

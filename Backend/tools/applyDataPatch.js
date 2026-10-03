@@ -11,6 +11,7 @@
 //
 // Accepted career drafts (Round 11) are written too: a new career into ALL-professions.json,
 // baseline_rating.json and profession_embeddings.json; a combined one into combined_careers.json.
+// And the study bot's approved exam and college changes, into exam_calendar.json and study_places.json.
 
 const fs = require("fs")
 const path = require("path")
@@ -134,6 +135,53 @@ newCombined.forEach((row) => {
     changed += 1
 })
 
+// ── the study bot's approved changes (Round 11) ─────────────────────────────────────────────────
+// Both files were written whole with JSON.stringify(…, null, 2), so they round-trip exactly and the
+// commit diff is only what changed. An approved exam value marks the row checked on its approval day.
+const examCalendar = JSON.parse(readText("exam_calendar.json"))
+const studyPlaces = JSON.parse(readText("study_places.json"))
+let studyChanged = 0
+
+;(patch.exams || []).forEach((change) => {
+    const exam = examCalendar.exams.find((row) => row.id === change.id)
+    if (!exam) return console.log(`skip  exam ${change.id} — not in exam_calendar.json`)
+    ;["usual_application_window", "usual_exam_month", "eligibility"].forEach((field) => {
+        if (change.values && change.values[field] && change.values[field] !== exam[field]) {
+            console.log(`exam  ${exam.id}.${field}\n  was ${JSON.stringify(exam[field])}\n  now ${JSON.stringify(change.values[field])}`)
+            exam[field] = change.values[field]
+            studyChanged += 1
+        }
+    })
+    if (exam.usual_application_window && exam.usual_exam_month) {
+        exam.status = "checked"
+        exam.checked_on = change.checkedOn
+        exam.checked_via = "admin-approved study bot proposal"
+    }
+})
+
+;(patch.newExams || []).forEach((exam) => {
+    if (examCalendar.exams.some((row) => row.id === exam.id)) return console.log(`skip  exam ${exam.id} — already in the calendar`)
+    examCalendar.exams.push({
+        id: exam.id, name: exam.name, conducting_body: exam.conducting_body, official_url: exam.official_url, level: exam.level,
+        usual_application_window: null, usual_exam_month: null, eligibility: null, status: "draft", checked_on: null, checked_via: null,
+    })
+    console.log(`new   exam ${exam.id} — ${exam.name} (draft; map a career's spelling to it in "aliases" to show it)`)
+    studyChanged += 1
+})
+
+;(patch.studyPlaces || []).forEach((change) => {
+    const discipline = studyPlaces.disciplines.find((row) => row.id === change.discipline)
+    if (!discipline) return console.log(`skip  study places ${change.discipline} — unknown discipline`)
+    const { applyStudyOverride } = require("../utils/studyPlaces")
+    const before = JSON.stringify(discipline.institutions)
+    discipline.institutions = applyStudyOverride(discipline.institutions, change)
+    if (JSON.stringify(discipline.institutions) !== before) {
+        console.log(`study ${discipline.id} — ${discipline.institutions.length} institutions after the approved changes`)
+        studyChanged += 1
+    }
+})
+changed += studyChanged
+
 // the counts each file carries about itself
 const recount = () => {
     const professions = taxonomy.professions
@@ -161,6 +209,10 @@ if (write && changed > 0) {
     fs.writeFileSync(path.join(DATA, "baseline_rating.json"), baselineText)
     fs.writeFileSync(path.join(DATA, "profession_embeddings.json"), embeddingsText)
     fs.writeFileSync(path.join(DATA, "combined_careers.json"), combinedText)
+    if (studyChanged > 0) {
+        fs.writeFileSync(path.join(DATA, "exam_calendar.json"), `${JSON.stringify(examCalendar, null, 2)}\n`)
+        fs.writeFileSync(path.join(DATA, "study_places.json"), `${JSON.stringify(studyPlaces, null, 2)}\n`)
+    }
     console.log(`\n${changed} changes written — run the fixtures and node Backend/tools/verifyEmbeddings.js, then commit`)
 } else {
     console.log(`\n${changed} changes${write ? "" : " would be made — add --write to apply"}`)
