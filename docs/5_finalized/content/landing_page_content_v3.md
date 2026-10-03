@@ -117,11 +117,12 @@ recommendation into real momentum.
 
 ## 7. PRICING
 
-- **Career Discovery + Full Profile — ₹3,500.** The complete experience, your detailed profile, and
+- **Career Discovery — ₹2,499.** The complete experience, your detailed profile, and
   your ranked career matches with a readiness guide.
-- **Mentor Connection — ₹6,500.** Everything above plus two sessions with a working professional in
+- **Discovery + Mentor — ₹5,499.** Everything above plus two sessions with a working professional in
   your matched field (1-hour clarity + 20-min follow-up). → [Join the waitlist](/mentor-waitlist)
-- *Did the ₹3,500 profile first? Upgrade to mentorship for just **₹3,000 more** after you see your
+- *Did Career Discovery first? Add a mentor for just **₹3,000 more** after you see your matches — no paying twice.*
+- **Mentor Only — ₹2,999.** Already know the field you want? Skip the assessment — choose a career and job role, and we match you with a mentor (the same two sessions). *(Round 12; prices on the site always come from the server.)*
   matches — no paying twice.*
 
 ---

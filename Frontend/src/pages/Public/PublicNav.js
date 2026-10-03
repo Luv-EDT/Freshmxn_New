@@ -23,6 +23,8 @@ function PublicNav() {
                     <Link to="/success-stories" className="nav-link">Success stories</Link>
                     <Link to="/mentor-waitlist" className="nav-link">Mentors</Link>
                     <Link to="/about" className="nav-link">About us</Link>
+                    {/* for working professionals (owner, Round 12) — only to visitors; a logged-in student is not the audience */}
+                    {!isLoggedIn && <Link to="/mentor/register" className="nav-link">Become a mentor</Link>}
                     {!isLoggedIn && <Link to="/login" className="nav-link">Log in</Link>}
                 </div>
                 <div className="nav-cta">

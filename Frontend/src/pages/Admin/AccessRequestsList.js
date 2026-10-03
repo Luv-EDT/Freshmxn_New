@@ -9,6 +9,7 @@ import {
 } from "../../apiCall/paymentsApi"
 import { formatCallback } from "../User/callbackOptions"
 import StudentEditForm from "./StudentEditForm"
+import { PLAN_NAMES } from "../plans"
 
 function AccessRequestsList({ dataVersion, onDataChanged }) {
     const [accessRequests, setAccessRequests] = useState([])
@@ -101,7 +102,7 @@ function AccessRequestsList({ dataVersion, onDataChanged }) {
         { title: "Student", render: (_, record) => `${record.user?.name || "N/A"} (${record.user?.email || "N/A"})` },
         { title: "Phone", render: (_, record) => record.user?.phone || record.phone || "—" },
         { title: "Call at", render: (_, record) => formatCallback(record.callbackDay, record.callbackSlot) },
-        { title: "Tier", render: (_, record) => `${record.requestedTier}${record.isUpgrade ? " (upgrade)" : ""}` },
+        { title: "Tier", render: (_, record) => `${record.requestedTier} · ${PLAN_NAMES[record.requestedTier] || ""}${record.isUpgrade ? " (upgrade)" : ""}` },
         { title: "Coupon", render: (_, record) => (record.coupon ? `${record.coupon} (${record.discountPct}%)` : "—") },
         { title: "Collect (₹)", dataIndex: "finalAmountInr" },
         { title: "Status", dataIndex: "status" },

@@ -8,6 +8,7 @@ import {
 } from "../../apiCall/paymentsApi"
 import { formatCallback } from "../User/callbackOptions"
 import StudentEditForm from "./StudentEditForm"
+import { PLAN_NAMES } from "../plans"
 
 // You call the student, agree a figure, and type it here. From then on their paywall quotes that
 // figure for that tier — which works unchanged in manual mode (they pay you) and in Razorpay mode
@@ -81,7 +82,7 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
         { title: "Student", render: (_, record) => `${record.user?.name || "N/A"} (${record.user?.email || "N/A"})` },
         { title: "Phone", render: (_, record) => record.user?.phone || record.phone || "—" },
         { title: "Call at", render: (_, record) => formatCallback(record.callbackDay, record.callbackSlot) },
-        { title: "Tier", dataIndex: "requestedTier" },
+        { title: "Tier", dataIndex: "requestedTier", render: (value) => `${value} · ${PLAN_NAMES[value] || ""}` },
         { title: "Their reason", dataIndex: "reason", width: 320 },
         {
             title: "Status",

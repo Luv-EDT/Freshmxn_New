@@ -31,6 +31,9 @@ const paymentSchema = new mongoose.Schema(
             type: String,
             required: true, // purchase | upgrade | refund
         },
+        fromTier: {
+            type: Number, // an upgrade's starting plan: 1 (Discovery → +Mentor) or 3 (Mentor Only → +Discovery). Older upgrade rows have none and were all from 1
+        },
         coupon: {
             type: String,
         },

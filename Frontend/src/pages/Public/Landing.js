@@ -180,7 +180,7 @@ function Landing() {
                                 <h3>vs. AI Tools (LLMs)</h3>
                                 <ul>
                                     <li>
-                                        <strong>Human connection — via our mentorship tier.</strong> Real people in the
+                                        <strong>Human connection — via our mentor plans.</strong> Real people in the
                                         field, not generic chat. → <Link to="/mentor-waitlist">Join the mentor waitlist</Link>
                                     </li>
                                     <li><strong>Personalized tracking</strong> — guidance built on your profile.</li>
@@ -197,6 +197,25 @@ function Landing() {
                         <Link to="/register" className="btn btn-light tap">Let's figure out your career →</Link>
                     </div>
                 </section>
+
+                {/* 6. FOR WORKING PROFESSIONALS (owner, Round 12) — near the bottom but above the
+                    footer, where it gets noticed. Visitors only: a logged-in student isn't the audience. */}
+                {!localStorage.getItem("token") && (
+                    <section className="section mentor-band">
+                        <div className="page">
+                            <div className="card">
+                                <div>
+                                    <h2>Working professional? Mentor a student who's where you once were.</h2>
+                                    <p>
+                                        Two short conversations — an hour and a 20-minute follow-up — can save a student years
+                                        of guessing. Tell us about your work; we'll match you with students heading your way.
+                                    </p>
+                                </div>
+                                <Link to="/mentor/register" className="btn btn-primary tap">Become a mentor →</Link>
+                            </div>
+                        </div>
+                    </section>
+                )}
 
             </main>
 

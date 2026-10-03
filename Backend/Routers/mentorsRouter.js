@@ -15,6 +15,9 @@ const router = express.Router()
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const TRANSITION_CATEGORIES = ["Category A", "Category B", "Category C", "Category D"]
+const taxonomy = require("../data/ALL-professions.json")
+const { industryByCode } = require("../utils/industries")
+const professionById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
 
 
 // ========================
@@ -48,9 +51,6 @@ const cleanOnboarding = (body) => {
         name: text(body.name),
         email: text(body.email).toLowerCase(),
         phone: text(body.phone),
-        currentRole: text(body.currentRole),
-        discipline: text(body.discipline),
-        sectors: toList(body.sectors),
         yearsExperience: Number(body.yearsExperience),
         languages: toList(body.languages),
         motivation: text(body.motivation),
@@ -63,9 +63,30 @@ const cleanOnboarding = (body) => {
     if (!emailRegex.test(fields.email)) return { error: "Please enter a valid email" }
     // country code + number: at least 8 digits, an optional leading +, spaces and dashes allowed
     if (!/^\+?[0-9][0-9\s-]{7,19}$/.test(fields.phone)) return { error: "Please enter your contact number with country code" }
-    if (!fields.currentRole) return { error: "Please enter your current role" }
-    if (!fields.discipline) return { error: "Please enter your discipline or profession" }
-    if (fields.sectors.length === 0) return { error: "Please list at least one industry or sector" }
+    // 4–6 from our lists (Round 12): the profession by id, a job role in it or their own words for
+    // one, and at least one industry. The readable fields are written from these, never typed.
+    const profession = professionById.get(text(body.professionId))
+    if (!profession) return { error: "Please choose your profession from the list" }
+    let role = (profession.job_roles || []).find((name) => name === body.jobRole)
+    let roleOther = ""
+    if (body.jobRole === "other") {
+        roleOther = text(body.jobRoleOther).slice(0, 120)
+        if (roleOther.length < 2) return { error: "Please tell us your job role" }
+        role = roleOther
+    }
+    if (!role) return { error: "Please choose your job role from that profession" }
+    const industries = (Array.isArray(body.industryCodes) ? body.industryCodes : []).map(String).filter((code) => industryByCode.has(code))
+    if (industries.length === 0) return { error: "Please choose at least one industry from the list" }
+    Object.assign(fields, {
+        professionId: profession.id,
+        professionName: profession.profession,
+        jobRole: role,
+        jobRoleOther: roleOther,
+        industryCodes: [...new Set(industries)],
+        currentRole: role,
+        discipline: profession.profession,
+        sectors: [...new Set(industries)].map((code) => industryByCode.get(code).name),
+    })
     if (!Number.isFinite(fields.yearsExperience) || fields.yearsExperience < 0 || fields.yearsExperience > 60) {
         return { error: "Please enter your years of experience" }
     }

@@ -680,6 +680,8 @@ For the college journey, "master's or start working?" is *the* question. Generic
 | `masters_advantage` | meaningfully helps, not required — core engineering |
 | `work_first` | industry values experience; do it later if ever — software, design |
 
+What backs each value (an official rule, published evidence, or judgement) is recorded in `study_sources.json` and explained in `docs/5_finalized/STUDY_INFO_RULES.md` (Round 12).
+
 `self_employment`: `common` / `possible_later` / `rare`. In India this is a major income path the tool would otherwise ignore — CA practice, independent lawyer, freelance designer, private tutor — and it is what makes "job, freelance or startup" answerable.
 
 ## 8.7b `self_employment` — and why there is no status field

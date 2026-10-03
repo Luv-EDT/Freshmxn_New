@@ -144,6 +144,15 @@ const monthYear = (iso) => {
         : null
 }
 
+// What backs the master's and study-abroad lines (Round 12): an official rule, published
+// evidence, or our own estimate — said plainly, as the pay lines say "estimate" or "checked".
+const factLabel = (fact) => {
+    if (!fact) return null
+    if (fact.status === "checked") return `Checked against the official rules${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
+    if (fact.status === "supported") return `Based on published information${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
+    return "Our estimate"
+}
+
 function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel }) {
     const [open, setOpen] = useState(false)
 
@@ -321,7 +330,10 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                     {laterStage && MASTERS_WORDS[detail.afterUndergrad] && (
                                         <>
                                             <dt>A master's?</dt>
-                                            <dd>{MASTERS_WORDS[detail.afterUndergrad]}</dd>
+                                            <dd>
+                                                {MASTERS_WORDS[detail.afterUndergrad]}
+                                                {factLabel(detail.studyFacts && detail.studyFacts.masters) && <span className="pc-small"><br />{factLabel(detail.studyFacts.masters)}</span>}
+                                            </dd>
                                         </>
                                     )}
                                     {detail.licensingBody && (
@@ -392,6 +404,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                             {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}
                                         </p>
                                         <p className="pc-small">{detail.abroad.why}.</p>
+                                        {factLabel(detail.studyFacts && detail.studyFacts.abroad) && <p className="pc-small"><em>{factLabel(detail.studyFacts.abroad)}</em></p>}
                                     </Section>
                                 )}
 
@@ -419,6 +432,28 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                 </span>
                                             ))}
                                         </p>
+                                        {/* Last year's closing ranks (Round 12): only ranks checked on the official page,
+                                            always with the category caveat and the page to check */}
+                                        {detail.studyPlaces.cutoffs && (
+                                            <div className="pc-cutoffs">
+                                                {detail.studyPlaces.cutoffs.rows.map((row) => (
+                                                    <p key={`${row.institution}-${row.programme}`} className="pc-line">
+                                                        {row.institution}, {row.programme} — last closing rank <strong>{row.closingRank.toLocaleString("en-IN")}</strong>
+                                                        <span className="pc-small"> ({row.year}, {row.round}, {row.category}, {row.quota}{row.seatPool ? `, ${row.seatPool}` : ""}) · <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer">official result ↗</a></span>
+                                                    </p>
+                                                ))}
+                                                <p className="pc-small">
+                                                    {detail.studyPlaces.cutoffs.rows.length > 0 ? detail.studyPlaces.cutoffs.caveat : "Last year's cut-offs: "}{" "}
+                                                    {detail.studyPlaces.cutoffs.sources.map((source, position) => (
+                                                        <span key={source.url}>
+                                                            {position > 0 && " · "}
+                                                            <a href={source.url} target="_blank" rel="noopener noreferrer">{source.name} ↗</a>
+                                                            {source.noRank && <span> — {source.how}</span>}
+                                                        </span>
+                                                    ))}
+                                                </p>
+                                            </div>
+                                        )}
                                     </Section>
                                 )}
                             </More>

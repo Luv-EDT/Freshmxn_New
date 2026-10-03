@@ -3,6 +3,7 @@ import { Table, Button, Segmented, Popconfirm, message } from "antd"
 import dayjs from "dayjs"
 import { getProposalsForAdmin, decideProposalForAdmin, exportPatchForAdmin } from "../../apiCall/dataUpdatesApi"
 import { runHousekeepingForAdmin } from "../../apiCall/followUpsApi"
+import ModelChoiceCard from "./ModelChoiceCard"
 
 // The monthly data refresh's suggestions (Round 10): demand and pay changes found in the named public
 // sources and on Adzuna. Nothing changes until it is approved here; approving shows the new value on
@@ -15,14 +16,17 @@ const FIELD_NAMES = {
     india_demand: "Demand in India", early_earnings_lpa: "Starting pay (LPA)", mid_career_lpa: "Mid-career pay (LPA)",
     usual_application_window: "Applications usually", usual_exam_month: "Exam usually", eligibility: "Who can sit it",
     new_exam: "A new exam", add_institution: "Add an institution", remove_institution: "Remove an institution", update_institution: "Change a rank",
+    after_undergrad: "Master's needed?", abroad: "Studying abroad", closing_rank: "Last closing rank",
 }
-const KIND_NAMES = { career: "Career", exam: "Exam", college: "College" }
+const KIND_NAMES = { career: "Career", exam: "Exam", college: "College", study_fact: "Study fact", cutoff: "Cut-off" }
 
 // a college or new-exam proposal carries its institution or exam as JSON text
 const readable = (value) => {
     try {
         const parsed = JSON.parse(value)
         if (parsed && typeof parsed === "object") {
+            if (parsed.closing_rank) return [`rank ${parsed.closing_rank}`, parsed.year, parsed.round, parsed.source_url].filter(Boolean).join(" · ")
+            if (parsed.need) return [parsed.need.replace(/_/g, " "), parsed.stage, parsed.why].filter(Boolean).join(" · ")
             return [parsed.name, parsed.city, parsed.ownership, parsed.basis || parsed.conducting_body, parsed.official_url].filter(Boolean).join(" · ")
         }
     } catch (error) {
@@ -121,10 +125,12 @@ function DataUpdatesList() {
 
     return (
         <div>
+            <ModelChoiceCard />
             <p>
                 {data.summary.open} waiting · {data.summary.careersChecked} careers checked so far{" "}
                 <Button onClick={() => runRefresh("data_refresh")}>Run the career refresh now</Button>{" "}
                 <Button onClick={() => runRefresh("study_refresh")}>Run the study bot now</Button>{" "}
+                <Button onClick={() => runRefresh("batch_collect")}>Collect batch answers now</Button>{" "}
                 <Button onClick={exportPatch}>Export patch</Button>{" "}
                 <Button onClick={fetchAll}>Refresh</Button>
             </p>

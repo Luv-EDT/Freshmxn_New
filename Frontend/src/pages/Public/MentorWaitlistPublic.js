@@ -5,11 +5,12 @@ import MentorRolloverPolicy from "./MentorRolloverPolicy"
 import usePricing, { formatInr } from "./usePricing"
 import { StepIcon } from "./illustrations"
 
-// The public Mentor Connection page — copy verbatim from mentor_waitlist_page.md. This tier is live
+// The public mentor page — copy verbatim from mentor_waitlist_page.md. Two plans include a mentor
+// (Round 12): Discovery + Mentor, and Mentor Only for a student who wants just the mentor. Both are live
 // and payable now (a paid waitlist), not "coming soon". Paying goes through the existing paywall:
 // a visitor who isn't logged in is sent to log in first.
 function MentorWaitlistPublic() {
-    const { tier1, tier2, upgrade } = usePricing()
+    const { tier1, tier2, tier3, upgrade, names } = usePricing()
 
     return (
         <div>
@@ -19,7 +20,7 @@ function MentorWaitlistPublic() {
                 <section className="hero">
                     <div className="page hero-grid">
                         <div>
-                            <span className="eyebrow">Mentor Connection</span>
+                            <span className="eyebrow">Mentors</span>
                             <h1>Talk to someone who's already where you want to go.</h1>
                             <p className="lead">
                                 Two sessions with a working professional in your chosen field — a 1-hour clarity session
@@ -28,6 +29,7 @@ function MentorWaitlistPublic() {
                             </p>
                             <div className="btn-row">
                                 <Link to="/paywall" className="btn btn-primary tap">Join the waitlist &amp; pay — {formatInr(tier2)}</Link>
+                                <Link to="/paywall" className="btn btn-ghost tap">Just the mentor — {formatInr(tier3)}</Link>
                             </div>
                         </div>
                         <div className="hero-visual" aria-hidden="true">
@@ -51,6 +53,8 @@ function MentorWaitlistPublic() {
                                 <p>
                                     Do your career discovery and profile, and get your ranked matches. Mentorship only
                                     works once you know which direction you're exploring — so this comes first.
+                                    <em> Already know the field you want? With {names[3]} you skip this step and choose from
+                                    our full list of careers — or tell us in your own words.</em>
                                 </p>
                             </div>
                             <div className="card">
@@ -117,8 +121,19 @@ function MentorWaitlistPublic() {
                             </ul>
                             <Link to="/paywall" className="btn btn-primary tap">Pay &amp; join the waitlist →</Link>
                         </div>
+                        <div className="price-card" style={{ marginTop: 24 }}>
+                            <h3>{names[3]}</h3>
+                            <div className="price">{formatInr(tier3)}</div>
+                            <ul className="check-list">
+                                <li>For students who already know the field they want and just need a mentor.</li>
+                                <li>No assessment or report — choose a career and job role from our full list, add an industry if you like, or describe it in your own words.</li>
+                                <li>The same two sessions and the same 20-business-day match, counted from your choice.</li>
+                                <li>Want your career report later? Add Career Discovery for the difference.</li>
+                            </ul>
+                            <Link to="/paywall" className="btn btn-ghost tap">Choose {names[3]} →</Link>
+                        </div>
                         <div className="policy" style={{ marginTop: 24 }}>
-                            <MentorRolloverPolicy />
+                            <MentorRolloverPolicy both />
                         </div>
                     </div>
                 </section>

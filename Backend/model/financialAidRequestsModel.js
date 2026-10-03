@@ -13,7 +13,7 @@ const financialAidRequestSchema = new mongoose.Schema(
         },
         requestedTier: {
             type: Number,
-            required: true, // 1 | 2 — an approval only applies to the tier it was granted for
+            required: true, // 1 | 2 | 3 — an approval only applies to the tier it was granted for
         },
         reason: {
             type: String,

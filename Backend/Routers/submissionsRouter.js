@@ -2,7 +2,7 @@ const express = require("express")
 const Submission = require("../model/submissionsModel")
 const User = require("../model/userModel")
 const authMiddleware = require("../middlewares/authMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 
 const { raiseIssue } = require("../utils/assessmentIssues")
 const { directionUpdate } = require("../utils/direction")
@@ -61,7 +61,7 @@ const stripBlankRows = (value) => {
 // called on every section change (isComplete false) and once on Finish (isComplete true).
 // There is no separate submit page — a student who stops halfway has already been saved, so the
 // form resumes on any device instead of living only in one browser's localStorage.
-router.post("/saveInterest", authMiddleware, requirePaid, async (req, res) => {
+router.post("/saveInterest", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { interest, isComplete } = req.body
 
@@ -201,7 +201,7 @@ const offerSartRetakeIfInvalid = async (userId, rawRows, submission) => {
     return true
 }
 
-router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) => {
+router.post("/savePsychometric", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { module, block } = req.body
 
@@ -343,7 +343,7 @@ const nextTrialFor = (trials) => {
     return null   // cleared 9 digits
 }
 
-router.post("/digitSpanNext", authMiddleware, requirePaid, async (req, res) => {
+router.post("/digitSpanNext", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id })
         const block = (submission && submission.psychometric && submission.psychometric.digitSpan) || {}
@@ -384,7 +384,7 @@ router.post("/digitSpanNext", authMiddleware, requirePaid, async (req, res) => {
     }
 })
 
-router.post("/digitSpanAnswer", authMiddleware, requirePaid, async (req, res) => {
+router.post("/digitSpanAnswer", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { response, ms } = req.body
 
@@ -459,7 +459,7 @@ router.post("/digitSpanAnswer", authMiddleware, requirePaid, async (req, res) =>
 const reasoningBank = require("../assessment/reasoningBank")
 const REASONING_SLOW_MS = 5 * 60 * 1000
 
-router.post("/reasoningNext", authMiddleware, requirePaid, async (req, res) => {
+router.post("/reasoningNext", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id }).lean()
         const block = (submission && submission.psychometric && submission.psychometric.reasoning) || {}
@@ -503,7 +503,7 @@ router.post("/reasoningNext", authMiddleware, requirePaid, async (req, res) => {
     }
 })
 
-router.post("/reasoningAnswer", authMiddleware, requirePaid, async (req, res) => {
+router.post("/reasoningAnswer", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { choice } = req.body
 
@@ -567,7 +567,7 @@ router.post("/reasoningAnswer", authMiddleware, requirePaid, async (req, res) =>
 // The page shows each word for wordBank.WORD_MS; the recall is typed, any order, and marked here.
 const wordBank = require("../assessment/wordBank")
 
-router.post("/wordRecallNext", authMiddleware, requirePaid, async (req, res) => {
+router.post("/wordRecallNext", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id }).lean()
         const block = (submission && submission.psychometric && submission.psychometric.wordRecall) || {}
@@ -613,7 +613,7 @@ router.post("/wordRecallNext", authMiddleware, requirePaid, async (req, res) => 
     }
 })
 
-router.post("/wordRecallAnswer", authMiddleware, requirePaid, async (req, res) => {
+router.post("/wordRecallAnswer", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const text = typeof req.body.text === "string" ? req.body.text.slice(0, 600) : ""
 
@@ -664,7 +664,7 @@ router.post("/wordRecallAnswer", authMiddleware, requirePaid, async (req, res) =
 // dropped connection, gets one job rather than two racing writes to the same profile. That matters
 // more than it sounds: the answers are already saved by /savePsychometric, so a failed enqueue
 // loses nothing and retrying this endpoint is always the right move.
-router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res) => {
+router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id })
 
@@ -786,7 +786,7 @@ const forStudent = (submission) => {
     return { ...submission, psychometric }
 }
 
-router.get("/getMySubmission", authMiddleware, requirePaid, async (req, res) => {
+router.get("/getMySubmission", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id }).lean()  // ← filter by logged in user
 

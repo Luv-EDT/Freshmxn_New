@@ -43,13 +43,13 @@ function UpgradeToMentorship({ user, professions = [], compact = false }) {
 
             {named.length > 0 ? (
                 <p>
-                    Your report puts <strong>{named.join(", ")}</strong> near the top. Tier 2 pairs you
+                    Your report puts <strong>{named.join(", ")}</strong> near the top. Discovery + Mentor pairs you
                     with someone working in one of them — not a careers advisor, someone who actually
                     does the job.
                 </p>
             ) : (
                 <p>
-                    Tier 2 pairs you with someone working in one of the professions your report
+                    Discovery + Mentor pairs you with someone working in one of the professions your report
                     raised — not a careers advisor, someone who actually does the job.
                 </p>
             )}
@@ -62,7 +62,7 @@ function UpgradeToMentorship({ user, professions = [], compact = false }) {
 
             <p>
                 <em>
-                    Your report does not change if you stay on Tier 1 — nothing in it is held back.
+                    Your report does not change if you stay on Career Discovery — nothing in it is held back.
                     This adds a person, not a section.
                 </em>
             </p>
@@ -72,7 +72,7 @@ function UpgradeToMentorship({ user, professions = [], compact = false }) {
                 className="btn btn-primary"
                 onClick={() => navigate("/mentorship")}
             >
-                See what Tier 2 includes
+                See what Discovery + Mentor includes
             </button>
         </div>
     )

@@ -25,6 +25,7 @@
 const taxonomy = require("../data/ALL-professions.json")
 const professionEmbeddings = require("../data/profession_embeddings.json")
 const { createResearchClient } = require("./claudeResearch")
+const { researchModel } = require("../utils/researchModel")
 const { createAdzuna } = require("./adzuna")
 const { cosine, embedQuery } = require("../matching/activityResolver")
 const { parseRange } = require("../utils/professionOverrides")
@@ -250,13 +251,15 @@ const voyageEmbed = () => {
 }
 
 const runCareerScout = async ({
-    research = createResearchClient({ job: "career_scout" }),
+    research,
     adzuna = createAdzuna(),
     embed = voyageEmbed(),
     embeddings = professionEmbeddings.embeddings,
     professions = taxonomy.professions,
     now = new Date(),
 } = {}) => {
+    // the admin's chosen research model (Round 12) unless a client was injected (the fixtures)
+    if (research === undefined) research = createResearchClient({ job: "career_scout", model: await researchModel() })
     if (!embed) return { skipped: "VOYAGE_API_KEY is not set" }
 
     const Recommendation = require("../model/recommendationsModel")

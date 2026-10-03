@@ -3,6 +3,7 @@ import { useEffect } from "react"
 import { Form, Input, Modal, Select, Popconfirm, message } from "antd"
 import { requestAccess } from "../../apiCall/paymentsApi"
 import { CALLBACK_DAY_OPTIONS, CALLBACK_SLOT_OPTIONS } from "./callbackOptions"
+import { PLAN_NAMES } from "../plans"
 
 // manual payment mode: the student leaves a callback request; an admin collects payment and grants access
 function RequestAccessForm({ visible, onClose, quote, defaultName, defaultPhone, onAddSuccess }) {
@@ -55,7 +56,7 @@ function RequestAccessForm({ visible, onClose, quote, defaultName, defaultPhone,
     return (
         <Modal
             open={visible}
-            title={`Request access — Tier ${quote.tier}`}
+            title={`Request access — ${PLAN_NAMES[quote.tier] || "your plan"}`}
             onCancel={onClose}
             footer={[
                 <button type="button" key="cancel" onClick={onClose}>Cancel</button>,

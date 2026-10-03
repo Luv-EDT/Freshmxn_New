@@ -1,6 +1,6 @@
 const express = require("express")
 const authMiddleware = require("../middlewares/authMiddleware")
-const requirePaid = require("../middlewares/requirePaid")
+const requireDiscovery = require("../middlewares/requireDiscovery")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
 
 const router = express.Router()
@@ -12,6 +12,7 @@ const entranceGates = require("../data/entrance_gates.json")
 const filterRules = require("../data/filter_rules.json")
 const blueCollar = require("../data/blue_collar.json")
 const abroad = require("../data/abroad.json")
+const studySources = require("../data/study_sources.json")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 const { examsFor } = require("../utils/examCalendar")
 const { studyPlacesFor, getStudyOverrides } = require("../utils/studyPlaces")
@@ -97,6 +98,12 @@ const workMostly = (composition) => Object.entries(composition || {})
     .slice(0, 2)
     .map(([key]) => WORK_PARTS[key])
 
+const factStatus = (professionId, field, approvedOverride) => {
+    if (approvedOverride) return { status: "checked", checkedOn: new Date(approvedOverride.approvedAt).toISOString().slice(0, 10) }
+    const row = studySources.careers[professionId] && studySources.careers[professionId][field]
+    return row ? { status: row.status, checkedOn: row.status === "judgement" ? null : row.checkedOn } : { status: "judgement", checkedOn: null }
+}
+
 const labelFactors = (slugs) => asArray(slugs).map((slug) => FACTOR_LABELS[slug] || String(slug).replace(/_/g, " "))
 
 // ⚠ THE NUANCE WHITELIST. `nuances` ARE NOT UNIFORMLY STUDENT-SAFE.
@@ -173,7 +180,11 @@ const NUANCE_SECTION = {
 // `checked` (verified or estimate), `payCaution` (from `filter`), never the record itself.
 const studentFacing = (profession, studyOverrides) => {
     // { exams, places } Maps or nothing — `.map(studentFacing)` passes the array index here
-    const layers = studyOverrides && studyOverrides.exams instanceof Map ? studyOverrides : { exams: new Map(), places: new Map() }
+    const layers = studyOverrides && studyOverrides.exams instanceof Map ? studyOverrides : { exams: new Map(), places: new Map(), facts: new Map() }
+    const factOverride = layers.facts ? layers.facts.get(profession.id) : null
+    const factValues = factOverride && factOverride.values ? factOverride.values : {}
+    const afterUndergrad = factValues.after_undergrad || profession.after_undergrad
+    const abroadRow = factValues.abroad || abroad.careers[profession.id]
     const calendarExams = examsFor(profession, layers.exams)
     const gate = profession.entry_competition && entranceGates.gates
         ? entranceGates.gates[profession.entry_competition.primary_gate]
@@ -196,7 +207,7 @@ const studentFacing = (profession, studyOverrides) => {
 
         yearsToQualify: profession.years_to_qualify,
         degreeDependency: profession.degree_dependency,
-        afterUndergrad: profession.after_undergrad,
+        afterUndergrad,
         midStreamEntry: profession.mid_stream_entry,
         class12Prerequisite: asArray(profession.class12_prerequisite),
         licensingBody: profession.licensing_body || null,
@@ -217,13 +228,21 @@ const studentFacing = (profession, studyOverrides) => {
 
         // Where to study (Round 11): official links always; the institution list once the owner has
         // reviewed it. null for careers with no formal programme to point at.
-        studyPlaces: studyPlacesFor(profession.id, layers.places),
+        studyPlaces: studyPlacesFor(profession.id, layers.places, layers.cutoffs || new Map()),
 
         // Is studying abroad needed (Round 11)? null when it is not — the card then says nothing.
         // Never a ranking input: matching does not read data/abroad.json.
-        abroad: abroad.careers[profession.id] && abroad.careers[profession.id].need !== "not_needed"
-            ? { need: abroad.careers[profession.id].need, stage: abroad.careers[profession.id].stage, why: abroad.careers[profession.id].why }
+        abroad: abroadRow && abroadRow.need !== "not_needed"
+            ? { need: abroadRow.need, stage: abroadRow.stage, why: abroadRow.why }
             : null,
+
+        // What backs those two lines (Round 12, data/study_sources.json): "checked" = an official
+        // rule, "supported" = published evidence, "judgement" = our estimate. An admin-approved
+        // change from the study bot came with sources, so it counts as checked on its approval date.
+        studyFacts: {
+            masters: factStatus(profession.id, "after_undergrad", factOverride && factValues.after_undergrad ? factOverride : null),
+            abroad: factStatus(profession.id, "abroad", factOverride && factValues.abroad ? factOverride : null),
+        },
 
         // Only the facing numbers off the gate record — how hard it is to get in, which is what a
         // student is asking. Not its verification block or its internal next_stage wiring.
@@ -388,16 +407,47 @@ router.get("/search", authMiddleware, async (req, res) => {
 
 
 // ========================
+// Options for the pickers (Round 12)
+// ========================
+
+// Every career with its job roles, and the industry list — what a Mentor Only student and a mentor
+// filling their profile choose from. Logged-in only, like /search: names and roles, nothing else
+// from the record (the full facts stay behind requireDiscovery on /getProfessions).
+const PICKER_PROFESSIONS = taxonomy.professions
+    .map((profession) => ({ id: profession.id, profession: profession.profession, jobRoles: profession.job_roles || [] }))
+    .sort((left, right) => left.profession.localeCompare(right.profession))
+
+router.get("/getOptions", authMiddleware, async (req, res) => {
+    try {
+        const { INDUSTRIES } = require("../utils/industries")
+
+        return res.status(200).json({
+            success: true,
+            message: "Options fetched successfully",
+            data: { professions: PICKER_PROFESSIONS, industries: INDUSTRIES },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch options",
+            error: error.message,
+        })
+    }
+})
+
+
+// ========================
 // One profession, in full
 // ========================
 
 // Fetched when a student expands a row in the report — the taxonomy is static and shared, so it is
 // served live rather than copied into every student's recommendations document.
 //
-// `requirePaid`, like every other report route. The ids are guessable slugs and the taxonomy is the
+// `requireDiscovery`, like every other report route (Round 12: paid AND a plan with Career Discovery). The ids are guessable slugs and the taxonomy is the
 // hand-built asset of the whole product; a route that serves all 223 to any free account is a
 // scrape surface, and the server's only rate limiter is on login.
-router.post("/getProfessions", authMiddleware, requirePaid, async (req, res) => {
+router.post("/getProfessions", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const ids = Array.isArray(req.body.ids) ? req.body.ids.slice(0, 60) : []
 

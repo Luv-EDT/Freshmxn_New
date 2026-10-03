@@ -1776,3 +1776,125 @@ button.link-button:hover:not(:disabled) {
     margin-top: 2px;
     flex: none;
 }
+
+/* ── the mentor profile form (Round 12) ──────────────────────────────────────────────────────────
+   Question 10 is a fieldset of radio cards; the global fieldset box and full-width cards made it
+   sit out of line with the plain questions around it. Same column, same spacing as the rest. */
+.mentor-form > div,
+.mentor-form > fieldset {
+    margin: 0 0 var(--space-4);
+}
+
+.mentor-form fieldset {
+    border: 0;
+    padding: 0;
+    max-width: 480px;
+    display: grid;
+    gap: 6px;
+}
+
+.mentor-form legend {
+    padding: 0;
+    margin-bottom: var(--space-2);
+    font-weight: inherit;
+}
+
+.mentor-form label.choice {
+    max-width: 480px;
+}
+
+.mentor-form-label {
+    margin: 0 0 var(--space-2);
+}
+
+/* a mentor's review of our data for their profession (Round 12) */
+.mentor-review {
+    margin-top: var(--space-4);
+}
+
+.mentor-review .review-section {
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-3);
+}
+
+.mentor-review .review-section legend {
+    font-weight: 700;
+}
+
+.mentor-review .review-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.mentor-review .review-quality p {
+    margin: var(--space-2) 0 var(--space-1);
+}
+
+/* the career → job role → industry picker (Round 12), on the mentor form and Mentor Only */
+.career-picker {
+    max-width: 480px;
+    display: grid;
+    gap: var(--space-2);
+}
+
+.career-picker-results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.career-picker-results li + li {
+    border-top: 1px solid var(--line);
+}
+
+.career-picker-results button {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 0;
+    padding: 10px 12px;
+    min-height: 44px;
+    cursor: pointer;
+}
+
+.career-picker-roles {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.career-picker-industries {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0 var(--space-3) var(--space-2);
+}
+
+.career-picker-industries summary {
+    padding: var(--space-2) 0;
+    cursor: pointer;
+}
+
+.career-picker-industries .career-picker-roles {
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+/* the "become a mentor" band on the landing page (Round 12) */
+.mentor-band .card {
+    display: grid;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+@media (min-width: 760px) {
+    .mentor-band .card {
+        grid-template-columns: 1fr auto;
+    }
+}

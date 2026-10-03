@@ -303,9 +303,9 @@
       "why": null
     },
     "sci-space-scientist": {
-      "need": "often_needed",
+      "need": "helps",
       "stage": "doctorate",
-      "why": "Many astronomy and space-science researchers do a PhD or postdoc abroad; IISc, TIFR, RRI and IUCAA in India are strong too"
+      "why": "A PhD or postdoc abroad is common in astronomy research, though India's own routes (JEST into IISc, TIFR, IUCAA, RRI) are strong"
     },
     "sci-materials-scientist": {
       "need": "not_needed",
@@ -348,9 +348,9 @@
       "why": null
     },
     "sci-computer-science-researcher": {
-      "need": "often_needed",
+      "need": "helps",
       "stage": "doctorate",
-      "why": "Industry research labs and top faculty posts often go to people with a PhD from abroad; IISc and the IITs are the main Indian routes"
+      "why": "Some research labs and faculty posts favour a PhD from abroad; IISc and the IITs are strong Indian routes"
     },
     "sci-mathematician": {
       "need": "helps",

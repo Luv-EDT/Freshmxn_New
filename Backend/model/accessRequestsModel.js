@@ -11,11 +11,11 @@ const accessRequestSchema = new mongoose.Schema(
         },
         requestedTier: {
             type: Number,
-            required: true, // 1 | 2
+            required: true, // 1 | 2 | 3 — see utils/plans.js
         },
         isUpgrade: {
             type: Boolean,
-            default: false, // true → finalAmountInr is the ₹3,500 difference, not the full ₹7,000
+            default: false, // true → finalAmountInr is the difference between the plans (utils/plans.js), not a full price
         },
         coupon: {
             type: String,

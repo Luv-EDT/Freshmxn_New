@@ -16,17 +16,18 @@ as needed.
 
 **Freshmxn's Lab** — a career-guidance web app for Indian students (Class 9 → early career), run by
 Freshmxn Education India Private Limited. A student pays, fills an interest form (their story), takes
-a psychometric assessment, and gets a report ranking 223 Indian careers for them. Tier 2 adds a
-mentor match.
+a psychometric assessment, and gets a report ranking 223 Indian careers for them. Three plans (Round 12):
+**Career Discovery** (assessment + report), **Discovery + Mentor**, and **Mentor Only** (pick a career and
+job role, get a mentor; no assessment).
 
 | | State |
 |---|---|
 | **Live** | **www.freshmxn.com** — one free Render web service (`render.yaml`), DNS on Cloudflare |
-| **Code** | `main` (after the Day 5 merge). The cloud work happened on `claude/peaceful-bohr-rkxau6` |
+| **Code** | `main` (Rounds 9–11 merged 3 Oct 2026; Round 12 merged after it). The cloud work happens on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
-| **Prices** | from the server (`GET /payments/getPricing`): Tier 1 ₹3,500 · Tier 2 ₹6,500 · upgrade ₹3,000 |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment with SART, digit span, story recall, the in-house reasoning test and the O\*NET activities checklist · disability accommodations ("not measured", never low) · our own word-memory test · scoring (`profile@1.3.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, coverage line, compare page) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes |
-| **Tests** | fixtures 22 (scoring) / 58 (matching) / 155 (workers) — all offline, all green |
+| **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment with SART, digit span, story recall, the in-house reasoning test and the O\*NET activities checklist · disability accommodations ("not measured", never low) · our own word-memory test · scoring (`profile@1.3.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, coverage line, compare page) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
+| **Tests** | fixtures 22 (scoring) / 58 (matching) / 164 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -59,7 +60,7 @@ cd Backend && npm run seed:admin                  # once — the admin account
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
 node Backend/matching/fixtures/runFixtures.js    # 58/58
-node Backend/workers/fixtures/runFixtures.js     # 155/155 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 164/164 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -71,6 +72,25 @@ The browser suites (`uiFlow`, `round3`, `round5`, the Round 9, 10 and 11 suites)
 ran in the cloud sessions against FerretDB + Playwright; they were scratch scripts and are **not in the
 repo** (a committed suite is in V2).
 To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.js` for screenshots.
+
+**Every worker, and what the admin does about it** (Round 12). All run inside the one web service
+(`RUN_WORKERS_IN_WEB=true`). Calendar jobs use India time and live in Redis, so a redeploy keeps them.
+
+| Worker / job | When | What it does | What the admin does |
+|---|---|---|---|
+| `score_profile` | on Submit | grades written answers with Claude, scores the profile, queues the report | Nothing, unless **Assessment issues** shows a row (a failed grading, a device problem, a student's "something went wrong") — then allow a retake or dismiss |
+| `generate_report` | after scoring | matches 223 careers, writes the three report lines | Nothing; a failure shows the student "Try again" and an issues row |
+| `followup_scan` | 1st of the month, 09:00 | emails the 6- and 12-month follow-up | Read the **Follow-ups** tab now and then |
+| `data_refresh` | 1st of the month, 04:00 | demand and pay for 60 careers (Adzuna + official sources), as one half-price batch | Approve or reject in **Data updates** |
+| `study_refresh` | 1st of the month, 06:00 | 6 disciplines' colleges, 15 exams, 10 master's/abroad facts; Aug–Oct also 10 closing ranks — one batch | Approve or reject in **Data updates** (Kind column) |
+| `batch_collect` | every hour at :17 | files the answers of a finished batch through the same checks; re-asks anything incomplete directly | Nothing — proposals simply appear in Data updates within about an hour of the 1st. "Collect batch answers now" is there if you are waiting |
+| `career_scout` | Mondays, 05:00 | new job titles from the job board, students' unmatched wishes and the official reports | Decide in **Emerging careers**; approving drafts the full career |
+| `draft_career` | when you approve a scout title | drafts the career the way the 223 were built | Read the draft; **Accept** or **Send back** with a note |
+| `model_compare` | only when you press it | asks the same 20 careers of Opus 5.5 and Sonnet 5.5, files nothing | Press **Run the comparison** once (Data updates → "Model for the monthly jobs"), read it, choose |
+
+After approving anything that should last: **Data updates → Export patch** → `node Backend/tools/applyDataPatch.js patch.json --write`
+→ run the fixtures → commit. Approved values show on the site at once from the database; the patch puts them in the files
+so they are in git. Mentor review notes in the patch are listed for a person to act on; nothing in them is applied.
 
 ---
 
@@ -94,6 +114,12 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 | **Where to study** (`Backend/data/study_places.json`, Round 11) | 23 disciplines, 170 institutions, public and private. NIRF 2025 ranks where NIRF ranks the field; elsewhere "Suggested — check" (Claude's judgement, labelled). **The institution lists stay hidden** until the owner reads them and sets `review.reviewed_by_owner` to `true`; the official links show already. NIRF 2026 was not out on 3 Oct 2026 — the study bot proposes it when it is |
 | **Exam calendar** (`Backend/data/exam_calendar.json`, Round 11) | 61 exams; 23 checked against published reporting of the official notices, **38 still `draft`** (name and official link only). Read the rows once; the study bot re-checks 15 a month on their own sites. A fixture fails if a checked row is over 13 months old |
 | **Studying abroad** (`Backend/data/abroad.json`, Round 11) | 25 careers flagged "helps" or "often part of the route", drafted by Claude — read them once. **Name the study-abroad partner** and share leads from the admin "Study abroad" tab (consent and policy version are on each row) |
+| **Master's and studying-abroad sources** (`Backend/data/study_sources.json`, Round 12) | Master's: 24 of the 32 "required / is the way in" careers checked against an official rule, 7 supported by published information, 1 our estimate (public policy). Some sources are secondary sites (Careers360, Testbook, Indian Kanoon) — the study bot is meant to replace them with official pages. **Finding:** UPSC's Indian Statistical Service accepts a bachelor's, so Statistician's "master's required" may be wrong — decide. Abroad: 2 supported, 23 our estimate; none is "often needed" any more. Rules and tables: `docs/5_finalized/STUDY_INFO_RULES.md` |
+| **Closing ranks** (`Backend/data/cutoffs.json`, Round 12) | Seven B.Tech CSE rows (six IITs, NIT Tiruchirappalli) are **drafts and hidden**: the official sites were blocked from the build container and search summaries disagreed. The study bot checks them on JoSAA from August; approve each in Data updates. A shown rank also needs the institution list reviewed. Add more rows (other branches, MBBS, CLAT) by hand or in V2 |
+| **Mentor reviews** (Round 12) | Approved mentors can review our data for their profession. Decide each item in **Mentor reviews**; accepted ones go out in Export patch as notes for a person to apply. A profession whose eight qualities a mentor called "about right" (and you accepted) can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
+| **Model for the monthly research** (Round 12) | Run the comparison once (a few dollars), then choose. Until then Opus 5.5. `REFRESH_MODEL` on Render, if set, overrides the choice |
+| **First live batch** (Round 12) | The monthly jobs now send one half-price batch. If Anthropic refuses the batch, the job asks directly as before (logged). After the 1st, look for `batch_collect: … — {…}` in the Render logs. `RESEARCH_BATCH=false` turns batching off |
+| **Mentor Only "Other" requests** (Round 12) | A Mentor Only student may describe a career we do not list; the admin's **Mentor Matches** shows it as "Other — find separately". Full refund on request if no mentor is found |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
 **Owner to know (Round 10):**
@@ -104,7 +130,7 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
   the code already did exactly that.
 - **Claude calls in the refresh, the scout, the study bot and career drafting** use server-side fallbacks
   (`fallbacks: "default"`): if the model declines, Anthropic's recommended fallback model answers
-  instead. Default model `claude-opus-5-5` (`REFRESH_MODEL` to change).
+  instead. The model is the admin's choice after the Round 12 comparison, default `claude-opus-5-5`; `REFRESH_MODEL` on Render overrides it.
 - **AI cost is now measured** (Round 11): every Claude call logs its tokens, and the admin dashboard's
   "AI usage" card shows the month by job at list prices. The Round 11 estimate was about $1.45 per
   student at launch, falling to $0.55–0.75, plus $15–40 a month of fixed jobs; compare it with the card
@@ -1698,3 +1724,40 @@ usage row, and one lost its counts — the write now retries once.
 **Deferred (V2):** a one-time Sonnet-vs-Opus comparison on 20 careers before setting `REFRESH_MODEL`;
 the Batch API for the monthly jobs, only if web search works inside a batch; Haiku for simple grading
 after an eval; specific programmes and cut-offs.
+
+### Round 12 — prices, Mentor Only, mentor reviews, and the three deferred AI/data items (2026-10-03)
+Asked after Round 11: how to see the work, where the master's and study-abroad answers come from,
+the three items deferred to V2 built now, new prices and plan names, a mentor-only plan, five mentor
+changes, and a list of every worker. Rounds 9–11 were merged to `main` first (PR #3, `5ac64b2`) so the
+owner could review them live.
+
+| Item | What shipped |
+|---|---|
+| **A** study sources (`2ca99e7`) | `study_sources.json`: a source and a status (checked / supported / our estimate) for every master's-required and every study-abroad line; the card says which. `STUDY_INFO_RULES.md` explains the premises with full tables. The study bot gained a monthly facts pass on official and academic Indian domains |
+| **B** plans (`9f28e62`) | Career Discovery ₹2,499, Discovery + Mentor ₹5,499, Mentor Only ₹2,999 (owner's prices, no "price will go down" line). "Plan", not "Tier", for students. `utils/plans.js` holds prices and what each plan gives; `requireDiscovery` keeps Mentor Only out of the assessment and report. Mentor Only picks any career → job role (or "something else"), an industry if they like, or writes "Other"; full refund if unmatched |
+| **C** mentor section (`098673e`) | "Become a mentor" in the public nav and a landing band (logged out only); question 10 aligned; profession, job role and industries chosen from our lists (role may be "other"); admin Mentors list searchable with counts |
+| **E** mentor reviews (`152a6b9`) | An approved mentor's dashboard: "Check our data for {profession}" — each section looks right / needs a change (note + source link), the top eight qualities about right / higher / lower (in words), skills we're missing. Admin "Mentor reviews" tab, grouped by profession, shows where mentors agree; accepted items go to Export patch. Nothing changes by itself |
+| **D** batch, model, cut-offs (`191ad5a`) | Monthly refresh and study bot send one **half-price Message Batch**; hourly `batch_collect` files answers through the same checks and re-asks anything incomplete directly. **Model comparison** (20 careers, Opus vs Sonnet, files nothing) and an admin choice. **Cut-offs**: official counselling page per discipline; a closing rank only once read off the official result page |
+| **H** docs | This record; Parts 1–3 (incl. the workers table); `HOW_FRESHMXN_WORKS.md`; `STUDY_INFO_RULES.md`; V2; `CLAUDE.md` |
+
+**Fixtures:** scoring 22, matching 58, workers 155 → 164 (study sources ×2, plans ×2, mentor review ×2,
+batch, model choice, cut-offs). Changed because the owner changed the product:
+- the STUDY BOT fixture was extended for the new facts pass (A), and now passes `cutoffLimit: 0` — in
+  October the bot also runs the new cut-off pass, which that fixture does not stub (the cut-off pass has
+  its own fixture);
+- the scratch browser/API suites' price and mentor-form expectations.
+
+Every other failure along the way was fixed in the code. Cloud checks: plans API 21/21, mentor review
+API 22/22 and browser 8/8 (360 and 1280 px), batch end-to-end 17/17 (submit → wait → collect → file;
+paused and errored answers re-asked; a batch that refuses the fallback is resent without it), model
+choice and cut-off API 11/11, the API suite 46/46, uiFlow 65/65, plans and Mentor Only in the browser
+10/10 (three plan cards at 360 px; a listed career + role and an "Other" request both stored; Mentor Only
+kept out of the assessment).
+
+**Small fix found while testing:** the paywall printed amounts as "₹5499"; it now uses the same
+`formatInr` as the public pages ("₹5,499"). Amounts still come from the server.
+
+**Honest limits:** the official cut-off sites (JoSAA, MCC, the CLAT consortium) and the education
+portals were blocked from the build container, so no closing rank is live yet — the seven seeded rows
+are hidden drafts for the study bot. Batch mode and the comparison are proven with stubs; their first
+live runs are on Render.

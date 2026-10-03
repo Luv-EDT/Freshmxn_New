@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom"
+import { hasMentor, isMentorOnly } from "./plans"
 
 // The four stages, shown the same way everywhere they appear — Stage 4C's staged progress bar.
 //
@@ -34,6 +35,20 @@ export const journeyStages = (user) => {
     const assessmentDone = psychometric === "done"
     const reportReady = report === "ready"
 
+    const mentorStage = {
+        key: "mentor",
+        title: "Mentor",
+        path: "/mentorship",
+        state: hasMentor(user) ? "active" : "locked",
+        note: hasMentor(user)
+            ? progress.mentor === "waitlisted" ? "You are on the waitlist" : "Included in your plan"
+            : "Part of Discovery + Mentor",
+        open: true,
+    }
+
+    // Mentor Only (Round 12) has no interest form, assessment or report — just the mentor
+    if (isMentorOnly(user)) return [mentorStage]
+
     return [
         {
             key: "interest",
@@ -67,16 +82,7 @@ export const journeyStages = (user) => {
                     : "Opens when you submit the assessment",
             open: reportReady || assessmentDone,
         },
-        {
-            key: "mentor",
-            title: "Mentor",
-            path: "/mentorship",
-            state: user && user.currentTier === 2 ? "active" : "locked",
-            note: user && user.currentTier === 2
-                ? progress.mentor === "waitlisted" ? "You are on the waitlist" : "Included in your plan"
-                : "Part of Tier 2",
-            open: true,
-        },
+        mentorStage,
     ]
 }
 

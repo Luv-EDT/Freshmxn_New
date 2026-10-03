@@ -43,11 +43,9 @@ const razorpay = process.env.RAZORPAY_KEY_ID
     })
     : null
 
-// prices are module constants, not env vars — a missing env var must never mean a ₹0 charge
-const TIER_PRICE_INR = {
-    1: 3500,    // Career Discovery
-    2: 6500,    // Mentorship
-}
+// prices and plan names live in utils/plans.js (Round 12): constants, never env vars — a missing
+// env var must never mean a ₹0 charge
+const { TIER_PRICE_INR, PLAN_NAMES, TIERS, grants, owns, isUpgrade: isUpgradeOf, upgradePrice, purchaseProblem } = require("../utils/plans")
 
 const phoneRegex = /^[0-9]{10}$/
 
@@ -64,19 +62,17 @@ const CALLBACK_SLOTS = ["morning", "afternoon", "evening"]
 const calculateQuote = async (user, tier, coupon) => {
     const requestedTier = Number(tier)
 
-    if (requestedTier !== 1 && requestedTier !== 2) {
-        return { error: "Invalid tier" }
+    const problem = purchaseProblem(user.currentTier, requestedTier, user.paid === true)
+    if (problem) {
+        return { error: problem }
     }
 
-    if (user.paid === true && user.currentTier >= requestedTier) {
-        return { error: "You already have this tier" }
-    }
-
-    // a Tier 1 student moving to Tier 2 pays the difference, not the full ₹7,000
-    const isUpgrade = user.paid === true && user.currentTier === 1 && requestedTier === 2
+    // adding the second half of the full plan (Discovery → +Mentor, or Mentor Only → +Discovery)
+    // costs the difference, never the full price again
+    const isUpgrade = isUpgradeOf(user.currentTier, requestedTier, user.paid === true)
 
     const baseAmountInr = isUpgrade
-        ? TIER_PRICE_INR[2] - TIER_PRICE_INR[1]
+        ? upgradePrice(user.currentTier, requestedTier)
         : TIER_PRICE_INR[requestedTier]
 
     let couponCode = null
@@ -154,12 +150,12 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
         return { error: "User not found" }
     }
 
-    // already holds this tier → write nothing. Razorpay retries webhooks; admins double-click.
-    if (user.paid === true && user.currentTier >= tier) {
+    // already holds this plan → write nothing. Razorpay retries webhooks; admins double-click.
+    if (owns(user.currentTier, tier, user.paid === true)) {
         return { user, payment: null, isAlreadyGranted: true }
     }
 
-    const isUpgrade = user.paid === true && user.currentTier === 1 && tier === 2
+    const isUpgrade = isUpgradeOf(user.currentTier, tier, user.paid === true)
 
     const newPayment = await Payment.create({
         user: userId,
@@ -168,6 +164,7 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
         razorpayPaymentId: options.razorpayPaymentId,
         tier,
         action: isUpgrade ? "upgrade" : "purchase",
+        fromTier: isUpgrade ? user.currentTier : undefined,
         coupon: coupon || undefined,
         discountPct: options.discountPct || 0,
         amountInr,
@@ -183,7 +180,7 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
         {
             paid: true,
             currentTier: tier,
-            "progress.mentor": tier === 2 ? "waitlisted" : "not_applicable",
+            "progress.mentor": grants(tier).mentor ? "waitlisted" : "not_applicable",
         },
         { returnDocument: "after" }
     ).select("-password")
@@ -300,6 +297,9 @@ const sendRefund = async (originalPayment, amountInr, refundContext) => {
 }
 
 // Tier 2 → Tier 1: which payment the money comes back from, and how much of it.
+// Round 12: a student who reached Tier 2 from Mentor Only paid for the mentor in their tier-3
+// purchase, so that purchase is the one the mentor money comes back from; their upgrade paid for
+// Discovery, which they keep.
 // Shared by the student's rollover quote, the admin's rollover approval and the admin downgrade,
 // so all three always name the same figure.
 const getRolloverRefund = async (user) => {
@@ -310,15 +310,16 @@ const getRolloverRefund = async (user) => {
     const latest = await Payment.findOne({
         user: user._id,
         status: "paid",
-        $or: [{ action: "upgrade" }, { action: "purchase", tier: 2 }],
+        $or: [{ action: "upgrade", fromTier: { $ne: 3 } }, { action: "purchase", tier: { $in: [2, 3] } }],
     }).sort({ createdAt: -1 })
 
     if (!latest) return { originalPayment: null, amountInr: 0 }
 
     const balance = await getRefundableBalance(latest)
 
-    if (latest.action === "upgrade") {
-        // upgraded from Tier 1 → return what is left of what they paid for the upgrade
+    if (latest.action === "upgrade" || latest.tier === 3) {
+        // upgraded from Tier 1 → return what is left of what they paid for the upgrade; started on
+        // Mentor Only → return what is left of that purchase, which was the mentor part
         return { originalPayment: latest, amountInr: balance }
     }
 
@@ -550,11 +551,14 @@ router.get("/getPricing", async (req, res) => {
             success: true,
             message: "Pricing fetched successfully",
             data: {
-                tiers: {
-                    1: { name: "Career Recommendation + Psychometric Analysis", amountInr: TIER_PRICE_INR[1] },
-                    2: { name: "Mentor Connection", amountInr: TIER_PRICE_INR[2] },
+                // the three plans (Round 12), named as the site names them
+                tiers: Object.fromEntries(TIERS.map((tier) => [tier, { name: PLAN_NAMES[tier], amountInr: TIER_PRICE_INR[tier] }])),
+                // adding the other half of the full plan costs the difference
+                upgrades: {
+                    "1-2": upgradePrice(1, 2),
+                    "3-2": upgradePrice(3, 2),
                 },
-                upgradeAmountInr: TIER_PRICE_INR[2] - TIER_PRICE_INR[1],
+                upgradeAmountInr: upgradePrice(1, 2),
                 paymentMode,
                 razorpayKeyId: paymentMode === "razorpay" ? process.env.RAZORPAY_KEY_ID : null,   // public key, safe to send
             },
@@ -993,15 +997,17 @@ router.put("/overturnGrantForAdmin/:id", express.json(), authMiddleware, adminAu
             })
         }
 
-        // an upgrade drops them back to Tier 1 still paid; a first purchase closes access entirely
+        // an upgrade drops them back to the plan they upgraded from, still paid; a first purchase
+        // closes access entirely
         const isUpgrade = grantPayment.action === "upgrade"
+        const backTo = isUpgrade ? (grantPayment.fromTier || 1) : 0
 
         const updatedUser = await User.findByIdAndUpdate(
             grantPayment.user,
             {
                 paid: isUpgrade,
-                currentTier: isUpgrade ? 1 : 0,
-                "progress.mentor": "not_applicable",
+                currentTier: backTo,
+                "progress.mentor": backTo && grants(backTo).mentor ? "waitlisted" : "not_applicable",
             },
             { returnDocument: "after" }
         ).select("-password")
@@ -1216,7 +1222,9 @@ router.put("/downgradeForAdmin/:id", express.json(), authMiddleware, adminAuthMi
 
 router.get("/getRefundOptions", authMiddleware, requirePaid, async (req, res) => {
     try {
-        const isEligible = hasCompletedTierOne(req.user)
+        // Mentor Only has no Tier 1 steps to deliver: the promise is a full refund on request if we
+        // cannot match a mentor, and the admin decides each request (owner, Round 12)
+        const isEligible = Number(req.user.currentTier) === 3 || hasCompletedTierOne(req.user)
 
         // a Tier 1 student has nothing to roll back to, so only a full refund is offered — and nor
         // does a Tier 2 student whose Tier-2 money has nothing left to give (financial aid, a 100%
@@ -1253,8 +1261,8 @@ router.post("/requestRefund", express.json(), authMiddleware, requirePaid, async
     try {
         const { reason, refundType } = req.body
 
-        // refunds open only once Tier 1 has actually been delivered
-        if (!hasCompletedTierOne(req.user)) {
+        // refunds open only once Tier 1 has actually been delivered (Mentor Only: any time — see above)
+        if (Number(req.user.currentTier) !== 3 && !hasCompletedTierOne(req.user)) {
             return res.status(403).json({
                 success: false,
                 message: "Refunds open once all three Tier 1 steps are complete"
@@ -1647,17 +1655,12 @@ router.post("/requestFinancialAid", express.json(), authMiddleware, async (req, 
 
         const requestedTier = Number(tier)
 
-        if (requestedTier !== 1 && requestedTier !== 2) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid tier"
-            })
-        }
+        const planProblem = purchaseProblem(req.user.currentTier, requestedTier, req.user.paid === true)
 
-        if (req.user.paid === true && req.user.currentTier >= requestedTier) {
+        if (planProblem) {
             return res.status(400).json({
                 success: false,
-                message: "You already have this tier"
+                message: planProblem
             })
         }
 

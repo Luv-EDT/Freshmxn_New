@@ -49,15 +49,20 @@ const recordUsage = (job, model, payload, now = new Date()) => {
     }
 }
 
+// Batched calls (Round 12) are logged as "<job>:batch" and their tokens cost half. Web searches are
+// billed per search either way.
+const BATCH_DISCOUNT = 0.5
+const isBatch = (job) => /:batch$/.test(String(job || ""))
+
 // dollars for one row's counts, or null for a model with no listed price
 const costOf = (row) => {
     const price = PRICES[row.model]
     if (!price) return null
-    const tokens = (row.inputTokens * price.input)
+    const tokens = ((row.inputTokens * price.input)
         + (row.outputTokens * price.output)
         + (row.cacheReadTokens * price.cacheRead)
-        + (row.cacheWriteTokens * price.input * CACHE_WRITE_MULTIPLIER)
+        + (row.cacheWriteTokens * price.input * CACHE_WRITE_MULTIPLIER)) * (isBatch(row.job) ? BATCH_DISCOUNT : 1)
     return Math.round(((tokens / 1e6) + (row.webSearches * WEB_SEARCH_PER_THOUSAND / 1000)) * 100) / 100
 }
 
-module.exports = { recordUsage, countsOf, costOf, PRICES }
+module.exports = { recordUsage, countsOf, costOf, isBatch, PRICES, BATCH_DISCOUNT }

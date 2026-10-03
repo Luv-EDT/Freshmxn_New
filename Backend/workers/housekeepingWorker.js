@@ -5,6 +5,9 @@
 //     career_scout     every Monday                housekeeping/careerScout.js
 //     study_refresh    the 1st of each month       housekeeping/studyRefresh.js (colleges and exams)
 //     draft_career     on demand — the admin approved a scout row (housekeeping/draftCareer.js)
+//     batch_collect    every hour, at :17 — files the answers of a finished half-price batch
+//                      (housekeeping/researchBatch.js); with no batch waiting it makes no AI call
+//     model_compare    on demand — the one-time Opus/Sonnet comparison (housekeeping/modelCompare.js)
 //
 // ONE QUEUE, ONE WORKER, three job names — each extra worker costs idle Redis commands (see
 // queueHelpers idleTimings), and these jobs are rare and small. BullMQ's job schedulers keep the
@@ -32,6 +35,7 @@ const SCHEDULES = [
     { name: "data_refresh", pattern: "0 4 1 * *" },
     { name: "career_scout", pattern: "0 5 * * 1" },
     { name: "study_refresh", pattern: "0 6 1 * *" },
+    { name: "batch_collect", pattern: "17 * * * *" },   // hourly (Round 12) — usually collects within the hour of the 1st
 ]
 
 const JOBS = {
@@ -40,10 +44,12 @@ const JOBS = {
     career_scout: () => require("../housekeeping/careerScout").runCareerScout(),
     study_refresh: () => require("../housekeeping/studyRefresh").runStudyRefresh(),
     draft_career: (data) => require("../housekeeping/draftCareer").runDraftCareer({ candidateId: data && data.candidateId }),
+    batch_collect: () => require("../housekeeping/researchBatch").collectBatches(),
+    model_compare: () => require("../housekeeping/modelCompare").runModelCompare(),
 }
 
 // jobs the admin may start from "Run now" — draft_career is started only by approving a scout row
-const RUNNABLE = ["followup_scan", "data_refresh", "career_scout", "study_refresh"]
+const RUNNABLE = ["followup_scan", "data_refresh", "career_scout", "study_refresh", "batch_collect", "model_compare"]
 
 const connectionOptions = () => {
     const url = process.env.REDIS_URL

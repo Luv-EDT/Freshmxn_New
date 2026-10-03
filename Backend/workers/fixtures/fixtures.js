@@ -3684,9 +3684,10 @@ const fixtures = [
             const DataProposal = require("../../model/dataProposalsModel")
             const ExamOverride = require("../../model/examOverridesModel")
             const StudyPlaceOverride = require("../../model/studyPlaceOverridesModel")
+            const StudyFactOverride = require("../../model/studyFactOverridesModel")
             const created = []
             const stamped = []
-            const saved = { dp: [DataProposal.create, DataProposal.updateMany], eo: [ExamOverride.find, ExamOverride.updateOne], so: [StudyPlaceOverride.find, StudyPlaceOverride.updateOne] }
+            const saved = { dp: [DataProposal.create, DataProposal.updateMany], eo: [ExamOverride.find, ExamOverride.updateOne], so: [StudyPlaceOverride.find, StudyPlaceOverride.updateOne], sf: [StudyFactOverride.find, StudyFactOverride.updateOne] }
             const lean = (rows) => ({ lean: async () => rows })
             DataProposal.create = async (row) => { created.push(row); return row }
             DataProposal.updateMany = async () => ({})
@@ -3694,11 +3695,14 @@ const fixtures = [
             StudyPlaceOverride.find = () => lean([])
             ExamOverride.updateOne = async (query) => { stamped.push(query.examId) }
             StudyPlaceOverride.updateOne = async (query) => { stamped.push(query.disciplineId) }
+            StudyFactOverride.find = () => lean([])
+            StudyFactOverride.updateOne = async (query) => { stamped.push(query.professionId) }
             const calls = []
             const research = {
                 askJson: async ({ onlyDomains, user }) => {
                     calls.push({ onlyDomains, user })
                     if (/^Exam:/.test(user)) return { json: { changes: [{ field: "usual_exam_month", proposed: "June", reason: "the notice", confidence: "high" }] }, sources: [{ url: "https://jeemain.nta.nic.in/n" }] }
+                    if (/^Career:/.test(user)) return { json: { changes: [{ field: "after_undergrad", proposed: "masters_advantage", reason: "UPSC ISS accepts a bachelor's" }, { field: "after_undergrad", proposed: "a_phd" }] }, sources: [{ url: "https://upsc.gov.in/x" }] }
                     return { json: { changes: [{ action: "remove", institution: { name: "IIT Roorkee", city: "Roorkee" } }], newExams: [] }, sources: [{ url: "https://www.nirfindia.org/r" }] }
                 },
             }
@@ -3706,18 +3710,24 @@ const fixtures = [
             try {
                 const { disciplineById } = require("../../utils/studyPlaces")
                 const { examById } = require("../../utils/examCalendar")
-                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1 })
-                if (result.disciplines !== 1 || result.exams !== 1 || result.proposals !== 2) problems.push(`unexpected result ${JSON.stringify(result)}`)
+                const statistician = require("../../data/ALL-professions.json").professions.filter((profession) => profession.id === "sci-statistician")
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, professions: statistician })
+                if (result.disciplines !== 1 || result.exams !== 1 || result.facts !== 1 || result.proposals !== 3) problems.push(`unexpected result ${JSON.stringify(result)}`)
+                const factCall = calls.find((call) => /^Career:/.test(call.user))
+                if (!factCall || !factCall.onlyDomains.includes("gov.in") || factCall.onlyDomains.some((domain) => /\.com$/.test(domain))) problems.push("study facts are not searched on official and academic domains only")
+                if (!created.some((row) => row.kind === "study_fact" && row.proposedValue === "masters_advantage")) problems.push("the master's change was not filed as a study fact")
+                if (created.some((row) => row.proposedValue === "a_phd")) problems.push("an unknown master's value was filed")
                 const examCall = calls.find((call) => /^Exam:/.test(call.user))
                 if (!examCall || JSON.stringify(examCall.onlyDomains) !== JSON.stringify(["jeemain.nta.nic.in"])) problems.push(`the exam was not searched on its own site: ${JSON.stringify(examCall && examCall.onlyDomains)}`)
                 const collegeCall = calls.find((call) => /^Discipline:/.test(call.user))
                 if (!collegeCall || collegeCall.onlyDomains[0] !== RANKING_DOMAINS[0] || RANKING_DOMAINS[0] !== "nirfindia.org") problems.push("colleges are not searched on NIRF first")
                 if (!created.some((row) => row.kind === "exam" && row.field === "usual_exam_month") || !created.some((row) => row.kind === "college" && row.field === "remove_institution")) problems.push(`proposals not filed by kind: ${JSON.stringify(created.map((row) => [row.kind, row.field]))}`)
-                if (stamped.join() !== "engineering,jee-main") problems.push(`checked stamps wrong: ${stamped.join()}`)
+                if (stamped.join() !== "engineering,jee-main,sci-statistician") problems.push(`checked stamps wrong: ${stamped.join()}`)
             } finally {
                 ;[DataProposal.create, DataProposal.updateMany] = saved.dp
                 ;[ExamOverride.find, ExamOverride.updateOne] = saved.eo
                 ;[StudyPlaceOverride.find, StudyPlaceOverride.updateOne] = saved.so
+                ;[StudyFactOverride.find, StudyFactOverride.updateOne] = saved.sf
             }
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -3861,6 +3871,305 @@ const fixtures = [
             } })
             await client.ask({ system: "the instructions", user: "x" })
             if (!body || !Array.isArray(body.system) || !body.system[0].cache_control || body.system[0].text !== "the instructions") problems.push("the research instructions are not marked for caching")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY SOURCES — every 'master's required' and every abroad flag says what backs it",
+        // checked = an official rule, supported = published evidence, judgement = no source. The
+        // owner asked whether these come from anywhere; this keeps the answer true.
+        run: () => {
+            const sources = require("../../data/study_sources.json")
+            const abroad = require("../../data/abroad.json").careers
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            const STATUSES = ["checked", "supported", "judgement"]
+            const now = Date.now()
+            const checkRow = (id, field, row) => {
+                if (!row) return problems.push(`${id}.${field} says nothing about its source`)
+                if (!STATUSES.includes(row.status)) problems.push(`${id}.${field}: status ${row.status}`)
+                if (row.status !== "judgement") {
+                    if (!Array.isArray(row.sources) || row.sources.length === 0) problems.push(`${id}.${field} is ${row.status} with no source`)
+                    ;(row.sources || []).forEach((key) => {
+                        const source = sources.sources[key]
+                        if (!source || !/^https:\/\//.test(source.url)) problems.push(`${id}.${field}: source ${key} missing or not https`)
+                    })
+                    const age = (now - new Date(row.checkedOn).getTime()) / 86400000
+                    if (!(age >= -1 && age <= 396)) problems.push(`${id}.${field}: checked ${row.checkedOn} — over 13 months, re-check it`)
+                } else if ((row.sources || []).length > 0) problems.push(`${id}.${field} is judgement but lists sources`)
+            }
+            professions.filter((profession) => ["masters_required", "masters_is_the_entry"].includes(profession.after_undergrad))
+                .forEach((profession) => checkRow(profession.id, "after_undergrad", sources.careers[profession.id] && sources.careers[profession.id].after_undergrad))
+            Object.entries(abroad).filter(([, row]) => row.need !== "not_needed")
+                .forEach(([id]) => checkRow(id, "abroad", sources.careers[id] && sources.careers[id].abroad))
+            const checked = professions.filter((profession) => sources.careers[profession.id] && sources.careers[profession.id].after_undergrad && sources.careers[profession.id].after_undergrad.status === "checked").length
+            if (checked < 20) problems.push(`only ${checked} master's rules are checked against an official source`)
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY SOURCES — the card says checked, published or estimate; an approved study-bot fact wins",
+        run: () => {
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const { validateFactChange } = require("../../housekeeping/studyRefresh")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            const psychologist = professions.find((profession) => profession.id === "soc-clinical-psychologist")
+            const served = studentFacing(psychologist)
+            if (served.studyFacts.masters.status !== "checked" || !served.studyFacts.masters.checkedOn) problems.push("a checked master's rule is not served as checked")
+            const engineer = studentFacing(professions.find((profession) => profession.id === "eng-civil-engineer"))
+            if (engineer.studyFacts.masters.status !== "judgement" || engineer.studyFacts.masters.checkedOn !== null) problems.push("an unsourced value is not served as our estimate")
+            const layered = studentFacing(psychologist, {
+                exams: new Map(), places: new Map(),
+                facts: new Map([["soc-clinical-psychologist", { values: { abroad: { need: "helps", stage: "masters", why: "x" } }, approvedAt: new Date("2026-11-02") }]]),
+            })
+            if (!layered.abroad || layered.abroad.need !== "helps" || layered.studyFacts.abroad.status !== "checked") problems.push("an approved abroad change did not reach the page")
+            if (validateFactChange({ field: "abroad", proposed: { need: "helps", stage: "masters", why: "A real reason here" } }, { abroad: null }, []) !== null) problems.push("a change with no source was kept")
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            if (!/Our estimate/.test(card) || !/Checked against the official rules/.test(card)) problems.push("the card does not say where the master's and abroad lines come from")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "PLANS — three plans, priced from one place; each addition costs the difference; nothing is bought twice",
+        run: () => {
+            const { TIER_PRICE_INR, PLAN_NAMES, grants, owns, isUpgrade, upgradePrice, purchaseProblem } = require("../../utils/plans")
+            const problems = []
+            if (JSON.stringify(TIER_PRICE_INR) !== JSON.stringify({ 1: 2499, 2: 5499, 3: 2999 })) problems.push(`prices ${JSON.stringify(TIER_PRICE_INR)} — owner set ₹2,499 / ₹5,499 / ₹2,999`)
+            if (PLAN_NAMES[1] !== "Career Discovery" || PLAN_NAMES[2] !== "Discovery + Mentor" || PLAN_NAMES[3] !== "Mentor Only") problems.push("plan names drifted")
+            if (!grants(2).discovery || !grants(2).mentor || grants(3).discovery || !grants(3).mentor || grants(1).mentor) problems.push("what a plan gives is wrong")
+            if (upgradePrice(1, 2) !== 3000 || upgradePrice(3, 2) !== 2500) problems.push("an addition does not cost the difference")
+            if (!isUpgrade(1, 2) || !isUpgrade(3, 2) || isUpgrade(0, 2) || isUpgrade(1, 3)) problems.push("the upgrades are wrong")
+            if (!owns(2, 3) || !owns(2, 1) || owns(3, 1) || owns(1, 3) || owns(2, 1, false)) problems.push("ownership is wrong")
+            if (!purchaseProblem(1, 3, true) || !purchaseProblem(3, 1, true)) problems.push("buying the other single plan on top of one was allowed — it must be the upgrade")
+            if (purchaseProblem(0, 3, false) || purchaseProblem(3, 2, true) || purchaseProblem(1, 2, true)) problems.push("a valid purchase was refused")
+            if (purchaseProblem(0, 4, false) !== "Invalid plan") problems.push("an unknown plan was accepted")
+
+            // the price lives in one place: no router keeps its own copy
+            const payments = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            if (/TIER_PRICE_INR\s*=\s*\{/.test(payments)) problems.push("paymentsRouter defines its own prices")
+            if (/currentTier\s*>=/.test(payments)) problems.push("paymentsRouter still treats plans as an ordered number")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "PLANS — Mentor Only never reaches the assessment or report; every Discovery route checks for it",
+        run: async () => {
+            const requireDiscovery = require("../../middlewares/requireDiscovery")
+            const problems = []
+            const call = async (user) => {
+                let status = 200
+                const res = { status: (code) => { status = code; return { json: () => null } } }
+                let passed = false
+                await requireDiscovery({ user }, res, () => { passed = true })
+                return passed ? 200 : status
+            }
+            if (await call({ paid: true, currentTier: 3 }) !== 403) problems.push("Mentor Only passed the Discovery gate")
+            if (await call({ paid: false, currentTier: 0 }) !== 401) problems.push("an unpaid student passed")
+            if (await call({ paid: true, currentTier: 1 }) !== 200 || await call({ paid: true, currentTier: 2 }) !== 200) problems.push("a Discovery plan was refused")
+            ;["submissionsRouter", "reportsRouter", "storyRouter", "externalTestsRouter", "studyAbroadRouter", "assessmentIssuesRouter"].forEach((name) => {
+                const source = fs.readFileSync(path.join(__dirname, `../../Routers/${name}.js`), "utf8")
+                if (/requirePaid/.test(source)) problems.push(`${name} still uses requirePaid, which lets Mentor Only in`)
+            })
+            const route = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/ProtectedRoute.js"), "utf8")
+            if (!/currentTier === 3/.test(route)) problems.push("the page gate lets Mentor Only into the Discovery pages")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MENTOR REVIEW — the sheet shows a mentor words, never a number, an id or anything admin-only",
+        run: () => {
+            const { buildSheet, topQualities, SECTIONS } = require("../../Routers/mentorReviewsRouter")
+            const { FACTOR_LABELS } = require("../reportComposer")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const problems = []
+            const empty = { exams: new Map(), places: new Map(), facts: new Map() }
+            taxonomy.professions.forEach((profession) => {
+                const sheet = buildSheet(profession, new Map(), empty)
+                if (SECTIONS.some((id) => !(id in sheet.sections))) problems.push(`${profession.id}: a section is missing`)
+                const qualities = topQualities(profession.id)
+                if (qualities.length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities, not 8`)
+                qualities.forEach((quality) => {
+                    if (quality.label !== FACTOR_LABELS[quality.factor]) problems.push(`${profession.id}: "${quality.label}" is not the shared label`)
+                    if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
+                })
+                const text = JSON.stringify(sheet)
+                if (/preferredCurrency|residenceCitizenship|match_confidence|data_quality|admin_review|review_status|"weights"/.test(text)) problems.push(`${profession.id}: an admin-only field reached the sheet`)
+                if (/"level":\s*\d/.test(text)) problems.push(`${profession.id}: a quality went out as a number`)
+            })
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MENTOR REVIEW — a review changes nothing by itself; answers are checked; accepted items reach Export patch",
+        run: () => {
+            const { cleanReview, topQualities } = require("../../Routers/mentorReviewsRouter")
+            const problems = []
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
+            // it may READ the override layers (to show what students see) but writes only its own rows
+            const models = [...router.matchAll(/require\("\.\.\/model\/(\w+)"\)/g)].map((match) => match[1]).sort()
+            if (models.join(",") !== "mentorReviewsModel,mentorsModel") problems.push(`the review router loads ${models.join(", ")}`)
+            if (/writeFile|clearOverrides|clearStudyOverrides/.test(router)) problems.push("the review router can change data")
+            const qualities = topQualities("swc-software-developer")
+            const ok = cleanReview({ sections: [{ section: "exams", verdict: "change", note: "GATE matters for PSU jobs", sourceUrl: "https://gate.iitk.ac.in" }], qualities: [{ factor: qualities[0].factor, direction: "higher" }] }, qualities)
+            if (ok.error || ok.items.length !== 2) problems.push(`a good review was refused: ${ok.error}`)
+            if (!cleanReview({ sections: [{ section: "exams", verdict: "change", note: "" }] }, qualities).error) problems.push("a change with no note was kept")
+            if (!cleanReview({ sections: [{ section: "exams", verdict: "right", sourceUrl: "javascript:alert(1)" }] }, qualities).error) problems.push("a non-https link was kept")
+            if (!cleanReview({ sections: [{ section: "salary_secret", verdict: "right" }] }, qualities).error) problems.push("an unknown section was kept")
+            if (!cleanReview({ qualities: [{ factor: "musical_intelligence", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
+            if (!cleanReview({}, qualities).error) problems.push("an empty review was kept")
+            const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/mentorNotes:/.test(updates) || !/decision === "accepted"/.test(updates)) problems.push("accepted mentor notes do not reach Export patch")
+            const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
+            if (!/app\.use\("\/mentorReviews", mentorReviewsRouter\)/.test(server)) problems.push("the router is not mounted")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "BATCH — a batched answer is read like a direct one; anything paused, refused or cut off is asked again",
+        run: () => {
+            const { replyFrom, customIdFor, batchEnabled, HANDLERS } = require("../../housekeeping/researchBatch")
+            const { costOf } = require("../../utils/aiUsage")
+            const problems = []
+            const check = (json) => Array.isArray(json.changes)
+            const message = (stop, text) => ({ stop_reason: stop, content: [
+                { type: "web_search_tool_result", content: [{ url: "https://pib.gov.in/plfs", title: "PLFS" }] },
+                { type: "text", text },
+            ] })
+            const good = replyFrom(message("end_turn", 'Found it. {"changes": []}'), check)
+            if (!good || !Array.isArray(good.json.changes) || good.sources.length !== 1) problems.push("a good batched answer was not read")
+            ;["pause_turn", "refusal", "max_tokens"].forEach((stop) => {
+                if (replyFrom(message(stop, '{"changes": []}'), check) !== null) problems.push(`${stop} was not sent to be asked again`)
+            })
+            if (replyFrom(message("end_turn", "no json here"), check) !== null) problems.push("an unreadable answer was kept")
+            if (replyFrom(message("end_turn", '{"other": 1}'), check) !== null) problems.push("an answer of the wrong shape was kept")
+
+            const ids = Array.from({ length: 120 }, (unused, index) => customIdFor(index, { kind: "exam", id: `some.exam/with spaces-${"x".repeat(80)}` }))
+            if (ids.some((id) => !/^[a-zA-Z0-9_-]{1,64}$/.test(id))) problems.push("a custom_id breaks the batch API's rule")
+            if (new Set(ids).size !== ids.length) problems.push("two items share a custom_id")
+
+            const saved = process.env.RESEARCH_BATCH
+            delete process.env.RESEARCH_BATCH
+            if (!batchEnabled()) problems.push("batching is not on by default")
+            process.env.RESEARCH_BATCH = "false"
+            if (batchEnabled()) problems.push("RESEARCH_BATCH=false did not turn it off")
+            if (saved === undefined) delete process.env.RESEARCH_BATCH
+            else process.env.RESEARCH_BATCH = saved
+
+            // the two jobs that can be batched hand over their own checking and filing
+            ;Object.entries(HANDLERS).forEach(([job, load]) => {
+                const handler = load()
+                if (typeof handler.handleItem !== "function" || typeof handler.check !== "function" || typeof handler.newResult !== "function") problems.push(`${job} cannot finish a batched answer`)
+            })
+            ;["dataRefresh", "studyRefresh"].forEach((name) => {
+                const source = fs.readFileSync(path.join(__dirname, `../../housekeeping/${name}.js`), "utf8")
+                if (!/submitBatch\(/.test(source) || !/await handleItem\(item, reply/.test(source)) problems.push(`${name} does not share its filing between the two paths`)
+            })
+
+            // half price on the tokens of a batched call, full price on its searches
+            const row = { model: "claude-opus-5-5", inputTokens: 1e6, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, webSearches: 0 }
+            if (costOf({ ...row, job: "data_refresh:batch" }) !== 2 || costOf({ ...row, job: "data_refresh" }) !== 4) problems.push("a batched call is not priced at half")
+            if (costOf({ ...row, inputTokens: 0, webSearches: 1000, job: "data_refresh:batch" }) !== 10) problems.push("searches in a batch were discounted")
+
+            const { SCHEDULES, RUNNABLE } = require("../housekeepingWorker")
+            const collect = SCHEDULES.find((schedule) => schedule.name === "batch_collect")
+            if (!collect || collect.pattern !== "17 * * * *") problems.push("batch_collect is not hourly")
+            if (!RUNNABLE.includes("model_compare") || SCHEDULES.some((schedule) => schedule.name === "model_compare")) problems.push("the comparison must be on demand only")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MODEL CHOICE — the comparison asks both models the same 20 questions and files nothing",
+        run: async () => {
+            const { runModelCompare, sampleCareers } = require("../../housekeeping/modelCompare")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const problems = []
+            const sample = sampleCareers(taxonomy.professions)
+            if (sample.length !== 20 || new Set(sample.map((row) => row.id)).size !== 20) problems.push("the sample is not 20 different careers")
+            if (sampleCareers(taxonomy.professions).map((row) => row.id).join() !== sample.map((row) => row.id).join()) problems.push("the sample changes between runs")
+
+            const seen = { "claude-opus-5-5": 0, "claude-sonnet-5-5": 0 }
+            const fetchImpl = async (url, options) => {
+                const body = JSON.parse(options.body)
+                seen[body.model] += 1
+                const changes = body.model === "claude-opus-5-5" ? '[{"field": "india_demand", "proposed": "declining", "reason": "PLFS says so", "confidence": "medium"}]' : "[]"
+                const reply = { model: body.model, stop_reason: "end_turn", usage: { input_tokens: 1000, output_tokens: 200, server_tool_use: { web_search_requests: 1 } },
+                    content: [{ type: "web_search_tool_result", content: [{ url: "https://pib.gov.in/x", title: "x" }] }, { type: "text", text: `{"changes": ${changes}}` }] }
+                return { ok: true, status: 200, headers: new Map(), text: async () => JSON.stringify(reply), json: async () => reply }
+            }
+            const result = await runModelCompare({ apiKey: "test", fetchImpl, save: false })
+            if (seen["claude-opus-5-5"] !== 20 || seen["claude-sonnet-5-5"] !== 20) problems.push(`calls ${JSON.stringify(seen)}`)
+            const opus = result.summary.perModel["claude-opus-5-5"]
+            const sonnet = result.summary.perModel["claude-sonnet-5-5"]
+            if (sonnet.changes !== 0 || opus.changes < 1) problems.push("the changes were not counted per model")
+            if (!(opus.costPerCareer > sonnet.costPerCareer)) problems.push("cost per career is not measured from usage")
+            if (typeof result.summary.agreement !== "number") problems.push("no agreement figure")
+
+            const source = fs.readFileSync(path.join(__dirname, "../../housekeeping/modelCompare.js"), "utf8")
+            if (/dataProposalsModel|professionOverridesModel|lastCheckedAt:/.test(source)) problems.push("the comparison can file proposals or mark careers checked")
+            const resolver = fs.readFileSync(path.join(__dirname, "../../utils/researchModel.js"), "utf8")
+            if (resolver.indexOf("REFRESH_MODEL") > resolver.indexOf("research_model")) problems.push("the admin's choice is read before REFRESH_MODEL")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "CUT-OFFS — only a rank read off the official page is shown, always with its year, round, category and the caveat",
+        run: () => {
+            const { cutoffs, cutoffsFor, isShowable, applyCutoffOverride, CAVEAT } = require("../../utils/cutoffs")
+            const { validateCutoffChange, cutoffDomains } = require("../../housekeeping/studyRefresh")
+            const studyPlaces = require("../../data/study_places.json")
+            const calendar = require("../../data/exam_calendar.json")
+            const problems = []
+            const disciplines = new Set(studyPlaces.disciplines.map((row) => row.id))
+            const exams = new Set(calendar.exams.map((row) => row.id))
+            const ids = new Set()
+            Object.entries(cutoffs.sources).forEach(([key, source]) => {
+                if (!source.url.startsWith("https://")) problems.push(`${key}: the official page is not https`)
+                source.disciplines.forEach((id) => { if (!disciplines.has(id)) problems.push(`${key}: unknown discipline ${id}`) })
+            })
+            cutoffs.rows.forEach((row) => {
+                if (ids.has(row.id)) problems.push(`${row.id} twice`)
+                ids.add(row.id)
+                if (!disciplines.has(row.discipline) || !cutoffs.sources[row.source] || !exams.has(row.exam)) problems.push(`${row.id}: unknown discipline, source or exam`)
+                if (!["checked", "draft"].includes(row.status)) problems.push(`${row.id}: status ${row.status}`)
+                if (row.status === "checked") {
+                    if (!isShowable(row)) problems.push(`${row.id}: a checked row is missing its rank, year, round, category or official link`)
+                    if (!cutoffDomains(row).some((domain) => new URL(row.source_url).hostname.endsWith(domain))) problems.push(`${row.id}: checked against a page that is not the counselling body's`)
+                    if ((Date.now() - new Date(row.checked_on).getTime()) / 86400000 > 400) problems.push(`${row.id}: checked more than 13 months ago`)
+                }
+            })
+
+            // a draft never shows, even with the institution list reviewed; an approved check does
+            const draft = cutoffs.rows.find((row) => row.status === "draft")
+            if (draft && isShowable(draft)) problems.push("a draft row would be shown")
+            const approved = applyCutoffOverride(draft, { approvedAt: new Date(), values: { closing_rank: 66, year: 2025, round: "Round 6 (final)", source_url: "https://josaa.admissions.nic.in/result" } })
+            if (!isShowable(approved)) problems.push("an approved check is not shown")
+            const shown = cutoffsFor(draft.discipline, new Map([[draft.id, { approvedAt: new Date(), values: approved }]]))
+            if (shown.rows.length !== 1 || shown.caveat !== CAVEAT || !/category/.test(CAVEAT)) problems.push("the shown rank lost its caveat")
+            if (cutoffsFor(draft.discipline).rows.length !== 0) problems.push("unchecked ranks reached the page")
+            const management = cutoffsFor("management")
+            if (!management || !management.sources[0].noRank) problems.push("management must say there is no single closing rank")
+
+            const now = new Date("2026-09-15")
+            const domains = cutoffDomains(draft)
+            const good = { field: "closing_rank", proposed: { closing_rank: 70, year: 2026, round: "Round 6", source_url: "https://josaa.admissions.nic.in/x" } }
+            if (!validateCutoffChange(good, draft, [{ url: "x" }], { now, domains })) problems.push("a good check was dropped")
+            if (validateCutoffChange({ ...good, proposed: { ...good.proposed, source_url: "https://www.shiksha.com/x" } }, draft, [{ url: "x" }], { now, domains })) problems.push("a summary site was accepted as the source")
+            if (validateCutoffChange({ ...good, proposed: { ...good.proposed, year: 2022 } }, draft, [{ url: "x" }], { now, domains })) problems.push("an old year was accepted")
+            if (validateCutoffChange({ ...good, proposed: { ...good.proposed, closing_rank: "about 70" } }, draft, [{ url: "x" }], { now, domains })) problems.push("a rank that is not a number was accepted")
+            if (validateCutoffChange(good, draft, [], { now, domains })) problems.push("a check with no cited page was accepted")
+
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            if (!/cutoffs\.caveat/.test(card) || !/official result/.test(card)) problems.push("the card shows a rank without the caveat or the official page")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

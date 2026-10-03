@@ -78,6 +78,21 @@ const parseJsonReply = (text) => {
     }
 }
 
+// The body of one web-search question — the same for a call now and a request in a batch
+// (housekeeping/researchBatch.js), so both paths ask exactly the same thing.
+const searchRequest = ({ model, system, user, maxUses = 3, maxTokens = 4000, onlyDomains = SOURCE_DOMAINS, messages }) => ({
+    model,
+    max_tokens: maxTokens,
+    fallbacks: "default",
+    thinking: { type: "adaptive" },
+    // cached (Round 11): the same instructions go out for every career, exam or title
+    system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
+    messages: messages || [{ role: "user", content: user }],
+    tools: [{ type: "web_search_20260209", name: "web_search", allowed_domains: onlyDomains, max_uses: maxUses }],
+})
+
+const textOf = (content) => (content || []).filter((block) => block.type === "text").map((block) => block.text || "").join("")
+
 const createResearchClient = ({
     apiKey = process.env.ANTHROPIC_API_KEY,
     model = process.env.REFRESH_MODEL || "claude-opus-5-5",
@@ -129,16 +144,7 @@ const createResearchClient = ({
         const content = []
 
         for (let resume = 0; resume <= MAX_RESUMES; resume += 1) {
-            const payload = await post({
-                model,
-                max_tokens: maxTokens,
-                fallbacks: "default",
-                thinking: { type: "adaptive" },
-                // cached (Round 11): the same instructions go out for every career, exam or title
-                system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
-                messages,
-                tools: [{ type: "web_search_20260209", name: "web_search", allowed_domains: onlyDomains, max_uses: maxUses }],
-            })
+            const payload = await post(searchRequest({ model, system, maxUses, maxTokens, onlyDomains, messages }))
 
             if (payload.stop_reason === "refusal") return { text: "", sources: [], refused: true }
             if (!Array.isArray(payload.content)) throw new Error("research reply had no content")
@@ -155,8 +161,7 @@ const createResearchClient = ({
             break
         }
 
-        const text = content.filter((block) => block.type === "text").map((block) => block.text || "").join("")
-        return { text, sources: sourcesOf(content), refused: false }
+        return { text: textOf(content), sources: sourcesOf(content), refused: false }
     }
 
     // ask, parse, check — and ask once more with the rule restated before giving up
@@ -193,4 +198,4 @@ const createResearchClient = ({
     return { ask, askJson, askPlain, model }
 }
 
-module.exports = { createResearchClient, sourcesOf, parseJsonReply, isTransient, SOURCE_DOMAINS }
+module.exports = { createResearchClient, searchRequest, sourcesOf, textOf, parseJsonReply, isTransient, SOURCE_DOMAINS, ANTHROPIC_ENDPOINT }

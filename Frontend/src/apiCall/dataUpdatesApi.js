@@ -34,3 +34,13 @@ export async function getAiUsageForAdmin(month) {
     const response = await axiosInstance.get("/dataUpdates/getAiUsageForAdmin", { params: { month } })
     return response
 }
+
+export async function getModelChoiceForAdmin() {
+    const response = await axiosInstance.get("/dataUpdates/getModelChoiceForAdmin")
+    return response
+}
+
+export async function setResearchModelForAdmin(model) {
+    const response = await axiosInstance.put("/dataUpdates/setResearchModelForAdmin", { model })
+    return response
+}

@@ -1,6 +1,9 @@
 const mongoose = require("mongoose")
 
-// a Tier-2 student's place on the mentor waitlist (PRD §B.10).
+// a student's place on the mentor waitlist (PRD §B.10) — Discovery + Mentor (tier 2) or, from
+// Round 12, Mentor Only (tier 3). A tier-2 student chooses from their own ranked matches; a Mentor
+// Only student has no matches, so they choose from all our careers, may name an industry, or write
+// what they want in their own words ("Other") and we find that mentor separately.
 //
 // The PAYMENT is not recorded here — grantAccess already writes it and flips progress.mentor to
 // "waitlisted". This row records what happens after: the career and the ONE job role in it they choose (Round 11),
@@ -26,6 +29,18 @@ const mentorWaitlistSchema = new mongoose.Schema(
         },
         chosenJobRole: {
             type: String, // one of that career's job_roles (Round 11) — read from the data file, never trusted from the body
+        },
+        jobRoleIsOther: {
+            type: Boolean, // Round 12: the student wrote their own role inside the chosen career (chosenJobRole holds their words)
+        },
+        chosenIndustryCode: {
+            type: String, // Round 12: an industry from utils/industries.js, if the student had one in mind
+        },
+        otherRequest: {
+            type: String, // Round 12, Mentor Only: the career they want in their own words — the admin finds this mentor separately
+        },
+        planTier: {
+            type: Number, // 2 | 3 — the plan the choice was made on
         },
         choiceSentAt: {
             type: Date, // the clock starts here

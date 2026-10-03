@@ -11,7 +11,8 @@
 //
 // Accepted career drafts (Round 11) are written too: a new career into ALL-professions.json,
 // baseline_rating.json and profession_embeddings.json; a combined one into combined_careers.json.
-// And the study bot's approved exam and college changes, into exam_calendar.json and study_places.json.
+// And the study bot's approved exam and college changes, into exam_calendar.json and study_places.json,
+// and its master's / study-abroad facts into ALL-professions.json, abroad.json and study_sources.json.
 
 const fs = require("fs")
 const path = require("path")
@@ -180,7 +181,36 @@ let studyChanged = 0
         studyChanged += 1
     }
 })
-changed += studyChanged
+// master's need and studying abroad (Round 12): the value into its file, and what backed it into
+// study_sources.json as "checked" on the approval date
+const abroadFile = JSON.parse(readText("abroad.json"))
+const sourcesFile = JSON.parse(readText("study_sources.json"))
+let factsChanged = 0
+;(patch.studyFacts || []).forEach((fact) => {
+    const position = index.get(fact.id)
+    if (position === undefined) return console.log(`skip  study fact ${fact.id} — not in ALL-professions.json`)
+    const keys = (fact.sources || []).map((source, number) => {
+        const key = `${fact.id}-${fact.checkedOn}-${number + 1}`
+        sourcesFile.sources[key] = { url: source.url, title: source.title || source.url }
+        return key
+    })
+    const row = sourcesFile.careers[fact.id] || {}
+    const values = fact.values || {}
+    if (values.after_undergrad && values.after_undergrad !== taxonomy.professions[position].after_undergrad) {
+        console.log(`fact  ${fact.id}.after_undergrad\n  was ${taxonomy.professions[position].after_undergrad}\n  now ${values.after_undergrad}`)
+        taxonomy.professions[position].after_undergrad = values.after_undergrad
+        row.after_undergrad = { status: "checked", sources: keys, note: "Admin-approved study bot proposal", checkedOn: fact.checkedOn }
+        factsChanged += 1
+    }
+    if (values.abroad && JSON.stringify(values.abroad) !== JSON.stringify(abroadFile.careers[fact.id])) {
+        console.log(`fact  ${fact.id}.abroad\n  was ${JSON.stringify(abroadFile.careers[fact.id])}\n  now ${JSON.stringify(values.abroad)}`)
+        abroadFile.careers[fact.id] = values.abroad
+        row.abroad = { status: "checked", sources: keys, note: "Admin-approved study bot proposal", checkedOn: fact.checkedOn }
+        factsChanged += 1
+    }
+    sourcesFile.careers[fact.id] = row
+})
+changed += studyChanged + factsChanged
 
 // the counts each file carries about itself
 const recount = () => {
@@ -201,6 +231,25 @@ const recount = () => {
 
 ;(patch.newCareerDrafts || []).forEach((draft) => console.log(`not finished yet (${draft.as}): ${draft.title} — accept its draft in Emerging careers first`))
 
+// closing ranks (Round 12) — written into data/cutoffs.json as checked rows
+const cutoffsFile = JSON.parse(fs.readFileSync(path.join(DATA, "cutoffs.json"), "utf8"))
+let cutoffsChanged = 0
+;(patch.cutoffs || []).forEach((change) => {
+    const row = cutoffsFile.rows.find((entry) => entry.id === change.id)
+    if (!row) return console.log(`skip  cut-off ${change.id} — not in cutoffs.json`)
+    const after = { ...row, ...change.values, status: "checked", checked_on: change.checkedOn }
+    delete after.reported
+    console.log(`cut   ${row.id}\n  was ${row.status === "checked" ? `${row.closing_rank} (${row.year}, ${row.round})` : "draft"}\n  now ${after.closing_rank} (${after.year}, ${after.round}) ${after.source_url}`)
+    Object.keys(row).forEach((key) => delete row[key])
+    Object.assign(row, after)
+    cutoffsChanged += 1
+    changed += 1
+})
+
+// mentors' accepted remarks (Round 12) are words, not values — listed for a person to act on
+;(patch.mentorNotes || []).forEach((note) => console.log(`mentor ${note.id} · ${note.factor ? `${note.factor} should be ${note.direction}` : `${note.section}: ${note.verdict === "right" ? "looks right" : "needs a change"}`}${note.note ? ` — ${note.note}` : ""}${note.sourceUrl ? ` (${note.sourceUrl})` : ""}`))
+;(patch.mentorReviewedRatings || []).forEach((id) => console.log(`mentor ${id} · every top quality called about right — you may set its baseline_rating.json review_status to "mentor_reviewed"`))
+
 if (write && changed > 0) {
     recount()
     // every file is parsed back before anything is written — a broken insertion writes nothing
@@ -209,6 +258,11 @@ if (write && changed > 0) {
     fs.writeFileSync(path.join(DATA, "baseline_rating.json"), baselineText)
     fs.writeFileSync(path.join(DATA, "profession_embeddings.json"), embeddingsText)
     fs.writeFileSync(path.join(DATA, "combined_careers.json"), combinedText)
+    if (factsChanged > 0) {
+        fs.writeFileSync(path.join(DATA, "abroad.json"), `${JSON.stringify(abroadFile, null, 2)}\n`)
+        fs.writeFileSync(path.join(DATA, "study_sources.json"), `${JSON.stringify(sourcesFile, null, 2)}\n`)
+    }
+    if (cutoffsChanged > 0) fs.writeFileSync(path.join(DATA, "cutoffs.json"), `${JSON.stringify(cutoffsFile, null, 2)}\n`)
     if (studyChanged > 0) {
         fs.writeFileSync(path.join(DATA, "exam_calendar.json"), `${JSON.stringify(examCalendar, null, 2)}\n`)
         fs.writeFileSync(path.join(DATA, "study_places.json"), `${JSON.stringify(studyPlaces, null, 2)}\n`)

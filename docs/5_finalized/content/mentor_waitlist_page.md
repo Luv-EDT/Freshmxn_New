@@ -1,7 +1,7 @@
 # Freshmxn — Mentor Waitlist Page (content)
 
 Reached from the landing page ("Join the waitlist & pay" and the vs-AI-tools link). This is the
-₹6,500 Mentor Connection tier — NOT "coming soon". The student can pay and join now; we match
+₹5,499 Discovery + Mentor plan (and, from Round 12, the ₹2,999 Mentor Only plan) — NOT "coming soon". The student can pay and join now; we match
 them to a mentor after they've done Step 1 and chosen a direction.
 
 ---
@@ -14,7 +14,7 @@ them to a mentor after they've done Step 1 and chosen a direction.
 session and a 20-minute follow-up. Someone who was once exactly where you are, ready to show you
 the real picture of the field, not the glossy one.
 
-**CTA button:** Join the waitlist & pay — ₹6,500
+**CTA button:** Join the waitlist & pay — ₹5,499 · second button: Just the mentor — ₹2,999
 
 ---
 
@@ -52,9 +52,11 @@ choice.
 
 **Heading:** Reserve your mentor match
 
-- Pay ₹6,500 now to join the mentor waitlist.
-- **Already bought the ₹3,500 Career Discovery profile?** Upgrade here for just **₹3,000 more** —
-  you won't pay the full ₹6,500 again.
+- Pay ₹5,499 now to join the mentor waitlist.
+- **Already bought the ₹2,499 Career Discovery profile?** Upgrade here for just **₹3,000 more** —
+  you won't pay the full ₹5,499 again.
+
+**Mentor Only — ₹2,999** (Round 12): for students who already know the field they want. No assessment or report — choose a career and job role from our full list, add an industry if you like, or describe it in your own words. The same two sessions and the same 20-business-day match from the choice. If we can't match, we keep searching or refund the full ₹2,999 on request. Want the career report later? Add Career Discovery for the difference.
 - Your place is held the moment payment clears.
 - Complete Step 1 and send us your chosen career whenever you're ready — the 20-business-day match
   clock starts from *that* point, not from payment.

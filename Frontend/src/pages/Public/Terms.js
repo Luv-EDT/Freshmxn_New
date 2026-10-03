@@ -25,16 +25,20 @@ const SECTIONS = [
         title: "The service",
         body: (
             <>
-                <p>Freshmxn's Lab offers two paid plans:</p>
+                <p>Freshmxn's Lab offers three paid plans:</p>
                 <ul>
                     <li>
-                        <strong>Career Discovery + Full Profile</strong> — an interest form, a psychometric
-                        assessment, your profile, and a report with your ranked career matches and a readiness guide.
+                        <strong>Career Discovery</strong> — an interest form, a psychometric assessment, your
+                        profile, and a report with your ranked career matches and a readiness guide.
                     </li>
                     <li>
-                        <strong>Mentor Connection</strong> — everything above, plus two sessions with a working
+                        <strong>Discovery + Mentor</strong> — everything above, plus two sessions with a working
                         professional in a career you choose from your matches (a 1-hour clarity session and a
                         20-minute follow-up), arranged by us.
+                    </li>
+                    <li>
+                        <strong>Mentor Only</strong> — the same two mentor sessions without the assessment or report:
+                        you choose a career and job role from our list, or describe it in your own words.
                     </li>
                 </ul>
                 <p>
@@ -81,7 +85,7 @@ const SECTIONS = [
             <p>
                 Prices are shown in Indian Rupees on the site (see <Link to="/how-it-works">How it works</Link>)
                 and are the amount you pay at checkout. If you buy Career
-                Discovery first, you can upgrade to Mentor Connection later by paying only the difference. Coupons
+                Discovery or Mentor Only first, you can move to Discovery + Mentor later by paying only the difference. Coupons
                 and financial aid are offered at our discretion. Payments are made through our payment partner or
                 arranged directly with our team; we never store your card or bank details.
             </p>
@@ -97,8 +101,8 @@ const SECTIONS = [
                     delivered, you can request a refund from your Profile page. Each request is reviewed
                     individually, and we'll tell you the outcome.
                 </p>
-                <p><strong>Mentor Connection:</strong></p>
-                <blockquote className="legal-quote"><MentorRolloverPolicy /></blockquote>
+                <p><strong>Discovery + Mentor and Mentor Only:</strong></p>
+                <blockquote className="legal-quote"><MentorRolloverPolicy both /></blockquote>
                 <p>
                     Nothing in these terms limits any refund you are entitled to under Indian consumer law.
                 </p>

@@ -12,3 +12,10 @@ export async function searchProfessions(query) {
     const response = await axiosInstance.get("/professions/search", { params: { q: query } })
     return response
 }
+
+// every career with its job roles, and the industry list — for the Mentor Only picker and the
+// mentor profile form (Round 12)
+export async function getProfessionOptions() {
+    const response = await axiosInstance.get("/professions/getOptions")
+    return response
+}
