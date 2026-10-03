@@ -1807,6 +1807,30 @@ button.link-button:hover:not(:disabled) {
     margin: 0 0 var(--space-2);
 }
 
+/* a mentor's review of our data for their profession (Round 12) */
+.mentor-review {
+    margin-top: var(--space-4);
+}
+
+.mentor-review .review-section {
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-3);
+}
+
+.mentor-review .review-section legend {
+    font-weight: 700;
+}
+
+.mentor-review .review-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.mentor-review .review-quality p {
+    margin: var(--space-2) 0 var(--space-1);
+}
+
 /* the career → job role → industry picker (Round 12), on the mentor form and Mentor Only */
 .career-picker {
     max-width: 480px;

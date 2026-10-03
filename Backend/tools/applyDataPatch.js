@@ -231,6 +231,10 @@ const recount = () => {
 
 ;(patch.newCareerDrafts || []).forEach((draft) => console.log(`not finished yet (${draft.as}): ${draft.title} — accept its draft in Emerging careers first`))
 
+// mentors' accepted remarks (Round 12) are words, not values — listed for a person to act on
+;(patch.mentorNotes || []).forEach((note) => console.log(`mentor ${note.id} · ${note.factor ? `${note.factor} should be ${note.direction}` : `${note.section}: ${note.verdict === "right" ? "looks right" : "needs a change"}`}${note.note ? ` — ${note.note}` : ""}${note.sourceUrl ? ` (${note.sourceUrl})` : ""}`))
+;(patch.mentorReviewedRatings || []).forEach((id) => console.log(`mentor ${id} · every top quality called about right — you may set its baseline_rating.json review_status to "mentor_reviewed"`))
+
 if (write && changed > 0) {
     recount()
     // every file is parsed back before anything is written — a broken insertion writes nothing

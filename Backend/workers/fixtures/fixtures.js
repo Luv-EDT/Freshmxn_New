@@ -3981,6 +3981,57 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "MENTOR REVIEW — the sheet shows a mentor words, never a number, an id or anything admin-only",
+        run: () => {
+            const { buildSheet, topQualities, SECTIONS } = require("../../Routers/mentorReviewsRouter")
+            const { FACTOR_LABELS } = require("../reportComposer")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const problems = []
+            const empty = { exams: new Map(), places: new Map(), facts: new Map() }
+            taxonomy.professions.forEach((profession) => {
+                const sheet = buildSheet(profession, new Map(), empty)
+                if (SECTIONS.some((id) => !(id in sheet.sections))) problems.push(`${profession.id}: a section is missing`)
+                const qualities = topQualities(profession.id)
+                if (qualities.length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities, not 8`)
+                qualities.forEach((quality) => {
+                    if (quality.label !== FACTOR_LABELS[quality.factor]) problems.push(`${profession.id}: "${quality.label}" is not the shared label`)
+                    if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
+                })
+                const text = JSON.stringify(sheet)
+                if (/preferredCurrency|residenceCitizenship|match_confidence|data_quality|admin_review|review_status|"weights"/.test(text)) problems.push(`${profession.id}: an admin-only field reached the sheet`)
+                if (/"level":\s*\d/.test(text)) problems.push(`${profession.id}: a quality went out as a number`)
+            })
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MENTOR REVIEW — a review changes nothing by itself; answers are checked; accepted items reach Export patch",
+        run: () => {
+            const { cleanReview, topQualities } = require("../../Routers/mentorReviewsRouter")
+            const problems = []
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
+            // it may READ the override layers (to show what students see) but writes only its own rows
+            const models = [...router.matchAll(/require\("\.\.\/model\/(\w+)"\)/g)].map((match) => match[1]).sort()
+            if (models.join(",") !== "mentorReviewsModel,mentorsModel") problems.push(`the review router loads ${models.join(", ")}`)
+            if (/writeFile|clearOverrides|clearStudyOverrides/.test(router)) problems.push("the review router can change data")
+            const qualities = topQualities("swc-software-developer")
+            const ok = cleanReview({ sections: [{ section: "exams", verdict: "change", note: "GATE matters for PSU jobs", sourceUrl: "https://gate.iitk.ac.in" }], qualities: [{ factor: qualities[0].factor, direction: "higher" }] }, qualities)
+            if (ok.error || ok.items.length !== 2) problems.push(`a good review was refused: ${ok.error}`)
+            if (!cleanReview({ sections: [{ section: "exams", verdict: "change", note: "" }] }, qualities).error) problems.push("a change with no note was kept")
+            if (!cleanReview({ sections: [{ section: "exams", verdict: "right", sourceUrl: "javascript:alert(1)" }] }, qualities).error) problems.push("a non-https link was kept")
+            if (!cleanReview({ sections: [{ section: "salary_secret", verdict: "right" }] }, qualities).error) problems.push("an unknown section was kept")
+            if (!cleanReview({ qualities: [{ factor: "musical_intelligence", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
+            if (!cleanReview({}, qualities).error) problems.push("an empty review was kept")
+            const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/mentorNotes:/.test(updates) || !/decision === "accepted"/.test(updates)) problems.push("accepted mentor notes do not reach Export patch")
+            const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
+            if (!/app\.use\("\/mentorReviews", mentorReviewsRouter\)/.test(server)) problems.push("the router is not mounted")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

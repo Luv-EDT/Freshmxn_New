@@ -6,12 +6,14 @@ const CareerDraft = require("../model/careerDraftsModel")
 const ExamOverride = require("../model/examOverridesModel")
 const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
 const StudyFactOverride = require("../model/studyFactOverridesModel")
+const MentorReview = require("../model/mentorReviewsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
 const { clearStudyOverrides } = require("../utils/studyPlaces")
 const { costOf } = require("../utils/aiUsage")
 const { validateExamChange, validateNewExam, validateFactChange, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
+const { topQualities } = require("./mentorReviewsRouter")
 
 const router = express.Router()
 
@@ -177,13 +179,14 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
 // built (a combined career's two sides, or a full new record) before they can ship.
 router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const [overrides, approvedScout, accepted, examRows, placeRows, factRows] = await Promise.all([
+        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
             CareerDraft.find({ status: "accepted" }).lean(),
             ExamOverride.find({ approvedAt: { $ne: null } }).lean(),
             StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
             StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
+            MentorReview.find({ "items.decision": "accepted" }).lean(),
         ])
         const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
@@ -220,6 +223,27 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                 checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
                 sources: (row.sources || []).map((source) => ({ url: source.url, title: source.title })),
             })),
+            // mentors' accepted remarks on their own profession (Round 12). Words, not values: a person
+            // turns each into a data change, so tools/applyDataPatch.js only lists them.
+            mentorNotes: mentorReviews.flatMap((review) => review.items
+                .filter((item) => item.decision === "accepted")
+                .map((item) => ({
+                    id: review.professionId,
+                    section: item.section,
+                    ...(item.factor ? { factor: item.factor, direction: item.direction } : { verdict: item.verdict }),
+                    note: item.note,
+                    sourceUrl: item.sourceUrl || null,
+                    reviewedOn: new Date(review.updatedAt).toISOString().slice(0, 10),
+                }))),
+            // careers whose top qualities a mentor called "about right" and the admin accepted, every
+            // one of them — baseline_rating.json can mark these mentor_reviewed
+            mentorReviewedRatings: [...new Set(mentorReviews
+                .filter((review) => {
+                    const qualities = review.items.filter((item) => item.section === "qualities")
+                    return qualities.length >= topQualities(review.professionId).length
+                        && qualities.every((item) => item.direction === "right" && item.decision === "accepted")
+                })
+                .map((review) => review.professionId))],
             // approved but not yet accepted as a finished draft — listed so nothing is forgotten
             newCareerDrafts: approvedScout.filter((row) => !acceptedFor.has(String(row._id))).map((row) => ({
                 title: row.title,

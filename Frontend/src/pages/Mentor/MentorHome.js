@@ -3,6 +3,7 @@ import { useSelector } from "react-redux"
 import { message } from "antd"
 import { getMyMentorProfile, onboardMentor, updateMyMentorProfile } from "../../apiCall/mentorsApi"
 import MentorOnboarding from "./MentorOnboarding"
+import MentorReviewSheet from "./MentorReviewSheet"
 import LogoutButton from "../LogoutButton"
 import logo from "../../assets/brand/logo.png"
 
@@ -102,6 +103,9 @@ function MentorHome() {
                             <li><strong>Residence / citizenship (team only):</strong> {profile.residenceCitizenship}</li>
                         </ul>
                         <button type="button" className="tap" onClick={() => setEditing(true)}>Edit my profile</button>
+
+                        {/* Round 12: approved mentors check what students read about their profession */}
+                        {profile.status === "onboarded" && <MentorReviewSheet />}
                     </>
                 )}
             </main>
