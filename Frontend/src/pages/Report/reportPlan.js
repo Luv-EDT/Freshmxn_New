@@ -302,3 +302,11 @@ export const mastersOptions = (ranked, details = {}, topN = 20) => {
 
     return { groups: groups.filter((group) => group.careers.length > 0), notNeeded, unknown }
 }
+
+// STUDYING ABROAD (owner, Round 11): the student's top-ten matches for which the data says study
+// abroad helps or is often part of the route. The report offers the partner connection only when
+// this is non-empty — the same rule the server checks (studyAbroadRouter).
+export const abroadCareers = (ranked, details = {}, topN = 10) => (ranked || [])
+    .slice(0, topN)
+    .filter((entry) => details[entry.professionId] && details[entry.professionId].abroad)
+    .map((entry) => ({ professionId: entry.professionId, profession: entry.profession, need: details[entry.professionId].abroad.need }))

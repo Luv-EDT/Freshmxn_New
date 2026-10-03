@@ -16,6 +16,7 @@
 //   3. Whatever the model returns is checked for the forbidden terms before it is stored.
 
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
+const { recordUsage } = require("../utils/aiUsage")
 
 // 2.0.0 — the prompt went from eight sections to four. A MAJOR bump because it BREAKS
 // COMPARABILITY: a 1.0.0 report has `howYouWork`, `strengths`, `worthConsidering` and `aspirations`
@@ -330,6 +331,7 @@ const createReportClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = pr
                 }
 
                 const payload = await response.json()
+                recordUsage("report", model, payload)
 
                 if (payload.stop_reason === "max_tokens") throw permanent("report reply hit max_tokens")
                 if (!Array.isArray(payload.content)) throw new Error("report reply had no content")

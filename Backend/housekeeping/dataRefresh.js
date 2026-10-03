@@ -103,7 +103,7 @@ const adzunaFor = async (adzuna, profession) => {
 }
 
 const runDataRefresh = async ({
-    research = createResearchClient(),
+    research = createResearchClient({ job: "data_refresh" }),
     adzuna = createAdzuna(),
     professions = taxonomy.professions,
     limit = maxCareers(),

@@ -19,7 +19,7 @@ const { sendEmail } = require("../utils/mailer")
 const { sendParentCode } = require("../utils/parentConsent")
 
 const JOURNEYS = ["class9_10", "class11_12", "college", "early_professional"]
-const POLICY_VERSION = "v1.1"   // 1 October 2026: the sensitive-answers section; email-verified parental consent
+const POLICY_VERSION = "v1.2"   // 3 October 2026: the study-abroad partner, on opt-in only (v1.1, 1 October: sensitive answers; email-verified parental consent)
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phoneRegex = /^[0-9]{10}$/
 

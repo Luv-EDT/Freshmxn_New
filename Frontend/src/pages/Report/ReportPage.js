@@ -11,6 +11,7 @@ import ReportSortMenu from "./ReportSortMenu"
 import { studentTags } from "./reportTags"
 import { buildList } from "./reportFilters"
 import { journeyHeadline, mastersOptions } from "./reportPlan"
+import StudyAbroadCard from "./StudyAbroadCard"
 import ReportHeadline from "./ReportHeadline"
 import CombinedCareers from "./CombinedCareers"
 import DirectionModal from "../DirectionModal"
@@ -643,6 +644,9 @@ function ReportPage() {
 
                 <p className="report-small"><em>Each career above also has its own next steps — open it to see them.</em></p>
             </details>
+
+            {/* Round 11: offered only when a top-ten match is one where studying abroad helps */}
+            <StudyAbroadCard ranked={ranked} details={details} />
 
             {/* THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —

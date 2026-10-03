@@ -130,6 +130,13 @@ const SELF_WORDS = {
     rare: "Rare — this is mostly employed work",
 }
 
+const ABROAD_STAGE = {
+    undergrad: "for the first degree",
+    masters: "for a master's",
+    doctorate: "for a PhD or research",
+    training: "for the training",
+}
+
 const monthYear = (iso) => {
     const date = iso ? new Date(iso) : null
     return date && !Number.isNaN(date.getTime())
@@ -374,6 +381,17 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                         {detail.entryWindow.bypass.length > 0 && (
                                             <p className="pc-small">Other ways in: {detail.entryWindow.bypass.join(" · ")}</p>
                                         )}
+                                    </Section>
+                                )}
+
+                                {/* Studying abroad (Round 11): whether it is needed — never which university */}
+                                {detail.abroad && (
+                                    <Section title="Studying abroad">
+                                        <p className="pc-line">
+                                            {detail.abroad.need === "often_needed" ? "Often part of the route" : "Helps, but not needed"}
+                                            {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}
+                                        </p>
+                                        <p className="pc-small">{detail.abroad.why}.</p>
                                     </Section>
                                 )}
 

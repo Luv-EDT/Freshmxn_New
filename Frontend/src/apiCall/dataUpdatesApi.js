@@ -29,3 +29,8 @@ export async function decideDraftForAdmin(candidateId, decision, adminNote) {
     const response = await axiosInstance.put(`/dataUpdates/decideDraftForAdmin/${candidateId}`, { decision, adminNote })
     return response
 }
+
+export async function getAiUsageForAdmin(month) {
+    const response = await axiosInstance.get("/dataUpdates/getAiUsageForAdmin", { params: { month } })
+    return response
+}

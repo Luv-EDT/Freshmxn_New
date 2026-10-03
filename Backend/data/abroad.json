@@ -1,0 +1,1126 @@
+{
+  "schema_version": "abroad@1.0.0",
+  "generated_on": "2026-10-03",
+  "rule": "Is studying abroad needed for this career, for a student in India? 'often_needed' only where the main research or entry route regularly runs through study abroad; 'helps' where a foreign degree is a common edge but strong Indian routes exist; everything else 'not_needed'. About whether it is needed, never about universities. Drafted by Claude from general knowledge of how these careers are entered; not a ranking input.",
+  "review": {
+    "reviewed_by_owner": false,
+    "note": "Owner gate (Round 11): read the non-'not_needed' rows once."
+  },
+  "careers": {
+    "swc-software-developer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-website-store-builder": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-game-developer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-ai-ml-engineer": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's abroad is a common way into AI research and product teams, though many are hired from Indian B.Tech and M.Tech too"
+    },
+    "swc-data-analyst": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-data-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-cybersecurity-specialist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-cloud-devops-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-software-tester": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-it-support-network-technician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-embedded-iot-developer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-enterprise-software-consultant": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-it-business-systems-analyst": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "swc-vfx-graphics-developer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-civil-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-mechanical-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-electrical-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-electronics-communication-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-chip-design-engineer": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in VLSI abroad is a common route into design roles; IIT M.Tech programmes are the Indian equivalent"
+    },
+    "eng-chemical-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-aerospace-engineer": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "Design and research roles in aerospace often want a master's; some people take it abroad where the industry is larger"
+    },
+    "eng-mining-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-metallurgical-materials-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-marine-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-petroleum-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-robotics-automation-engineer": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in robotics abroad is common for research and advanced R&D roles"
+    },
+    "eng-architect": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's abroad helps for specialised practice (urban design, sustainable buildings) and international firms"
+    },
+    "eng-commercial-pilot": {
+      "need": "helps",
+      "stage": "training",
+      "why": "Many trainee pilots do their flying hours at schools abroad; it costs more, and the licence must then be converted with DGCA"
+    },
+    "eng-aircraft-maintenance-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-electrician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-welder": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-fitter-machinist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-plumber": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-carpenter-furniture-maker": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-mason-construction-technician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-hvac-refrigeration-technician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-automobile-mechanic": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-heavy-equipment-operator": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-land-surveyor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-cad-draughtsman": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-textile-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-biomedical-engineer": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "Medical-device R&D often hires master's graduates; programmes abroad are a common choice"
+    },
+    "eng-fire-safety-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-drone-pilot": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-precision-manufacturing-technician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-nuclear-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-urban-planner": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in planning abroad helps for international consultancies and multilateral projects"
+    },
+    "eng-air-traffic-controller": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-railway-operations": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-merchant-navy-deck-officer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "eng-industrial-product-designer": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in design abroad helps for global product companies; NID and IIT design schools are strong in India"
+    },
+    "sci-physicist": {
+      "need": "helps",
+      "stage": "doctorate",
+      "why": "A PhD or postdoc abroad is common for research careers, though IISc, TIFR and the IISERs train many physicists"
+    },
+    "sci-chemist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-biologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-microbiologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-biotechnologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-bioinformatics-scientist": {
+      "need": "helps",
+      "stage": "doctorate",
+      "why": "Research roles often follow a PhD or postdoc abroad, where the large genomics groups are"
+    },
+    "sci-geologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-atmospheric-ocean-scientist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-space-scientist": {
+      "need": "often_needed",
+      "stage": "doctorate",
+      "why": "Many astronomy and space-science researchers do a PhD or postdoc abroad; IISc, TIFR, RRI and IUCAA in India are strong too"
+    },
+    "sci-materials-scientist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-statistician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-research-psychologist": {
+      "need": "helps",
+      "stage": "doctorate",
+      "why": "Research psychology in India is small; many researchers do their PhD abroad"
+    },
+    "sci-forensic-scientist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-clinical-research-associate": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-drug-discovery-scientist": {
+      "need": "helps",
+      "stage": "doctorate",
+      "why": "Discovery research in big pharma often hires PhDs and postdocs trained abroad"
+    },
+    "sci-laboratory-technician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-quality-control-analyst": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "sci-computer-science-researcher": {
+      "need": "often_needed",
+      "stage": "doctorate",
+      "why": "Industry research labs and top faculty posts often go to people with a PhD from abroad; IISc and the IITs are the main Indian routes"
+    },
+    "sci-mathematician": {
+      "need": "helps",
+      "stage": "doctorate",
+      "why": "A PhD or postdoc abroad is common for research posts; CMI, ISI and TIFR are the strong Indian routes"
+    },
+    "hlt-doctor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-dentist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-ayurveda-doctor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-homeopathy-doctor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-veterinary-doctor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-nurse": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-pharmacist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-physiotherapist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-optometrist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-audiologist-speech-therapist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-occupational-therapist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-dietitian": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-medical-lab-technologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-radiology-technologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-ot-anaesthesia-technologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-dialysis-technologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-emergency-medical-technician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-public-health-professional": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "An MPH from abroad helps for international health organisations; IIPH and AIIMS offer strong Indian MPHs"
+    },
+    "hlt-home-care-attendant": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hlt-general-duty-assistant": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-marketing-specialist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-sales-professional": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-hr-professional": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-operations-manager": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-supply-chain-manager": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-logistics-warehouse-operator": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-retail-store-operations": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-product-manager": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "An MBA or master's abroad is one route into global product roles; most Indian PMs move in from engineering or an Indian MBA"
+    },
+    "mgt-project-manager": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-management-consultant": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "An MBA from a top global school opens international consulting offices; the IIMs are the main Indian route"
+    },
+    "mgt-market-research-analyst": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-entrepreneur": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "mgt-commercial-driver": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-chartered-accountant": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-accounts-executive": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-financial-analyst": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-banking-professional": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-insurance-professional": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-investment-wealth-manager": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-actuary": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "fin-economist": {
+      "need": "helps",
+      "stage": "doctorate",
+      "why": "Research economists at think tanks, the RBI and universities often hold a PhD from abroad"
+    },
+    "law-lawyer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-company-secretary": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-civil-services-officer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-police-officer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-armed-forces-officer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-judicial-services-officer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-public-policy-professional": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in public policy abroad (MPP/MPA) is a common route; Indian programmes at NLSIU, TISS and IIMs exist too"
+    },
+    "law-paralegal": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-firefighter": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-patent-agent": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "law-political-electoral": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-graphic-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-ux-designer": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in HCI or interaction design abroad helps for global product teams; most UX hiring still runs on portfolios"
+    },
+    "des-animator-vfx": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-illustrator": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-game-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-interior-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-fashion-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-apparel-production": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-tailor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-handloom-weaver": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-handicraft-artisan": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-jeweller": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-advertising-creative": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-fine-artist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "des-footwear-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-journalist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-content-writer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-filmmaker": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-cinematographer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-film-editor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-sound-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-photographer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-production-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-content-creator": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-voice-artist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-pr-communications": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "med-production-crew": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-musician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-music-producer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-dancer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-actor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-dj": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-folk-performer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-live-sound": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-instrument-maker": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-theatre-practitioner": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "prf-model": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-athlete": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-coach": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-fitness-trainer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-official": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-adventure-instructor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-esports": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-sports-scientist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "spt-facility-turf": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-school-teacher": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-special-educator": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-college-teacher": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-coaching-faculty": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-early-childhood": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-vocational-trainer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-corporate-trainer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-instructional-designer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-librarian": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "edu-career-counsellor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "soc-clinical-psychologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "soc-counsellor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "soc-social-worker": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "soc-development-professional": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in development abroad helps for international NGOs and multilateral agencies"
+    },
+    "soc-me-analyst": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "soc-community-worker": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "soc-disability-inclusion": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "soc-child-protection": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "env-environmental-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "env-environmental-scientist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "env-gis-analyst": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "env-forest-officer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "env-sustainability-esg": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "A master's in sustainability abroad helps for global ESG and climate roles"
+    },
+    "env-renewable-energy": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "env-sanitation-worker": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "env-disaster-resilience": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-farmer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-agronomist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-agricultural-engineer": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-food-technologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-dairy-livestock": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-horticulture": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-fisheries": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "agr-extension-agribusiness": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hos-chef": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hos-fb-service": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hos-housekeeping": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hos-hotel-manager": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hos-travel-tourism": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hos-event-manager": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hos-cabin-crew": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-archaeologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-anthropologist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-historian": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-museum-archive": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-conservator": {
+      "need": "helps",
+      "stage": "masters",
+      "why": "Art conservation has few Indian programmes; many conservators train abroad, alongside the National Museum Institute in Delhi"
+    },
+    "hum-religious-professional": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-classical-language": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-heritage-management": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "hum-funeral-mortuary": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "pcw-yoga-instructor": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "pcw-beautician": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "pcw-hair-stylist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "pcw-makeup-artist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "pcw-spa-therapist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    },
+    "pcw-tattoo-artist": {
+      "need": "not_needed",
+      "stage": null,
+      "why": null
+    }
+  }
+}

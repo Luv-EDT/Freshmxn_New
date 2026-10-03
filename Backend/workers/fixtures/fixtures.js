@@ -3753,6 +3753,118 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "STUDY ABROAD — every career says whether it is needed, with a reason when it is; matching never reads it",
+        run: () => {
+            const abroad = require("../../data/abroad.json")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            professions.forEach((profession) => {
+                const row = abroad.careers[profession.id]
+                if (!row) return problems.push(`${profession.id} has no abroad value`)
+                if (!["not_needed", "helps", "often_needed"].includes(row.need)) problems.push(`${profession.id}: need "${row.need}"`)
+                if (row.need !== "not_needed" && !(typeof row.why === "string" && row.why.length > 20)) problems.push(`${profession.id}: no reason given`)
+                if (row.need !== "not_needed" && !["undergrad", "masters", "doctorate", "training"].includes(row.stage)) problems.push(`${profession.id}: stage "${row.stage}"`)
+            })
+            if (Object.keys(abroad.careers).length !== professions.length) problems.push("abroad.json lists careers that are not in the data")
+            const flagged = Object.values(abroad.careers).filter((row) => row.need !== "not_needed").length
+            if (flagged === 0 || flagged > 60) problems.push(`${flagged} careers flagged — the rule says only where it really helps`)
+            const matchingDir = path.join(__dirname, "../../matching")
+            fs.readdirSync(matchingDir).filter((name) => name.endsWith(".js")).forEach((name) => {
+                if (/abroad/.test(fs.readFileSync(path.join(matchingDir, name), "utf8"))) problems.push(`matching/${name} reads the abroad data`)
+            })
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY ABROAD — the offer appears only for a top-ten career that needs it, and is never sent without consent",
+        run: () => {
+            const { abroadCareers } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+            const details = Object.fromEntries(professions.map((profession) => [profession.id, studentFacing(profession)]))
+            const asRanked = (ids) => ids.map((id) => ({ professionId: id, profession: id }))
+            const problems = []
+            if (abroadCareers(asRanked(["eng-electrician", "hos-chef", "law-lawyer"]), details).length !== 0) problems.push("offered for careers that do not need study abroad")
+            const ten = ["eng-electrician", "hos-chef", "law-lawyer", "eng-plumber", "eng-welder", "hlt-nurse", "fin-accounts-executive", "mgt-sales-professional", "edu-school-teacher", "hos-fb-service"]
+            if (abroadCareers(asRanked([...ten, "sci-space-scientist"]), details).length !== 0) problems.push("offered for a career outside the top ten")
+            const hit = abroadCareers(asRanked(["eng-electrician", "sci-space-scientist"]), details)
+            if (hit.length !== 1 || hit[0].professionId !== "sci-space-scientist") problems.push(`not offered for a top-ten career that needs it: ${JSON.stringify(hit)}`)
+            if (details["eng-electrician"].abroad !== null) problems.push("a not-needed career carries an abroad line")
+
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8")
+            if (!/req\.body\.consent !== true/.test(router)) problems.push("the route does not refuse without consent")
+            if (!/policyVersion: POLICY_VERSION/.test(router)) problems.push("the policy version is not stored with the consent")
+            const card = fs.readFileSync(path.join(REPORT_DIR, "StudyAbroadCard.js"), "utf8")
+            if (!/disabled=\{!consent/.test(card)) problems.push("the Connect button works before the box is ticked")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "AI USAGE — every Claude call is logged; a missing usage block or no database never breaks a call",
+        run: () => {
+            const { countsOf, recordUsage, costOf } = require("../../utils/aiUsage")
+            const problems = []
+            const counts = countsOf({ usage: { input_tokens: 1000, output_tokens: 200, cache_read_input_tokens: 5000, cache_creation_input_tokens: 0, server_tool_use: { web_search_requests: 3 } } })
+            if (counts.calls !== 1 || counts.inputTokens !== 1000 || counts.cacheReadTokens !== 5000 || counts.webSearches !== 3) problems.push(`counts wrong: ${JSON.stringify(counts)}`)
+            if (countsOf(undefined).inputTokens !== 0) problems.push("a reply without usage was not counted as zero")
+            try {
+                recordUsage("grading", "claude-sonnet-5", undefined)
+            } catch (error) {
+                problems.push(`recordUsage threw: ${error.message}`)
+            }
+            // $2/$10 per million, cache reads $0.20, 3 searches at $10 per thousand
+            const cost = costOf({ model: "claude-sonnet-5", inputTokens: 1e6, outputTokens: 1e5, cacheReadTokens: 1e6, cacheWriteTokens: 0, webSearches: 3 })
+            if (cost !== 3.23) problems.push(`cost ${cost}, expected 3.23`)
+            if (costOf({ model: "some-new-model", inputTokens: 1 }) !== null) problems.push("a model with no listed price was given a cost")
+
+            // every file that calls the Messages API logs it (tools/ are offline scripts)
+            const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+                const full = path.join(dir, entry.name)
+                if (entry.isDirectory()) return ["node_modules", "fixtures", "tools"].includes(entry.name) ? [] : walk(full)
+                return entry.name.endsWith(".js") ? [full] : []
+            })
+            walk(path.join(__dirname, "../..")).forEach((file) => {
+                const source = fs.readFileSync(file, "utf8")
+                if (/api\.anthropic\.com\/v1\/messages/.test(source) && !/recordUsage\(/.test(source)) problems.push(`${path.relative(path.join(__dirname, "../.."), file)} calls Claude without logging usage`)
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "AI USAGE — the grading rubric and the research instructions are sent as cached prompts",
+        run: async () => {
+            const problems = []
+            const realFetch = global.fetch
+            let sent = null
+            global.fetch = async (url, options) => {
+                sent = JSON.parse(options.body)
+                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: "{}" }] }) }
+            }
+            try {
+                const { createGradingClient } = require("../gradeOpenItems")
+                await createGradingClient({ apiKey: "test" })({ system: "the rubric", user: "an answer" })
+                const block = Array.isArray(sent.system) ? sent.system[0] : null
+                if (!block || block.text !== "the rubric" || !block.cache_control) problems.push("the grading rubric is not marked for caching")
+            } finally {
+                global.fetch = realFetch
+            }
+
+            const { createResearchClient } = require("../../housekeeping/claudeResearch")
+            let body = null
+            const client = createResearchClient({ apiKey: "test", job: "study_refresh", fetchImpl: async (url, options) => {
+                body = JSON.parse(options.body)
+                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: "{}" }] }) }
+            } })
+            await client.ask({ system: "the instructions", user: "x" })
+            if (!body || !Array.isArray(body.system) || !body.system[0].cache_control || body.system[0].text !== "the instructions") problems.push("the research instructions are not marked for caching")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

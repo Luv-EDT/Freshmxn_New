@@ -212,6 +212,12 @@ const SECTIONS = [
                     authority acting lawfully. When we match you with a mentor, we share only what they need to
                     prepare, such as your name and the career you chose.
                 </p>
+                <p>
+                    <strong>Study-abroad partner — only if you ask.</strong> If studying abroad helps for one of your
+                    top career matches, your report offers to connect you with a study-abroad partner. We share your
+                    name, email, phone and those careers with that partner only after you tick the box agreeing to it
+                    and press "Connect me". You can ask us to withdraw this at any time.
+                </p>
             </>
         ),
     },

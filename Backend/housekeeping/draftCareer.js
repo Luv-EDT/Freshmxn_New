@@ -294,7 +294,7 @@ const validateCombined = (row) => {
 
 // ── the job ─────────────────────────────────────────────────────────────────────────────────────
 
-const runDraftCareer = async ({ candidateId, research = createResearchClient(), embed = embedDocument } = {}) => {
+const runDraftCareer = async ({ candidateId, research = createResearchClient({ job: "draft_career" }), embed = embedDocument } = {}) => {
     const ScoutCandidate = require("../model/scoutCandidatesModel")
     const CareerDraft = require("../model/careerDraftsModel")
 

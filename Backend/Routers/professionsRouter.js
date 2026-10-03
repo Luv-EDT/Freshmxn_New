@@ -11,6 +11,7 @@ const industrialSectors = require("../data/industrial_sectors.json")
 const entranceGates = require("../data/entrance_gates.json")
 const filterRules = require("../data/filter_rules.json")
 const blueCollar = require("../data/blue_collar.json")
+const abroad = require("../data/abroad.json")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 const { examsFor } = require("../utils/examCalendar")
 const { studyPlacesFor, getStudyOverrides } = require("../utils/studyPlaces")
@@ -217,6 +218,12 @@ const studentFacing = (profession, studyOverrides) => {
         // Where to study (Round 11): official links always; the institution list once the owner has
         // reviewed it. null for careers with no formal programme to point at.
         studyPlaces: studyPlacesFor(profession.id, layers.places),
+
+        // Is studying abroad needed (Round 11)? null when it is not — the card then says nothing.
+        // Never a ranking input: matching does not read data/abroad.json.
+        abroad: abroad.careers[profession.id] && abroad.careers[profession.id].need !== "not_needed"
+            ? { need: abroad.careers[profession.id].need, stage: abroad.careers[profession.id].stage, why: abroad.careers[profession.id].why }
+            : null,
 
         // Only the facing numbers off the gate record — how hard it is to get in, which is what a
         // student is asking. Not its verification block or its internal next_stage wiring.

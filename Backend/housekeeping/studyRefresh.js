@@ -174,7 +174,7 @@ const examPrompt = (exam) => [
 
 // ── the job ────────────────────────────────────────────────────────────────────────────────────
 const runStudyRefresh = async ({
-    research = createResearchClient(),
+    research = createResearchClient({ job: "study_refresh" }),
     disciplines = studyPlaces.disciplines,
     exams = calendar.exams,
     disciplineLimit = maxDisciplines(),

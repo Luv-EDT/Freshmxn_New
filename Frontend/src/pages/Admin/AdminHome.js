@@ -13,6 +13,8 @@ import AssessmentIssuesList from "./AssessmentIssuesList"
 import FollowUpsList from "./FollowUpsList"
 import DataUpdatesList from "./DataUpdatesList"
 import EmergingCareersList from "./EmergingCareersList"
+import StudyAbroadList from "./StudyAbroadList"
+import AiUsageCard from "./AiUsageCard"
 import { getAllIssuesForAdmin } from "../../apiCall/assessmentIssuesApi"
 
 function AdminHome() {
@@ -83,6 +85,11 @@ function AdminHome() {
             children: <EmergingCareersList />,
         },
         {
+            key: "studyAbroad",
+            label: "Study abroad",
+            children: <StudyAbroadList />,
+        },
+        {
             key: "coupons",
             label: "Coupons",
             children: <CouponsList />,
@@ -95,6 +102,7 @@ function AdminHome() {
             <div className="page">
                 <h2>Admin</h2>
                 <LogoutButton />
+                <AiUsageCard />
                 <Tabs items={items} />
             </div>
         </div>

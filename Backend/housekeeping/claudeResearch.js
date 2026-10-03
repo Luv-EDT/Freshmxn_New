@@ -15,6 +15,7 @@
 // skipped and logged, never retried.
 
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
+const { recordUsage } = require("../utils/aiUsage")
 
 const SOURCE_DOMAINS = [
     "mospi.gov.in",                  // PLFS — the government's labour force survey
@@ -82,6 +83,7 @@ const createResearchClient = ({
     model = process.env.REFRESH_MODEL || "claude-opus-5-5",
     fetchImpl = fetch,
     domains = SOURCE_DOMAINS,
+    job = "research",      // the label on the AI usage log: data_refresh, career_scout, study_refresh, draft_career
 } = {}) => {
     if (!apiKey) return null
 
@@ -109,7 +111,9 @@ const createResearchClient = ({
                     throw error
                 }
 
-                return await response.json()
+                const payload = await response.json()
+                recordUsage(job, body.model, payload)
+                return payload
             } catch (error) {
                 if (attempt === MAX_RETRIES || !isTransient(error)) throw error
                 await sleep(waitMs)
@@ -130,7 +134,8 @@ const createResearchClient = ({
                 max_tokens: maxTokens,
                 fallbacks: "default",
                 thinking: { type: "adaptive" },
-                system,
+                // cached (Round 11): the same instructions go out for every career, exam or title
+                system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
                 messages,
                 tools: [{ type: "web_search_20260209", name: "web_search", allowed_domains: onlyDomains, max_uses: maxUses }],
             })

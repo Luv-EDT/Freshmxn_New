@@ -17,6 +17,7 @@
 // profile after a formula change never re-bills a single model call. That is the same property that
 // lets the whole scoring engine stay pure and re-runnable.
 
+const { recordUsage } = require("../utils/aiUsage")
 const crypto = require("crypto")
 const fs = require("fs")
 const path = require("path")
@@ -69,7 +70,9 @@ const createGradingClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = p
             body: JSON.stringify({
                 model,
                 max_tokens: 1500,
-                system,
+                // CACHED (Round 11): every student's answer is graded against the same rubric text,
+                // so the rubric is read from the cache at a fraction of the price after the first.
+                system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
                 messages: [{ role: "user", content: user }],
             }),
             signal: AbortSignal.timeout(90000),
@@ -78,6 +81,7 @@ const createGradingClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = p
         if (!response.ok) throw new Error(`Anthropic HTTP ${response.status} — ${(await response.text()).slice(0, 200)}`)
 
         const payload = await response.json()
+        recordUsage("grading", model, payload)
 
         // A truncated reply is not a grade; and it will truncate again, so it is said plainly
         // rather than left to look like a malformed (and therefore retryable) one.

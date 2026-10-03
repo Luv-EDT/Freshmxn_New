@@ -9,6 +9,7 @@ const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
 const { clearStudyOverrides } = require("../utils/studyPlaces")
+const { costOf } = require("../utils/aiUsage")
 const { validateExamChange, validateNewExam, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
 
 const router = express.Router()
@@ -328,6 +329,45 @@ router.put("/decideDraftForAdmin/:candidateId", authMiddleware, adminAuthMiddlew
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to save the decision", error: error.message })
+    }
+})
+
+// ========================
+// AI Usage For Admin (Round 11)
+// ========================
+
+// One month of utils/aiUsage's log, summed by job, with the cost at list prices. A model with no
+// listed price shows its tokens and a null cost — never a guess.
+router.get("/getAiUsageForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const month = /^\d{4}-\d{2}$/.test(String(req.query.month || "")) ? req.query.month : new Date().toISOString().slice(0, 7)
+        const AiUsage = require("../model/aiUsageModel")
+        const rows = await AiUsage.find({ day: { $regex: `^${month}` } }).lean()
+
+        const byJob = new Map()
+        let total = 0
+        let unpriced = false
+        rows.forEach((row) => {
+            const job = byJob.get(row.job) || { job: row.job, calls: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, webSearches: 0, cost: 0, models: [] }
+            ;["calls", "inputTokens", "outputTokens", "cacheReadTokens", "cacheWriteTokens", "webSearches"].forEach((key) => { job[key] += row[key] || 0 })
+            if (!job.models.includes(row.model)) job.models.push(row.model)
+            const cost = costOf(row)
+            if (cost === null) unpriced = true
+            else {
+                job.cost = Math.round((job.cost + cost) * 100) / 100
+                total += cost
+            }
+            byJob.set(row.job, job)
+        })
+
+        return res.status(200).json({
+            success: true,
+            message: "Usage fetched",
+            data: { month, jobs: [...byJob.values()].sort((left, right) => right.cost - left.cost), totalCost: Math.round(total * 100) / 100, unpriced },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch usage", error: error.message })
     }
 })
 

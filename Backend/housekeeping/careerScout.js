@@ -250,7 +250,7 @@ const voyageEmbed = () => {
 }
 
 const runCareerScout = async ({
-    research = createResearchClient(),
+    research = createResearchClient({ job: "career_scout" }),
     adzuna = createAdzuna(),
     embed = voyageEmbed(),
     embeddings = professionEmbeddings.embeddings,
