@@ -140,6 +140,12 @@ until the student ticks the consent box.
   official link. A fixture fails if a checked row is over 13 months old.
 - **Where to study** (`Backend/data/study_places.json`) — NIRF ranks first (the main source); "Suggested — check" where no
   ranking covers the field. Public and private. The institution lists stay hidden until the owner has read them.
-- **Programmes and cut-offs** (`Backend/data/cutoffs.json`, Round 12) — last year's closing rank for a programme, always
-  with the year, round, category and the official results page; the student is told their own category's cut-off differs.
+- **Programmes and cut-offs** (`Backend/data/cutoffs.json`, Round 12) — every discipline with an official counselling body
+  links to it (JoSAA, MCC, the CLAT consortium, NCHM; IIM CAT and UCEED/NID say there is no single closing rank). A closing
+  rank is shown only when it was **read off the official result page** (status `checked`), and always with the year, round,
+  category, quota and seat pool, the official page, and the line that ranks change every year and differ by category.
+  The seven seed rows (B.Tech CSE at six IITs and NIT Tiruchirappalli) are **drafts**: the build container could not open
+  the official sites and search summaries disagreed (IIT Delhi 116 vs 126, IIT Roorkee 320 vs 592). The study bot checks
+  them on the official sites from August to October; the admin approves each value. A rank also waits for the institution
+  list to be reviewed, since it belongs to one of those institutions.
 - **Master's options** in the report group a college or working student's top careers by the `after_undergrad` value above.

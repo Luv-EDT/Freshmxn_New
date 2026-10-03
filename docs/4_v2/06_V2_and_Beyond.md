@@ -14,21 +14,17 @@ are in git history.*
 
 # SOON — before or just after real students
 
-## Specific programmes and cut-offs
-Round 11 added the exam calendar, where to study (by discipline) and a master's summary. Still not
-built: the specific programme at each college, seat counts and last year's cut-offs or closing ranks.
-They change every year and differ by category and state quota, so they need a source that is checked
-every admission cycle — never a number from memory.
+## More closing ranks
+Round 12 added the official counselling page for each discipline and seven draft closing-rank rows
+(B.Tech CSE at six IITs and NIT Tiruchirappalli), checked by the study bot from August. Still to add:
+other branches and programmes (MBBS through MCC, the top NLUs through CLAT, B.Arch, B.Des), more
+categories (OBC-NCL, SC, ST, EWS, PwD) and state-quota counselling, and seat counts. Every row must be
+read off the official result page, never from memory or a summary site.
 
-## AI cost — the measured next steps
-Every Claude call is now logged and the admin "AI usage" card shows the month. Once a month of real
-numbers exists:
-- **Model for the monthly jobs:** run the data refresh, scout and study bot on Sonnet 5.5 *once*,
-  side by side with Opus 5.5 on 20 careers, compare, then set `REFRESH_MODEL` for good. Nothing is
-  ever generated twice after that.
-- **Batch API** (half price, answers within hours) for the monthly jobs — only after confirming in
-  Anthropic's docs that web search works inside a batch. If it does not, those jobs stay as they are.
-- **Haiku for simple grading items**, only after an eval against the current grades.
+## AI cost — Haiku for simple grading
+Every Claude call is logged, the monthly research runs as a half-price batch, and the admin chooses
+its model after the one-time comparison (all Round 12). Still to try: **Haiku for simple grading
+items**, only after an eval against the current grades.
 
 ## Parent consent by SMS
 Parent consent is verified by an emailed code today (`/parent-consent`). Add the same flow by SMS for

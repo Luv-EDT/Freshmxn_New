@@ -77,8 +77,17 @@ button (`grantAccess` in `paymentsRouter.js`) unlocks your plan. When online pay
 switched on, Razorpay will press the same button automatically after you pay — nothing else changes.
 
 Prices are never typed into the website; it always asks the server (`GET /payments/getPricing`), so
-there is only one place to change them. Today: **₹3,500** (career discovery), **₹6,500** (with a
-mentor), **₹3,000** to upgrade later.
+there is only one place to change them (`Backend/utils/plans.js`). There are three **plans**:
+
+| Plan | Price | What you get |
+|---|---|---|
+| **Career Discovery** | ₹2,499 | the assessment and your ranked career report |
+| **Discovery + Mentor** | ₹5,499 | both — and the mentor is picked from your own report |
+| **Mentor Only** | ₹2,999 | skip the assessment: choose a career and a job role (or describe your own), get a mentor |
+
+Adding a mentor to Career Discovery later costs the difference (₹3,000); adding Career Discovery to
+Mentor Only costs ₹2,500. A Mentor Only student cannot open the assessment or the report — the server
+checks this on every one of those pages (`middlewares/requireDiscovery.js`).
 
 ---
 
@@ -225,7 +234,9 @@ finds changes the website until the admin approves it.
 | The 1st of each month, 9:00 India time | **Follow-up** (`housekeeping/followUpScan.js`) | 6 and 12 months after your latest assessment, emails you a link (`/follow-up/…`) to five quick questions: what you're doing now, which career, did a match help. One reminder, then never again. You can opt out. This is how we'll learn, one day, whether our matches really work. The clock restarts only if you told us you're looking for something new |
 | The 1st of each month | **Data refresh** (`housekeeping/dataRefresh.js`) | For up to 60 careers, checks job-board numbers (Adzuna) and asks Claude to search a few official sources (government labour survey, National Career Service, India Skills Report, Naukri, LinkedIn's published reports). Suggested changes to **demand and pay** go to the admin's **Data updates** tab. Approved ones show on the career page at once; the ranking itself is never changed by them |
 | Every Monday | **Careers scout** (`housekeeping/careerScout.js`) | Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit |
-| The 1st of each month | **Study bot** (`housekeeping/studyRefresh.js`) | Re-checks 6 study disciplines (NIRF rankings first, then other published rankings and the regulators) and 15 exams (each on its own official site only). Suggested changes go to **Data updates**; nothing changes until the admin approves |
+| The 1st of each month | **Study bot** (`housekeeping/studyRefresh.js`) | Re-checks 6 study disciplines (NIRF rankings first, then other published rankings and the regulators), 15 exams (each on its own official site only) and 10 careers' master's and study-abroad answers (on government and university sites only). From August to October it also reads last year's **closing ranks** off the official counselling results (JoSAA and others). Suggested changes go to **Data updates**; nothing changes until the admin approves |
+| Every hour, at :17 | **Batch collector** (`housekeeping/researchBatch.js`) | The data refresh and the study bot don't wait for Claude's answers one by one. They hand Anthropic all their questions in **one bundle at half price**. Anthropic answers the bundle in the background — usually within the hour, at most a day. This small check asks every hour "is a bundle finished?"; if so it reads the answers, runs exactly the same checks the job would have, and files the suggestions in Data updates. Any answer that came back incomplete or unreadable is asked again the normal way. With no bundle waiting it does nothing and costs nothing |
+| Only when the admin presses it | **Model comparison** (`housekeeping/modelCompare.js`) | Asks the same 20 careers of two Claude models (Opus 5.5 and Sonnet 5.5) and shows side by side what each would change, how many pages it cited and what it cost. Nothing is filed. The admin then chooses which model runs the monthly jobs |
 
 **What the AI costs** is measured, not guessed: every Claude call writes down how many tokens it used
 (`utils/aiUsage.js`), and the admin dashboard's **AI usage** card adds up the month, job by job.
@@ -234,13 +245,25 @@ finds changes the website until the admin approves it.
 
 ## 7. The mentor part
 
-- Mentors sign up on their own page (`/mentor/register`) and fill a profile. The admin approves
-  them.
+- Mentors sign up on their own page (`/mentor/register`, also linked from the home page's top bar and a
+  band near the bottom, for visitors who aren't logged in) and fill a profile. Their profession, job
+  role and industries are chosen from **our own lists**, so they can be matched exactly. The admin
+  approves them, and can search every mentor in the admin's Mentors tab.
+- **Mentors check our data.** An approved mentor sees "Check our data for {their profession}": the
+  career exactly as students read it — path, exams, where to study, abroad, master's, pay, demand, AI,
+  things worth knowing — and the eight qualities it needs most, in words. They mark each part "looks
+  right" or "needs a change" (with a note and a link), and each quality "about right / higher /
+  lower". The admin decides every item; accepted ones go into the data through a reviewed commit.
+  **Nothing changes on the site from a mentor's answer alone.**
 - A student on the mentor plan opens their matched careers and picks **one job role** inside one of
   them (the roles that suit them best are listed first). That starts a
   **20-business-day** clock. The admin matches a mentor by hand in V1 and the student is told on
   WhatsApp. If no mentor can be found, the money rolls over — or, if you ask, you move back to
   Career Discovery and get **the difference between the two plans** refunded.
+- A **Mentor Only** student does the same without a report: they search any of our 223 careers, pick a
+  job role (or "something else"), add an industry if they have one in mind, or describe a career we
+  don't list ("Other" — the admin finds a mentor for it separately). If no mentor can be found they
+  can keep waiting or ask for a **full refund**.
 
 ---
 

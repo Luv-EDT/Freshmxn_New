@@ -9,6 +9,7 @@ import RequestAccessForm from "./RequestAccessForm"
 import FinancialAidForm from "./FinancialAidForm"
 import { formatCallback } from "./callbackOptions"
 import Navbar from "../Navbar"
+import { formatInr } from "../Public/usePricing"
 
 // loads Razorpay's checkout script once, only when Razorpay mode is on
 const loadRazorpayCheckout = () => {
@@ -212,7 +213,7 @@ function Paywall() {
                 <div>
                     <p>
                         <strong>Your request is pending.</strong> {planName(pendingRequest.requestedTier)} —
-                        ₹{pendingRequest.finalAmountInr}. We'll call you
+                        {formatInr(pendingRequest.finalAmountInr)}. We'll call you
                         ({formatCallback(pendingRequest.callbackDay, pendingRequest.callbackSlot)}) to complete the payment.
                     </p>
                 </div>
@@ -225,7 +226,7 @@ function Paywall() {
                     {current !== 3 && (
                         <div className={`plan-card${selectedTier === 1 ? " is-selected" : ""}`}>
                             <h3>{planName(1)}</h3>
-                            <p className="price">₹{pricing.tiers[1].amountInr}</p>
+                            <p className="price">{formatInr(pricing.tiers[1].amountInr)}</p>
                             <p>The full assessment, your psychometric profile and your ranked career report, with next steps for your stage.</p>
                             {current === 1 ? (
                                 <p><em>Your current plan</em></p>
@@ -240,8 +241,8 @@ function Paywall() {
                     <div className={`plan-card${selectedTier === 2 ? " is-selected" : ""}`}>
                         <h3>{planName(2)}</h3>
                         <p className="price">
-                            ₹{pricing.tiers[2].amountInr}
-                            {addPrice ? ` — add it for ₹${addPrice}` : ""}
+                            {formatInr(pricing.tiers[2].amountInr)}
+                            {addPrice ? ` — add it for ${formatInr(addPrice)}` : ""}
                         </p>
                         <p>
                             {current === 3
@@ -256,7 +257,7 @@ function Paywall() {
                     {current !== 1 && (
                         <div className={`plan-card${selectedTier === 3 ? " is-selected" : ""}`}>
                             <h3>{planName(3)}</h3>
-                            <p className="price">₹{pricing.tiers[3].amountInr}</p>
+                            <p className="price">{formatInr(pricing.tiers[3].amountInr)}</p>
                             <p>
                                 Skip the assessment. Choose a career and a job role from our list — or tell us in your own
                                 words — and we match you with a mentor: a 1-hour session and a 20-minute follow-up. A full
@@ -287,15 +288,15 @@ function Paywall() {
                     {quote && (
                         <div className="quote-card">
                             <p>
-                                {quote.isUpgrade ? "Upgrade amount" : "Amount"}: ₹{quote.baseAmountInr}
+                                {quote.isUpgrade ? "Upgrade amount" : "Amount"}: {formatInr(quote.baseAmountInr)}
                                 {quote.isFinancialAid && " — financial aid rate"}
                                 {!quote.isFinancialAid && quote.discountPct > 0 && ` − ${quote.discountPct}% (${quote.coupon})`}
                                 {" = "}
-                                <strong>₹{quote.finalAmountInr}</strong>
+                                <strong>{formatInr(quote.finalAmountInr)}</strong>
                             </p>
 
                             {pricing.paymentMode === "razorpay" ? (
-                                <button type="button" className="btn btn-primary" onClick={handlePayNow}>Pay ₹{quote.finalAmountInr}</button>
+                                <button type="button" className="btn btn-primary" onClick={handlePayNow}>Pay {formatInr(quote.finalAmountInr)}</button>
                             ) : (
                                 <button type="button" className="btn btn-primary" onClick={() => setShowForm(true)}>Request access</button>
                             )}
@@ -307,7 +308,7 @@ function Paywall() {
                     {approvedAid ? (
                         <p>
                             💙 <strong>Financial aid approved.</strong> Your price for {planName(approvedAid.requestedTier)} is
-                            ₹{approvedAid.approvedAmountInr} — pick that plan above and it will be applied.
+                            {formatInr(approvedAid.approvedAmountInr)} — pick that plan above and it will be applied.
                         </p>
                     ) : pendingAid ? (
                         <p>💙 <strong>Your financial aid request is pending.</strong> We'll call you soon.</p>
