@@ -11,6 +11,7 @@
 // only, cached like utils/professionOverrides.js and cleared when the admin approves.
 
 const studyPlaces = require("../data/study_places.json")
+const { cutoffsFor } = require("./cutoffs")
 
 const MAX_INSTITUTIONS = 10
 const disciplineById = new Map(studyPlaces.disciplines.map((discipline) => [discipline.id, discipline]))
@@ -49,7 +50,7 @@ const clean = (institution) => {
 }
 
 // What a career page shows. `institutions` is empty until the owner has reviewed the lists.
-const studyPlacesFor = (professionId, studyOverrides = new Map()) => {
+const studyPlacesFor = (professionId, studyOverrides = new Map(), cutoffOverrides = new Map()) => {
     const disciplineId = studyPlaces.careers[professionId]
     const discipline = disciplineId ? disciplineById.get(disciplineId) : null
     if (!discipline) return null
@@ -69,6 +70,12 @@ const studyPlacesFor = (professionId, studyOverrides = new Map()) => {
             }))
             : [],
         listsPending: !reviewed,
+        // last year's closing ranks (Round 12): the official page always; a checked rank only once
+        // the institution list itself is shown, since each rank belongs to one of those institutions
+        cutoffs: (() => {
+            const found = cutoffsFor(discipline.id, cutoffOverrides)
+            return found ? { ...found, rows: reviewed ? found.rows : [] } : null
+        })(),
     }
 }
 
@@ -82,15 +89,18 @@ const getStudyOverrides = async () => {
     const ExamOverride = require("../model/examOverridesModel")
     const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
     const StudyFactOverride = require("../model/studyFactOverridesModel")
-    const [exams, places, facts] = await Promise.all([
+    const CutoffOverride = require("../model/cutoffOverridesModel")
+    const [exams, places, facts, cutoffRows] = await Promise.all([
         ExamOverride.find({ approvedAt: { $ne: null } }).lean(),
         StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
         StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
+        CutoffOverride.find({ approvedAt: { $ne: null } }).lean(),
     ])
     cache = {
         exams: new Map(exams.map((row) => [row.examId, row])),
         places: new Map(places.map((row) => [row.disciplineId, row])),
         facts: new Map(facts.map((row) => [row.professionId, row])),
+        cutoffs: new Map(cutoffRows.map((row) => [row.rowId, row])),
     }
     cachedAt = Date.now()
     return cache

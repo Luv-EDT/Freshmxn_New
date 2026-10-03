@@ -27,6 +27,7 @@ const industrial = require("../data/industrial_sectors.json")
 const entranceGates = require("../data/entrance_gates.json")
 const sectorsData = require("../data/professional_sectors.json")
 const { createResearchClient } = require("./claudeResearch")
+const { researchModel } = require("../utils/researchModel")
 
 const RATING_PASSES = 3
 const RATING_MODEL = () => process.env.RATING_MODEL || "claude-sonnet-5"
@@ -294,7 +295,9 @@ const validateCombined = (row) => {
 
 // ── the job ─────────────────────────────────────────────────────────────────────────────────────
 
-const runDraftCareer = async ({ candidateId, research = createResearchClient({ job: "draft_career" }), embed = embedDocument } = {}) => {
+const runDraftCareer = async ({ candidateId, research, embed = embedDocument } = {}) => {
+    // the admin's chosen research model (Round 12) unless a client was injected (the fixtures)
+    if (research === undefined) research = createResearchClient({ job: "draft_career", model: await researchModel() })
     const ScoutCandidate = require("../model/scoutCandidatesModel")
     const CareerDraft = require("../model/careerDraftsModel")
 

@@ -432,6 +432,28 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                 </span>
                                             ))}
                                         </p>
+                                        {/* Last year's closing ranks (Round 12): only ranks checked on the official page,
+                                            always with the category caveat and the page to check */}
+                                        {detail.studyPlaces.cutoffs && (
+                                            <div className="pc-cutoffs">
+                                                {detail.studyPlaces.cutoffs.rows.map((row) => (
+                                                    <p key={`${row.institution}-${row.programme}`} className="pc-line">
+                                                        {row.institution}, {row.programme} — last closing rank <strong>{row.closingRank.toLocaleString("en-IN")}</strong>
+                                                        <span className="pc-small"> ({row.year}, {row.round}, {row.category}, {row.quota}{row.seatPool ? `, ${row.seatPool}` : ""}) · <a href={row.sourceUrl} target="_blank" rel="noopener noreferrer">official result ↗</a></span>
+                                                    </p>
+                                                ))}
+                                                <p className="pc-small">
+                                                    {detail.studyPlaces.cutoffs.rows.length > 0 ? detail.studyPlaces.cutoffs.caveat : "Last year's cut-offs: "}{" "}
+                                                    {detail.studyPlaces.cutoffs.sources.map((source, position) => (
+                                                        <span key={source.url}>
+                                                            {position > 0 && " · "}
+                                                            <a href={source.url} target="_blank" rel="noopener noreferrer">{source.name} ↗</a>
+                                                            {source.noRank && <span> — {source.how}</span>}
+                                                        </span>
+                                                    ))}
+                                                </p>
+                                            </div>
+                                        )}
                                     </Section>
                                 )}
                             </More>

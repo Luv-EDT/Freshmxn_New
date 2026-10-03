@@ -1,0 +1,231 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-10-03",
+  "rule": "A closing rank is the last rank admitted in the FINAL round of last year's official counselling, for the Open category, gender-neutral seats, in the quota named. It is shown only when status is 'checked' — read off the official result page (source_url) by a person or by the study bot with an admin's approval. Every shown rank carries the caveat that it changes every year and differs by category, quota and seat pool, with a link to the official archive. Draft rows are never shown; 'reported' keeps what search summaries said, for the checker only.",
+  "review": {
+    "note": "Built in a session that could not open the official result sites (josaa.nic.in, mcc.nic.in and the CLAT consortium were blocked from the build container). Search summaries gave conflicting numbers, so every row starts as a draft. The study bot checks them on the official sites from August to October and proposes each value in Data updates."
+  },
+  "sources": {
+    "josaa": {
+      "name": "JoSAA — opening and closing ranks (IITs, NITs, IIITs)",
+      "url": "https://josaa.nic.in",
+      "archive": "https://josaa.admissions.nic.in/applicant/seatmatrix/openingclosingrankarchieve.aspx",
+      "disciplines": [
+        "engineering",
+        "architecture_planning"
+      ],
+      "how": "by JEE Advanced rank (IITs) or JEE Main rank (NITs, IIITs), per round, category, quota and seat pool"
+    },
+    "mcc": {
+      "name": "MCC — NEET UG all-India quota allotments",
+      "url": "https://mcc.nic.in",
+      "disciplines": [
+        "medical",
+        "dental"
+      ],
+      "how": "by NEET UG rank, per round, category and quota; state-quota seats are counselled by each state"
+    },
+    "clat": {
+      "name": "Consortium of NLUs — CLAT allotment lists",
+      "url": "https://consortiumofnlus.ac.in",
+      "disciplines": [
+        "law"
+      ],
+      "how": "by CLAT rank, per allotment list, category and domicile"
+    },
+    "iim": {
+      "name": "IIM CAT — each IIM's own admission criteria",
+      "url": "https://iimcat.ac.in",
+      "disciplines": [
+        "management"
+      ],
+      "how": "no single closing rank: each IIM shortlists by CAT percentile, then selects on a written test, interview and profile",
+      "no_rank": true
+    },
+    "design": {
+      "name": "UCEED (IIT design) and NID DAT results",
+      "url": "https://www.uceed.iitb.ac.in",
+      "disciplines": [
+        "design"
+      ],
+      "how": "UCEED rank for the IIT B.Des programmes; NID selects on DAT prelims and mains",
+      "no_rank": true
+    },
+    "nchm": {
+      "name": "NCHM JEE — NCHMCT counselling",
+      "url": "https://exams.nta.nic.in/nchm-jee",
+      "disciplines": [
+        "hotel_management"
+      ],
+      "how": "by NCHM JEE rank, per round and category"
+    }
+  },
+  "rows": [
+    {
+      "id": "iit-bombay-cse",
+      "institution": "IIT Bombay",
+      "city": "Mumbai",
+      "discipline": "engineering",
+      "programme": "B.Tech Computer Science and Engineering",
+      "exam": "jee-advanced",
+      "source": "josaa",
+      "year": 2025,
+      "round": "final round",
+      "category": "Open",
+      "seat_pool": "Gender-neutral",
+      "quota": "All India",
+      "rank_type": "rank",
+      "closing_rank": null,
+      "status": "draft",
+      "checked_on": null,
+      "source_url": null,
+      "reported": [
+        66
+      ],
+      "note": "Two searches agreed on 66; still not checked against the JoSAA archive"
+    },
+    {
+      "id": "iit-delhi-cse",
+      "institution": "IIT Delhi",
+      "city": "New Delhi",
+      "discipline": "engineering",
+      "programme": "B.Tech Computer Science and Engineering",
+      "exam": "jee-advanced",
+      "source": "josaa",
+      "year": 2025,
+      "round": "final round",
+      "category": "Open",
+      "seat_pool": "Gender-neutral",
+      "quota": "All India",
+      "rank_type": "rank",
+      "closing_rank": null,
+      "status": "draft",
+      "checked_on": null,
+      "source_url": null,
+      "reported": [
+        116,
+        126
+      ],
+      "note": "Search summaries disagreed; not shown until checked against the JoSAA archive"
+    },
+    {
+      "id": "iit-madras-cse",
+      "institution": "IIT Madras",
+      "city": "Chennai",
+      "discipline": "engineering",
+      "programme": "B.Tech Computer Science and Engineering",
+      "exam": "jee-advanced",
+      "source": "josaa",
+      "year": 2025,
+      "round": "final round",
+      "category": "Open",
+      "seat_pool": "Gender-neutral",
+      "quota": "All India",
+      "rank_type": "rank",
+      "closing_rank": null,
+      "status": "draft",
+      "checked_on": null,
+      "source_url": null,
+      "reported": [
+        140,
+        171
+      ],
+      "note": "Search summaries disagreed; not shown until checked against the JoSAA archive"
+    },
+    {
+      "id": "iit-kanpur-cse",
+      "institution": "IIT Kanpur",
+      "city": "Kanpur",
+      "discipline": "engineering",
+      "programme": "B.Tech Computer Science and Engineering",
+      "exam": "jee-advanced",
+      "source": "josaa",
+      "year": 2025,
+      "round": "final round",
+      "category": "Open",
+      "seat_pool": "Gender-neutral",
+      "quota": "All India",
+      "rank_type": "rank",
+      "closing_rank": null,
+      "status": "draft",
+      "checked_on": null,
+      "source_url": null,
+      "reported": [
+        205,
+        271
+      ],
+      "note": "Search summaries disagreed; not shown until checked against the JoSAA archive"
+    },
+    {
+      "id": "iit-kharagpur-cse",
+      "institution": "IIT Kharagpur",
+      "city": "Kharagpur",
+      "discipline": "engineering",
+      "programme": "B.Tech Computer Science and Engineering",
+      "exam": "jee-advanced",
+      "source": "josaa",
+      "year": 2025,
+      "round": "final round",
+      "category": "Open",
+      "seat_pool": "Gender-neutral",
+      "quota": "All India",
+      "rank_type": "rank",
+      "closing_rank": null,
+      "status": "draft",
+      "checked_on": null,
+      "source_url": null,
+      "reported": [
+        290,
+        466
+      ],
+      "note": "Search summaries disagreed; not shown until checked against the JoSAA archive"
+    },
+    {
+      "id": "iit-roorkee-cse",
+      "institution": "IIT Roorkee",
+      "city": "Roorkee",
+      "discipline": "engineering",
+      "programme": "B.Tech Computer Science and Engineering",
+      "exam": "jee-advanced",
+      "source": "josaa",
+      "year": 2025,
+      "round": "final round",
+      "category": "Open",
+      "seat_pool": "Gender-neutral",
+      "quota": "All India",
+      "rank_type": "rank",
+      "closing_rank": null,
+      "status": "draft",
+      "checked_on": null,
+      "source_url": null,
+      "reported": [
+        320,
+        592
+      ],
+      "note": "Search summaries disagreed; not shown until checked against the JoSAA archive"
+    },
+    {
+      "id": "nit-trichy-cse",
+      "institution": "NIT Tiruchirappalli",
+      "city": "Tiruchirappalli",
+      "discipline": "engineering",
+      "programme": "B.Tech Computer Science and Engineering",
+      "exam": "jee-main",
+      "source": "josaa",
+      "year": 2025,
+      "round": "final round",
+      "category": "Open",
+      "seat_pool": "Gender-neutral",
+      "quota": "Other State",
+      "rank_type": "rank",
+      "closing_rank": null,
+      "status": "draft",
+      "checked_on": null,
+      "source_url": null,
+      "reported": [
+        1449
+      ],
+      "note": "Reported as about 1,450 (Other State quota); not checked against the JoSAA archive"
+    }
+  ]
+}

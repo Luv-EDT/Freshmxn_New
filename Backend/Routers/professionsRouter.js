@@ -228,7 +228,7 @@ const studentFacing = (profession, studyOverrides) => {
 
         // Where to study (Round 11): official links always; the institution list once the owner has
         // reviewed it. null for careers with no formal programme to point at.
-        studyPlaces: studyPlacesFor(profession.id, layers.places),
+        studyPlaces: studyPlacesFor(profession.id, layers.places, layers.cutoffs || new Map()),
 
         // Is studying abroad needed (Round 11)? null when it is not — the card then says nothing.
         // Never a ranking input: matching does not read data/abroad.json.

@@ -17,12 +17,15 @@ const EXAM_FIELDS = ["usual_application_window", "usual_exam_month", "eligibilit
 const COLLEGE_FIELDS = ["add_institution", "remove_institution", "update_institution"]
 // Round 12: a career's master's need and whether studying abroad helps — kind "study_fact"
 const STUDY_FACT_FIELDS = ["after_undergrad", "abroad"]
+// Round 12: last year's closing rank for one row of data/cutoffs.json — kind "cutoff"; professionId
+// holds the row id, proposedValue the JSON { closing_rank, year, round, source_url }
+const CUTOFF_FIELDS = ["closing_rank"]
 
 const dataProposalSchema = new mongoose.Schema(
     {
         kind: {
             type: String,
-            enum: ["career", "exam", "college", "study_fact"],
+            enum: ["career", "exam", "college", "study_fact", "cutoff"],
             default: "career",
         },
         professionId: {
@@ -35,7 +38,7 @@ const dataProposalSchema = new mongoose.Schema(
         },
         field: {
             type: String,
-            enum: [...CAREER_FIELDS, ...EXAM_FIELDS, ...COLLEGE_FIELDS, ...STUDY_FACT_FIELDS],
+            enum: [...CAREER_FIELDS, ...EXAM_FIELDS, ...COLLEGE_FIELDS, ...STUDY_FACT_FIELDS, ...CUTOFF_FIELDS],
             required: true,
         },
         currentValue: {

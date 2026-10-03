@@ -7,12 +7,17 @@
 //      sources say has changed
 //   3. every change that passes validateProposal becomes a DataProposal for the admin
 //
+// HALF PRICE BY DEFAULT (Round 12): the questions go out as one Message Batch and batch_collect files
+// the answers within the hour (housekeeping/researchBatch.js). RESEARCH_BATCH=false asks directly.
+//
 // NOTHING AUTO-CHANGES. The admin approves in "Data updates"; only then does a value reach a career
 // page (utils/professionOverrides.js). Matching inputs are never proposed, never changed.
 
 const taxonomy = require("../data/ALL-professions.json")
 const { createResearchClient } = require("./claudeResearch")
 const { createAdzuna } = require("./adzuna")
+const { researchModel } = require("../utils/researchModel")
+const { submitBatch, batchEnabled } = require("./researchBatch")
 const { isValidValue, parseRange } = require("../utils/professionOverrides")
 
 const FIELDS = ["india_demand", "early_earnings_lpa", "mid_career_lpa"]
@@ -102,70 +107,97 @@ const adzunaFor = async (adzuna, profession) => {
     }
 }
 
+const check = (json) => Array.isArray(json.changes)
+const newResult = () => ({ checked: 0, proposals: 0, refused: [], failed: [] })
+
+// one career's question, with what its answer will be checked against
+const prepareItem = (profession, current, board) => ({
+    kind: "career",
+    id: profession.id,
+    name: profession.profession,
+    request: { system: SYSTEM, user: promptFor(profession, current, board) },
+    context: { current, board },
+})
+
+// one answer → proposals for the admin. The same whether it came back directly or in a batch.
+const handleItem = async (item, reply, { now, result }) => {
+    const DataProposal = require("../model/dataProposalsModel")
+    const ProfessionOverride = require("../model/professionOverridesModel")
+    const { current, board } = item.context
+
+    if (reply.refused) result.refused.push(item.id)
+    if (reply.unreadable) result.failed.push(item.id)
+
+    const changes = reply.json
+        ? reply.json.changes.map((change) => validateProposal(change, current, reply.sources)).filter(Boolean)
+        : []
+
+    for (const change of changes) {
+        // a newer suggestion replaces an undecided older one for the same field
+        await DataProposal.updateMany({ professionId: item.id, field: change.field, status: "open" }, { status: "superseded" })
+        await DataProposal.create({
+            professionId: item.id,
+            profession: item.name,
+            ...change,
+            sources: reply.sources.slice(0, 8),
+            adzuna: board ? { count: board.count, meanLpa: board.meanLpa, medianLpa: board.medianLpa } : {},
+        })
+        result.proposals += 1
+    }
+
+    // an unreadable reply is not a check — that career stays at the front for next month
+    if (!reply.unreadable) {
+        await ProfessionOverride.updateOne({ professionId: item.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
+        result.checked += 1
+    }
+}
+
 const runDataRefresh = async ({
-    research = createResearchClient({ job: "data_refresh" }),
+    research,             // injected in the fixtures; otherwise built on the chosen research model
+    batch,                // true / false to force; by default batched unless RESEARCH_BATCH=false
     adzuna = createAdzuna(),
     professions = taxonomy.professions,
     limit = maxCareers(),
     now = new Date(),
 } = {}) => {
+    const injected = research !== undefined
+    if (!injected) research = createResearchClient({ job: "data_refresh", model: await researchModel() })
     if (!research) return { skipped: "ANTHROPIC_API_KEY is not set" }
 
-    const DataProposal = require("../model/dataProposalsModel")
     const ProfessionOverride = require("../model/professionOverridesModel")
 
     const overrides = await ProfessionOverride.find().lean()
     const overridesById = new Map(overrides.map((row) => [row.professionId, row]))
     const careers = pickCareersToCheck(professions, overridesById, limit)
 
-    const result = { checked: 0, proposals: 0, adzuna: adzuna ? "used" : "skipped (no keys)", refused: [], failed: [] }
-
+    // The job-board figures are fetched now, in either mode, and travel with the question.
+    const items = []
     for (const profession of careers) {
         // the value shown today is the approved one where there is one
         const override = overridesById.get(profession.id)
         const current = { ...currentValues(profession), ...((override && override.values) || {}) }
         Object.keys(current).forEach((key) => { if (current[key] === undefined) current[key] = null })
+        items.push(prepareItem(profession, current, await adzunaFor(adzuna, profession)))
+    }
+    const adzunaState = adzuna ? "used" : "skipped (no keys)"
 
+    if (batch === undefined ? !injected && batchEnabled() : batch) {
+        const submitted = await submitBatch({ job: "data_refresh", items, model: research.model })
+        if (submitted) return { batched: submitted.batchId, questions: submitted.items, adzuna: adzunaState, note: "answers are filed by batch_collect, usually within the hour" }
+    }
+
+    const result = { ...newResult(), adzuna: adzunaState }
+    for (const item of items) {
         try {
-            const board = await adzunaFor(adzuna, profession)
-            const reply = await research.askJson({
-                system: SYSTEM,
-                user: promptFor(profession, current, board),
-                check: (json) => Array.isArray(json.changes),
-            })
-
-            if (reply.refused) result.refused.push(profession.id)
-            if (reply.unreadable) result.failed.push(profession.id)
-
-            const changes = reply.json
-                ? reply.json.changes.map((change) => validateProposal(change, current, reply.sources)).filter(Boolean)
-                : []
-
-            for (const change of changes) {
-                // a newer suggestion replaces an undecided older one for the same field
-                await DataProposal.updateMany({ professionId: profession.id, field: change.field, status: "open" }, { status: "superseded" })
-                await DataProposal.create({
-                    professionId: profession.id,
-                    profession: profession.profession,
-                    ...change,
-                    sources: reply.sources.slice(0, 8),
-                    adzuna: board ? { count: board.count, meanLpa: board.meanLpa, medianLpa: board.medianLpa } : {},
-                })
-                result.proposals += 1
-            }
-
-            // an unreadable reply is not a check — that career stays at the front for next month
-            if (!reply.unreadable) {
-                await ProfessionOverride.updateOne({ professionId: profession.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
-                result.checked += 1
-            }
+            const reply = await research.askJson({ ...item.request, check })
+            await handleItem(item, reply, { now, result })
         } catch (error) {
-            console.error(`data_refresh: ${profession.id} failed — ${error.message}`)
-            result.failed.push(profession.id)
+            console.error(`data_refresh: ${item.id} failed — ${error.message}`)
+            result.failed.push(item.id)
         }
     }
 
     return result
 }
 
-module.exports = { runDataRefresh, pickCareersToCheck, validateProposal, currentValues, FIELDS }
+module.exports = { runDataRefresh, handleItem, newResult, check, prepareItem, pickCareersToCheck, validateProposal, currentValues, FIELDS, SYSTEM, promptFor }

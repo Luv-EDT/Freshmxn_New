@@ -12,7 +12,8 @@ const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
 const { clearStudyOverrides } = require("../utils/studyPlaces")
 const { costOf } = require("../utils/aiUsage")
-const { validateExamChange, validateNewExam, validateFactChange, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
+const { validateExamChange, validateNewExam, validateFactChange, validateCutoffChange, cutoffDomains, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
+const { cutoffs: cutoffData } = require("../utils/cutoffs")
 const { topQualities } = require("./mentorReviewsRouter")
 
 const router = express.Router()
@@ -51,6 +52,21 @@ const approveStudyProposal = async (proposal) => {
         await StudyFactOverride.updateOne(
             { professionId: proposal.professionId },
             { $set: { [`values.${proposal.field}`]: value, approvedAt: new Date() }, $push: { sources } },
+            { upsert: true }
+        )
+        return null
+    }
+
+    if (proposal.kind === "cutoff") {
+        const value = parseJson(proposal.proposedValue)
+        const row = cutoffData.rows.find((entry) => entry.id === proposal.professionId)
+        if (!row || !value) return "That cut-off row is not in data/cutoffs.json"
+        const valid = validateCutoffChange({ field: "closing_rank", proposed: value }, null, [{ url: "checked" }], { now: proposal.createdAt || new Date(), domains: cutoffDomains(row) })
+        if (!valid) return "The proposed rank is not well formed, or its page is not the official one"
+        const CutoffOverride = require("../model/cutoffOverridesModel")
+        await CutoffOverride.updateOne(
+            { rowId: proposal.professionId },
+            { $set: { values: parseJson(valid.proposedValue), approvedAt: new Date() }, $push: { sources } },
             { upsert: true }
         )
         return null
@@ -179,7 +195,8 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
 // built (a combined career's two sides, or a full new record) before they can ship.
 router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews] = await Promise.all([
+        const CutoffOverride = require("../model/cutoffOverridesModel")
+        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews, cutoffRows] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
             CareerDraft.find({ status: "accepted" }).lean(),
@@ -187,6 +204,7 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
             StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
             StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
             MentorReview.find({ "items.decision": "accepted" }).lean(),
+            CutoffOverride.find({ approvedAt: { $ne: null } }).lean(),
         ])
         const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
@@ -222,6 +240,12 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                 values: row.values,
                 checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
                 sources: (row.sources || []).map((source) => ({ url: source.url, title: source.title })),
+            })),
+            // closing ranks read off the official result pages and approved (Round 12)
+            cutoffs: cutoffRows.filter((row) => row.values).map((row) => ({
+                id: row.rowId,
+                values: row.values,
+                checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
             })),
             // mentors' accepted remarks on their own profession (Round 12). Words, not values: a person
             // turns each into a data change, so tools/applyDataPatch.js only lists them.
@@ -414,6 +438,67 @@ router.get("/getAiUsageForAdmin", authMiddleware, adminAuthMiddleware, async (re
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to fetch usage", error: error.message })
+    }
+})
+
+// ========================
+// Research Model For Admin (Round 12)
+// ========================
+
+// The latest one-time comparison, the model the monthly research uses now, and why.
+router.get("/getModelChoiceForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const ModelComparison = require("../model/modelComparisonsModel")
+        const AppSetting = require("../model/appSettingsModel")
+        const { researchModel, RESEARCH_MODELS, DEFAULT_RESEARCH_MODEL } = require("../utils/researchModel")
+        const [comparison, setting, inUse] = await Promise.all([
+            ModelComparison.findOne().sort({ createdAt: -1 }).lean(),
+            AppSetting.findOne({ key: "research_model" }).lean(),
+            researchModel(),
+        ])
+
+        return res.status(200).json({
+            success: true,
+            message: "Model choice fetched",
+            data: {
+                comparison,
+                inUse,
+                chosen: setting ? setting.value : null,
+                chosenAt: setting ? setting.updatedAt : null,
+                // REFRESH_MODEL on Render wins over the choice made here
+                fromEnvironment: Boolean(process.env.REFRESH_MODEL),
+                models: RESEARCH_MODELS,
+                defaultModel: DEFAULT_RESEARCH_MODEL,
+            },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch the model choice", error: error.message })
+    }
+})
+
+router.put("/setResearchModelForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const AppSetting = require("../model/appSettingsModel")
+        const { RESEARCH_MODELS } = require("../utils/researchModel")
+        const { model } = req.body || {}
+
+        if (!RESEARCH_MODELS.includes(model)) {
+            return res.status(400).json({ success: false, message: "Unknown model" })
+        }
+
+        await AppSetting.updateOne({ key: "research_model" }, { $set: { value: model, setBy: req.user._id } }, { upsert: true })
+
+        return res.status(200).json({
+            success: true,
+            message: process.env.REFRESH_MODEL
+                ? `Saved — but REFRESH_MODEL on Render (${process.env.REFRESH_MODEL}) still wins until it is removed`
+                : "Saved — the next monthly run uses it",
+            data: { model },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to save the model", error: error.message })
     }
 })
 

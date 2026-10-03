@@ -231,6 +231,21 @@ const recount = () => {
 
 ;(patch.newCareerDrafts || []).forEach((draft) => console.log(`not finished yet (${draft.as}): ${draft.title} — accept its draft in Emerging careers first`))
 
+// closing ranks (Round 12) — written into data/cutoffs.json as checked rows
+const cutoffsFile = JSON.parse(fs.readFileSync(path.join(DATA, "cutoffs.json"), "utf8"))
+let cutoffsChanged = 0
+;(patch.cutoffs || []).forEach((change) => {
+    const row = cutoffsFile.rows.find((entry) => entry.id === change.id)
+    if (!row) return console.log(`skip  cut-off ${change.id} — not in cutoffs.json`)
+    const after = { ...row, ...change.values, status: "checked", checked_on: change.checkedOn }
+    delete after.reported
+    console.log(`cut   ${row.id}\n  was ${row.status === "checked" ? `${row.closing_rank} (${row.year}, ${row.round})` : "draft"}\n  now ${after.closing_rank} (${after.year}, ${after.round}) ${after.source_url}`)
+    Object.keys(row).forEach((key) => delete row[key])
+    Object.assign(row, after)
+    cutoffsChanged += 1
+    changed += 1
+})
+
 // mentors' accepted remarks (Round 12) are words, not values — listed for a person to act on
 ;(patch.mentorNotes || []).forEach((note) => console.log(`mentor ${note.id} · ${note.factor ? `${note.factor} should be ${note.direction}` : `${note.section}: ${note.verdict === "right" ? "looks right" : "needs a change"}`}${note.note ? ` — ${note.note}` : ""}${note.sourceUrl ? ` (${note.sourceUrl})` : ""}`))
 ;(patch.mentorReviewedRatings || []).forEach((id) => console.log(`mentor ${id} · every top quality called about right — you may set its baseline_rating.json review_status to "mentor_reviewed"`))
@@ -247,6 +262,7 @@ if (write && changed > 0) {
         fs.writeFileSync(path.join(DATA, "abroad.json"), `${JSON.stringify(abroadFile, null, 2)}\n`)
         fs.writeFileSync(path.join(DATA, "study_sources.json"), `${JSON.stringify(sourcesFile, null, 2)}\n`)
     }
+    if (cutoffsChanged > 0) fs.writeFileSync(path.join(DATA, "cutoffs.json"), `${JSON.stringify(cutoffsFile, null, 2)}\n`)
     if (studyChanged > 0) {
         fs.writeFileSync(path.join(DATA, "exam_calendar.json"), `${JSON.stringify(examCalendar, null, 2)}\n`)
         fs.writeFileSync(path.join(DATA, "study_places.json"), `${JSON.stringify(studyPlaces, null, 2)}\n`)

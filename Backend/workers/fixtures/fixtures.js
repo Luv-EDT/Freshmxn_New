@@ -3711,7 +3711,7 @@ const fixtures = [
                 const { disciplineById } = require("../../utils/studyPlaces")
                 const { examById } = require("../../utils/examCalendar")
                 const statistician = require("../../data/ALL-professions.json").professions.filter((profession) => profession.id === "sci-statistician")
-                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1, factLimit: 1, professions: statistician })
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, professions: statistician })
                 if (result.disciplines !== 1 || result.exams !== 1 || result.facts !== 1 || result.proposals !== 3) problems.push(`unexpected result ${JSON.stringify(result)}`)
                 const factCall = calls.find((call) => /^Career:/.test(call.user))
                 if (!factCall || !factCall.onlyDomains.includes("gov.in") || factCall.onlyDomains.some((domain) => /\.com$/.test(domain))) problems.push("study facts are not searched on official and academic domains only")
@@ -4028,6 +4028,148 @@ const fixtures = [
             if (!/mentorNotes:/.test(updates) || !/decision === "accepted"/.test(updates)) problems.push("accepted mentor notes do not reach Export patch")
             const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
             if (!/app\.use\("\/mentorReviews", mentorReviewsRouter\)/.test(server)) problems.push("the router is not mounted")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "BATCH — a batched answer is read like a direct one; anything paused, refused or cut off is asked again",
+        run: () => {
+            const { replyFrom, customIdFor, batchEnabled, HANDLERS } = require("../../housekeeping/researchBatch")
+            const { costOf } = require("../../utils/aiUsage")
+            const problems = []
+            const check = (json) => Array.isArray(json.changes)
+            const message = (stop, text) => ({ stop_reason: stop, content: [
+                { type: "web_search_tool_result", content: [{ url: "https://pib.gov.in/plfs", title: "PLFS" }] },
+                { type: "text", text },
+            ] })
+            const good = replyFrom(message("end_turn", 'Found it. {"changes": []}'), check)
+            if (!good || !Array.isArray(good.json.changes) || good.sources.length !== 1) problems.push("a good batched answer was not read")
+            ;["pause_turn", "refusal", "max_tokens"].forEach((stop) => {
+                if (replyFrom(message(stop, '{"changes": []}'), check) !== null) problems.push(`${stop} was not sent to be asked again`)
+            })
+            if (replyFrom(message("end_turn", "no json here"), check) !== null) problems.push("an unreadable answer was kept")
+            if (replyFrom(message("end_turn", '{"other": 1}'), check) !== null) problems.push("an answer of the wrong shape was kept")
+
+            const ids = Array.from({ length: 120 }, (unused, index) => customIdFor(index, { kind: "exam", id: `some.exam/with spaces-${"x".repeat(80)}` }))
+            if (ids.some((id) => !/^[a-zA-Z0-9_-]{1,64}$/.test(id))) problems.push("a custom_id breaks the batch API's rule")
+            if (new Set(ids).size !== ids.length) problems.push("two items share a custom_id")
+
+            const saved = process.env.RESEARCH_BATCH
+            delete process.env.RESEARCH_BATCH
+            if (!batchEnabled()) problems.push("batching is not on by default")
+            process.env.RESEARCH_BATCH = "false"
+            if (batchEnabled()) problems.push("RESEARCH_BATCH=false did not turn it off")
+            if (saved === undefined) delete process.env.RESEARCH_BATCH
+            else process.env.RESEARCH_BATCH = saved
+
+            // the two jobs that can be batched hand over their own checking and filing
+            ;Object.entries(HANDLERS).forEach(([job, load]) => {
+                const handler = load()
+                if (typeof handler.handleItem !== "function" || typeof handler.check !== "function" || typeof handler.newResult !== "function") problems.push(`${job} cannot finish a batched answer`)
+            })
+            ;["dataRefresh", "studyRefresh"].forEach((name) => {
+                const source = fs.readFileSync(path.join(__dirname, `../../housekeeping/${name}.js`), "utf8")
+                if (!/submitBatch\(/.test(source) || !/await handleItem\(item, reply/.test(source)) problems.push(`${name} does not share its filing between the two paths`)
+            })
+
+            // half price on the tokens of a batched call, full price on its searches
+            const row = { model: "claude-opus-5-5", inputTokens: 1e6, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, webSearches: 0 }
+            if (costOf({ ...row, job: "data_refresh:batch" }) !== 2 || costOf({ ...row, job: "data_refresh" }) !== 4) problems.push("a batched call is not priced at half")
+            if (costOf({ ...row, inputTokens: 0, webSearches: 1000, job: "data_refresh:batch" }) !== 10) problems.push("searches in a batch were discounted")
+
+            const { SCHEDULES, RUNNABLE } = require("../housekeepingWorker")
+            const collect = SCHEDULES.find((schedule) => schedule.name === "batch_collect")
+            if (!collect || collect.pattern !== "17 * * * *") problems.push("batch_collect is not hourly")
+            if (!RUNNABLE.includes("model_compare") || SCHEDULES.some((schedule) => schedule.name === "model_compare")) problems.push("the comparison must be on demand only")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MODEL CHOICE — the comparison asks both models the same 20 questions and files nothing",
+        run: async () => {
+            const { runModelCompare, sampleCareers } = require("../../housekeeping/modelCompare")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const problems = []
+            const sample = sampleCareers(taxonomy.professions)
+            if (sample.length !== 20 || new Set(sample.map((row) => row.id)).size !== 20) problems.push("the sample is not 20 different careers")
+            if (sampleCareers(taxonomy.professions).map((row) => row.id).join() !== sample.map((row) => row.id).join()) problems.push("the sample changes between runs")
+
+            const seen = { "claude-opus-5-5": 0, "claude-sonnet-5-5": 0 }
+            const fetchImpl = async (url, options) => {
+                const body = JSON.parse(options.body)
+                seen[body.model] += 1
+                const changes = body.model === "claude-opus-5-5" ? '[{"field": "india_demand", "proposed": "declining", "reason": "PLFS says so", "confidence": "medium"}]' : "[]"
+                const reply = { model: body.model, stop_reason: "end_turn", usage: { input_tokens: 1000, output_tokens: 200, server_tool_use: { web_search_requests: 1 } },
+                    content: [{ type: "web_search_tool_result", content: [{ url: "https://pib.gov.in/x", title: "x" }] }, { type: "text", text: `{"changes": ${changes}}` }] }
+                return { ok: true, status: 200, headers: new Map(), text: async () => JSON.stringify(reply), json: async () => reply }
+            }
+            const result = await runModelCompare({ apiKey: "test", fetchImpl, save: false })
+            if (seen["claude-opus-5-5"] !== 20 || seen["claude-sonnet-5-5"] !== 20) problems.push(`calls ${JSON.stringify(seen)}`)
+            const opus = result.summary.perModel["claude-opus-5-5"]
+            const sonnet = result.summary.perModel["claude-sonnet-5-5"]
+            if (sonnet.changes !== 0 || opus.changes < 1) problems.push("the changes were not counted per model")
+            if (!(opus.costPerCareer > sonnet.costPerCareer)) problems.push("cost per career is not measured from usage")
+            if (typeof result.summary.agreement !== "number") problems.push("no agreement figure")
+
+            const source = fs.readFileSync(path.join(__dirname, "../../housekeeping/modelCompare.js"), "utf8")
+            if (/dataProposalsModel|professionOverridesModel|lastCheckedAt:/.test(source)) problems.push("the comparison can file proposals or mark careers checked")
+            const resolver = fs.readFileSync(path.join(__dirname, "../../utils/researchModel.js"), "utf8")
+            if (resolver.indexOf("REFRESH_MODEL") > resolver.indexOf("research_model")) problems.push("the admin's choice is read before REFRESH_MODEL")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "CUT-OFFS — only a rank read off the official page is shown, always with its year, round, category and the caveat",
+        run: () => {
+            const { cutoffs, cutoffsFor, isShowable, applyCutoffOverride, CAVEAT } = require("../../utils/cutoffs")
+            const { validateCutoffChange, cutoffDomains } = require("../../housekeeping/studyRefresh")
+            const studyPlaces = require("../../data/study_places.json")
+            const calendar = require("../../data/exam_calendar.json")
+            const problems = []
+            const disciplines = new Set(studyPlaces.disciplines.map((row) => row.id))
+            const exams = new Set(calendar.exams.map((row) => row.id))
+            const ids = new Set()
+            Object.entries(cutoffs.sources).forEach(([key, source]) => {
+                if (!source.url.startsWith("https://")) problems.push(`${key}: the official page is not https`)
+                source.disciplines.forEach((id) => { if (!disciplines.has(id)) problems.push(`${key}: unknown discipline ${id}`) })
+            })
+            cutoffs.rows.forEach((row) => {
+                if (ids.has(row.id)) problems.push(`${row.id} twice`)
+                ids.add(row.id)
+                if (!disciplines.has(row.discipline) || !cutoffs.sources[row.source] || !exams.has(row.exam)) problems.push(`${row.id}: unknown discipline, source or exam`)
+                if (!["checked", "draft"].includes(row.status)) problems.push(`${row.id}: status ${row.status}`)
+                if (row.status === "checked") {
+                    if (!isShowable(row)) problems.push(`${row.id}: a checked row is missing its rank, year, round, category or official link`)
+                    if (!cutoffDomains(row).some((domain) => new URL(row.source_url).hostname.endsWith(domain))) problems.push(`${row.id}: checked against a page that is not the counselling body's`)
+                    if ((Date.now() - new Date(row.checked_on).getTime()) / 86400000 > 400) problems.push(`${row.id}: checked more than 13 months ago`)
+                }
+            })
+
+            // a draft never shows, even with the institution list reviewed; an approved check does
+            const draft = cutoffs.rows.find((row) => row.status === "draft")
+            if (draft && isShowable(draft)) problems.push("a draft row would be shown")
+            const approved = applyCutoffOverride(draft, { approvedAt: new Date(), values: { closing_rank: 66, year: 2025, round: "Round 6 (final)", source_url: "https://josaa.admissions.nic.in/result" } })
+            if (!isShowable(approved)) problems.push("an approved check is not shown")
+            const shown = cutoffsFor(draft.discipline, new Map([[draft.id, { approvedAt: new Date(), values: approved }]]))
+            if (shown.rows.length !== 1 || shown.caveat !== CAVEAT || !/category/.test(CAVEAT)) problems.push("the shown rank lost its caveat")
+            if (cutoffsFor(draft.discipline).rows.length !== 0) problems.push("unchecked ranks reached the page")
+            const management = cutoffsFor("management")
+            if (!management || !management.sources[0].noRank) problems.push("management must say there is no single closing rank")
+
+            const now = new Date("2026-09-15")
+            const domains = cutoffDomains(draft)
+            const good = { field: "closing_rank", proposed: { closing_rank: 70, year: 2026, round: "Round 6", source_url: "https://josaa.admissions.nic.in/x" } }
+            if (!validateCutoffChange(good, draft, [{ url: "x" }], { now, domains })) problems.push("a good check was dropped")
+            if (validateCutoffChange({ ...good, proposed: { ...good.proposed, source_url: "https://www.shiksha.com/x" } }, draft, [{ url: "x" }], { now, domains })) problems.push("a summary site was accepted as the source")
+            if (validateCutoffChange({ ...good, proposed: { ...good.proposed, year: 2022 } }, draft, [{ url: "x" }], { now, domains })) problems.push("an old year was accepted")
+            if (validateCutoffChange({ ...good, proposed: { ...good.proposed, closing_rank: "about 70" } }, draft, [{ url: "x" }], { now, domains })) problems.push("a rank that is not a number was accepted")
+            if (validateCutoffChange(good, draft, [], { now, domains })) problems.push("a check with no cited page was accepted")
+
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            if (!/cutoffs\.caveat/.test(card) || !/official result/.test(card)) problems.push("the card shows a rank without the caveat or the official page")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

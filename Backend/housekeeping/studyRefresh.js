@@ -11,6 +11,11 @@
 //              for the usual application window, exam month and eligibility. Never exact dates.
 //   FACTS      (Round 12) up to STUDY_FACT_MAX (10) careers: is a master's required, and does
 //              studying abroad help — on official and academic Indian domains, with sources.
+//   CUT-OFFS   (Round 12, August–October) up to STUDY_CUTOFF_MAX (10) rows of data/cutoffs.json:
+//              last year's final-round closing rank, read off the counselling body's own result page.
+//
+// HALF PRICE BY DEFAULT (Round 12): sent as one Message Batch; batch_collect files the answers
+// (housekeeping/researchBatch.js). RESEARCH_BATCH=false asks directly.
 //
 // NOTHING AUTO-CHANGES. Every proposal goes to the admin's "Data updates" tab (kind exam / college);
 // only an approval reaches a career page (utils/studyPlaces.js, utils/examCalendar.js).
@@ -19,6 +24,8 @@ const calendar = require("../data/exam_calendar.json")
 const { studyPlaces, applyStudyOverride, BASIS, keyOf, MAX_INSTITUTIONS } = require("../utils/studyPlaces")
 const { applyExamOverride, EDITABLE } = require("../utils/examCalendar")
 const { createResearchClient } = require("./claudeResearch")
+const { researchModel } = require("../utils/researchModel")
+const { submitBatch, batchEnabled } = require("./researchBatch")
 
 const RANKING_DOMAINS = ["nirfindia.org", "indiatoday.in", "outlookindia.com"]
 const CONFIDENCE = ["low", "medium", "high"]
@@ -230,100 +237,176 @@ const factPrompt = (profession, current) => [
     `We show — master's: ${current.after_undergrad || "unknown"}; studying abroad: ${current.abroad ? `${current.abroad.need}${current.abroad.stage ? ` (${current.abroad.stage})` : ""}` : "not needed"}`,
 ].join("\n")
 
-// ── the job ────────────────────────────────────────────────────────────────────────────────────
-const runStudyRefresh = async ({
-    research = createResearchClient({ job: "study_refresh" }),
-    disciplines = studyPlaces.disciplines,
-    exams = calendar.exams,
-    disciplineLimit = maxDisciplines(),
-    examLimit = maxExams(),
-    factLimit = maxFacts(),
-    professions = require("../data/ALL-professions.json").professions,
-    now = new Date(),
-} = {}) => {
-    if (!research) return { skipped: "ANTHROPIC_API_KEY is not set" }
+// ── cut-offs: last year's closing ranks (Round 12) ─────────────────────────────────────────────
+// August to October only — when the year's final counselling rounds are published. Up to
+// STUDY_CUTOFF_MAX (10) rows of data/cutoffs.json a month, oldest-checked first, each searched on its
+// counselling body's own site. The rank must be read off the official result page and that page
+// named; a summary site is not a source.
+const { cutoffs: cutoffData, applyCutoffOverride } = require("../utils/cutoffs")
+const CUTOFF_MONTHS = [7, 8, 9]       // Aug, Sep, Oct (getMonth)
+const maxCutoffs = () => Number(process.env.STUDY_CUTOFF_MAX) || 10
 
+const cutoffDomains = (row) => {
+    const source = cutoffData.sources[row.source]
+    return source ? [...new Set([source.url, source.archive].filter(Boolean).map(hostOf).filter(Boolean))] : []
+}
+
+const validateCutoffChange = (change, current, sources, { now = new Date(), domains = [] } = {}) => {
+    if (!change || change.field !== "closing_rank" || !Array.isArray(sources) || sources.length === 0) return null
+    const raw = change.proposed || {}
+    const rank = Number(raw.closing_rank)
+    const year = Number(raw.year)
+    const round = typeof raw.round === "string" ? raw.round.trim() : ""
+    const url = typeof raw.source_url === "string" ? raw.source_url.trim() : ""
+    if (!Number.isInteger(rank) || rank <= 0 || rank > 2000000) return null
+    if (!Number.isInteger(year) || year < now.getFullYear() - 1 || year > now.getFullYear()) return null
+    if (round === "" || round.length > 40) return null
+    const host = hostOf(url)
+    if (!url.startsWith("https://") || !host || !domains.some((domain) => host === domain || host.endsWith(`.${domain}`))) return null
+    if (current && current.status === "checked" && current.closing_rank === rank && current.year === year) return null
+    return {
+        field: "closing_rank",
+        currentValue: current && current.status === "checked" ? JSON.stringify({ closing_rank: current.closing_rank, year: current.year, round: current.round }) : null,
+        proposedValue: JSON.stringify({ closing_rank: rank, year, round, source_url: url }),
+        reason: String(change.reason || "").slice(0, 600),
+        confidence: CONFIDENCE.includes(change.confidence) ? change.confidence : "low",
+    }
+}
+
+const CUTOFF_SYSTEM = `You read one closing rank off an official Indian admission counselling result, for a career-guidance service.
+
+You are told the institution, programme, counselling body, category, seat pool and quota. Search ONLY the counselling
+body's own site and find LAST YEAR'S FINAL ROUND closing rank for exactly that row. Read it off the official result page
+itself; never use a coaching, news or summary site, and never estimate. If you cannot find the official figure, return an
+empty list.
+
+Reply with ONLY this JSON object:
+{"changes": [{"field": "closing_rank", "proposed": {"closing_rank": 66, "year": 2025, "round": "Round 6 (final)", "source_url": "https://<the official page>"}, "reason": "one sentence naming the page", "confidence": "low" | "medium" | "high"}]}`
+
+const cutoffPrompt = (row) => [
+    `Institution: ${row.institution}, ${row.city}`,
+    `Programme: ${row.programme}`,
+    `Counselling: ${(cutoffData.sources[row.source] || {}).name || row.source} (${row.exam})`,
+    `Row: ${row.category} category, ${row.seat_pool} seats, ${row.quota} quota, final round`,
+    row.status === "checked" ? `We show: ${row.closing_rank} (${row.year}, ${row.round})` : "We show nothing yet.",
+].join("\n")
+
+// ── the job ────────────────────────────────────────────────────────────────────────────────────
+const check = (json) => Array.isArray(json.changes)
+const newResult = () => ({ disciplines: 0, exams: 0, facts: 0, cutoffs: 0, proposals: 0, refused: [], failed: [] })
+
+// a newer suggestion replaces an undecided older one for the same thing
+const fileProposal = async (kind, id, name, change, sources, result) => {
     const DataProposal = require("../model/dataProposalsModel")
+    const same = { kind, professionId: id, field: change.field, status: "open" }
+    if (kind === "college") same.proposedValue = change.proposedValue
+    await DataProposal.updateMany(same, { status: "superseded" })
+    await DataProposal.create({ kind, professionId: id, profession: name, ...change, sources: sources.slice(0, 8) })
+    result.proposals += 1
+}
+
+// one answer → proposals. The same whether it came back directly or in a batch (researchBatch.js).
+// An unreadable answer is not a check: that row stays at the front for next month.
+const handleItem = async (item, reply, { now, result }) => {
+    if (reply.refused) result.refused.push(item.id)
+    if (reply.unreadable) {
+        result.failed.push(item.id)
+        return
+    }
+    const changes = reply.json ? reply.json.changes : []
+    const sources = reply.sources || []
+
+    if (item.kind === "college") {
+        const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
+        for (const change of changes.map((raw) => validateCollegeChange(raw, item.context.current, sources)).filter(Boolean)) {
+            await fileProposal("college", item.id, item.name, change, sources, result)
+        }
+        for (const exam of ((reply.json && Array.isArray(reply.json.newExams)) ? reply.json.newExams : []).map((raw) => validateNewExam(raw, sources)).filter(Boolean)) {
+            const draft = JSON.parse(exam.proposedValue)
+            await fileProposal("exam", `new:${normaliseExamName(draft.name).replace(/ /g, "-")}`, draft.name, exam, sources, result)
+        }
+        await StudyPlaceOverride.updateOne({ disciplineId: item.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
+        result.disciplines += 1
+    }
+    if (item.kind === "exam") {
+        const ExamOverride = require("../model/examOverridesModel")
+        for (const change of changes.map((raw) => validateExamChange(raw, item.context.current, sources)).filter(Boolean)) {
+            await fileProposal("exam", item.id, item.name, change, sources, result)
+        }
+        await ExamOverride.updateOne({ examId: item.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
+        result.exams += 1
+    }
+    if (item.kind === "cutoff") {
+        const CutoffOverride = require("../model/cutoffOverridesModel")
+        for (const change of changes.map((raw) => validateCutoffChange(raw, item.context.current, sources, { now: new Date(now), domains: item.context.domains })).filter(Boolean)) {
+            await fileProposal("cutoff", item.id, item.name, change, sources, result)
+        }
+        await CutoffOverride.updateOne({ rowId: item.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
+        result.cutoffs = (result.cutoffs || 0) + 1
+    }
+    if (item.kind === "fact") {
+        const StudyFactOverride = require("../model/studyFactOverridesModel")
+        for (const change of changes.map((raw) => validateFactChange(raw, item.context.current, sources)).filter(Boolean)) {
+            await fileProposal("study_fact", item.id, item.name, change, sources, result)
+        }
+        await StudyFactOverride.updateOne({ professionId: item.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
+        result.facts += 1
+    }
+}
+
+// every question this month, each with what its answer will be checked against
+const prepareItems = async ({ disciplines, exams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit = 0, cutoffRows = cutoffData.rows }) => {
     const ExamOverride = require("../model/examOverridesModel")
     const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
-
     const [examRows, placeRows] = await Promise.all([ExamOverride.find().lean(), StudyPlaceOverride.find().lean()])
     const examOverrides = new Map(examRows.map((row) => [row.examId, row]))
     const placeOverrides = new Map(placeRows.map((row) => [row.disciplineId, row]))
-
-    const result = { disciplines: 0, exams: 0, facts: 0, proposals: 0, refused: [], failed: [] }
-
-    // a newer suggestion replaces an undecided older one for the same thing
-    const file = async (kind, id, name, change, sources) => {
-        const same = { kind, professionId: id, field: change.field, status: "open" }
-        if (kind === "college") same.proposedValue = change.proposedValue
-        await DataProposal.updateMany(same, { status: "superseded" })
-        await DataProposal.create({ kind, professionId: id, profession: name, ...change, sources: sources.slice(0, 8) })
-        result.proposals += 1
-    }
+    const items = []
 
     for (const discipline of pickOldest(disciplines, (row) => row.id, placeOverrides, disciplineLimit, (row) => row.checked_on)) {
         const current = applyStudyOverride(discipline.institutions, placeOverrides.get(discipline.id))
         const regulatorDomains = discipline.links.map((link) => hostOf(link.url)).filter(Boolean)
-        try {
-            const reply = await research.askJson({
-                system: COLLEGE_SYSTEM,
-                user: collegePrompt(discipline, current),
-                check: (json) => Array.isArray(json.changes),
-                onlyDomains: [...new Set([...RANKING_DOMAINS, ...regulatorDomains])],
-            })
-            if (reply.refused) result.refused.push(discipline.id)
-            if (reply.unreadable) {
-                result.failed.push(discipline.id)
-                continue
-            }
-            if (reply.json) {
-                for (const change of reply.json.changes.map((raw) => validateCollegeChange(raw, current, reply.sources)).filter(Boolean)) {
-                    await file("college", discipline.id, discipline.name, change, reply.sources)
-                }
-                for (const exam of (Array.isArray(reply.json.newExams) ? reply.json.newExams : []).map((raw) => validateNewExam(raw, reply.sources)).filter(Boolean)) {
-                    const draft = JSON.parse(exam.proposedValue)
-                    await file("exam", `new:${normaliseExamName(draft.name).replace(/ /g, "-")}`, draft.name, exam, reply.sources)
-                }
-            }
-            await StudyPlaceOverride.updateOne({ disciplineId: discipline.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
-            result.disciplines += 1
-        } catch (error) {
-            console.error(`study_refresh: ${discipline.id} failed — ${error.message}`)
-            result.failed.push(discipline.id)
-        }
+        items.push({
+            kind: "college",
+            id: discipline.id,
+            name: discipline.name,
+            request: { system: COLLEGE_SYSTEM, user: collegePrompt(discipline, current), onlyDomains: [...new Set([...RANKING_DOMAINS, ...regulatorDomains])] },
+            context: { current },
+        })
     }
 
     for (const row of pickOldest(exams, (exam) => exam.id, examOverrides, examLimit, (exam) => exam.checked_on)) {
         const exam = applyExamOverride(row, examOverrides.get(row.id))
         const domain = hostOf(exam.official_url)
         if (!domain) continue
-        try {
-            const reply = await research.askJson({
-                system: EXAM_SYSTEM,
-                user: examPrompt(exam),
-                check: (json) => Array.isArray(json.changes),
-                onlyDomains: [domain],
+        items.push({
+            kind: "exam",
+            id: exam.id,
+            name: exam.name,
+            request: { system: EXAM_SYSTEM, user: examPrompt(exam), onlyDomains: [domain] },
+            context: { current: { usual_application_window: exam.usual_application_window, usual_exam_month: exam.usual_exam_month, eligibility: exam.eligibility } },
+        })
+    }
+
+    if (cutoffLimit > 0) {
+        const CutoffOverride = require("../model/cutoffOverridesModel")
+        const cutoffOverrides = new Map((await CutoffOverride.find().lean()).map((row) => [row.rowId, row]))
+        for (const raw of pickOldest(cutoffRows, (row) => row.id, cutoffOverrides, cutoffLimit, (row) => row.checked_on)) {
+            const row = applyCutoffOverride(raw, cutoffOverrides.get(raw.id))
+            const domains = cutoffDomains(row)
+            if (domains.length === 0) continue
+            items.push({
+                kind: "cutoff",
+                id: row.id,
+                name: `${row.institution} — ${row.programme}`,
+                request: { system: CUTOFF_SYSTEM, user: cutoffPrompt(row), onlyDomains: domains },
+                context: { current: { status: row.status, closing_rank: row.closing_rank, year: row.year, round: row.round }, domains },
             })
-            if (reply.refused) result.refused.push(exam.id)
-            if (reply.unreadable) {
-                result.failed.push(exam.id)
-                continue
-            }
-            const current = { usual_application_window: exam.usual_application_window, usual_exam_month: exam.usual_exam_month, eligibility: exam.eligibility }
-            for (const change of (reply.json ? reply.json.changes : []).map((raw) => validateExamChange(raw, current, reply.sources)).filter(Boolean)) {
-                await file("exam", exam.id, exam.name, change, reply.sources)
-            }
-            await ExamOverride.updateOne({ examId: exam.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
-            result.exams += 1
-        } catch (error) {
-            console.error(`study_refresh: ${exam.id} failed — ${error.message}`)
-            result.failed.push(exam.id)
         }
     }
 
     // the careers whose master's matters, or where studying abroad was flagged
-    if (factLimit <= 0) return result
+    if (factLimit <= 0) return items
     const StudyFactOverride = require("../model/studyFactOverridesModel")
     const abroadData = require("../data/abroad.json").careers
     const factRows = await StudyFactOverride.find().lean()
@@ -341,26 +424,49 @@ const runStudyRefresh = async ({
             after_undergrad: values.after_undergrad || profession.after_undergrad,
             abroad: abroadRow && abroadRow.need !== "not_needed" ? abroadRow : null,
         }
+        items.push({
+            kind: "fact",
+            id: profession.id,
+            name: profession.profession,
+            request: { system: FACT_SYSTEM, user: factPrompt(profession, current), onlyDomains: FACT_DOMAINS },
+            context: { current },
+        })
+    }
+    return items
+}
+
+const runStudyRefresh = async ({
+    research,             // injected in the fixtures; otherwise built on the chosen research model
+    batch,                // true / false to force; by default batched unless RESEARCH_BATCH=false
+    disciplines = studyPlaces.disciplines,
+    exams = calendar.exams,
+    disciplineLimit = maxDisciplines(),
+    examLimit = maxExams(),
+    factLimit = maxFacts(),
+    cutoffLimit,          // by default STUDY_CUTOFF_MAX in August to October, otherwise none
+    professions = require("../data/ALL-professions.json").professions,
+    now = new Date(),
+} = {}) => {
+    if (cutoffLimit === undefined) cutoffLimit = CUTOFF_MONTHS.includes(now.getMonth()) ? maxCutoffs() : 0
+    const injected = research !== undefined
+    if (!injected) research = createResearchClient({ job: "study_refresh", model: await researchModel() })
+    if (!research) return { skipped: "ANTHROPIC_API_KEY is not set" }
+
+    const items = await prepareItems({ disciplines, exams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit })
+
+    if (batch === undefined ? !injected && batchEnabled() : batch) {
+        const submitted = await submitBatch({ job: "study_refresh", items, model: research.model })
+        if (submitted) return { batched: submitted.batchId, questions: submitted.items, note: "answers are filed by batch_collect, usually within the hour" }
+    }
+
+    const result = newResult()
+    for (const item of items) {
         try {
-            const reply = await research.askJson({
-                system: FACT_SYSTEM,
-                user: factPrompt(profession, current),
-                check: (json) => Array.isArray(json.changes),
-                onlyDomains: FACT_DOMAINS,
-            })
-            if (reply.refused) result.refused.push(profession.id)
-            if (reply.unreadable) {
-                result.failed.push(profession.id)
-                continue
-            }
-            for (const change of (reply.json ? reply.json.changes : []).map((raw) => validateFactChange(raw, current, reply.sources)).filter(Boolean)) {
-                await file("study_fact", profession.id, profession.profession, change, reply.sources)
-            }
-            await StudyFactOverride.updateOne({ professionId: profession.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
-            result.facts += 1
+            const reply = await research.askJson({ ...item.request, check })
+            await handleItem(item, reply, { now, result })
         } catch (error) {
-            console.error(`study_refresh: ${profession.id} failed — ${error.message}`)
-            result.failed.push(profession.id)
+            console.error(`study_refresh: ${item.id} failed — ${error.message}`)
+            result.failed.push(item.id)
         }
     }
 
@@ -368,6 +474,7 @@ const runStudyRefresh = async ({
 }
 
 module.exports = {
-    runStudyRefresh, pickOldest, validateCollegeChange, validateExamChange, validateNewExam, validateFactChange, cleanInstitution,
+    runStudyRefresh, handleItem, newResult, check, prepareItems, pickOldest, validateCollegeChange, validateExamChange, validateNewExam, validateFactChange, cleanInstitution,
+    validateCutoffChange, cutoffDomains, CUTOFF_SYSTEM, CUTOFF_MONTHS,
     EXACT_DATE, RANKING_DOMAINS, FACT_DOMAINS, COLLEGE_SYSTEM, EXAM_SYSTEM, FACT_SYSTEM, MASTERS_VALUES, ABROAD_NEEDS, ABROAD_STAGES,
 }
