@@ -1,0 +1,605 @@
+{
+  "schema_version": "study_sources@1.0.0",
+  "generated_on": "2026-10-03",
+  "note": "Where the study facts come from. after_undergrad (master's) is set in ALL-professions.json and abroad in abroad.json; this file says what backs each value. checked = an official rule, cited (usually through education-press reporting of the notice); supported = published evidence that is not a rule; judgement = no source, Claude's judgement. A career not listed here is judgement. The monthly study bot re-checks the oldest rows and the admin approves any change.",
+  "statuses": {
+    "checked": "an official rule, cited",
+    "supported": "published evidence, not a rule",
+    "judgement": "no source — Claude's judgement"
+  },
+  "sources": {
+    "ugc_phd": {
+      "url": "https://www.ugc.gov.in/pdfnews/4405511_Draft-UGC-PhD-regulations-2022.pdf",
+      "title": "UGC PhD Regulations 2022 — PhD needs a master's (55%) or a 4-year degree with 75% / CGPA 7.5"
+    },
+    "ugc_teach": {
+      "url": "https://indiankanoon.org/doc/25717311/",
+      "title": "UGC Minimum Qualifications Regulations 2018 — Assistant Professor needs a master's with 55% plus NET/SET or a PhD"
+    },
+    "csir_net": {
+      "url": "https://competition.careers360.com/articles/csir-ugc-net-eligibility-criteria",
+      "title": "CSIR-UGC NET eligibility — M.Sc with 55%, or a 4-year BS / B.Tech / B.Pharm with 75%"
+    },
+    "rci": {
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12798336/",
+      "title": "Clinical psychology training and accreditation in India — RCI registration needs an RCI-recognised clinical qualification (M.Phil, now the RCI-regulated MA in Clinical Psychology from 2025–26)"
+    },
+    "gsi": {
+      "url": "https://testbook.com/upsc-combined-geo-scientist/eligibility-criteria",
+      "title": "UPSC Combined Geo-Scientist exam (Geological Survey of India, CGWB) — a master's in geology or a listed geoscience"
+    },
+    "ies_iss": {
+      "url": "https://testbook.com/upsc-ies-iss/eligibility",
+      "title": "UPSC IES/ISS — IES needs a postgraduate degree in economics; ISS accepts a bachelor's or master's with statistics"
+    },
+    "dcpu": {
+      "url": "https://www.wcdcommpune.com/resources/pdf/DCPU_Positions_Eligibility_Criteria.pdf",
+      "title": "Mission Vatsalya — District Child Protection Unit posts need a postgraduate degree in social work, sociology, psychology, law or a related field"
+    },
+    "library": {
+      "url": "https://www.mirandahouse.ac.in/file-nts-2022/essential%20qualifications.pdf",
+      "title": "UGC norms for college librarians — a master's in library science with 55% plus NET"
+    },
+    "asi": {
+      "url": "https://asi.nic.in/admin/whatsnew/download/299",
+      "title": "Archaeological Survey of India — Assistant Archaeologist needs a master's in archaeology, ancient Indian history, anthropology or geology"
+    },
+    "ansi": {
+      "url": "https://www.mysarkarinaukri.com/en/anthropological-survey-of-india/",
+      "title": "Anthropological Survey of India — Anthropologist posts need a master's in anthropology plus research experience"
+    },
+    "museum": {
+      "url": "https://www.mysarkarinaukri.com/find/national-museum-jobs/103385",
+      "title": "National Museum — curator posts need a master's in museology, history of art, history, archaeology or a related subject"
+    },
+    "nmi": {
+      "url": "https://nmi.gov.in/studentsadmissionseligibilityma.htm",
+      "title": "National Museum Institute — MA Museology and MA Conservation, the specialised training for museum and conservation work"
+    },
+    "cpcb": {
+      "url": "https://testbook.com/cpcb-scientist-b/eligibity-criteria",
+      "title": "Central Pollution Control Board — Scientist B needs a first-class master's in environmental science (or a B.E./B.Tech in an environmental branch)"
+    },
+    "icar": {
+      "url": "https://icar.org.in/sites/default/files/Circulars/Minimum%20Educational%20Qualification%20for%20direct%20recruitment%20of%20entry%20level%20scientists%20through%20ARS%20Examination.pdf",
+      "title": "ICAR — entry-level ARS scientists need a master's in the relevant agricultural discipline"
+    },
+    "fsl": {
+      "url": "https://www.tgprb.in/FSL_PDF/FSL%20Notification.pdf",
+      "title": "State Forensic Science Laboratory recruitment (Telangana) — Scientific Officer needs an M.Sc in forensic science or the relevant science"
+    },
+    "mph": {
+      "url": "https://www.researchgate.net/publication/257364624_Career_Opportunities_for_Master_of_Public_Health_Graduates_in_India",
+      "title": "Career opportunities for MPH graduates in India (published study) — public-health roles commonly hire at MPH level"
+    },
+    "msw": {
+      "url": "https://www.wcdcommpune.com/resources/pdf/DCPU_Positions_Eligibility_Criteria.pdf",
+      "title": "Government social-sector posts (Mission Vatsalya) list a postgraduate degree in social work among the required qualifications"
+    },
+    "dgca": {
+      "url": "https://www.wingmanlog.in/post/conversion-of-foreign-cpl-to-an-indian-pilot-license/",
+      "title": "Converting a foreign CPL to an Indian licence — DGCA exams, an Indian Class 1 medical, RTR(A) and a flight test"
+    },
+    "jest": {
+      "url": "https://en.wikipedia.org/wiki/Joint_Entrance_Screening_Test",
+      "title": "JEST — the Indian entrance to PhD programmes in physics and astronomy at IISc, TIFR, IUCAA, RRI and 30-odd institutes"
+    }
+  },
+  "careers": {
+    "sci-physicist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-chemist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-biologist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-atmospheric-ocean-scientist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-space-scientist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "supported",
+        "sources": [
+          "jest"
+        ],
+        "note": "India has a strong PhD route (JEST into IISc, TIFR, IUCAA, RRI). 'Often part of the route' overstated it — changed to 'helps'",
+        "checkedOn": "2026-10-03",
+        "changed": "often_needed → helps"
+      }
+    },
+    "sci-materials-scientist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-mathematician": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-computer-science-researcher": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "Indian PhD routes (IISc, IITs) are strong and industry research labs in India hire them. 'Often part of the route' overstated it — changed to 'helps'",
+        "checkedOn": "2026-10-03",
+        "changed": "often_needed → helps"
+      }
+    },
+    "sci-research-psychologist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_phd",
+          "ugc_teach"
+        ],
+        "note": "Research and teaching posts need a master's — or a 4-year degree with 75% for a direct PhD (UGC 2022), which is what the data's 'skippable with a 4-year UG at 75%' says",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-microbiologist": {
+      "after_undergrad": {
+        "status": "supported",
+        "sources": [
+          "csir_net"
+        ],
+        "note": "The research route (CSIR-NET, PhD) needs an M.Sc or a 4-year degree with 75%. That industry hires at M.Sc level is market practice, not a rule",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-biotechnologist": {
+      "after_undergrad": {
+        "status": "supported",
+        "sources": [
+          "csir_net"
+        ],
+        "note": "The research route (CSIR-NET, PhD) needs an M.Sc or a 4-year degree with 75%. That industry hires at M.Sc level is market practice, not a rule",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-bioinformatics-scientist": {
+      "after_undergrad": {
+        "status": "supported",
+        "sources": [
+          "csir_net"
+        ],
+        "note": "The research route (CSIR-NET, PhD) needs an M.Sc or a 4-year degree with 75%. That industry hires at M.Sc level is market practice, not a rule",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-drug-discovery-scientist": {
+      "after_undergrad": {
+        "status": "supported",
+        "sources": [
+          "csir_net"
+        ],
+        "note": "The research route (CSIR-NET, PhD) needs an M.Sc or a 4-year degree with 75%. That industry hires at M.Sc level is market practice, not a rule",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-geologist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "gsi"
+        ],
+        "note": "The Geological Survey of India and CGWB recruit through UPSC's Combined Geo-Scientist exam, which needs a master's",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "sci-statistician": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ies_iss"
+        ],
+        "note": "UPSC's Indian Statistical Service accepts a bachelor's with statistics, so a master's is not strictly required for the government route",
+        "checkedOn": "2026-10-03",
+        "finding": "The source suggests 'masters_advantage' rather than 'masters_required' — owner to decide whether to change the data"
+      }
+    },
+    "sci-forensic-scientist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "fsl"
+        ],
+        "note": "State forensic labs recruit Scientific Officers at M.Sc level",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "fin-economist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ies_iss",
+          "ugc_teach"
+        ],
+        "note": "The Indian Economic Service needs a postgraduate degree in economics; academic posts need a master's plus NET",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "edu-college-teacher": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_teach"
+        ],
+        "note": "Assistant Professor: a master's with 55% plus NET/SET, or a PhD (UGC 2018)",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "edu-librarian": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "library"
+        ],
+        "note": "College and university librarians need a master's in library science with 55% plus NET",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "soc-clinical-psychologist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "rci"
+        ],
+        "note": "Practising as a clinical psychologist needs RCI registration, which needs an RCI-recognised postgraduate clinical qualification",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "soc-child-protection": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "dcpu"
+        ],
+        "note": "District Child Protection Unit posts need a postgraduate degree in social work or a related field",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "env-environmental-scientist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "cpcb"
+        ],
+        "note": "Pollution-control-board scientist posts need a first-class master's in environmental science",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "agr-agronomist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "icar"
+        ],
+        "note": "ICAR's entry-level scientist posts need a master's in agronomy or a related discipline",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "hum-archaeologist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "asi"
+        ],
+        "note": "The Archaeological Survey of India recruits Assistant Archaeologists at master's level",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "hum-anthropologist": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ansi",
+          "ugc_teach"
+        ],
+        "note": "The Anthropological Survey of India and university posts both need a master's in anthropology",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "hum-historian": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_teach"
+        ],
+        "note": "Academic and research posts need a master's with 55% plus NET or a PhD (UGC 2018)",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "hum-classical-language": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "ugc_teach"
+        ],
+        "note": "Academic and research posts need a master's with 55% plus NET or a PhD (UGC 2018)",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "hum-museum-archive": {
+      "after_undergrad": {
+        "status": "checked",
+        "sources": [
+          "museum",
+          "nmi"
+        ],
+        "note": "Museum curator posts need a master's in museology, history of art, history or archaeology",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "hum-conservator": {
+      "after_undergrad": {
+        "status": "supported",
+        "sources": [
+          "nmi"
+        ],
+        "note": "The specialised training is a master's (e.g. MA Conservation, National Museum Institute); no recruitment rule was found",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "hlt-public-health-professional": {
+      "after_undergrad": {
+        "status": "supported",
+        "sources": [
+          "mph"
+        ],
+        "note": "Public-health roles commonly hire at MPH level; this is hiring practice, not a legal rule",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "soc-social-worker": {
+      "after_undergrad": {
+        "status": "supported",
+        "sources": [
+          "msw"
+        ],
+        "note": "Government and hospital social-work posts commonly list an MSW; not a licensing rule",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "law-public-policy-professional": {
+      "after_undergrad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source found that makes a master's necessary; it is the common route (MPP / MA in public policy)",
+        "checkedOn": "2026-10-03"
+      },
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "swc-ai-ml-engineer": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-chip-design-engineer": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-aerospace-engineer": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-robotics-automation-engineer": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-architect": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-commercial-pilot": {
+      "abroad": {
+        "status": "supported",
+        "sources": [
+          "dgca"
+        ],
+        "note": "Training abroad is common; the foreign licence must then be converted with DGCA",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-biomedical-engineer": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-urban-planner": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "eng-industrial-product-designer": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "mgt-product-manager": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "mgt-management-consultant": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "des-ux-designer": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "soc-development-professional": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    },
+    "env-sustainability-esg": {
+      "abroad": {
+        "status": "judgement",
+        "sources": [],
+        "note": "No source looked up yet — Claude's judgement of how the career is entered",
+        "checkedOn": "2026-10-03"
+      }
+    }
+  }
+}

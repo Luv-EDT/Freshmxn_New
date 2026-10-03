@@ -5,12 +5,13 @@ const ScoutCandidate = require("../model/scoutCandidatesModel")
 const CareerDraft = require("../model/careerDraftsModel")
 const ExamOverride = require("../model/examOverridesModel")
 const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
+const StudyFactOverride = require("../model/studyFactOverridesModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
 const { clearStudyOverrides } = require("../utils/studyPlaces")
 const { costOf } = require("../utils/aiUsage")
-const { validateExamChange, validateNewExam, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
+const { validateExamChange, validateNewExam, validateFactChange, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
 
 const router = express.Router()
 
@@ -39,6 +40,19 @@ const parseJson = (text) => {
 // value through. Returns an error message, or null once written.
 const approveStudyProposal = async (proposal) => {
     const sources = { $each: proposal.sources.map((source) => ({ url: source.url, title: source.title })), $slice: -20 }
+
+    if (proposal.kind === "study_fact") {
+        const proposed = proposal.field === "abroad" ? parseJson(proposal.proposedValue) : proposal.proposedValue
+        const valid = validateFactChange({ field: proposal.field, proposed }, {}, [{ url: "checked" }])
+        if (!valid) return "The proposed value is not well formed"
+        const value = proposal.field === "abroad" ? parseJson(valid.proposedValue) : valid.proposedValue
+        await StudyFactOverride.updateOne(
+            { professionId: proposal.professionId },
+            { $set: { [`values.${proposal.field}`]: value, approvedAt: new Date() }, $push: { sources } },
+            { upsert: true }
+        )
+        return null
+    }
 
     if (proposal.kind === "exam" && proposal.field === "new_exam") {
         const exam = parseJson(proposal.proposedValue)
@@ -163,12 +177,13 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
 // built (a combined career's two sides, or a full new record) before they can ship.
 router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const [overrides, approvedScout, accepted, examRows, placeRows] = await Promise.all([
+        const [overrides, approvedScout, accepted, examRows, placeRows, factRows] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
             CareerDraft.find({ status: "accepted" }).lean(),
             ExamOverride.find({ approvedAt: { $ne: null } }).lean(),
             StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
+            StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
         ])
         const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
@@ -197,6 +212,13 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                 added: (row.added || []).map(({ _id, ...institution }) => institution),
                 removed: row.removed || [],
                 updated: (row.updated || []).map(({ _id, ...institution }) => institution),
+            })),
+            // master's need and studying abroad (Round 12), with the pages that backed them
+            studyFacts: factRows.filter((row) => row.values && (row.values.after_undergrad || row.values.abroad)).map((row) => ({
+                id: row.professionId,
+                values: row.values,
+                checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
+                sources: (row.sources || []).map((source) => ({ url: source.url, title: source.title })),
             })),
             // approved but not yet accepted as a finished draft — listed so nothing is forgotten
             newCareerDrafts: approvedScout.filter((row) => !acceptedFor.has(String(row._id))).map((row) => ({

@@ -144,6 +144,15 @@ const monthYear = (iso) => {
         : null
 }
 
+// What backs the master's and study-abroad lines (Round 12): an official rule, published
+// evidence, or our own estimate — said plainly, as the pay lines say "estimate" or "checked".
+const factLabel = (fact) => {
+    if (!fact) return null
+    if (fact.status === "checked") return `Checked against the official rules${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
+    if (fact.status === "supported") return `Based on published information${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
+    return "Our estimate"
+}
+
 function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel }) {
     const [open, setOpen] = useState(false)
 
@@ -321,7 +330,10 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                     {laterStage && MASTERS_WORDS[detail.afterUndergrad] && (
                                         <>
                                             <dt>A master's?</dt>
-                                            <dd>{MASTERS_WORDS[detail.afterUndergrad]}</dd>
+                                            <dd>
+                                                {MASTERS_WORDS[detail.afterUndergrad]}
+                                                {factLabel(detail.studyFacts && detail.studyFacts.masters) && <span className="pc-small"><br />{factLabel(detail.studyFacts.masters)}</span>}
+                                            </dd>
                                         </>
                                     )}
                                     {detail.licensingBody && (
@@ -392,6 +404,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                             {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}
                                         </p>
                                         <p className="pc-small">{detail.abroad.why}.</p>
+                                        {factLabel(detail.studyFacts && detail.studyFacts.abroad) && <p className="pc-small"><em>{factLabel(detail.studyFacts.abroad)}</em></p>}
                                     </Section>
                                 )}
 

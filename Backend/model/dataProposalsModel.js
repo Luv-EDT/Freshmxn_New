@@ -15,12 +15,14 @@ const mongoose = require("mongoose")
 const CAREER_FIELDS = ["india_demand", "early_earnings_lpa", "mid_career_lpa"]
 const EXAM_FIELDS = ["usual_application_window", "usual_exam_month", "eligibility", "new_exam"]
 const COLLEGE_FIELDS = ["add_institution", "remove_institution", "update_institution"]
+// Round 12: a career's master's need and whether studying abroad helps — kind "study_fact"
+const STUDY_FACT_FIELDS = ["after_undergrad", "abroad"]
 
 const dataProposalSchema = new mongoose.Schema(
     {
         kind: {
             type: String,
-            enum: ["career", "exam", "college"],
+            enum: ["career", "exam", "college", "study_fact"],
             default: "career",
         },
         professionId: {
@@ -33,7 +35,7 @@ const dataProposalSchema = new mongoose.Schema(
         },
         field: {
             type: String,
-            enum: [...CAREER_FIELDS, ...EXAM_FIELDS, ...COLLEGE_FIELDS],
+            enum: [...CAREER_FIELDS, ...EXAM_FIELDS, ...COLLEGE_FIELDS, ...STUDY_FACT_FIELDS],
             required: true,
         },
         currentValue: {
@@ -90,3 +92,4 @@ module.exports = DataProposal
 module.exports.CAREER_FIELDS = CAREER_FIELDS
 module.exports.EXAM_FIELDS = EXAM_FIELDS
 module.exports.COLLEGE_FIELDS = COLLEGE_FIELDS
+module.exports.STUDY_FACT_FIELDS = STUDY_FACT_FIELDS

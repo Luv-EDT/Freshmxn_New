@@ -81,13 +81,16 @@ const getStudyOverrides = async () => {
     if (cache && Date.now() - cachedAt < CACHE_MS) return cache
     const ExamOverride = require("../model/examOverridesModel")
     const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
-    const [exams, places] = await Promise.all([
+    const StudyFactOverride = require("../model/studyFactOverridesModel")
+    const [exams, places, facts] = await Promise.all([
         ExamOverride.find({ approvedAt: { $ne: null } }).lean(),
         StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
+        StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
     ])
     cache = {
         exams: new Map(exams.map((row) => [row.examId, row])),
         places: new Map(places.map((row) => [row.disciplineId, row])),
+        facts: new Map(facts.map((row) => [row.professionId, row])),
     }
     cachedAt = Date.now()
     return cache

@@ -9,6 +9,8 @@
 //              is labelled "Suggested — check". It may also name an exam the calendar lacks.
 //   EXAMS      up to REFRESH_MAX_EXAMS (15) exams, each searched ON ITS OWN OFFICIAL DOMAIN only,
 //              for the usual application window, exam month and eligibility. Never exact dates.
+//   FACTS      (Round 12) up to STUDY_FACT_MAX (10) careers: is a master's required, and does
+//              studying abroad help — on official and academic Indian domains, with sources.
 //
 // NOTHING AUTO-CHANGES. Every proposal goes to the admin's "Data updates" tab (kind exam / college);
 // only an approval reaches a career page (utils/studyPlaces.js, utils/examCalendar.js).
@@ -172,6 +174,62 @@ const examPrompt = (exam) => [
     `We show — applications usually: ${exam.usual_application_window || "blank"}; exam usually: ${exam.usual_exam_month || "blank"}; eligibility: ${exam.eligibility || "blank"}`,
 ].join("\n")
 
+// ── study facts: the master's need and studying abroad (Round 12) ─────────────────────────────
+// Up to STUDY_FACT_MAX careers a month whose master's matters or where studying abroad was
+// flagged, oldest-checked first. Searched on official and academic Indian domains only.
+const FACT_DOMAINS = ["gov.in", "nic.in", "ac.in", "res.in", "edu.in"]
+const MASTERS_VALUES = ["masters_required", "masters_is_the_entry", "masters_advantage", "work_first"]
+const ABROAD_NEEDS = ["not_needed", "helps", "often_needed"]
+const ABROAD_STAGES = ["undergrad", "masters", "doctorate", "training"]
+const maxFacts = () => Number(process.env.STUDY_FACT_MAX) || 10
+
+// A change is kept only with a cited page, a known value, and a real difference from today's.
+const validateFactChange = (change, current, sources) => {
+    if (!change || !Array.isArray(sources) || sources.length === 0) return null
+    const reason = String(change.reason || "").slice(0, 600)
+    const confidence = CONFIDENCE.includes(change.confidence) ? change.confidence : "low"
+    if (change.field === "after_undergrad") {
+        if (!MASTERS_VALUES.includes(change.proposed) || change.proposed === current.after_undergrad) return null
+        return { field: "after_undergrad", currentValue: current.after_undergrad || null, proposedValue: change.proposed, reason, confidence }
+    }
+    if (change.field === "abroad") {
+        const raw = change.proposed || {}
+        if (!ABROAD_NEEDS.includes(raw.need)) return null
+        const value = raw.need === "not_needed"
+            ? { need: "not_needed", stage: null, why: null }
+            : (ABROAD_STAGES.includes(raw.stage) && textOk(raw.why, 220) ? { need: raw.need, stage: raw.stage, why: raw.why.trim().replace(/\.$/, "") } : null)
+        if (!value) return null
+        const before = current.abroad || { need: "not_needed" }
+        if (before.need === value.need && (before.stage || null) === value.stage) return null
+        return { field: "abroad", currentValue: JSON.stringify(before), proposedValue: JSON.stringify(value), reason, confidence }
+    }
+    return null
+}
+
+const FACT_SYSTEM = `You check two facts about one career for an Indian career-guidance service used by students aged 14 to 25.
+
+1. after_undergrad — what a master's means for this career in India:
+   masters_required      you cannot practise or be recruited without it (cite the rule: a regulator, UGC, a recruitment notice)
+   masters_is_the_entry  the postgraduate degree is the usual door in, though no law requires it
+   masters_advantage     it helps, but people are hired without it
+   work_first            experience counts more; a master's is rarely needed
+2. abroad — does a student in India NEED to study abroad for this career? Never name a university.
+   not_needed / helps / often_needed, with the stage (undergrad, masters, doctorate, training) and one short reason.
+
+Search only official and academic Indian sources. Propose a change ONLY where a page you found clearly supports a
+different value. Most careers need no change — an empty list is a good answer.
+
+Reply with ONLY this JSON object:
+{"changes": [{"field": "after_undergrad", "proposed": "masters_required", "reason": "one sentence naming the rule and the page", "confidence": "low" | "medium" | "high"},
+             {"field": "abroad", "proposed": {"need": "helps", "stage": "masters", "why": "..."}, "reason": "...", "confidence": "..."}]}`
+
+const factPrompt = (profession, current) => [
+    `Career: ${profession.profession}`,
+    `What it is: ${profession.one_liner || ""}`,
+    `Path: ${(profession.path_to_entry || []).map((step) => step.requirement).join(" → ")}`,
+    `We show — master's: ${current.after_undergrad || "unknown"}; studying abroad: ${current.abroad ? `${current.abroad.need}${current.abroad.stage ? ` (${current.abroad.stage})` : ""}` : "not needed"}`,
+].join("\n")
+
 // ── the job ────────────────────────────────────────────────────────────────────────────────────
 const runStudyRefresh = async ({
     research = createResearchClient({ job: "study_refresh" }),
@@ -179,6 +237,8 @@ const runStudyRefresh = async ({
     exams = calendar.exams,
     disciplineLimit = maxDisciplines(),
     examLimit = maxExams(),
+    factLimit = maxFacts(),
+    professions = require("../data/ALL-professions.json").professions,
     now = new Date(),
 } = {}) => {
     if (!research) return { skipped: "ANTHROPIC_API_KEY is not set" }
@@ -191,7 +251,7 @@ const runStudyRefresh = async ({
     const examOverrides = new Map(examRows.map((row) => [row.examId, row]))
     const placeOverrides = new Map(placeRows.map((row) => [row.disciplineId, row]))
 
-    const result = { disciplines: 0, exams: 0, proposals: 0, refused: [], failed: [] }
+    const result = { disciplines: 0, exams: 0, facts: 0, proposals: 0, refused: [], failed: [] }
 
     // a newer suggestion replaces an undecided older one for the same thing
     const file = async (kind, id, name, change, sources) => {
@@ -262,10 +322,52 @@ const runStudyRefresh = async ({
         }
     }
 
+    // the careers whose master's matters, or where studying abroad was flagged
+    if (factLimit <= 0) return result
+    const StudyFactOverride = require("../model/studyFactOverridesModel")
+    const abroadData = require("../data/abroad.json").careers
+    const factRows = await StudyFactOverride.find().lean()
+    const factOverrides = new Map(factRows.map((row) => [row.professionId, row]))
+    const studySources = require("../data/study_sources.json").careers
+    const candidates = professions.filter((profession) => profession.after_undergrad !== "work_first" || (abroadData[profession.id] && abroadData[profession.id].need !== "not_needed"))
+    for (const profession of pickOldest(candidates, (row) => row.id, factOverrides, factLimit, (row) => {
+        const known = studySources[row.id] && (studySources[row.id].after_undergrad || studySources[row.id].abroad)
+        return known ? known.checkedOn : null
+    })) {
+        const override = factOverrides.get(profession.id)
+        const values = (override && override.approvedAt && override.values) || {}
+        const abroadRow = values.abroad || abroadData[profession.id]
+        const current = {
+            after_undergrad: values.after_undergrad || profession.after_undergrad,
+            abroad: abroadRow && abroadRow.need !== "not_needed" ? abroadRow : null,
+        }
+        try {
+            const reply = await research.askJson({
+                system: FACT_SYSTEM,
+                user: factPrompt(profession, current),
+                check: (json) => Array.isArray(json.changes),
+                onlyDomains: FACT_DOMAINS,
+            })
+            if (reply.refused) result.refused.push(profession.id)
+            if (reply.unreadable) {
+                result.failed.push(profession.id)
+                continue
+            }
+            for (const change of (reply.json ? reply.json.changes : []).map((raw) => validateFactChange(raw, current, reply.sources)).filter(Boolean)) {
+                await file("study_fact", profession.id, profession.profession, change, reply.sources)
+            }
+            await StudyFactOverride.updateOne({ professionId: profession.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
+            result.facts += 1
+        } catch (error) {
+            console.error(`study_refresh: ${profession.id} failed — ${error.message}`)
+            result.failed.push(profession.id)
+        }
+    }
+
     return result
 }
 
 module.exports = {
-    runStudyRefresh, pickOldest, validateCollegeChange, validateExamChange, validateNewExam, cleanInstitution,
-    EXACT_DATE, RANKING_DOMAINS, COLLEGE_SYSTEM, EXAM_SYSTEM,
+    runStudyRefresh, pickOldest, validateCollegeChange, validateExamChange, validateNewExam, validateFactChange, cleanInstitution,
+    EXACT_DATE, RANKING_DOMAINS, FACT_DOMAINS, COLLEGE_SYSTEM, EXAM_SYSTEM, FACT_SYSTEM, MASTERS_VALUES, ABROAD_NEEDS, ABROAD_STAGES,
 }

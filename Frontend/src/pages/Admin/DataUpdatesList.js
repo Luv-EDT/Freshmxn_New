@@ -15,14 +15,16 @@ const FIELD_NAMES = {
     india_demand: "Demand in India", early_earnings_lpa: "Starting pay (LPA)", mid_career_lpa: "Mid-career pay (LPA)",
     usual_application_window: "Applications usually", usual_exam_month: "Exam usually", eligibility: "Who can sit it",
     new_exam: "A new exam", add_institution: "Add an institution", remove_institution: "Remove an institution", update_institution: "Change a rank",
+    after_undergrad: "Master's needed?", abroad: "Studying abroad",
 }
-const KIND_NAMES = { career: "Career", exam: "Exam", college: "College" }
+const KIND_NAMES = { career: "Career", exam: "Exam", college: "College", study_fact: "Study fact" }
 
 // a college or new-exam proposal carries its institution or exam as JSON text
 const readable = (value) => {
     try {
         const parsed = JSON.parse(value)
         if (parsed && typeof parsed === "object") {
+            if (parsed.need) return [parsed.need.replace(/_/g, " "), parsed.stage, parsed.why].filter(Boolean).join(" · ")
             return [parsed.name, parsed.city, parsed.ownership, parsed.basis || parsed.conducting_body, parsed.official_url].filter(Boolean).join(" · ")
         }
     } catch (error) {

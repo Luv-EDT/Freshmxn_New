@@ -3684,9 +3684,10 @@ const fixtures = [
             const DataProposal = require("../../model/dataProposalsModel")
             const ExamOverride = require("../../model/examOverridesModel")
             const StudyPlaceOverride = require("../../model/studyPlaceOverridesModel")
+            const StudyFactOverride = require("../../model/studyFactOverridesModel")
             const created = []
             const stamped = []
-            const saved = { dp: [DataProposal.create, DataProposal.updateMany], eo: [ExamOverride.find, ExamOverride.updateOne], so: [StudyPlaceOverride.find, StudyPlaceOverride.updateOne] }
+            const saved = { dp: [DataProposal.create, DataProposal.updateMany], eo: [ExamOverride.find, ExamOverride.updateOne], so: [StudyPlaceOverride.find, StudyPlaceOverride.updateOne], sf: [StudyFactOverride.find, StudyFactOverride.updateOne] }
             const lean = (rows) => ({ lean: async () => rows })
             DataProposal.create = async (row) => { created.push(row); return row }
             DataProposal.updateMany = async () => ({})
@@ -3694,11 +3695,14 @@ const fixtures = [
             StudyPlaceOverride.find = () => lean([])
             ExamOverride.updateOne = async (query) => { stamped.push(query.examId) }
             StudyPlaceOverride.updateOne = async (query) => { stamped.push(query.disciplineId) }
+            StudyFactOverride.find = () => lean([])
+            StudyFactOverride.updateOne = async (query) => { stamped.push(query.professionId) }
             const calls = []
             const research = {
                 askJson: async ({ onlyDomains, user }) => {
                     calls.push({ onlyDomains, user })
                     if (/^Exam:/.test(user)) return { json: { changes: [{ field: "usual_exam_month", proposed: "June", reason: "the notice", confidence: "high" }] }, sources: [{ url: "https://jeemain.nta.nic.in/n" }] }
+                    if (/^Career:/.test(user)) return { json: { changes: [{ field: "after_undergrad", proposed: "masters_advantage", reason: "UPSC ISS accepts a bachelor's" }, { field: "after_undergrad", proposed: "a_phd" }] }, sources: [{ url: "https://upsc.gov.in/x" }] }
                     return { json: { changes: [{ action: "remove", institution: { name: "IIT Roorkee", city: "Roorkee" } }], newExams: [] }, sources: [{ url: "https://www.nirfindia.org/r" }] }
                 },
             }
@@ -3706,18 +3710,24 @@ const fixtures = [
             try {
                 const { disciplineById } = require("../../utils/studyPlaces")
                 const { examById } = require("../../utils/examCalendar")
-                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1 })
-                if (result.disciplines !== 1 || result.exams !== 1 || result.proposals !== 2) problems.push(`unexpected result ${JSON.stringify(result)}`)
+                const statistician = require("../../data/ALL-professions.json").professions.filter((profession) => profession.id === "sci-statistician")
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1, factLimit: 1, professions: statistician })
+                if (result.disciplines !== 1 || result.exams !== 1 || result.facts !== 1 || result.proposals !== 3) problems.push(`unexpected result ${JSON.stringify(result)}`)
+                const factCall = calls.find((call) => /^Career:/.test(call.user))
+                if (!factCall || !factCall.onlyDomains.includes("gov.in") || factCall.onlyDomains.some((domain) => /\.com$/.test(domain))) problems.push("study facts are not searched on official and academic domains only")
+                if (!created.some((row) => row.kind === "study_fact" && row.proposedValue === "masters_advantage")) problems.push("the master's change was not filed as a study fact")
+                if (created.some((row) => row.proposedValue === "a_phd")) problems.push("an unknown master's value was filed")
                 const examCall = calls.find((call) => /^Exam:/.test(call.user))
                 if (!examCall || JSON.stringify(examCall.onlyDomains) !== JSON.stringify(["jeemain.nta.nic.in"])) problems.push(`the exam was not searched on its own site: ${JSON.stringify(examCall && examCall.onlyDomains)}`)
                 const collegeCall = calls.find((call) => /^Discipline:/.test(call.user))
                 if (!collegeCall || collegeCall.onlyDomains[0] !== RANKING_DOMAINS[0] || RANKING_DOMAINS[0] !== "nirfindia.org") problems.push("colleges are not searched on NIRF first")
                 if (!created.some((row) => row.kind === "exam" && row.field === "usual_exam_month") || !created.some((row) => row.kind === "college" && row.field === "remove_institution")) problems.push(`proposals not filed by kind: ${JSON.stringify(created.map((row) => [row.kind, row.field]))}`)
-                if (stamped.join() !== "engineering,jee-main") problems.push(`checked stamps wrong: ${stamped.join()}`)
+                if (stamped.join() !== "engineering,jee-main,sci-statistician") problems.push(`checked stamps wrong: ${stamped.join()}`)
             } finally {
                 ;[DataProposal.create, DataProposal.updateMany] = saved.dp
                 ;[ExamOverride.find, ExamOverride.updateOne] = saved.eo
                 ;[StudyPlaceOverride.find, StudyPlaceOverride.updateOne] = saved.so
+                ;[StudyFactOverride.find, StudyFactOverride.updateOne] = saved.sf
             }
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -3861,6 +3871,64 @@ const fixtures = [
             } })
             await client.ask({ system: "the instructions", user: "x" })
             if (!body || !Array.isArray(body.system) || !body.system[0].cache_control || body.system[0].text !== "the instructions") problems.push("the research instructions are not marked for caching")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY SOURCES — every 'master's required' and every abroad flag says what backs it",
+        // checked = an official rule, supported = published evidence, judgement = no source. The
+        // owner asked whether these come from anywhere; this keeps the answer true.
+        run: () => {
+            const sources = require("../../data/study_sources.json")
+            const abroad = require("../../data/abroad.json").careers
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            const STATUSES = ["checked", "supported", "judgement"]
+            const now = Date.now()
+            const checkRow = (id, field, row) => {
+                if (!row) return problems.push(`${id}.${field} says nothing about its source`)
+                if (!STATUSES.includes(row.status)) problems.push(`${id}.${field}: status ${row.status}`)
+                if (row.status !== "judgement") {
+                    if (!Array.isArray(row.sources) || row.sources.length === 0) problems.push(`${id}.${field} is ${row.status} with no source`)
+                    ;(row.sources || []).forEach((key) => {
+                        const source = sources.sources[key]
+                        if (!source || !/^https:\/\//.test(source.url)) problems.push(`${id}.${field}: source ${key} missing or not https`)
+                    })
+                    const age = (now - new Date(row.checkedOn).getTime()) / 86400000
+                    if (!(age >= -1 && age <= 396)) problems.push(`${id}.${field}: checked ${row.checkedOn} — over 13 months, re-check it`)
+                } else if ((row.sources || []).length > 0) problems.push(`${id}.${field} is judgement but lists sources`)
+            }
+            professions.filter((profession) => ["masters_required", "masters_is_the_entry"].includes(profession.after_undergrad))
+                .forEach((profession) => checkRow(profession.id, "after_undergrad", sources.careers[profession.id] && sources.careers[profession.id].after_undergrad))
+            Object.entries(abroad).filter(([, row]) => row.need !== "not_needed")
+                .forEach(([id]) => checkRow(id, "abroad", sources.careers[id] && sources.careers[id].abroad))
+            const checked = professions.filter((profession) => sources.careers[profession.id] && sources.careers[profession.id].after_undergrad && sources.careers[profession.id].after_undergrad.status === "checked").length
+            if (checked < 20) problems.push(`only ${checked} master's rules are checked against an official source`)
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY SOURCES — the card says checked, published or estimate; an approved study-bot fact wins",
+        run: () => {
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const { validateFactChange } = require("../../housekeeping/studyRefresh")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            const psychologist = professions.find((profession) => profession.id === "soc-clinical-psychologist")
+            const served = studentFacing(psychologist)
+            if (served.studyFacts.masters.status !== "checked" || !served.studyFacts.masters.checkedOn) problems.push("a checked master's rule is not served as checked")
+            const engineer = studentFacing(professions.find((profession) => profession.id === "eng-civil-engineer"))
+            if (engineer.studyFacts.masters.status !== "judgement" || engineer.studyFacts.masters.checkedOn !== null) problems.push("an unsourced value is not served as our estimate")
+            const layered = studentFacing(psychologist, {
+                exams: new Map(), places: new Map(),
+                facts: new Map([["soc-clinical-psychologist", { values: { abroad: { need: "helps", stage: "masters", why: "x" } }, approvedAt: new Date("2026-11-02") }]]),
+            })
+            if (!layered.abroad || layered.abroad.need !== "helps" || layered.studyFacts.abroad.status !== "checked") problems.push("an approved abroad change did not reach the page")
+            if (validateFactChange({ field: "abroad", proposed: { need: "helps", stage: "masters", why: "A real reason here" } }, { abroad: null }, []) !== null) problems.push("a change with no source was kept")
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            if (!/Our estimate/.test(card) || !/Checked against the official rules/.test(card)) problems.push("the card does not say where the master's and abroad lines come from")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
