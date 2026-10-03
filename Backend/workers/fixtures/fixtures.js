@@ -262,7 +262,9 @@ const fixtures = [
 
             // Modules whose answers are not a simple id→letter map (digit span, SART, the external
             // tests, story recall) are exempt: they have their own shapes and their own checks.
-            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective"]
+            // The reasoning puzzles and the activity checklist (Round 10) are covered by the
+            // REASONING and INTERESTS fixtures below; the word-memory test (Round 11) by WORD MEMORY.
+            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "interests60", "wordRecall"]
             const uncovered = built.filter((key) => !covered.includes(key) && !SHAPED_DIFFERENTLY.includes(key))
 
             return uncovered.length > 0 ? `built but untested: ${uncovered.join(", ")}` : null
@@ -876,11 +878,14 @@ const fixtures = [
             })
 
             // The block has to survive the trip through the real scorer, not merely look plausible.
-            const scored = scoreReasoning(outcome.block)
+            // Once the student confirms the numbers it counts in full; before that it is used but
+            // marked partial (backend review #11, Round 10 — owner-approved change).
+            const scored = scoreReasoning({ ...outcome.block, studentConfirmedAt: new Date() })
+            const unconfirmed = scoreReasoning(outcome.block)
 
-            return { accepted: outcome.accepted, queue: outcome.queue, score: scored.score, quality: scored.quality }
+            return { accepted: outcome.accepted, queue: outcome.queue, score: scored.score, quality: scored.quality, unconfirmed: unconfirmed.quality }
         },
-        expect: { accepted: true, queue: null, score: 7.2, quality: "full" },
+        expect: { accepted: true, queue: null, score: 7.2, quality: "full", unconfirmed: "partial" },
     },
     {
         name: "EXTERNAL — a percentile outside 0-100 is rejected and NOT stored",
@@ -1975,7 +1980,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT PAGE — no control hides or fades a career",
+        name: "REPORT PAGE — nothing hides a career except the owner-approved blue-collar opt-out",
         // REPLACES "nothing is pinned; the controls apply uniformly" (owner, Round 6). Filters were
         // removed from the page because they crowded the screen and confused students; the filter
         // module stays (its own fixtures still run) but nothing on the page may hide, fade or pin a
@@ -1989,6 +1994,21 @@ const fixtures = [
             if (filters.isPinned) problems.push("isPinned is back in the filter module")
             if (/isPinned|const pinned/.test(page)) problems.push("the page exempts rows again")
             if (/missedBy\(|dimmed=\{/.test(page)) problems.push("the page fades rows again")
+
+            // The ONE exception (owner, 2026-09-30): "Leave out blue-collar careers" — off by default,
+            // removes only blue-collar ids, and the page says how many it hid.
+            if (!/const \[excludeBlueCollar, setExcludeBlueCollar\] = useState\(false\)/.test(page)) {
+                problems.push("the blue-collar filter is not off by default")
+            }
+            if (!/hiddenBlueCollar > 0/.test(page)) problems.push("the page does not say how many careers the blue-collar filter hid")
+
+            const { buildList } = filters
+            const ranked = [{ professionId: "a" }, { professionId: "b" }, { professionId: "c" }]
+            const details = { a: { blueCollar: true }, b: { coreEngineering: true }, c: {} }
+            const ids = (list) => list.map((entry) => entry.professionId).join(",")
+            if (ids(buildList(ranked, [], "best", null, details, {})) !== "a,b,c") problems.push("with no options set the list is not the full ranking")
+            if (ids(buildList(ranked, [], "best", null, details, { excludeBlueCollar: true })) !== "b,c") problems.push("the blue-collar filter removed the wrong careers")
+            if (ids(buildList(ranked, [], "best", null, details, { showFirst: "coreEngineering" })) !== "b,a,c") problems.push("show-first is not a stable partition that keeps everything")
             const listBlock = page.split('<div className="match-list">')[1] || ""
             if (!/^\s*\{ordered\.map\(/.test(listBlock)) problems.push("the rendered list is not the full ordered list")
 
@@ -2117,7 +2137,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT — the prompt is four short sections and the version bumped with it",
+        name: "REPORT — the prompt is three short sections, no next steps, and the version is 3.x",
         // A prose-shape change without a MAJOR version bump makes an old report unrenderable rather
         // than merely old — the page renders against the section keys.
         run: () => {
@@ -2129,11 +2149,16 @@ const fixtures = [
                 if (SYSTEM_PROMPT.includes(`"${gone}"`)) problems.push(`${gone} is still requested from the model`)
             })
 
-            ;["opening", "yourMatches", "readiness", "nextSteps"].forEach((kept) => {
+            ;["opening", "yourMatches", "readiness"].forEach((kept) => {
                 if (!SYSTEM_PROMPT.includes(`"${kept}"`)) problems.push(`${kept} is no longer requested`)
             })
 
-            if (!/^report@2\./.test(REPORT_VERSION)) problems.push(`REPORT_VERSION is ${REPORT_VERSION} — the prose shape changed, so it must be a 2.x`)
+            // Owner, 2026-09-29: next steps come from the data (reportPlan.js), not the model, which
+            // never sees exams, deadlines or subjects and could only write generic advice.
+            if (SYSTEM_PROMPT.includes('"nextSteps"')) problems.push("nextSteps is still requested from the model")
+            if (!/between 14 and 25/.test(SYSTEM_PROMPT)) problems.push("the prompt no longer states the 14-25 readership")
+
+            if (!/^report@3\./.test(REPORT_VERSION)) problems.push(`REPORT_VERSION is ${REPORT_VERSION} — a key was removed, so it must be a 3.x`)
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2589,6 +2614,254 @@ const fixtures = [
         expect: null,
     },
     {
+        name: "MODULES — a finished module's button says whether it can still be changed",
+        // Owner, Round 10 (item 22): "Review and edit" only where answers can be edited; the
+        // one-attempt tests say "Review answers", the screenshot uploads "Review scores".
+        run: () => {
+            const { reviewLabel } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "moduleLabels.js"))
+            const external = ["extReasoning", "extVerbal"]
+            const label = (key) => reviewLabel({ key, external: external.includes(key) })
+            const problems = []
+            ;["ipip50", "mi", "rosenberg", "confidence", "perspective"].forEach((key) => {
+                if (label(key) !== "Review and edit") problems.push(`${key}: ${label(key)}`)
+            })
+            ;["digitSpan", "sartRaw", "storyRecall"].forEach((key) => {
+                if (label(key) !== "Review answers") problems.push(`${key}: ${label(key)}`)
+            })
+            ;["extVerbal"].forEach((key) => {
+                if (label(key) !== "Review scores") problems.push(`${key}: ${label(key)}`)
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "COVERAGE — the assessment page counts exactly the factors the scorer produces",
+        // factorFeeds.js mirrors scoreProfile's inputs for the "N of 31 factors" line. If a factor is
+        // added to or removed from the profile, the page's count must move with it.
+        run: () => {
+            const { FACTOR_FEEDS, factorCoverage } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "factorFeeds.js"))
+            const engine = [...scoreProfile.MAJOR_FACTORS, ...scoreProfile.MINOR_FACTORS].sort()
+            const page = Object.keys(FACTOR_FEEDS).sort()
+            if (JSON.stringify(engine) !== JSON.stringify(page)) return `factor lists differ: engine ${engine.length}, page ${page.length}`
+
+            const nothing = factorCoverage([])
+            const all = factorCoverage(["ipip50", "mi", "rosenberg", "confidence", "perspective", "digitSpan", "extReasoning", "extVerbal", "sartRaw", "storyRecall"])
+            if (nothing.count !== 0) return `nothing finished should measure 0, got ${nothing.count}`
+            if (all.count !== 31 || all.pct !== 100) return `everything finished should measure 31 (100%), got ${all.count} (${all.pct}%)`
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "RESEARCH — every section on the assessment page has its research note, and none says 'validated'",
+        run: () => {
+            const { MODULE_RESEARCH } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "researchNotes.js"))
+            const modulesSource = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "assessmentModules.js"), "utf8")
+            const keys = [...modulesSource.matchAll(/\{ key: "(\w+)"/g)].map((match) => match[1])
+            const missing = keys.filter((key) => !MODULE_RESEARCH[key] || MODULE_RESEARCH[key].references.length === 0)
+            if (missing.length > 0) return `no research note for: ${missing.join(", ")}`
+            const overclaims = Object.entries(MODULE_RESEARCH).filter(([, note]) => /validated/i.test(note.why + note.measures)).map(([key]) => key)
+            return overclaims.length > 0 ? `claims our version is validated: ${overclaims.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
+        name: "REASONING — the same seed deals the same sixteen items, four of each kind, and no answer reaches the browser",
+        run: () => {
+            const bank = require("../../assessment/reasoningBank")
+            const deal = (seed) => Array.from({ length: bank.ITEM_COUNT }, (_, index) => bank.itemFor(seed, index))
+            const first = deal(424242)
+            if (JSON.stringify(first) !== JSON.stringify(deal(424242))) return "the same seed dealt different items"
+            const counts = {}
+            first.forEach((item) => { counts[item.type] = (counts[item.type] || 0) + 1 })
+            if (bank.TYPES.some((type) => counts[type] !== 4)) return `expected four of each kind, got ${JSON.stringify(counts)}`
+            const leaked = first.map(bank.publicItem).filter((item) => "answer" in item)
+            if (leaked.length > 0) return "publicItem still carries the answer"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "REASONING — across 300 students every item has one valid answer, distinct options, and exactly one true turn",
+        run: () => {
+            const bank = require("../../assessment/reasoningBank")
+            for (let seed = 1; seed <= 300; seed += 1) {
+                for (let index = 0; index < bank.ITEM_COUNT; index += 1) {
+                    const item = bank.itemFor(seed * 104729, index)
+                    if (!(item.answer >= 0 && item.answer < item.options.length)) return `no answer: seed ${seed} item ${index}`
+                    if (item.options.length < 4) return `too few options: seed ${seed} item ${index}`
+                    const keys = item.options.map((option) => JSON.stringify(option))
+                    if (new Set(keys).size !== keys.length) return `repeated option: seed ${seed} item ${index}`
+                    if (item.type === "rotation") {
+                        const turns = item.options.filter((option) => bank.isTurnOf(option, item.payload.target)).length
+                        if (turns !== 1) return `rotation with ${turns} correct options: seed ${seed} item ${index}`
+                    }
+                }
+            }
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "REASONING — an unfinished run is not measured; a finished one is a share, with its three parts",
+        run: () => {
+            const score = require("../../scoring/reasoningInHouse")
+            const response = (type, correct) => ({ type, correct })
+            const types = ["matrix", "series", "verbal", "rotation"]
+            const allRight = Array.from({ length: 16 }, (_, index) => response(types[index % 4], true))
+            const half = Array.from({ length: 16 }, (_, index) => response(types[index % 4], index % 4 !== 3))
+            const unfinished = score({ responses: allRight.slice(0, 9) })
+            const full = score({ responses: allRight, completedAt: new Date() })
+            const mixed = score({ responses: half, completedAt: new Date() })
+            if (unfinished.score !== null) return "an abandoned run must not be scored"
+            if (full.score !== 10 || full.parts.spatial !== 10) return `all right should be 10, got ${full.score}`
+            if (mixed.parts.spatial !== 0 || mixed.parts.logical !== 10 || mixed.score !== 7.5) return `parts wrong: ${JSON.stringify(mixed.parts)} ${mixed.score}`
+            if (!full.flags.reasoning_provisional_norms) return "the in-house score must be flagged provisional"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "INTERESTS — the O*NET items that feed the intelligences exist, and none feeds two",
+        run: () => {
+            const interests = require("../../scoring/interests60")
+            const used = Object.values(interests.MI_ITEMS).flat()
+            const unknown = used.filter((id) => !interests.ALL_ITEMS.includes(id))
+            if (unknown.length > 0) return `unknown items: ${unknown.join(", ")}`
+            if (new Set(used).size !== used.length) return "an activity feeds two intelligences"
+            if (interests.ALL_ITEMS.length !== 60) return `expected 60 items, got ${interests.ALL_ITEMS.length}`
+            const frontend = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "interestItems.js"), "utf8")
+            const missing = interests.ALL_ITEMS.filter((id) => !frontend.includes(`id: "${id}"`))
+            return missing.length > 0 ? `not asked on the page: ${missing.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
+        name: "MI — each intelligence is built from self-report, activities and (where tested) reasoning",
+        run: () => {
+            const answers = {}
+            ;["V", "S", "M", "B", "N", "E", "L"].forEach((letter) => { for (let item = 1; item <= 5; item += 1) answers[`MI_${letter}${item}`] = "C" })
+            const onlySelf = scoreProfile({ mi: { answers } })
+            const ticks = {}
+            ;["A4", "A5", "A6", "A10"].forEach((id) => { ticks[id] = true })
+            const withActivities = scoreProfile({ mi: { answers }, interests60: { answers: ticks, completedAt: new Date() } })
+            if (onlySelf.raw_scores.existential_intelligence !== 5) return `existential is self-report only, expected 5, got ${onlySelf.raw_scores.existential_intelligence}`
+            if (onlySelf.data_quality.spatial_intelligence !== "partial") return "spatial without activities or the reasoning test should be partial"
+            // spatial: affinity 0.7*5 + 0.3*10 = 6.5, no reasoning part → 6.5
+            if (withActivities.raw_scores.spatial_intelligence !== 6.5) return `spatial with all four drawing activities ticked: expected 6.5, got ${withActivities.raw_scores.spatial_intelligence}`
+            if (withActivities.factor_coverage.spatial_intelligence !== 0.5) return `spatial coverage without the reasoning test should be 50%, got ${withActivities.factor_coverage.spatial_intelligence}`
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "UNCERTAINTY — U7 and U8 together: both accept the sure thing → uncalibrated; one → mixed; U8 absent → U7 alone",
+        run: () => {
+            const high = { U1: "A", U2: "A", U3: "A", U4: "A", U5: "A", U6: "B" }
+            const run = (extra) => {
+                const profile = scoreProfile({ perspective: { answers: { ...high, ...extra } } })
+                return [Boolean(profile.flags.risk_uncalibrated), Boolean(profile.flags.risk_calibration_mixed), profile.components.uncertainty_tolerance_matching, profile.raw_scores.uncertainty_tolerance]
+            }
+            const both = run({ U7: "C", U8: "D" })
+            const one = run({ U7: "C", U8: "A" })
+            const neither = run({ U7: "A", U8: "E" })
+            const legacy = run({ U7: "D" })
+            if (both[3] < 7) return `the test answers should give a high tolerance, got ${both[3]}`
+            if (!(both[0] && !both[1])) return "both C/D should be uncalibrated"
+            if (!(!one[0] && one[1])) return "one C/D should be mixed"
+            if (neither[0] || neither[1]) return "neither should be flagged"
+            if (!legacy[0]) return "with no U8, U7 alone should still decide"
+            if (!(one[2] > both[2] && one[2] < one[3])) return "mixed should adjust half as far as uncalibrated"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "DATA — an any-stream career never names a PCM- or PCB-gated degree without the open route beside it",
+        // Round 10 (owner spotted it on Software Developer): "any stream" in Class 12, then "B.Tech
+        // CSE" as if a commerce student could walk into it. B.Tech needs PCM and an entrance exam.
+        run: () => {
+            const professions = require("../../data/ALL-professions.json").professions
+            const GATED = /B\.Tech|B\.E\.|MBBS|BDS|B\.Arch|B\.Pharm|B\.Sc Nursing/
+            const OPEN = /BCA|B\.Sc|BA\b|B\.Com|diploma|any (bachelor|degree|stream)|Any bachelor/i
+            const problems = []
+            professions.forEach((profession) => {
+                const prerequisite = profession.class12_prerequisite
+                const anyStream = prerequisite === "any" || (Array.isArray(prerequisite) && prerequisite.includes("any"))
+                if (!anyStream) return
+                ;(profession.path_to_entry || []).forEach((step) => {
+                    const text = String(step.requirement || "")
+                    if (GATED.test(text) && !OPEN.test(text.replace(GATED, ""))) problems.push(`${profession.id}: "${text.slice(0, 60)}"`)
+                    if (/B\.Tech/.test(text) && !/Physics|PCM|JEE|CET|engineering/i.test(text) && !/any (bachelor|degree)/i.test(text)) problems.push(`${profession.id}: B.Tech without its gate`)
+                })
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "DEGREES — the forms and the server offer exactly the same degree list",
+        run: () => {
+            const { DEGREE_FAMILIES } = loadEsModule(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "journeyOptions.js"))
+            const server = require("../../data/degree_options.json").families
+            const shape = (list) => JSON.stringify(list.map((family) => [family.id, family.label, family.bachelor, family.subjects.map((subject) => [subject.id, subject.label])]))
+            return shape(DEGREE_FAMILIES) === shape(server) ? null : "Frontend/src/pages/journeyOptions.js and Backend/data/degree_options.json disagree"
+        },
+        expect: null,
+    },
+    {
+        name: "SUPPORT — a test skipped for a declared difficulty is not measured, never low",
+        run: () => {
+            const { buildSubmission } = require("../../scoring/fixtures/buildSubmission")
+            const submission = buildSubmission()
+            const taken = scoreProfile(submission)
+            const skipped = scoreProfile({ ...submission, accommodations: { needs: ["attention"], skipped: { sartRaw: true } } })
+            if (taken.raw_scores.processing_speed === null) return "the fixture's SART should score"
+            if (skipped.raw_scores.processing_speed !== null) return "a skipped SART must leave processing speed unmeasured, not scored"
+            if (!(skipped.flags.not_measured_for_support || []).includes("sartRaw")) return "the skip is not recorded in the flags"
+            if (skipped.raw_scores.focus === null) return "focus should still score from its other inputs"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "SUPPORT — the disability support facts stay hidden until the owner has checked them",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "reportsRouter.js"), "utf8")
+            const data = require("../../data/disability_support.json")
+            if (!/verified_by_owner/.test(router)) return "getMyReport no longer checks verified_by_owner"
+            if (data.rows.some((row) => !row.source || !row.url)) return "every support line needs its official source"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "FOLLOW-UP — reports.generatedAt is the FIRST report's date: written only on insert, never moved",
+        // The 6- and 12-month follow-up counts from it (housekeeping/followUpScan.js). A rebuild that
+        // moved it would restart every student's clock and the follow-up would never arrive.
+        run: () => {
+            const worker = fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8")
+            const reportWrite = worker.slice(worker.indexOf("await Report.findOneAndUpdate("), worker.indexOf("await User.findByIdAndUpdate(userId, { \"progress.report\""))
+            if (!/\$setOnInsert:\s*\{\s*generatedAt/.test(reportWrite)) return "generatedAt is not written with $setOnInsert"
+            const setBlock = reportWrite.slice(reportWrite.indexOf("$set:"))
+            if (/\bgeneratedAt:/.test(setBlock.replace(/lastGeneratedAt/g, ""))) return "generatedAt is also in $set — a rebuild would move it"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "HOUSEKEEPING — every scheduled job has a runner, and no job id can contain a colon",
+        run: () => {
+            const { SCHEDULES, JOBS } = require("../housekeepingWorker")
+            const missing = SCHEDULES.filter((schedule) => !JOBS[schedule.name]).map((schedule) => schedule.name)
+            if (missing.length > 0) return `scheduled with no runner: ${missing.join(", ")}`
+            const colons = SCHEDULES.filter((schedule) => schedule.name.includes(":")).map((schedule) => schedule.name)
+            return colons.length > 0 ? `ids with a colon: ${colons.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
         name: "MODULES — sartMeta is savable and is not something the scorer reads",
         // A refused session still records why, and that record must never be mistaken for data.
         run: () => {
@@ -2704,6 +2977,890 @@ const fixtures = [
                 problems.push("failure is written into progress.report, which refunds read as delivered")
             }
 
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "REPORT PLAN — the stream map uses the engine's own prerequisite rule",
+        // The class 9-10 headline says "PCM keeps 12 of your 20 open". If it used a different rule
+        // from journey.js, the report would promise careers the engine then filters out in class 11.
+        run: () => {
+            const { streamKeepsOpen, STREAMS } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { class12Satisfied } = require("../../matching/journey")
+            const professions = require("../../data/ALL-professions.json").professions
+
+            const problems = []
+            professions.forEach((profession) => {
+                STREAMS.forEach((stream) => {
+                    const ours = streamKeepsOpen(Array.isArray(profession.class12_prerequisite) ? profession.class12_prerequisite : ["any"], stream.subjects)
+                    // journey.js treats an EMPTY stream as "undeclared, keep everything" — correct for
+                    // a student who skipped the field, but not what "no science, no maths" means. So
+                    // the engine is compared only for streams that name subjects.
+                    if (stream.subjects.length > 0) {
+                        const engine = class12Satisfied(profession, { stream: stream.subjects })
+                        if (ours !== engine) problems.push(`${profession.profession} × ${stream.key}: page ${ours}, engine ${engine}`)
+                    } else if (ours && Array.isArray(profession.class12_prerequisite) && profession.class12_prerequisite.length > 0) {
+                        problems.push(`${profession.profession} needs ${profession.class12_prerequisite.join("+")} but the no-maths stream keeps it open`)
+                    }
+                })
+            })
+
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "REPORT PLAN — next steps are at most three real sentences, for every career and every stage",
+        // Built from data, never filler: an empty string, an "undefined" or a fourth step would all
+        // be the report padding itself.
+        run: () => {
+            const { cardSteps, whyFits } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+
+            const problems = []
+            ;["class9_10", "class11_12", "college", "early_professional"].forEach((journey) => {
+                professions.forEach((profession) => {
+                    const detail = studentFacing(profession)
+                    const steps = cardSteps({ professionId: profession.id }, detail, journey, detail.pathToEntry[1] || null)
+                    if (steps.length > 3) problems.push(`${profession.profession} (${journey}): ${steps.length} steps`)
+                    steps.forEach((step) => {
+                        if (typeof step !== "string" || step.trim() === "" || /undefined|null|NaN/.test(step)) {
+                            problems.push(`${profession.profession} (${journey}): bad step "${step}"`)
+                        }
+                    })
+                })
+            })
+
+            // "Why it fits you" never names confidence or uncertainty tolerance as a strength.
+            const fit = whyFits({
+                supportingFactors: [
+                    { factor: "confidence", slug: "confidence", held: 9 },
+                    { factor: "working without knowing the outcome", slug: "uncertainty_tolerance", held: 9 },
+                    { factor: "logical thinking", slug: "logical_intelligence", held: 8 },
+                ],
+                matchedBy: [{ activity: "coding club" }],
+            })
+            if (fit.strengths.join() !== "logical thinking") problems.push(`why-it-fits named ${fit.strengths.join(", ")}`)
+            if (fit.via !== "coding club") problems.push("why-it-fits lost the activity")
+
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "TAGS — the blue-collar list is the owner's reviewed list, and core engineering follows filter_rules.json",
+        run: () => {
+            const blueCollar = require("../../data/blue_collar.json")
+            const professions = require("../../data/ALL-professions.json").professions
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const ids = new Set(professions.map((profession) => profession.id))
+            const byName = new Map(professions.map((profession) => [profession.profession, profession]))
+
+            const problems = []
+            blueCollar.ids.forEach((id) => { if (!ids.has(id)) problems.push(`blue_collar.json names ${id}, which does not exist`) })
+            if (blueCollar.ids.includes(byName.get("Chef & Professional Cook").id)) problems.push("Chef & Professional Cook is tagged blue-collar against the owner's decision")
+
+            const facing = professions.map(studentFacing)
+            if (facing.filter((profession) => profession.blueCollar).length !== blueCollar.ids.length) problems.push("the API tag does not match the list")
+
+            // Every Engineering & Making career, and every named also_include, is core engineering.
+            const also = Object.keys(require("../../data/filter_rules.json").preference_filters.presets.core_engineering_track.also_include)
+            professions.forEach((profession, index) => {
+                if ((profession.professional_sector_id === 2 || also.includes(profession.profession)) && !facing[index].coreEngineering) {
+                    problems.push(`${profession.profession} should be core engineering`)
+                }
+            })
+
+            // The pay caution is exactly filter_rules.json's derived flag.
+            const cautions = facing.filter((profession) => profession.payCaution).length
+            const flagged = professions.filter((profession) => profession.filter === false).length
+            if (cautions !== flagged) problems.push(`${cautions} pay cautions for ${flagged} flagged careers`)
+
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "DATA REFRESH — never-checked careers first, then the longest since checked, then the oldest hand check",
+        run: () => {
+            const { pickCareersToCheck } = require("../../housekeeping/dataRefresh")
+            const career = (id, checkedOn) => ({ id, economics: { verification: { checked_on: checkedOn } } })
+            const professions = [career("a", "2026-08-01"), career("b", "2026-01-01"), career("c", "2026-05-01"), career("d", null)]
+            const overrides = new Map([["a", { lastCheckedAt: "2026-09-01" }], ["c", { lastCheckedAt: "2026-07-01" }]])
+            return pickCareersToCheck(professions, overrides, 3).map((profession) => profession.id).join(",")
+        },
+        expect: "d,b,c",
+    },
+    {
+        name: "DATA REFRESH — only well-formed, sourced, real changes to the three display fields reach the admin",
+        run: () => {
+            const { validateProposal } = require("../../housekeeping/dataRefresh")
+            const current = { india_demand: "moderate", early_earnings_lpa: "3.0-6.0", mid_career_lpa: "8.0-20.0" }
+            const sources = [{ url: "https://mospi.gov.in/x" }]
+            const problems = []
+            if (!validateProposal({ field: "india_demand", proposed: "high", confidence: "medium" }, current, sources)) problems.push("a sourced demand change was dropped")
+            if (validateProposal({ field: "india_demand", proposed: "high" }, current, [])) problems.push("a change with no source was kept")
+            if (validateProposal({ field: "openness", proposed: "7" }, current, sources)) problems.push("a matching factor was accepted as a field")
+            if (validateProposal({ field: "early_earnings_lpa", proposed: "9-3" }, current, sources)) problems.push("a backwards range was accepted")
+            if (validateProposal({ field: "early_earnings_lpa", proposed: "lots" }, current, sources)) problems.push("a non-range was accepted")
+            if (validateProposal({ field: "mid_career_lpa", proposed: "8-20" }, current, sources)) problems.push("8-20 against 8.0-20.0 is no change, but was kept")
+            if (validateProposal({ field: "india_demand", proposed: "Moderate" }, current, sources)) problems.push("the same demand in other case was kept")
+            const kept = validateProposal({ field: "mid_career_lpa", proposed: "9 - 22", confidence: "certain" }, current, sources)
+            if (!kept || kept.proposedValue !== "9-22" || kept.confidence !== "low") problems.push(`a kept change is not cleaned: ${JSON.stringify(kept)}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "DATA REFRESH — an approved value changes the career page only: demand and pay, marked checked, midpoint recomputed",
+        run: () => {
+            const { applyOverride } = require("../../utils/professionOverrides")
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const profession = taxonomy.professions.find((record) => record.id === "swc-software-developer")
+            const before = JSON.stringify(profession)
+            const after = applyOverride(profession, { values: { india_demand: "moderate", mid_career_lpa: "10-30" }, approvedAt: "2026-10-01", sources: [{ url: "https://ncs.gov.in/x" }] })
+            const facing = studentFacing(after)
+            const problems = []
+            if (JSON.stringify(profession) !== before) problems.push("the file's record was mutated")
+            if (facing.demand.india !== "moderate") problems.push("demand not applied")
+            if (facing.economics.midCareerLpa !== "10-30" || facing.economics.midCareerMidpoint !== 20) problems.push("mid-career pay or midpoint wrong")
+            if (!facing.economics.checked || facing.economics.checkedOn !== "2026-10-01") problems.push("approved pay is not marked checked")
+            if (facing.economics.earlyEarningsLpa !== profession.economics.early_earnings_lpa) problems.push("an unapproved field changed")
+            if (applyOverride(profession, null) !== profession) problems.push("no override should return the record untouched")
+            if (applyOverride(profession, { values: { india_demand: "huge" } }).demand_signal.india_demand !== profession.demand_signal.india_demand) problems.push("a bad stored value was applied")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "DATA REFRESH — overrides reach the career pages and never the matching engine",
+        run: () => {
+            const read = (...parts) => fs.readFileSync(path.join(__dirname, "..", "..", ...parts), "utf8")
+            const problems = []
+            if (!/applyOverride\(profession, overrides\.get\(profession\.id\)\)/.test(read("Routers", "professionsRouter.js"))) problems.push("getProfessions does not apply the overrides")
+            if (!/app\.use\("\/dataUpdates", dataUpdatesRouter\)/.test(read("server.js"))) problems.push("the data-updates router is not mounted")
+            fs.readdirSync(path.join(__dirname, "..", "..", "matching")).filter((file) => file.endsWith(".js")).forEach((file) => {
+                if (/professionOverrides|professionOverridesModel/.test(read("matching", file))) problems.push(`matching/${file} reads the overrides`)
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ADZUNA — a median only with enough salaried postings, in lakh a year",
+        run: () => {
+            const { medianLpaFromHistogram } = require("../../housekeeping/adzuna")
+            return [
+                medianLpaFromHistogram({ 200000: 5, 400000: 5 }),
+                medianLpaFromHistogram({ 200000: 10, 400000: 10, 600000: 5 }),
+                medianLpaFromHistogram({ 300000: 1, 900000: 30 }),
+                medianLpaFromHistogram(null),
+            ]
+        },
+        expect: [null, 4, 9, null],
+    },
+    {
+        name: "SCOUT — titles are normalised and only recurring ones count",
+        run: () => {
+            const { normaliseTitle, countTitles } = require("../../housekeeping/careerScout")
+            const problems = []
+            const cases = [
+                ["Sr. Drone Pilot (Agri) - Pune | Urgent", "drone pilot"],
+                ["Senior Software Engineer II", "software engineer"],
+                ["Trainee 3+ years EV Technician", "ev technician"],
+                ["Sports Data Analyst", "sports data analyst"],
+            ]
+            cases.forEach(([raw, want]) => { if (normaliseTitle(raw) !== want) problems.push(`"${raw}" → "${normaliseTitle(raw)}"`) })
+            const counted = countTitles(["Drone Pilot", "Sr Drone Pilot", "Drone Pilot - Pune", "Chef", "Chef"])
+            if (counted.length !== 1 || counted[0].key !== "drone pilot" || counted[0].count !== 3 || counted[0].title !== "Drone Pilot") problems.push(`counted: ${JSON.stringify(counted)}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "SCOUT — one list from three sources, a tag for each; students first, then agreement; one vote per student",
+        // Round 11 (owner): the official reports became a third source, so "both" became one tag per source
+        run: () => {
+            const { countAspirations, mergeSources, byPriority } = require("../../housekeeping/careerScout")
+            const students = countAspirations([
+                { aspiration_signals: [{ outcome: "unmatched", professionText: "Drone Pilot" }, { outcome: "unmatched", professionText: "drone pilot" }, { outcome: "ranked", professionText: "Chef" }] },
+                { aspiration_signals: [{ outcome: "unmatched", professionText: "Esports Coach" }, { outcome: "unmatched", professionText: "Drone Pilot" }] },
+            ])
+            const board = [{ key: "drone pilot", title: "Drone Pilot", count: 12 }, { key: "prompt engineer", title: "Prompt Engineer", count: 40 }, { key: "ev technician", title: "EV Technician", count: 5 }]
+            const reports = [{ key: "ev technician", title: "EV Technician", url: "https://wheebox.com/x" }]
+            const merged = mergeSources(board, students, reports).sort(byPriority)
+            return merged.map((row) => `${row.key}:${row.sources.join("+")}:${row.aspirations}:${row.postings}`).join(",")
+        },
+        expect: "drone pilot:job_board+student_aspirations:2:12,esports coach:student_aspirations:1:0,ev technician:job_board+reports:0:5,prompt engineer:job_board:0:40",
+    },
+    {
+        name: "SCOUT — a title that is already one of our job titles is not a new career",
+        run: () => {
+            const { jobRoleIndex, nearestRoles, normaliseTitle } = require("../../housekeeping/careerScout")
+            const index = jobRoleIndex(require("../../data/ALL-professions.json").professions)
+            const byName = index.get(normaliseTitle("Senior Unity Developer - Bangalore"))
+            const near = nearestRoles([1, 0], [{ role: "A", professionId: "x", vector: [0, 1] }, { role: "B", professionId: "y", vector: [1, 0.01] }])
+            return [byName ? byName.professionId : null, index.has("drone pilot") || index.has(normaliseTitle("Drone Pilot")), near[0].role]
+        },
+        // Drone Pilot IS one of our careers (eng-drone-pilot), so it is known by name too
+        expect: ["swc-game-developer", true, "B"],
+    },
+    {
+        name: "SCOUT — far from everything is new, between two sectors is a combination, near one career is dropped",
+        run: () => {
+            const { classifyAgainstCareers } = require("../../housekeeping/careerScout")
+            const embeddings = [
+                { id: "a", profession: "A", embedding: [1, 0, 0] },
+                { id: "b", profession: "B", embedding: [0, 1, 0] },
+                { id: "c", profession: "C", embedding: [0.9, -0.43, 0] },
+            ]
+            const sectors = new Map([["a", "Sport"], ["b", "Data"], ["c", "Sport"]])
+            const options = { below: 0.55, gap: 0.03, sectors }
+            return [
+                classifyAgainstCareers([0, 0, 1], embeddings, options).kind,
+                classifyAgainstCareers([1, 1, 0], embeddings, options).kind,
+                classifyAgainstCareers([1, 0.05, 0], embeddings, options).kind,
+                classifyAgainstCareers([1, -0.2, 0], embeddings, { ...options, gap: 0.5 }).kind,
+            ]
+        },
+        // the last: near A and C, but both are Sport — the same field, not a combination
+        expect: ["new", "between", "known", "known"],
+    },
+    {
+        name: "RESEARCH CLIENT — named sources only, server-side fallback on, no structured-output mode, pause_turn resumed",
+        run: async () => {
+            const { createResearchClient, SOURCE_DOMAINS } = require("../../housekeeping/claudeResearch")
+            const bodies = []
+            const headers = []
+            const replies = [
+                { stop_reason: "pause_turn", content: [{ type: "server_tool_use", id: "s1", name: "web_search", input: {} }] },
+                {
+                    stop_reason: "end_turn",
+                    content: [
+                        { type: "web_search_tool_result", tool_use_id: "s1", content: [{ type: "web_search_result", url: "https://ncs.gov.in/a", title: "NCS" }] },
+                        { type: "web_search_tool_result", tool_use_id: "s2", content: { type: "web_search_tool_result_error", error_code: "unavailable" } },
+                        { type: "text", text: "Found it. {\"changes\": []}", citations: [{ url: "https://mospi.gov.in/b", title: "PLFS" }] },
+                    ],
+                },
+            ]
+            const fetchImpl = async (url, options) => {
+                bodies.push(JSON.parse(options.body))
+                headers.push(options.headers)
+                return { ok: true, json: async () => replies.shift() }
+            }
+            const client = createResearchClient({ apiKey: "test", fetchImpl })
+            const reply = await client.askJson({ system: "s", user: "u", check: (json) => Array.isArray(json.changes) })
+
+            const problems = []
+            if (bodies.length !== 2) problems.push(`expected a resumed second request, saw ${bodies.length}`)
+            const first = bodies[0]
+            if (first.fallbacks !== "default" || headers[0]["anthropic-beta"] !== "server-side-fallback-2026-07-01") problems.push("server-side fallback is not on")
+            if (first.output_config) problems.push("output_config is sent — the API rejects it alongside web-search citations")
+            const tool = first.tools && first.tools[0]
+            if (!tool || tool.type !== "web_search_20260209" || JSON.stringify(tool.allowed_domains) !== JSON.stringify(SOURCE_DOMAINS)) problems.push("web search is not limited to the named sources")
+            if (bodies[1] && (bodies[1].messages.length !== 2 || bodies[1].messages[1].role !== "assistant")) problems.push("pause_turn was not resumed by sending the turn back")
+            if (!reply.json || reply.sources.map((source) => source.url).join(",") !== "https://ncs.gov.in/a,https://mospi.gov.in/b") problems.push(`reply/sources wrong: ${JSON.stringify(reply)}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "RESEARCH CLIENT — a refusal is skipped, max_tokens is permanent, no key means no client",
+        run: async () => {
+            const { createResearchClient } = require("../../housekeeping/claudeResearch")
+            const problems = []
+            if (createResearchClient({ apiKey: "" }) !== null) problems.push("a client was built without a key")
+
+            let calls = 0
+            const refusing = createResearchClient({ apiKey: "t", fetchImpl: async () => { calls += 1; return { ok: true, json: async () => ({ stop_reason: "refusal", content: [] }) } } })
+            const refused = await refusing.askJson({ system: "s", user: "u", check: () => true })
+            if (!refused.refused || calls !== 1) problems.push(`refusal not skipped cleanly (calls ${calls})`)
+
+            calls = 0
+            const cut = createResearchClient({ apiKey: "t", fetchImpl: async () => { calls += 1; return { ok: true, json: async () => ({ stop_reason: "max_tokens", content: [{ type: "text", text: "{" }] }) } } })
+            try {
+                await cut.ask({ system: "s", user: "u" })
+                problems.push("max_tokens did not throw")
+            } catch (error) {
+                if (!error.permanent || calls !== 1) problems.push(`max_tokens retried or not permanent (calls ${calls})`)
+            }
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "HOUSEKEEPING — without keys the refresh and the scout say skipped instead of failing",
+        run: async () => {
+            const { runDataRefresh } = require("../../housekeeping/dataRefresh")
+            const { runCareerScout } = require("../../housekeeping/careerScout")
+            const refresh = await runDataRefresh({ research: null })
+            const scout = await runCareerScout({ embed: null })
+            return [Boolean(refresh.skipped), Boolean(scout.skipped)]
+        },
+        expect: [true, true],
+    },
+    {
+        name: "MENTOR PICKER — every career offers its own job roles, the ones that suit you first, nothing invented",
+        // Round 11: the student chooses ONE job role. The page's list and the server's check are the
+        // same list, so a role-group role that is not a job role could be shown and then refused.
+        run: () => {
+            const { pickerOptions } = require("../../Routers/mentorWaitlistRouter")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const problems = []
+            taxonomy.professions.forEach((profession) => {
+                ;((profession.role_spread && profession.role_spread.deviating_roles) || []).forEach((group) => {
+                    ;(group.roles || []).forEach((role) => {
+                        if (!(profession.job_roles || []).includes(role)) problems.push(`${profession.id}: role-group role "${role}" is not a job role`)
+                    })
+                })
+            })
+            const [option] = pickerOptions([{ professionId: "swc-game-developer", profession: "Game Developer", bestRoles: { roles: ["VR Developer", "Not A Real Role"] } }])
+            const all = taxonomy.professions.find((profession) => profession.id === "swc-game-developer").job_roles
+            if (option.jobRoles[0] !== "VR Developer") problems.push("the role that suits the student is not first")
+            if (option.jobRoles.includes("Not A Real Role")) problems.push("a role outside the data file was offered")
+            if (option.jobRoles.length !== all.length) problems.push("the job roles are not all offered exactly once")
+            if (!/jobRolesById\.get\(String\(match\.professionId\)\)/.test(fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "mentorWaitlistRouter.js"), "utf8"))) problems.push("chooseProfession does not check the role against the career's job roles")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WORD MEMORY — lists are fixed by the seed, never overlap, and the bank has no near-twins",
+        run: () => {
+            const wordBank = require("../../assessment/wordBank")
+            const problems = []
+            const [first, second] = wordBank.listsFor(12345)
+            if (JSON.stringify(wordBank.listsFor(12345)) !== JSON.stringify([first, second])) problems.push("the same seed gave different lists")
+            if (first.length !== 15 || second.length !== 15) problems.push("a list is not fifteen words")
+            if (first.some((word) => second.includes(word))) problems.push("the two lists share a word")
+            const words = wordBank.WORDS
+            if (new Set(words).size !== words.length) problems.push("the bank repeats a word")
+            for (let i = 0; i < words.length; i += 1) {
+                for (let j = i + 1; j < words.length; j += 1) {
+                    if ((words[i].length >= 5 || words[j].length >= 5) && wordBank.withinOneEdit(words[i], words[j])) problems.push(`"${words[i]}" and "${words[j]}" are one typo apart`)
+                }
+            }
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WORD MEMORY — marking forgives typos and plurals, credits each word once, never subtracts",
+        run: () => {
+            const { markRecall } = require("../../assessment/wordBank")
+            const list = ["tiger", "umbrella", "mango", "wizard", "chair", "comb"]
+            const marked = markRecall("Tigers, umbrela; MANGO mango wizzard banana hcair cmob", list)
+            return { correct: marked.correct, intrusions: marked.intrusions }
+        },
+        // "cmob" is a swap in a 4-letter word — short words must be spelt right, or "comb"/"come"
+        // would blur; "banana" was never shown
+        expect: { correct: 5, intrusions: ["banana", "cmob"] },
+    },
+    {
+        name: "WORD MEMORY — an unfinished run is not measured; a finished one is a provisional share",
+        run: () => {
+            const scoreWordRecall = require("../../scoring/wordRecall")
+            const half = scoreWordRecall({ trials: [{ correct: 9, intrusions: [] }] })
+            const full = scoreWordRecall({ completedAt: new Date(), trials: [{ correct: 9, intrusions: [] }, { correct: 12, intrusions: ["kite"] }] })
+            return [half.score, Boolean(half.flags.word_recall_unfinished), full.score, Boolean(full.flags.word_recall_provisional_norms)]
+        },
+        expect: [null, true, 7, true],
+    },
+    {
+        name: "WORD MEMORY — the in-house test wins over an old upload, and the lists never reach the page",
+        run: () => {
+            const problems = []
+            const base = buildSubmission({ ipip50: fillIpip({ default: 3 }), perspective: fillPerspective({}) }).psychometric
+            const withBoth = scoreProfile({ ...base, digitSpan: undefined, extVerbal: { your_score: 36, studentConfirmedAt: new Date() }, wordRecall: { completedAt: new Date(), trials: [{ correct: 0 }, { correct: 0 }] } }, {})
+            if (withBoth.components.verbal_memory !== 0 || withBoth.components.verbal_memory_source !== "in_house") problems.push(`in-house did not win: ${withBoth.components.verbal_memory} ${withBoth.components.verbal_memory_source}`)
+            const router = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "submissionsRouter.js"), "utf8")
+            if (!/const \{ seed, pending, trials, \.\.\.words \} = psychometric\.wordRecall/.test(router)) problems.push("getMySubmission does not strip the word lists")
+            if (/"wordRecall"\s*:/.test(router.slice(router.indexOf("const CLIENT_OWNED"), router.indexOf("const MODULE_KEYS")))) problems.push("the page may write its own word-test block")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "FOLLOW-UP CLOCK — the first submit starts it; afterwards only 'something new' moves it",
+        run: () => {
+            const { directionUpdate } = require("../../utils/direction")
+            const now = new Date("2026-10-02T00:00:00Z")
+            const first = directionUpdate({ via: "resubmit", direction: undefined, firstTime: true, now })
+            const same = directionUpdate({ via: "update", direction: "same", firstTime: false, now })
+            const fresh = directionUpdate({ via: "update", direction: "new", firstTime: false, now })
+            const missing = directionUpdate({ via: "resubmit", direction: "maybe", firstTime: false, now })
+            return [
+                Boolean(first.$set && first.$set.followUpAnchorAt),
+                Boolean(same.$set),
+                same.$push.directionChanges.$each[0].choice,
+                Boolean(fresh.$set && fresh.$set.followUpAnchorAt),
+                missing,
+            ]
+        },
+        expect: [true, false, "same", true, null],
+    },
+    {
+        name: "REPORT — never rebuilt behind the student's back; 'Update my report' only on their word",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "reportsRouter.js"), "utf8")
+            const getMyReport = router.slice(router.indexOf('router.get("/getMyReport"'), router.indexOf("// Retry My Report") > 0 ? router.indexOf("// Retry My Report") : router.indexOf('router.post("/retryMyReport"'))
+            const update = router.slice(router.indexOf('router.post("/updateMyReport"'), router.indexOf('router.get("/getMyScores"'))
+            const problems = []
+            if (/enqueue/.test(getMyReport)) problems.push("getMyReport queues a rebuild")
+            if (!/updateIsAvailable\(report, recommendation\)/.test(update)) problems.push("updateMyReport does not check there is something to update")
+            if (!/directionUpdate\(\{ via: "update"/.test(update)) problems.push("updateMyReport does not ask which way the student is heading")
+            const page = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            if (/status === "stale"/.test(page)) problems.push("the page still waits for an automatic rebuild")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "FOLLOW-UP — the catch-up window is longer than the gap between runs",
+        run: () => {
+            const { SCHEDULES } = require("../housekeepingWorker")
+            const { CATCH_UP_DAYS } = require("../../housekeeping/followUpScan")
+            const scan = SCHEDULES.find((schedule) => schedule.name === "followup_scan")
+            const monthly = /^\S+ \S+ \d+ \* \*$/.test(scan.pattern)
+            const gapDays = monthly ? 31 : 1
+            return CATCH_UP_DAYS > gapDays ? null : `window ${CATCH_UP_DAYS} days, runs up to ${gapDays} days apart — a student could be skipped`
+        },
+        expect: null,
+    },
+    {
+        name: "CAREER DRAFTS — the checks a drafted career must pass are ones all 223 already pass",
+        // if a check here rejected a real record, the drafter would be held to a rule the data never followed
+        run: () => {
+            const { validateDraftRecord, deriveFilter } = require("../../housekeeping/draftCareer")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            professions.forEach((profession) => {
+                const others = new Set(professions.filter((other) => other.id !== profession.id).map((other) => other.id))
+                const checks = validateDraftRecord(profession, others)
+                if (checks.blocking.length > 0) problems.push(`${profession.id}: ${checks.blocking[0]}`)
+                if (deriveFilter(profession) !== profession.filter) problems.push(`${profession.id}: the derived filter disagrees with the data`)
+            })
+            const broken = validateDraftRecord({ ...professions[0], id: professions[1].id, ai_exposure: { ...professions[0].ai_exposure, work_composition: { ...professions[0].ai_exposure.work_composition, clarity: 99 } } })
+            if (!broken.blocking.some((text) => /already exists/.test(text))) problems.push("a duplicate id was not caught")
+            if (!broken.blocking.some((text) => /sums to/.test(text))) problems.push("a work composition that does not sum to 100 was not caught")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "CAREER DRAFTS — embedded from the exact text the 223 were, and rated the way they were merged",
+        run: () => {
+            const { sourceTextOf, contentHash, mergePasses, decisionsText, DECISION_SECTIONS, validateCombined } = require("../../housekeeping/draftCareer")
+            const professions = require("../../data/ALL-professions.json").professions
+            const stored = require("../../data/profession_embeddings.json").embeddings
+            const problems = []
+            const drift = stored.filter((entry) => contentHash(sourceTextOf(professions.find((profession) => profession.id === entry.id))) !== entry.content_hash)
+            if (drift.length > 0) problems.push(`${drift.length} stored hashes do not reproduce — the draft would be embedded from different text`)
+
+            const merged = mergePasses({ id: "x", profession: "X", driving_reasons: ["curiosityDriven", "notAReason"] }, [
+                { factors: { openness: 4, focus: 2 }, weights: { openness: 0.5, focus: 0.2 } },
+                { factors: { openness: 4, focus: 8 }, weights: { openness: 0.5, focus: 0.4 } },
+                { factors: { openness: 5, focus: 5 }, weights: { openness: 0.6, focus: 0.3 } },
+            ])
+            if (merged.factors.openness !== 4.33 || merged.weights.focus !== 0.3) problems.push(`the passes are not averaged: ${JSON.stringify(merged.factors)}`)
+            if (!merged.admin_review.required || !/focus/.test(merged.admin_review.reason)) problems.push("a 6-point disagreement was not sent for review")
+            if (merged.review_status !== "unreviewed") problems.push("a drafted rating must start unreviewed")
+            if (merged.drivingReasons.join() !== "curiosityDriven") problems.push("a driving reason outside the vocabulary was kept")
+
+            const rules = decisionsText()
+            ;["## 1. Profession schema", "## 3. `degree_dependency`", "## 8.95 What makes something a profession", "## 8.6 AI exposure"].forEach((heading) => {
+                if (!rules.includes(heading)) problems.push(`the drafter is not given "${heading}"`)
+            })
+            if (DECISION_SECTIONS.length < 10) problems.push("too few rule sections")
+
+            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "photo_film" }).blocking.length === 0) problems.push("a combined career with the same group on both sides was accepted")
+            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "no_such_group" }).blocking.length === 0) problems.push("an unknown side group was accepted")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "EXAM CALENDAR — every exam spelling in the data is mapped to a row or carries a reason",
+        run: () => {
+            const calendar = require("../../data/exam_calendar.json")
+            const professions = require("../../data/ALL-professions.json").professions
+            const ids = new Set(calendar.exams.map((exam) => exam.id))
+            const problems = []
+            const spellings = new Set(professions.flatMap((profession) => {
+                const routes = profession.entrance_exams || {}
+                return [...(routes.public_routes || []), ...(routes.private_entrances || [])]
+            }))
+            spellings.forEach((spelling) => {
+                const alias = calendar.aliases[spelling]
+                if (!alias) problems.push(`"${spelling}" is not in the alias map`)
+                else if (alias.exam && !ids.has(alias.exam)) problems.push(`"${spelling}" points at unknown exam ${alias.exam}`)
+                else if (!alias.exam && !(typeof alias.reason === "string" && alias.reason.length > 10)) problems.push(`"${spelling}" has no exam and no reason`)
+            })
+            if (ids.size !== calendar.exams.length) problems.push("two exam rows share an id")
+            if (spellings.size < 150) problems.push(`only ${spellings.size} spellings found — the fixture is reading the wrong field`)
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "EXAM CALENDAR — checked rows are fresh, every link is https, and no row gives an exact date",
+        // "usually in May", never "on 4 May 2027": a student is always sent to the official site. A
+        // checked row older than 13 months fails here, so the calendar cannot quietly go stale.
+        run: () => {
+            const calendar = require("../../data/exam_calendar.json")
+            const problems = []
+            const now = Date.now()
+            const EXACT = /\b\d{1,2}(st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}(st|nd|rd|th)?\b|\b20\d\d\b|\d{4}-\d{2}-\d{2}/i
+            calendar.exams.forEach((exam) => {
+                if (!/^https:\/\/[^\s/]+\.[a-z]{2,}/i.test(exam.official_url || "")) problems.push(`${exam.id}: official link is not https`)
+                if (!["ug", "pg", "professional", "recruitment"].includes(exam.level)) problems.push(`${exam.id}: unknown level ${exam.level}`)
+                ;["usual_application_window", "usual_exam_month", "eligibility"].forEach((field) => {
+                    if (exam[field] && EXACT.test(exam[field])) problems.push(`${exam.id}.${field} reads like an exact date: "${exam[field]}"`)
+                })
+                if (exam.status === "checked") {
+                    const age = (now - new Date(exam.checked_on).getTime()) / (24 * 60 * 60 * 1000)
+                    if (!(age >= -1 && age <= 396)) problems.push(`${exam.id}: checked ${exam.checked_on} — older than 13 months, re-check it`)
+                    if (!exam.usual_application_window || !exam.usual_exam_month) problems.push(`${exam.id}: checked but has no window or month`)
+                } else if (exam.status !== "draft") {
+                    problems.push(`${exam.id}: status must be checked or draft`)
+                }
+            })
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "EXAM CALENDAR — a draft row reaches the page as a name and a link only; overrides apply",
+        run: () => {
+            const { examsFor, examById } = require("../../utils/examCalendar")
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+
+            let served = 0
+            professions.forEach((profession) => {
+                const facing = studentFacing(profession)
+                facing.exams.forEach((exam) => {
+                    served += 1
+                    const row = examById.get(exam.id)
+                    if (row.status === "draft" && (exam.window || exam.examMonth || exam.eligibility || exam.checkedOn)) problems.push(`${exam.id}: a draft row carried a window`)
+                })
+                const listed = facing.exams.length + facing.otherRoutes.public.length + facing.otherRoutes.private.length
+                const routes = profession.entrance_exams || {}
+                if (listed === 0 && ((routes.public_routes || []).length + (routes.private_entrances || []).length) > 0) problems.push(`${profession.profession}: its exams vanished`)
+            })
+            if (served < 100) problems.push(`only ${served} calendar exams served across the careers`)
+
+            const engineer = professions.find((profession) => (profession.entrance_exams && (profession.entrance_exams.public_routes || []).some((name) => /JEE Main/.test(name))))
+            const draftId = [...examById.values()].find((exam) => exam.status === "draft").id
+            const fake = { entrance_exams: { public_routes: [...engineer.entrance_exams.public_routes, ...engineer.entrance_exams.public_routes] } }
+            const once = examsFor(fake).exams.filter((exam) => exam.id === "jee-main")
+            if (once.length !== 1) problems.push("an exam listed twice was served twice")
+
+            const spelling = Object.entries(require("../../data/exam_calendar.json").aliases).find(([, alias]) => alias.exam === draftId)[0]
+            const approved = examsFor({ entrance_exams: { public_routes: [spelling] } }, new Map([[draftId, { values: { usual_application_window: "March to April" }, approvedAt: new Date() }]])).exams[0]
+            if (!approved || approved.window !== "March to April" || !approved.checkedOn) problems.push("an approved exam change did not reach the page")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WHERE TO STUDY — every career maps to a known discipline or to none; links are official and https",
+        run: () => {
+            const { studyPlaces } = require("../../utils/studyPlaces")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            const ids = new Set(studyPlaces.disciplines.map((discipline) => discipline.id))
+            if (ids.size !== studyPlaces.disciplines.length) problems.push("two disciplines share an id")
+            professions.forEach((profession) => {
+                if (!(profession.id in studyPlaces.careers)) problems.push(`${profession.id} is not in the career map`)
+                else if (studyPlaces.careers[profession.id] !== null && !ids.has(studyPlaces.careers[profession.id])) problems.push(`${profession.id} → unknown discipline`)
+            })
+            const known = new Set(professions.map((profession) => profession.id))
+            Object.keys(studyPlaces.careers).forEach((id) => { if (!known.has(id)) problems.push(`${id} is mapped but is not a career`) })
+            const allowed = studyPlaces.allowed_link_domains
+            studyPlaces.disciplines.forEach((discipline) => {
+                if (!discipline.links || discipline.links.length === 0) problems.push(`${discipline.id} has no official link`)
+                ;(discipline.links || []).forEach((link) => {
+                    let host = ""
+                    try {
+                        const url = new URL(link.url)
+                        host = url.protocol === "https:" ? url.hostname : ""
+                    } catch (error) {
+                        host = ""
+                    }
+                    if (!host) problems.push(`${discipline.id}: ${link.url} is not an https link`)
+                    else if (!allowed.some((domain) => host === domain || host.endsWith(`.${domain}`))) problems.push(`${discipline.id}: ${host} is not an allowed official domain`)
+                })
+            })
+            if (Object.values(studyPlaces.careers).filter(Boolean).length < 100) problems.push("fewer than 100 careers have somewhere to study — the map is wrong")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WHERE TO STUDY — every institution has a basis, suggestions say so, at most ten, none listed twice",
+        run: () => {
+            const { studyPlaces, BASIS, MAX_INSTITUTIONS, keyOf } = require("../../utils/studyPlaces")
+            const problems = []
+            let ranked = 0
+            let privateRows = 0
+            studyPlaces.disciplines.forEach((discipline) => {
+                if (discipline.institutions.length > MAX_INSTITUTIONS) problems.push(`${discipline.id} lists ${discipline.institutions.length}`)
+                const keys = discipline.institutions.map(keyOf)
+                if (new Set(keys).size !== keys.length) problems.push(`${discipline.id} lists an institution twice`)
+                discipline.institutions.forEach((institution) => {
+                    if (!BASIS.test(institution.basis || "")) problems.push(`${discipline.id}: "${institution.name}" has basis "${institution.basis}"`)
+                    if (/^NIRF/.test(institution.basis)) ranked += 1
+                    if (institution.ownership === "private") privateRows += 1
+                    if (!institution.city) problems.push(`${discipline.id}: "${institution.name}" has no city`)
+                })
+            })
+            if (ranked < 80) problems.push(`only ${ranked} NIRF-ranked rows — NIRF is the main source`)
+            if (privateRows < 15) problems.push(`only ${privateRows} private institutions — the owner asked for private colleges too`)
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "WHERE TO STUDY — the lists stay hidden until the owner has reviewed them; links show at once",
+        run: () => {
+            const sp = require("../../utils/studyPlaces")
+            const problems = []
+            const served = sp.studyPlacesFor("hlt-doctor")
+            if (!served || served.links.length === 0) problems.push("the official links are not served")
+            if (sp.studyPlaces.review.reviewed_by_owner === false && (served.institutions.length > 0 || served.listsPending !== true)) problems.push("an unreviewed institution list reached the page")
+            if (sp.studyPlacesFor("mgt-entrepreneur") !== null) problems.push("a career with no programme was given somewhere to study")
+
+            // the override layer: removal by name AND city, an update in place, an addition at the end
+            const list = sp.disciplineById.get("hotel_management").institutions
+            const after = sp.applyStudyOverride(list, {
+                removed: ["institute of hotel management · mumbai"],
+                updated: [{ name: "Institute of Hotel Management", city: "Kolkata", basis: "NIRF 2026 Hotel #1" }],
+                added: [{ name: "New Place", city: "Goa", basis: "Suggested — check" }],
+            })
+            const names = after.map(sp.keyOf)
+            if (names.includes("institute of hotel management · mumbai")) problems.push("a removal did not apply")
+            if (!names.includes("institute of hotel management · bengaluru")) problems.push("a removal took out a same-named institute in another city")
+            if (!after.some((row) => row.city === "Kolkata" && row.basis === "NIRF 2026 Hotel #1")) problems.push("an update did not apply")
+            if (names[names.length - 1] !== "new place · goa") problems.push("an addition is not at the end")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY BOT — only checkable, well-formed changes with a cited page reach the admin",
+        run: () => {
+            const { validateCollegeChange, validateExamChange, validateNewExam } = require("../../housekeeping/studyRefresh")
+            const sp = require("../../utils/studyPlaces")
+            const src = [{ url: "https://www.nirfindia.org/x" }]
+            const law = sp.disciplineById.get("law").institutions
+            const design = sp.disciplineById.get("design").institutions.slice(0, 9)
+            const problems = []
+            if (!validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "NIRF 2026 Engineering #40" } }, design, src)) problems.push("a well-formed addition was dropped")
+            if (validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "Top college" } }, design, src)) problems.push("an addition with no checkable basis was kept")
+            if (validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "NIRF 2026 Law #12" } }, law, src)) problems.push("an addition to a full list of ten was kept")
+            if (validateCollegeChange({ action: "add", institution: { name: "A New College", city: "Pune", basis: "NIRF 2026 Engineering #40" } }, design, [])) problems.push("a change with no source was kept")
+            if (validateCollegeChange({ action: "remove", institution: { name: "Nowhere", city: "X" } }, law, src)) problems.push("removing an institution not on the list was kept")
+            const update = validateCollegeChange({ action: "update", institution: { name: "Symbiosis Law School", city: "Pune", basis: "NIRF 2026 Law #6" } }, law, src)
+            if (!update || JSON.parse(update.proposedValue).ownership !== "private") problems.push("an update lost the institution's other fields")
+            if (validateExamChange({ field: "usual_exam_month", proposed: "4 May 2027" }, {}, src)) problems.push("an exact date was kept")
+            if (validateExamChange({ field: "official_url", proposed: "https://x.in" }, {}, src)) problems.push("an exam field outside the three was kept")
+            if (validateExamChange({ field: "usual_exam_month", proposed: "April" }, { usual_exam_month: "april" }, src)) problems.push("a no-op exam change was kept")
+            if (!validateExamChange({ field: "usual_exam_month", proposed: "May" }, { usual_exam_month: "April" }, src)) problems.push("a real exam change was dropped")
+            if (validateNewExam({ name: "JEE Main", conducting_body: "NTA", official_url: "https://jeemain.nta.nic.in", level: "ug" }, src)) problems.push("an exam the calendar already has was proposed as new")
+            if (!validateNewExam({ name: "Some New Test", conducting_body: "A Board", official_url: "https://board.gov.in", level: "pg" }, src)) problems.push("a well-formed new exam was dropped")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY BOT — an exam is searched on its own site only, colleges on NIRF first; nothing is written but proposals",
+        run: async () => {
+            const { runStudyRefresh, RANKING_DOMAINS } = require("../../housekeeping/studyRefresh")
+            const DataProposal = require("../../model/dataProposalsModel")
+            const ExamOverride = require("../../model/examOverridesModel")
+            const StudyPlaceOverride = require("../../model/studyPlaceOverridesModel")
+            const created = []
+            const stamped = []
+            const saved = { dp: [DataProposal.create, DataProposal.updateMany], eo: [ExamOverride.find, ExamOverride.updateOne], so: [StudyPlaceOverride.find, StudyPlaceOverride.updateOne] }
+            const lean = (rows) => ({ lean: async () => rows })
+            DataProposal.create = async (row) => { created.push(row); return row }
+            DataProposal.updateMany = async () => ({})
+            ExamOverride.find = () => lean([])
+            StudyPlaceOverride.find = () => lean([])
+            ExamOverride.updateOne = async (query) => { stamped.push(query.examId) }
+            StudyPlaceOverride.updateOne = async (query) => { stamped.push(query.disciplineId) }
+            const calls = []
+            const research = {
+                askJson: async ({ onlyDomains, user }) => {
+                    calls.push({ onlyDomains, user })
+                    if (/^Exam:/.test(user)) return { json: { changes: [{ field: "usual_exam_month", proposed: "June", reason: "the notice", confidence: "high" }] }, sources: [{ url: "https://jeemain.nta.nic.in/n" }] }
+                    return { json: { changes: [{ action: "remove", institution: { name: "IIT Roorkee", city: "Roorkee" } }], newExams: [] }, sources: [{ url: "https://www.nirfindia.org/r" }] }
+                },
+            }
+            const problems = []
+            try {
+                const { disciplineById } = require("../../utils/studyPlaces")
+                const { examById } = require("../../utils/examCalendar")
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1 })
+                if (result.disciplines !== 1 || result.exams !== 1 || result.proposals !== 2) problems.push(`unexpected result ${JSON.stringify(result)}`)
+                const examCall = calls.find((call) => /^Exam:/.test(call.user))
+                if (!examCall || JSON.stringify(examCall.onlyDomains) !== JSON.stringify(["jeemain.nta.nic.in"])) problems.push(`the exam was not searched on its own site: ${JSON.stringify(examCall && examCall.onlyDomains)}`)
+                const collegeCall = calls.find((call) => /^Discipline:/.test(call.user))
+                if (!collegeCall || collegeCall.onlyDomains[0] !== RANKING_DOMAINS[0] || RANKING_DOMAINS[0] !== "nirfindia.org") problems.push("colleges are not searched on NIRF first")
+                if (!created.some((row) => row.kind === "exam" && row.field === "usual_exam_month") || !created.some((row) => row.kind === "college" && row.field === "remove_institution")) problems.push(`proposals not filed by kind: ${JSON.stringify(created.map((row) => [row.kind, row.field]))}`)
+                if (stamped.join() !== "engineering,jee-main") problems.push(`checked stamps wrong: ${stamped.join()}`)
+            } finally {
+                ;[DataProposal.create, DataProposal.updateMany] = saved.dp
+                ;[ExamOverride.find, ExamOverride.updateOne] = saved.eo
+                ;[StudyPlaceOverride.find, StudyPlaceOverride.updateOne] = saved.so
+            }
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MASTER'S OPTIONS — every career lands in one group, and an exam is listed only if it is that career's own",
+        run: () => {
+            const { mastersOptions } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+            const details = Object.fromEntries(professions.map((profession) => [profession.id, studentFacing(profession)]))
+            const ranked = professions.map((profession) => ({ professionId: profession.id, profession: profession.profession }))
+            const problems = []
+
+            const all = mastersOptions(ranked, details, ranked.length)
+            const placed = all.groups.reduce((total, group) => total + group.careers.length, 0)
+            if (placed + all.notNeeded + all.unknown !== ranked.length) problems.push(`${placed} + ${all.notNeeded} + ${all.unknown} ≠ ${ranked.length}`)
+            const seen = all.groups.flatMap((group) => group.careers.map((career) => career.professionId))
+            if (new Set(seen).size !== seen.length) problems.push("a career is in two groups")
+            all.groups.forEach((group) => group.careers.forEach((career) => {
+                const own = details[career.professionId].exams.filter((exam) => exam.level === "pg").map((exam) => exam.name)
+                career.exams.forEach((name) => { if (!own.includes(name)) problems.push(`${career.profession}: exam ${name} is not in its own list`) })
+                if (career.step !== null && typeof career.step !== "string") problems.push(`${career.profession}: bad step`)
+            }))
+            if (!all.groups.some((group) => group.careers.some((career) => career.exams.length > 0))) problems.push("no career shows a postgraduate exam — the calendar's pg level is not being read")
+            const withStep = all.groups.flatMap((group) => group.careers).filter((career) => career.step).length
+            if (withStep < placed * 0.6) problems.push(`only ${withStep} of ${placed} careers name the degree step`)
+
+            const top = mastersOptions(ranked.slice(0, 5), {}, 20)
+            if (top.unknown !== 5 || top.groups.length !== 0) problems.push("careers without loaded details were placed in a group")
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY ABROAD — every career says whether it is needed, with a reason when it is; matching never reads it",
+        run: () => {
+            const abroad = require("../../data/abroad.json")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            professions.forEach((profession) => {
+                const row = abroad.careers[profession.id]
+                if (!row) return problems.push(`${profession.id} has no abroad value`)
+                if (!["not_needed", "helps", "often_needed"].includes(row.need)) problems.push(`${profession.id}: need "${row.need}"`)
+                if (row.need !== "not_needed" && !(typeof row.why === "string" && row.why.length > 20)) problems.push(`${profession.id}: no reason given`)
+                if (row.need !== "not_needed" && !["undergrad", "masters", "doctorate", "training"].includes(row.stage)) problems.push(`${profession.id}: stage "${row.stage}"`)
+            })
+            if (Object.keys(abroad.careers).length !== professions.length) problems.push("abroad.json lists careers that are not in the data")
+            const flagged = Object.values(abroad.careers).filter((row) => row.need !== "not_needed").length
+            if (flagged === 0 || flagged > 60) problems.push(`${flagged} careers flagged — the rule says only where it really helps`)
+            const matchingDir = path.join(__dirname, "../../matching")
+            fs.readdirSync(matchingDir).filter((name) => name.endsWith(".js")).forEach((name) => {
+                if (/abroad/.test(fs.readFileSync(path.join(matchingDir, name), "utf8"))) problems.push(`matching/${name} reads the abroad data`)
+            })
+            return problems.length > 0 ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY ABROAD — the offer appears only for a top-ten career that needs it, and is never sent without consent",
+        run: () => {
+            const { abroadCareers } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+            const details = Object.fromEntries(professions.map((profession) => [profession.id, studentFacing(profession)]))
+            const asRanked = (ids) => ids.map((id) => ({ professionId: id, profession: id }))
+            const problems = []
+            if (abroadCareers(asRanked(["eng-electrician", "hos-chef", "law-lawyer"]), details).length !== 0) problems.push("offered for careers that do not need study abroad")
+            const ten = ["eng-electrician", "hos-chef", "law-lawyer", "eng-plumber", "eng-welder", "hlt-nurse", "fin-accounts-executive", "mgt-sales-professional", "edu-school-teacher", "hos-fb-service"]
+            if (abroadCareers(asRanked([...ten, "sci-space-scientist"]), details).length !== 0) problems.push("offered for a career outside the top ten")
+            const hit = abroadCareers(asRanked(["eng-electrician", "sci-space-scientist"]), details)
+            if (hit.length !== 1 || hit[0].professionId !== "sci-space-scientist") problems.push(`not offered for a top-ten career that needs it: ${JSON.stringify(hit)}`)
+            if (details["eng-electrician"].abroad !== null) problems.push("a not-needed career carries an abroad line")
+
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8")
+            if (!/req\.body\.consent !== true/.test(router)) problems.push("the route does not refuse without consent")
+            if (!/policyVersion: POLICY_VERSION/.test(router)) problems.push("the policy version is not stored with the consent")
+            const card = fs.readFileSync(path.join(REPORT_DIR, "StudyAbroadCard.js"), "utf8")
+            if (!/disabled=\{!consent/.test(card)) problems.push("the Connect button works before the box is ticked")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "AI USAGE — every Claude call is logged; a missing usage block or no database never breaks a call",
+        run: () => {
+            const { countsOf, recordUsage, costOf } = require("../../utils/aiUsage")
+            const problems = []
+            const counts = countsOf({ usage: { input_tokens: 1000, output_tokens: 200, cache_read_input_tokens: 5000, cache_creation_input_tokens: 0, server_tool_use: { web_search_requests: 3 } } })
+            if (counts.calls !== 1 || counts.inputTokens !== 1000 || counts.cacheReadTokens !== 5000 || counts.webSearches !== 3) problems.push(`counts wrong: ${JSON.stringify(counts)}`)
+            if (countsOf(undefined).inputTokens !== 0) problems.push("a reply without usage was not counted as zero")
+            try {
+                recordUsage("grading", "claude-sonnet-5", undefined)
+            } catch (error) {
+                problems.push(`recordUsage threw: ${error.message}`)
+            }
+            // $2/$10 per million, cache reads $0.20, 3 searches at $10 per thousand
+            const cost = costOf({ model: "claude-sonnet-5", inputTokens: 1e6, outputTokens: 1e5, cacheReadTokens: 1e6, cacheWriteTokens: 0, webSearches: 3 })
+            if (cost !== 3.23) problems.push(`cost ${cost}, expected 3.23`)
+            if (costOf({ model: "some-new-model", inputTokens: 1 }) !== null) problems.push("a model with no listed price was given a cost")
+
+            // every file that calls the Messages API logs it (tools/ are offline scripts)
+            const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+                const full = path.join(dir, entry.name)
+                if (entry.isDirectory()) return ["node_modules", "fixtures", "tools"].includes(entry.name) ? [] : walk(full)
+                return entry.name.endsWith(".js") ? [full] : []
+            })
+            walk(path.join(__dirname, "../..")).forEach((file) => {
+                const source = fs.readFileSync(file, "utf8")
+                if (/api\.anthropic\.com\/v1\/messages/.test(source) && !/recordUsage\(/.test(source)) problems.push(`${path.relative(path.join(__dirname, "../.."), file)} calls Claude without logging usage`)
+            })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "AI USAGE — the grading rubric and the research instructions are sent as cached prompts",
+        run: async () => {
+            const problems = []
+            const realFetch = global.fetch
+            let sent = null
+            global.fetch = async (url, options) => {
+                sent = JSON.parse(options.body)
+                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: "{}" }] }) }
+            }
+            try {
+                const { createGradingClient } = require("../gradeOpenItems")
+                await createGradingClient({ apiKey: "test" })({ system: "the rubric", user: "an answer" })
+                const block = Array.isArray(sent.system) ? sent.system[0] : null
+                if (!block || block.text !== "the rubric" || !block.cache_control) problems.push("the grading rubric is not marked for caching")
+            } finally {
+                global.fetch = realFetch
+            }
+
+            const { createResearchClient } = require("../../housekeeping/claudeResearch")
+            let body = null
+            const client = createResearchClient({ apiKey: "test", job: "study_refresh", fetchImpl: async (url, options) => {
+                body = JSON.parse(options.body)
+                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: "{}" }] }) }
+            } })
+            await client.ask({ system: "the instructions", user: "x" })
+            if (!body || !Array.isArray(body.system) || !body.system[0].cache_control || body.system[0].text !== "the instructions") problems.push("the research instructions are not marked for caching")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

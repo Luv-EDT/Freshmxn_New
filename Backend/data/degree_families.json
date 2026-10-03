@@ -1,0 +1,346 @@
+{
+ "schema_version": "degree_families@1.0.0",
+ "generated_on": "2026-10-01",
+ "review": "Owner-approved with the Round 10 plan (Appendix D), 2026-10-01. Edit by hand; a fixture checks every id exists.",
+ "rule": "A student whose degree (in progress or finished) is listed for a career pays no undergrad switching cost for it, and the card says the degree already counts. 'any_bachelors' applies to every degree family. Keys are a degree family, or family:subject; a family key also applies to every subject in it.",
+ "any_bachelors": [
+  "law-civil-services-officer",
+  "fin-banking-professional",
+  "law-police-officer",
+  "law-armed-forces-officer",
+  "law-public-policy-professional",
+  "mgt-management-consultant",
+  "mgt-product-manager",
+  "mgt-project-manager",
+  "mgt-marketing-specialist",
+  "mgt-sales-professional",
+  "mgt-hr-professional",
+  "mgt-operations-manager",
+  "mgt-supply-chain-manager",
+  "mgt-market-research-analyst",
+  "fin-financial-analyst",
+  "fin-insurance-professional",
+  "fin-investment-wealth-manager",
+  "swc-enterprise-software-consultant",
+  "swc-it-business-systems-analyst",
+  "med-journalist",
+  "med-content-writer",
+  "med-pr-communications",
+  "des-advertising-creative",
+  "med-filmmaker",
+  "prf-theatre-practitioner",
+  "des-game-designer",
+  "des-ux-designer",
+  "des-animator-vfx",
+  "hos-event-manager",
+  "hos-hotel-manager",
+  "edu-corporate-trainer",
+  "edu-instructional-designer",
+  "edu-librarian",
+  "edu-career-counsellor",
+  "soc-development-professional",
+  "soc-social-worker",
+  "hum-heritage-management",
+  "law-lawyer",
+  "law-judicial-services-officer",
+  "edu-special-educator",
+  "soc-disability-inclusion",
+  "agr-extension-agribusiness"
+ ],
+ "by_degree": {
+  "btech:cse_it": [
+   "swc-software-developer",
+   "swc-ai-ml-engineer",
+   "swc-data-engineer",
+   "swc-vfx-graphics-developer",
+   "sci-computer-science-researcher",
+   "swc-game-developer",
+   "sci-bioinformatics-scientist",
+   "env-gis-analyst"
+  ],
+  "btech:ece": [
+   "eng-electronics-communication-engineer",
+   "eng-chip-design-engineer",
+   "swc-embedded-iot-developer",
+   "eng-robotics-automation-engineer",
+   "eng-nuclear-engineer",
+   "swc-ai-ml-engineer",
+   "swc-data-engineer"
+  ],
+  "btech:electrical": [
+   "eng-electrical-engineer",
+   "eng-robotics-automation-engineer",
+   "swc-embedded-iot-developer",
+   "env-renewable-energy",
+   "eng-nuclear-engineer"
+  ],
+  "btech:mechanical": [
+   "eng-mechanical-engineer",
+   "eng-robotics-automation-engineer",
+   "eng-nuclear-engineer",
+   "env-renewable-energy"
+  ],
+  "btech:civil": [
+   "eng-civil-engineer",
+   "env-environmental-engineer",
+   "env-gis-analyst",
+   "env-disaster-resilience"
+  ],
+  "btech:chemical": [
+   "eng-chemical-engineer",
+   "env-environmental-engineer",
+   "eng-nuclear-engineer"
+  ],
+  "btech:aerospace": [
+   "eng-aerospace-engineer"
+  ],
+  "btech:mining": [
+   "eng-mining-engineer"
+  ],
+  "btech:metallurgy": [
+   "eng-metallurgical-materials-engineer",
+   "eng-nuclear-engineer"
+  ],
+  "btech:marine": [
+   "eng-marine-engineer"
+  ],
+  "btech:petroleum": [
+   "eng-petroleum-engineer"
+  ],
+  "btech:textile": [
+   "eng-textile-engineer"
+  ],
+  "btech:biomedical": [
+   "eng-biomedical-engineer"
+  ],
+  "btech:fire_safety": [
+   "eng-fire-safety-engineer"
+  ],
+  "btech:agricultural": [
+   "agr-agricultural-engineer"
+  ],
+  "btech:food": [
+   "agr-food-technologist"
+  ],
+  "btech:biotech": [
+   "sci-biotechnologist"
+  ],
+  "btech:mechatronics": [
+   "eng-robotics-automation-engineer"
+  ],
+  "btech": [
+   "law-patent-agent",
+   "swc-ai-ml-engineer",
+   "swc-data-engineer",
+   "env-sustainability-esg",
+   "mgt-supply-chain-manager"
+  ],
+  "bca": [
+   "swc-software-developer",
+   "swc-ai-ml-engineer",
+   "swc-data-engineer"
+  ],
+  "bsc:computer_science": [
+   "swc-software-developer",
+   "swc-ai-ml-engineer",
+   "swc-data-engineer",
+   "swc-vfx-graphics-developer",
+   "sci-computer-science-researcher",
+   "sci-bioinformatics-scientist",
+   "env-gis-analyst"
+  ],
+  "bsc:physics": [
+   "sci-physicist",
+   "sci-space-scientist",
+   "sci-atmospheric-ocean-scientist",
+   "sci-materials-scientist",
+   "eng-nuclear-engineer",
+   "law-patent-agent"
+  ],
+  "bsc:chemistry": [
+   "sci-chemist",
+   "sci-materials-scientist",
+   "sci-forensic-scientist",
+   "sci-drug-discovery-scientist",
+   "sci-quality-control-analyst",
+   "eng-nuclear-engineer",
+   "law-patent-agent"
+  ],
+  "bsc:life_sciences": [
+   "sci-biologist",
+   "sci-microbiologist",
+   "sci-biotechnologist",
+   "sci-bioinformatics-scientist",
+   "sci-forensic-scientist",
+   "sci-clinical-research-associate",
+   "sci-drug-discovery-scientist",
+   "sci-quality-control-analyst",
+   "sci-laboratory-technician",
+   "env-environmental-scientist",
+   "hlt-public-health-professional",
+   "law-patent-agent"
+  ],
+  "bsc:maths_stats": [
+   "sci-mathematician",
+   "sci-statistician",
+   "swc-ai-ml-engineer",
+   "sci-atmospheric-ocean-scientist",
+   "fin-economist",
+   "soc-me-analyst"
+  ],
+  "bsc:earth_env": [
+   "sci-geologist",
+   "sci-atmospheric-ocean-scientist",
+   "env-environmental-scientist",
+   "env-gis-analyst",
+   "env-disaster-resilience",
+   "env-forest-officer"
+  ],
+  "bsc:agriculture": [
+   "agr-agronomist",
+   "agr-extension-agribusiness",
+   "agr-horticulture",
+   "agr-fisheries",
+   "agr-dairy-livestock",
+   "env-forest-officer",
+   "agr-food-technologist"
+  ],
+  "bsc:nutrition": [
+   "hlt-dietitian"
+  ],
+  "medical": [
+   "hlt-doctor",
+   "hlt-dentist",
+   "hlt-ayurveda-doctor",
+   "hlt-homeopathy-doctor",
+   "hlt-veterinary-doctor",
+   "hlt-public-health-professional",
+   "sci-clinical-research-associate"
+  ],
+  "nursing_allied": [
+   "hlt-nurse",
+   "hlt-physiotherapist",
+   "hlt-occupational-therapist",
+   "hlt-optometrist",
+   "hlt-audiologist-speech-therapist",
+   "hlt-medical-lab-technologist",
+   "hlt-radiology-technologist",
+   "hlt-ot-anaesthesia-technologist",
+   "hlt-dialysis-technologist",
+   "hlt-public-health-professional",
+   "mgt-operations-manager"
+  ],
+  "bpharm": [
+   "hlt-pharmacist",
+   "sci-drug-discovery-scientist",
+   "sci-clinical-research-associate",
+   "mgt-sales-professional",
+   "law-patent-agent"
+  ],
+  "bcom": [
+   "fin-chartered-accountant",
+   "law-company-secretary",
+   "fin-accounts-executive",
+   "env-sustainability-esg",
+   "env-renewable-energy"
+  ],
+  "bba": [
+   "hos-hotel-manager",
+   "hos-event-manager",
+   "agr-extension-agribusiness"
+  ],
+  "ba:economics": [
+   "fin-economist",
+   "soc-me-analyst",
+   "env-sustainability-esg",
+   "env-renewable-energy"
+  ],
+  "ba:psychology": [
+   "sci-research-psychologist",
+   "soc-clinical-psychologist",
+   "soc-counsellor",
+   "soc-child-protection"
+  ],
+  "ba:english_media": [
+   "med-voice-artist"
+  ],
+  "ba:history": [
+   "hum-archaeologist",
+   "hum-historian",
+   "hum-museum-archive",
+   "hum-classical-language",
+   "hum-conservator"
+  ],
+  "ba:social_sciences": [
+   "hum-anthropologist",
+   "law-political-electoral",
+   "soc-child-protection"
+  ],
+  "bsw": [
+   "soc-social-worker",
+   "soc-community-worker",
+   "soc-child-protection",
+   "env-disaster-resilience"
+  ],
+  "bdes_bfa": [
+   "des-graphic-designer",
+   "des-illustrator",
+   "des-animator-vfx",
+   "des-interior-designer",
+   "des-fashion-designer",
+   "eng-industrial-product-designer",
+   "des-fine-artist",
+   "med-production-designer",
+   "des-footwear-designer",
+   "des-jeweller"
+  ],
+  "barch_bplan": [
+   "eng-architect",
+   "eng-urban-planner",
+   "des-interior-designer",
+   "med-production-designer"
+  ],
+  "llb": [
+   "law-lawyer",
+   "law-judicial-services-officer",
+   "law-paralegal",
+   "law-company-secretary"
+  ],
+  "bed": [
+   "edu-school-teacher",
+   "edu-early-childhood"
+  ],
+  "bped": [
+   "spt-coach",
+   "spt-sports-scientist",
+   "spt-fitness-trainer"
+  ],
+  "hotel": [
+   "hos-hotel-manager",
+   "hos-chef",
+   "hos-fb-service",
+   "hos-travel-tourism",
+   "hos-event-manager"
+  ],
+  "diploma": [
+   "eng-railway-operations",
+   "eng-precision-manufacturing-technician",
+   "swc-it-support-network-technician",
+   "eng-cad-draughtsman",
+   "eng-land-surveyor"
+  ],
+  "iti": [
+   "eng-electrician",
+   "eng-welder",
+   "eng-fitter-machinist",
+   "eng-plumber",
+   "eng-carpenter-furniture-maker",
+   "eng-mason-construction-technician",
+   "eng-hvac-refrigeration-technician",
+   "eng-automobile-mechanic",
+   "eng-heavy-equipment-operator",
+   "eng-land-surveyor",
+   "eng-cad-draughtsman"
+  ]
+ }
+}

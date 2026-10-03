@@ -4,6 +4,9 @@ const User = require("../model/userModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
 
+const { raiseIssue } = require("../utils/assessmentIssues")
+const { directionUpdate } = require("../utils/direction")
+
 const router = express.Router()
 
 
@@ -148,7 +151,55 @@ router.post("/saveInterest", authMiddleware, requirePaid, async (req, res) => {
 // A session whose timing check failed writes `sartMeta` and NO `sartRaw`, which is the honest
 // outcome: processing speed resolves to null rather than to a confident number produced by a
 // browser that was dropping frames. scoreProfile reads named keys only, so this one passes it by.
-const MODULE_KEYS = ["ipip50", "mi", "rosenberg", "confidence", "perspective", "digitSpan", "sartRaw", "sartMeta", "extReasoning", "extVerbal", "storyRecall"]
+// WHAT THE BROWSER MAY WRITE, module by module (backend review #9). Before this, any module key was
+// accepted and the whole block overwritten, which let a save do three bad things:
+//   - wipe server-owned results — a perspective save without `open` erased the written-answer
+//     grades (and re-billed all four), and a save landing mid-scoring overwrote the worker's write;
+//   - overwrite blocks only the server writes — the digit span's marked trials, the story recall's
+//     facts, an external test's extracted score — with anything at all;
+//   - replace a SART run, whose "one attempt" rule lived only in the UI.
+//
+// `null` means the whole block belongs to the browser (a questionnaire's answers). A list means
+// only those fields do, and each is written by its own dotted path so everything else on the block
+// — including grades the worker is writing right now — is left exactly where it is. Modules the
+// server owns are not listed, and are refused.
+const CLIENT_OWNED = {
+    "ipip50": null,
+    "mi": null,
+    "rosenberg": null,
+    "confidence": null,
+    "interests60": null,
+    "accommodations": null,
+    "perspective": ["answers", "narrative", "openText"],
+    "sartMeta": null,
+    "sartRaw": null,
+}
+const MODULE_KEYS = Object.keys(CLIENT_OWNED)
+
+// Written ONCE. A second SART run only replaces the first through a sanctioned retry — the
+// automatic one for a run that did not record properly, or one an admin grants (retakeGrants).
+const WRITE_ONCE = ["sartRaw"]
+
+const offerSartRetakeIfInvalid = async (userId, rawRows, submission) => {
+    const scoreSart = require("../scoring/sartScoring")
+    const result = scoreSart(rawRows)
+    if (!result || result.valid || result.action !== "offer_retake") return false
+
+    const used = (submission && submission.psychometric && submission.psychometric.sartRetakes) || 0
+    const reasons = (result.invalid_reasons || result.problems || []).join(", ")
+
+    if (used >= 1) {
+        await raiseIssue({ user: userId, module: "sartRaw", kind: "sart_invalid", detail: `second run also invalid: ${reasons}` })
+        return false
+    }
+
+    await Submission.updateOne(
+        { user: userId },
+        { $set: { "psychometric.retakeGrants.sartRaw": true, "psychometric.sartRetakes": used + 1 } }
+    )
+    await raiseIssue({ user: userId, module: "sartRaw", kind: "sart_invalid", detail: `automatic retry offered: ${reasons}`, status: "retake_granted" })
+    return true
+}
 
 router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) => {
     try {
@@ -168,9 +219,40 @@ router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) =
             })
         }
 
+        const fields = CLIENT_OWNED[module]
+        if (fields && (typeof block !== "object" || Array.isArray(block))) {
+            return res.status(400).json({ success: false, message: "Assessment answers are in the wrong shape" })
+        }
+
+        const changes = { lastSavedAt: new Date() }
+        const unset = {}
+
+        if (WRITE_ONCE.includes(module)) {
+            const existing = await Submission.findOne({ user: req.user._id }).select(`psychometric.${module} psychometric.retakeGrants`).lean()
+            const psychometric = (existing && existing.psychometric) || {}
+            const already = psychometric[module]
+            const granted = psychometric.retakeGrants && psychometric.retakeGrants[module]
+
+            if (already && !granted) {
+                return res.status(409).json({ success: false, message: "This test has already been recorded" })
+            }
+            if (granted) unset[`psychometric.retakeGrants.${module}`] = ""
+        }
+
+        if (fields) {
+            fields.forEach((field) => {
+                if (block[field] !== undefined) changes[`psychometric.${module}.${field}`] = block[field]
+            })
+        } else {
+            changes[`psychometric.${module}`] = block
+        }
+
+        const update = { $set: changes }
+        if (Object.keys(unset).length > 0) update.$unset = unset
+
         const updatedSubmission = await Submission.findOneAndUpdate(
             { user: req.user._id },
-            { $set: { [`psychometric.${module}`]: block, lastSavedAt: new Date() } },
+            update,
             { returnDocument: "after", upsert: true }
         )
 
@@ -178,10 +260,19 @@ router.post("/savePsychometric", authMiddleware, requirePaid, async (req, res) =
             await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
         }
 
+        // A SART RUN THAT DID NOT MEASURE ANYTHING GETS ONE MORE TRY, automatically. The scorer can
+        // tell (sartScoring's `offer_retake`: too few responses, a key held down, a session that
+        // never really ran) — and until now nothing read that answer, so the run was simply lost.
+        // Once only: a second invalid run is recorded as it is, and the admin sees both.
+        let retakeOffered = false
+        if (module === "sartRaw") {
+            retakeOffered = await offerSartRetakeIfInvalid(req.user._id, block, updatedSubmission)
+        }
+
         return res.status(200).json({
             success: true,
-            message: "Progress saved",
-            data: { module, savedAt: updatedSubmission.lastSavedAt },
+            message: retakeOffered ? "That run did not record properly — you can take it once more" : "Progress saved",
+            data: { module, savedAt: updatedSubmission.lastSavedAt, retakeOffered },
         })
 
     } catch (error) {
@@ -264,6 +355,16 @@ router.post("/digitSpanNext", authMiddleware, requirePaid, async (req, res) => {
             return res.status(200).json({ success: true, message: "Digit span complete", data: { done: true, trials: trials.length } })
         }
 
+        // A sequence already shown and not yet answered is shown AGAIN, not replaced. Otherwise a
+        // refresh after seeing a hard sequence deals a fresh one at the same length — a free reroll.
+        if (block.pending && block.pending.length === length && block.pending.digits) {
+            return res.status(200).json({
+                success: true,
+                message: "Next sequence",
+                data: { done: false, length, digits: block.pending.digits },
+            })
+        }
+
         const digits = makeSequence(length)
 
         await Submission.findOneAndUpdate(
@@ -343,6 +444,219 @@ router.post("/digitSpanAnswer", authMiddleware, requirePaid, async (req, res) =>
 
 
 // ========================
+// Reasoning — the in-house test, served one item at a time
+// ========================
+
+// Same two rules as the digit span, for the same reasons (Round 10). THE ITEMS: built from a seed
+// stored on the block, one at a time, never ahead of presentation, and never with the answer
+// (reasoningBank.publicItem). THE MARKING: here, against the item rebuilt from the seed — the browser
+// only ever says which option was picked.
+//
+// One attempt. Time is recorded per item (from when it was issued) but nothing is cut off: the test
+// it follows (ICAR) is untimed, and a clock on screen measures nerves as much as reasoning. An item
+// left for more than five minutes is noted, because three of those in a row usually means the
+// device or the connection, not the student — and the admin is told.
+const reasoningBank = require("../assessment/reasoningBank")
+const REASONING_SLOW_MS = 5 * 60 * 1000
+
+router.post("/reasoningNext", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.reasoning) || {}
+        const responses = block.responses || []
+
+        if (block.completedAt || responses.length >= reasoningBank.ITEM_COUNT) {
+            return res.status(200).json({ success: true, message: "Reasoning complete", data: { done: true, answered: responses.length } })
+        }
+
+        const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
+        const index = responses.length
+
+        // an item already shown and not yet answered is shown again — a refresh is not a reroll,
+        // and its clock keeps running from when it was first issued
+        const pending = block.pending && block.pending.index === index ? block.pending : { index, issuedAt: new Date() }
+
+        await Submission.findOneAndUpdate(
+            { user: req.user._id },
+            { $set: {
+                "psychometric.reasoning.seed": seed,
+                "psychometric.reasoning.startedAt": block.startedAt || new Date(),
+                "psychometric.reasoning.responses": responses,
+                "psychometric.reasoning.pending": pending,
+                lastSavedAt: new Date(),
+            } },
+            { upsert: true }
+        )
+
+        if (req.user.progress.psychometric === "not_started") {
+            await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Next item",
+            data: { done: false, number: index + 1, of: reasoningBank.ITEM_COUNT, item: reasoningBank.publicItem(reasoningBank.itemFor(seed, index)) },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not load the next puzzle", error: error.message })
+    }
+})
+
+router.post("/reasoningAnswer", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const { choice } = req.body
+
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.reasoning) || {}
+        const responses = block.responses || []
+        const pending = block.pending
+
+        if (!pending || typeof block.seed !== "number" || pending.index !== responses.length) {
+            return res.status(400).json({ success: false, message: "No puzzle is currently shown" })
+        }
+
+        const item = reasoningBank.itemFor(block.seed, pending.index)
+        const picked = Number.isInteger(choice) && choice >= 0 && choice < item.options.length ? choice : null
+        const ms = Math.max(Date.now() - new Date(pending.issuedAt).getTime(), 0)
+
+        // Marked HERE. A skipped item (no choice) counts as not correct: it was shown.
+        const response = {
+            id: item.id,
+            type: item.type,
+            level: item.level,
+            choice: picked,
+            correct: picked !== null && picked === item.answer,
+            ms,
+            slow: ms > REASONING_SLOW_MS,
+        }
+
+        const all = [...responses, response]
+        const finished = all.length >= reasoningBank.ITEM_COUNT
+        const changes = {
+            "psychometric.reasoning.responses": all,
+            "psychometric.reasoning.pending": null,
+            lastSavedAt: new Date(),
+        }
+        if (finished) changes["psychometric.reasoning.completedAt"] = new Date()
+
+        await Submission.findOneAndUpdate({ user: req.user._id }, { $set: changes })
+
+        const lastThree = all.slice(-3)
+        if (lastThree.length === 3 && lastThree.every((entry) => entry.slow)) {
+            await raiseIssue({ user: req.user._id, module: "reasoning", kind: "reasoning_timeouts", detail: `three puzzles in a row took over five minutes each (up to ${response.id})` })
+        }
+
+        // No right/wrong back to the page: knowing you got one wrong changes how you attempt the next.
+        return res.status(200).json({ success: true, message: "Answer recorded", data: { done: finished, answered: all.length } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not record the answer", error: error.message })
+    }
+})
+
+
+// ========================
+// Word memory — the in-house test (Round 11)
+// ========================
+
+// Same shape as the reasoning test, one difference forced by the task: the answer key IS the word
+// list, and the student has to see it. So it is hidden by TIME instead. A list is handed over once,
+// at the moment it is shown, and recorded as shown; asking again before writing it down returns
+// "write what you remember", never the words — a refresh mid-list is not a second look.
+// The page shows each word for wordBank.WORD_MS; the recall is typed, any order, and marked here.
+const wordBank = require("../assessment/wordBank")
+
+router.post("/wordRecallNext", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.wordRecall) || {}
+        const trials = block.trials || []
+
+        if (block.completedAt || trials.length >= wordBank.LIST_COUNT) {
+            return res.status(200).json({ success: true, message: "Word memory complete", data: { done: true } })
+        }
+
+        const index = trials.length
+
+        // already shown and not yet written down: straight to writing, no second look
+        if (block.pending && block.pending.index === index) {
+            return res.status(200).json({ success: true, message: "Write what you remember", data: { done: false, phase: "recall", number: index + 1, of: wordBank.LIST_COUNT } })
+        }
+
+        const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
+
+        await Submission.findOneAndUpdate(
+            { user: req.user._id },
+            { $set: {
+                "psychometric.wordRecall.seed": seed,
+                "psychometric.wordRecall.startedAt": block.startedAt || new Date(),
+                "psychometric.wordRecall.trials": trials,
+                "psychometric.wordRecall.pending": { index, shownAt: new Date() },
+                lastSavedAt: new Date(),
+            } },
+            { upsert: true }
+        )
+
+        if (req.user.progress.psychometric === "not_started") {
+            await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Next list",
+            data: { done: false, phase: "study", number: index + 1, of: wordBank.LIST_COUNT, words: wordBank.listsFor(seed)[index], msPerWord: wordBank.WORD_MS },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not load the list", error: error.message })
+    }
+})
+
+router.post("/wordRecallAnswer", authMiddleware, requirePaid, async (req, res) => {
+    try {
+        const text = typeof req.body.text === "string" ? req.body.text.slice(0, 600) : ""
+
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const block = (submission && submission.psychometric && submission.psychometric.wordRecall) || {}
+        const trials = block.trials || []
+        const pending = block.pending
+
+        if (!pending || typeof block.seed !== "number" || pending.index !== trials.length) {
+            return res.status(400).json({ success: false, message: "No list is waiting to be written down" })
+        }
+
+        // Marked HERE, against the list rebuilt from the seed. Nothing about the result goes back.
+        const marked = wordBank.markRecall(text, wordBank.listsFor(block.seed)[pending.index])
+        const trial = {
+            list: pending.index + 1,
+            text,
+            correct: marked.correct,
+            recalled: marked.recalled,
+            intrusions: marked.intrusions,
+            ms: Math.max(Date.now() - new Date(pending.shownAt).getTime(), 0),
+        }
+
+        const all = [...trials, trial]
+        const finished = all.length >= wordBank.LIST_COUNT
+        const changes = {
+            "psychometric.wordRecall.trials": all,
+            "psychometric.wordRecall.pending": null,
+            lastSavedAt: new Date(),
+        }
+        if (finished) changes["psychometric.wordRecall.completedAt"] = new Date()
+
+        await Submission.findOneAndUpdate({ user: req.user._id }, { $set: changes })
+
+        return res.status(200).json({ success: true, message: "Saved", data: { done: finished, written: all.length } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not save what you wrote", error: error.message })
+    }
+})
+
+
+// ========================
 // Submit the assessment — starts the pipeline
 // ========================
 
@@ -361,6 +675,30 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
             })
         }
 
+        // An abandoned number-memory run is not scored (it would read as a floor), and the admin is
+        // told, so they can open it again if something broke.
+        const span = submission.psychometric.digitSpan
+        if (span && (span.trials || []).length > 0 && !span.completedAt) {
+            await raiseIssue({ user: req.user._id, module: "digitSpan", kind: "digit_span_unfinished", detail: `${span.trials.length} sequences answered, then stopped` })
+        }
+
+        // the same for the word lists (Round 11)
+        const words = submission.psychometric.wordRecall
+        if (words && words.startedAt && !words.completedAt) {
+            await raiseIssue({ user: req.user._id, module: "wordRecall", kind: "word_recall_unfinished", detail: `${(words.trials || []).length} of 2 lists written down, then stopped` })
+        }
+
+        // A RESUBMIT says which way the student is heading (Round 11, utils/direction.js): only "new"
+        // restarts the follow-up clock. The first submit starts it and asks nothing.
+        const firstTime = !submission.psychometricSubmittedAt
+        const direction = directionUpdate({ via: "resubmit", direction: req.body.direction, firstTime })
+        if (!direction) {
+            return res.status(400).json({
+                success: false,
+                message: "Tell us whether you're heading the same way or looking for something new",
+            })
+        }
+
         // Stamped so the report page can tell a FRESH report from a stale one. Without it, a
         // student who completes more modules and resubmits keeps seeing the old report — including
         // an old "not enough to go on yet" — with no sign that a new one is on its way, which reads
@@ -371,13 +709,26 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
         )
 
         // A new submit starts a fresh attempt, so any earlier "your report failed" is cleared.
-        await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "done", reportFailedAt: null })
+        await User.findByIdAndUpdate(req.user._id, {
+            ...direction,
+            $set: { ...(direction.$set || {}), "progress.psychometric": "done", reportFailedAt: null },
+        })
 
         // Required here rather than at the top of the file: the queue is built lazily, and a
         // machine with no REDIS_URL must still be able to load this router and serve every other
         // route on it.
         const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
-        await enqueueScoreProfile(req.user._id)
+        const { withTimeout } = require("../workers/queueHelpers")
+
+        try {
+            await withTimeout(enqueueScoreProfile(req.user._id), "queueing the report")
+        } catch (queueError) {
+            // The answers and "done" are committed, but nothing is working on them. Without this the
+            // student's page would say "generating" forever (backend review #17); marked as failed,
+            // it offers "Try again" instead, which re-queues.
+            await User.findByIdAndUpdate(req.user._id, { reportFailedAt: new Date() })
+            throw queueError
+        }
 
         return res.status(201).json({
             success: true,
@@ -401,14 +752,48 @@ router.post("/submitPsychometric", authMiddleware, requirePaid, async (req, res)
 // Get My Submission
 // ========================
 
+// What the student's own browser gets back. Grades, the graders' notes and answer keys stay on the
+// server: they are not the student's to see, and a page that never receives the written-answer
+// grades can never send them back in a save (backend review #9, the root of that round-trip).
+const forStudent = (submission) => {
+    if (!submission || !submission.psychometric) return submission
+    const psychometric = { ...submission.psychometric }
+
+    if (psychometric.perspective) {
+        const { open, openMeta, ...perspective } = psychometric.perspective
+        psychometric.perspective = perspective
+    }
+    if (psychometric.storyRecall) {
+        const { free, freeMeta, facts, ...story } = psychometric.storyRecall
+        psychometric.storyRecall = story
+    }
+    if (psychometric.digitSpan) {
+        const { pending, ...span } = psychometric.digitSpan
+        psychometric.digitSpan = { ...span, trials: (span.trials || []).map(({ correct, ...trial }) => trial) }
+    }
+    if (psychometric.reasoning) {
+        // the seed rebuilds every item WITH its answer, so it never leaves the server either
+        const { seed, pending, responses, ...reasoning } = psychometric.reasoning
+        psychometric.reasoning = { ...reasoning, answered: (responses || []).length }
+    }
+    if (psychometric.wordRecall) {
+        // the seed rebuilds the lists, and the marked trials say which words they held
+        const { seed, pending, trials, ...words } = psychometric.wordRecall
+        psychometric.wordRecall = { ...words, written: (trials || []).length }
+    }
+    delete psychometric.history
+
+    return { ...submission, psychometric }
+}
+
 router.get("/getMySubmission", authMiddleware, requirePaid, async (req, res) => {
     try {
-        const submission = await Submission.findOne({ user: req.user._id })  // ← filter by logged in user
+        const submission = await Submission.findOne({ user: req.user._id }).lean()  // ← filter by logged in user
 
         return res.status(200).json({
             success: true,
             message: "Submission fetched successfully",
-            data: submission,
+            data: forStudent(submission),
         })
 
     } catch (error) {

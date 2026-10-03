@@ -69,14 +69,15 @@ const combine = (parts, options = {}) => {
     const missingPrimary = parts.some((part) => part.primary && (part.value === null || part.value === undefined))
 
     if (missingPrimary) {
-        return { value: null, quality: null }
+        return { value: null, quality: null, coverage: null }
     }
 
     const used = parts.filter((part) => part.value !== null && part.value !== undefined)
     const usedWeight = used.reduce((sum, part) => sum + part.weight, 0)
+    const totalWeight = parts.reduce((sum, part) => sum + part.weight, 0)
 
     if (usedWeight < minUsedWeight) {
-        return { value: null, quality: null }
+        return { value: null, quality: null, coverage: null }
     }
 
     const value = used.reduce((sum, part) => sum + part.value * part.weight, 0) / usedWeight
@@ -87,6 +88,9 @@ const combine = (parts, options = {}) => {
     return {
         value: round2(value),
         quality: worstQuality([ownQuality, ...used.map((part) => part.quality)]),
+        // the share of this factor's weight whose input was actually present (Round 10: the
+        // profile's "Partial · N%"). Its own inputs only — never compounded through upstreams.
+        coverage: totalWeight > 0 ? round2(usedWeight / totalWeight) : null,
     }
 }
 

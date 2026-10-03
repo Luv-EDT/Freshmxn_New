@@ -15,8 +15,9 @@ export async function savePsychometric(payload) {
     return response
 }
 
-export async function submitPsychometric() {
-    const response = await axiosInstance.post("/submissions/submitPsychometric", {})
+// `direction` ("same" | "new") is asked on a resubmit only — see DirectionModal
+export async function submitPsychometric(direction) {
+    const response = await axiosInstance.post("/submissions/submitPsychometric", direction ? { direction } : {})
     return response
 }
 
@@ -60,5 +61,25 @@ export async function uploadTestResult(payload) {
 
 export async function confirmTestResult(payload) {
     const response = await axiosInstance.post("/external/confirmResult", payload)
+    return response
+}
+
+export async function reasoningNext() {
+    const response = await axiosInstance.post("/submissions/reasoningNext", {})
+    return response
+}
+
+export async function reasoningAnswer(payload) {
+    const response = await axiosInstance.post("/submissions/reasoningAnswer", payload)
+    return response
+}
+
+export async function wordRecallNext() {
+    const response = await axiosInstance.post("/submissions/wordRecallNext", {})
+    return response
+}
+
+export async function wordRecallAnswer(payload) {
+    const response = await axiosInstance.post("/submissions/wordRecallAnswer", payload)
     return response
 }

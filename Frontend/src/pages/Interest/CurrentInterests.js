@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import InterestProgressBar from "./InterestProgressBar"
 import { cleanupCurrentInterests, YOU_OR_THEM_OPTIONS_WITH_TIME } from "./interestFormState"
 
@@ -7,6 +7,14 @@ const CONFIDENCE_LIST = ["High", "Medium", "Low"]
 function CurrentInterests({ formData, extractedActivities, extractedProblems, updateFormData, updateExtractedProblems, handleNext, handlePrevious, steps, currentStepIndex, goToStep, isSaving, requestSave, reportDraft }) {
     // Local state for the form
     const [localFormData, setLocalFormData] = useState(formData)
+    // what is missing, shown beside the Next button instead of a browser pop-up
+    const [formError, setFormError] = useState("")
+    const errorRef = useRef(null)
+
+    // a jump from the step list starts at the top of the page — bring the message into view
+    useEffect(() => {
+        if (formError && errorRef.current) errorRef.current.scrollIntoView({ block: "center", behavior: "smooth" })
+    }, [formError])
 
     // Update local state when formData prop changes
     // keep the local draft current while typing, so a refresh mid-section loses nothing
@@ -59,11 +67,15 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
 
     // Validation for the Next button and forward progress-bar jumps
     const validateCurrentSection = () => {
+        const fail = (text) => {
+            setFormError(text)
+            return false
+        }
+
         // Check persistent interests have confidence levels
         for (const interest of localFormData.persistentInterests || []) {
             if (!interest.confidence || interest.confidence.trim() === "") {
-                alert("Please select confidence levels for all persistent interests.")
-                return false
+                return fail("Please select confidence levels for all persistent interests.")
             }
         }
 
@@ -72,17 +84,14 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
             if (data.isSelected) {
                 const reasons = data.reason || []
                 if (reasons.length === 0) {
-                    alert(`Please select at least one reason for discontinuing "${activity}".`)
-                    return false
+                    return fail(`Please select at least one reason for discontinuing "${activity}".`)
                 }
                 if (reasons.includes("Other")) {
                     if (!data.otherReason || data.otherReason.trim() === "") {
-                        alert(`Please specify the reason for discontinuing "${activity}".`)
-                        return false
+                        return fail(`Please specify the reason for discontinuing "${activity}".`)
                     }
                     if (!data.youOrThem || data.youOrThem.trim() === "") {
-                        alert(`Please select what held you back for "${activity}".`)
-                        return false
+                        return fail(`Please select what held you back for "${activity}".`)
                     }
                 }
             }
@@ -91,11 +100,11 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
         // Check achievement related have descriptions if selected
         for (const [activity, data] of Object.entries(localFormData.achievementRelated || {})) {
             if (data.isSelected && (!data.achievement || data.achievement.trim() === "")) {
-                alert(`Please describe your achievement for "${activity}".`)
-                return false
+                return fail(`Please describe your achievement for "${activity}".`)
             }
         }
 
+        setFormError("")
         return true
     }
 
@@ -213,18 +222,18 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
             />
 
             {/* Brief section header */}
-            <div>
+            <div className="if-step-head">
                 <h2>💡 Current Interests</h2>
-                <p>Look back at your past activities and see which ones still feel meaningful to you today.</p>
-                <div>
-                    <h3>📋 How to reflect on your interests</h3>
+                <p>Look back at your past activities and pick the ones that still feel meaningful to you today.</p>
+                <details className="if-examples">
+                    <summary>How to reflect on your interests</summary>
                     <p>Think about which activities you still enjoy or care about today and which ones you've outgrown. This helps us understand what motivates you right now.</p>
-                </div>
+                </details>
             </div>
 
             <form onSubmit={handleContinue}>
                 {/* Persistent Interests */}
-                <div>
+                <div className="if-card">
                     <label><strong>Ongoing Interests</strong></label> <span>*</span>
                     <p>Which of your earlier activities would you still like to continue? Pick the ones that still feel meaningful to you, even if you don't have time for them right now.</p>
 
@@ -269,7 +278,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 </div>
 
                 {/* Passion */}
-                <div>
+                <div className="if-card">
                     <label><strong>Strongest Passions</strong></label>
                     <p>Which of your ongoing interests are you most passionate about? These are the ones that excite you and you often think about.</p>
                     <p>(Note: Passion is just an extreme form of interest).</p>
@@ -288,7 +297,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 </div>
 
                 {/* Longer Term Pursuits */}
-                <div>
+                <div className="if-card">
                     <label><strong>Long-Term Commitments</strong></label>
                     <p>Which activities have you been doing for more than 6 months? These show your dedication and consistency.</p>
 
@@ -306,7 +315,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 </div>
 
                 {/* Discontinued Pursuits */}
-                <div>
+                <div className="if-card">
                     <label><strong>Activities You've Paused</strong></label>
                     <p>Which activities did you pursue but later stop? Please share why you paused or stopped them.</p>
 
@@ -409,7 +418,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 </div>
 
                 {/* Achievement Related Pursuits */}
-                <div>
+                <div className="if-card">
                     <label><strong>Achievements & Highlights</strong></label> <span>*</span>
                     <p>Which of your ongoing interests have led to something you're proud of? Describe what you achieved or learned through them.</p>
 
@@ -446,10 +455,12 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 </div>
 
                 {/* Note about adding more activities */}
-                <p><strong>Need to add more activities?</strong> Go back to previous sections and add them there, then return here to select them.</p>
+                <p className="if-question-prompt"><strong>Need to add more activities?</strong> Go back to previous sections and add them there, then return here to select them.</p>
+
+                {formError && <p className="if-error" role="alert" ref={errorRef}>{formError}</p>}
 
                 {/* Navigation Buttons */}
-                <div>
+                <div className="if-nav">
                     <button type="button" onClick={handleContinuePrevious} disabled={isSaving}>Previous</button>
                     {" "}
                     <button type="button" onClick={handleSaveForLater} disabled={isSaving}>Save</button>

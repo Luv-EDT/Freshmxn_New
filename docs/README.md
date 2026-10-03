@@ -11,8 +11,8 @@ Every project document, and when to read it. Numbers give the reading order.
 | | CODING_STYLE.md | House style every file follows (router → model, `{ success, message, data }`, no semicolons, 4 spaces) |
 | | DEPLOY.md | The deploy runbook: Render, Atlas, Upstash, Google OAuth, Cloudflare DNS, moving the site to `main`; also why `render.yaml` (repo root) and this file are separate |
 | | Report_Output_Brainstorm.md | What `ALL-professions.json` holds and how a richer, journey-shaped report could use it — discussion, with open questions for the owner |
-| **3_handover/** | HANDOVER.md | **The single handover**: where things stand, how to run and test, open items and owner gates, decisions that must not drift, then the full day-by-day record (Day 1 → Day 5 and its rounds) |
-| **4_v2/** | 06_V2_and_Beyond.md | Everything deliberately deferred — instrument (V1.1 → V3), product and platform, and the Day 5 addendum (backend-review items, report output, ops, legal) |
+| **3_handover/** | HANDOVER.md | **The single handover**: where things stand, how to run and test, open items and owner gates, decisions that must not drift, then the full day-by-day record (Day 1 → Day 5 and its rounds, through Round 10) |
+| **4_v2/** | 06_V2_and_Beyond.md | **Future scope only** — what is not built yet, why, and what triggers it (soon / V2 / V3), plus the ideas decided against. Done work is recorded in HANDOVER, not here |
 | **5_finalized/algorithms/** | 04_Item_Bank.md | Every assessment item and the SART spec (§6). Fixtures check the code against it |
 | | 05_Story_Bank.md | The story-recall stories and the free-recall marking prompt — **read by the running pipeline** |
 | | llm_scoring_prompts.md | The rubrics Claude marks written answers with — **read by the running pipeline** (`Backend/workers/gradeOpenItems.js`) |

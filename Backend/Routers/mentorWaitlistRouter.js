@@ -3,14 +3,16 @@ const User = require("../model/userModel")
 const Mentor = require("../model/mentorsModel")
 const MentorWaitlist = require("../model/mentorWaitlistModel")
 const Recommendation = require("../model/recommendationsModel")
+const Submission = require("../model/submissionsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
+const taxonomy = require("../data/ALL-professions.json")
 
 const router = express.Router()
 
 // The Tier-2 mentor waitlist, after payment. Flow (mentor_waitlist_page.md):
-//   pay → place held (grantAccess, untouched) → student completes Step 1 and CHOOSES a career from
-//   their own matches → we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE → admin matches.
+//   pay → place held (grantAccess, untouched) → student completes Step 1 and CHOOSES one job role in
+//   one of their own matches → we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE → admin matches.
 //
 // The row is created lazily on the student's first visit rather than at payment, so no payment
 // code changes: holding Tier 2 is what entitles you to a row, and the row only records the choice.
@@ -21,6 +23,25 @@ const MATCH_BUSINESS_DAYS = 20
 // ========================
 // Helpers
 // ========================
+
+const jobRolesById = new Map(taxonomy.professions.map((profession) => [profession.id, profession.job_roles || []]))
+
+// THE PICKER (owner, Round 11): the student chooses one JOB ROLE inside one of their own matches, so
+// the mentor we find does that work, not merely something in the same field. Built here, from the
+// student's own ranking and the data file, so the list the page shows and the list the choice is
+// checked against are the same list. The roles the matching found suit this student best (the role
+// group in `bestRoles`, Round 10) come first and are marked; every role-group role is also a job role.
+const pickerOptions = (ranked) => ranked.map((entry, index) => {
+    const all = jobRolesById.get(String(entry.professionId)) || []
+    const suits = entry.bestRoles && Array.isArray(entry.bestRoles.roles) ? entry.bestRoles.roles.filter((role) => all.includes(role)) : []
+    return {
+        professionId: String(entry.professionId),
+        profession: entry.profession,
+        rank: index + 1,
+        jobRoles: [...suits, ...all.filter((role) => !suits.includes(role))],
+        suitsYou: suits,
+    }
+})
 
 // Mon–Fri only, no holiday calendar. Promised to the student as "within 20 business days".
 const addBusinessDays = (start, days) => {
@@ -62,11 +83,31 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
             })
         }
 
-        const row = await MentorWaitlist.findOneAndUpdate(
+        let row = await MentorWaitlist.findOneAndUpdate(
             { user: req.user._id },
             { $setOnInsert: { user: req.user._id, matchStatus: "awaiting_choice" } },
             { upsert: true, returnDocument: "after" }
         )
+
+        // A row closed when the student left Tier 2 (paymentsRouter closeMentorWaitlist) belongs to
+        // that earlier place. Being on Tier 2 again means a new place: fresh choice, fresh clock.
+        if (row.resolution === "left_tier2") {
+            row = await MentorWaitlist.findOneAndUpdate(
+                { _id: row._id },
+                {
+                    $set: { matchStatus: "awaiting_choice", resolution: null, adminNote: "Re-opened on a new Tier 2 place" },
+                    $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                },
+                { returnDocument: "after" }
+            )
+        }
+
+        // the careers and their job roles to choose from — only needed before a choice is sent
+        let options = null
+        if (row.matchStatus === "awaiting_choice") {
+            const recommendation = await Recommendation.findOne({ user: req.user._id }).select("ranked_professions").lean()
+            options = pickerOptions(recommendation ? recommendation.ranked_professions || [] : [])
+        }
 
         return res.status(200).json({
             success: true,
@@ -75,6 +116,8 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 matchStatus: row.matchStatus,
                 chosenProfessionId: row.chosenProfessionId,
                 chosenProfessionName: row.chosenProfessionName,
+                chosenJobRole: row.chosenJobRole || null,
+                options,
                 choiceSentAt: row.choiceSentAt,
                 dueBy: dueByFor(row),
                 matchedAt: row.matchedAt,
@@ -108,7 +151,7 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
             })
         }
 
-        const { professionId } = req.body
+        const { professionId, jobRole } = req.body
 
         // the choice must come from THIS student's own ranked matches — the id is checked against
         // their recommendation and the name is read from there, never from the request body
@@ -122,6 +165,16 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
                 message: ranked.length === 0
                     ? "Your matches aren't ready yet — finish your assessment first"
                     : "Please choose a career from your matches"
+            })
+        }
+
+        // the role must be one of THIS career's job roles, exactly as the data file names it
+        const role = (jobRolesById.get(String(match.professionId)) || []).find((name) => name === jobRole)
+
+        if (!role) {
+            return res.status(400).json({
+                success: false,
+                message: "Please choose a job role from that career"
             })
         }
 
@@ -140,6 +193,7 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
                 user: req.user._id,
                 chosenProfessionId: String(match.professionId),
                 chosenProfessionName: match.profession,
+                chosenJobRole: role,
                 choiceSentAt: new Date(),
                 matchStatus: "matching",
             },
@@ -153,6 +207,7 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
                 matchStatus: row.matchStatus,
                 chosenProfessionId: row.chosenProfessionId,
                 chosenProfessionName: row.chosenProfessionName,
+                chosenJobRole: row.chosenJobRole,
                 choiceSentAt: row.choiceSentAt,
                 dueBy: dueByFor(row),
             },
@@ -187,9 +242,20 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 
         const rowByUser = new Map(rows.map((row) => [String(row.user), row]))
 
+        // Support needs a student declared on the assessment page AND agreed their mentor may know
+        // (Round 10). Nothing is shown for anyone who did not tick that box.
+        const NEED_LABELS = { vision: "seeing the screen", hearing: "hearing", motor: "movement / fine motor", reading: "reading (e.g. dyslexia)", attention: "attention" }
+        const submissions = await Submission.find({ user: { $in: students.map((s) => s._id) }, "psychometric.accommodations.shareWithMentor": true })
+            .select("user psychometric.accommodations")
+            .lean()
+        const supportByUser = new Map(submissions.map((submission) => [
+            String(submission.user),
+            (submission.psychometric.accommodations.needs || []).map((need) => NEED_LABELS[need] || need),
+        ]))
+
         const data = students.map((student) => {
             const row = rowByUser.get(String(student._id)) || { matchStatus: "awaiting_choice" }
-            return { student, ...row, user: student._id, dueBy: dueByFor(row) }
+            return { student, ...row, user: student._id, dueBy: dueByFor(row), sharedSupportNeeds: supportByUser.get(String(student._id)) || [] }
         })
 
         return res.status(200).json({
@@ -320,7 +386,7 @@ router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             { user: id },
             {
                 $set: { matchStatus: "awaiting_choice", adminNote: (adminNote || "").trim() },
-                $unset: { chosenProfessionId: "", chosenProfessionName: "", choiceSentAt: "", assignedMentor: "", matchedAt: "", resolution: "" },
+                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", choiceSentAt: "", assignedMentor: "", matchedAt: "", resolution: "" },
             },
             { returnDocument: "after" }
         )
@@ -349,3 +415,4 @@ router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
 
 
 module.exports = router
+module.exports.pickerOptions = pickerOptions

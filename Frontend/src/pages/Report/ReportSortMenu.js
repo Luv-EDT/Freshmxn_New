@@ -1,11 +1,12 @@
 import { useState } from "react"
-import { PRIMARY_SORTS, SECONDARY_SORTS } from "./reportFilters"
+import { PRIMARY_SORTS, SECONDARY_SORTS, SHOW_FIRST } from "./reportFilters"
 
 // The report's only control (owner, Round 6): one "Sort your list" button, collapsed by default,
 // so the list — not the controls — is what a student sees first. Two primary orders are
-// highlighted; a secondary "then order by" is optional. There are no filters: every order shows
-// every career.
-function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint }) {
+// highlighted; a secondary "then order by" is optional; "Show first" moves core engineering up.
+// The ONE filter is "Leave out blue-collar careers" (owner, 2026-09-30), off by default, and the
+// page says how many it hid.
+function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint, showFirst, onShowFirst, excludeBlueCollar, onExcludeBlueCollar }) {
     const [open, setOpen] = useState(false)
 
     const primaries = PRIMARY_SORTS
@@ -22,6 +23,8 @@ function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint
                 <span>Sort your list</span>
                 <span className="sort-current">
                     {primaryLabel}{secondaryLabel ? ` · then ${secondaryLabel.toLowerCase()}` : ""}
+                    {showFirst ? " · engineering first" : ""}
+                    {excludeBlueCollar ? " · no blue-collar" : ""}
                 </span>
             </button>
 
@@ -65,6 +68,35 @@ function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint
                             </button>
                         ))}
                     </div>
+
+                    <p className="sort-title">Show first <span className="sort-note">(if you like)</span></p>
+                    <div className="sort-secondaries">
+                        {SHOW_FIRST.map((option) => (
+                            <button
+                                type="button"
+                                key={option.value}
+                                className={`filter-option${showFirst === option.value ? " is-on" : ""}`}
+                                aria-pressed={showFirst === option.value}
+                                title={option.hint}
+                                onClick={() => onShowFirst(showFirst === option.value ? null : option.value)}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <label className="sort-filter">
+                        <input
+                            type="checkbox"
+                            checked={excludeBlueCollar}
+                            onChange={(event) => onExcludeBlueCollar(event.target.checked)}
+                        />
+                        <span>
+                            Leave out blue-collar careers
+                            <br />
+                            <span className="sort-note">Some of the most AI-proof careers are blue-collar, so this hides good options.</span>
+                        </span>
+                    </label>
                 </div>
             )}
         </div>

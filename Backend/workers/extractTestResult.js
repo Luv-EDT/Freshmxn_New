@@ -25,6 +25,8 @@
 
 // ── the schemas, transcribed from 04_Item_Bank.md §7 ────────────────────────────────────────────
 
+const { recordUsage } = require("../utils/aiUsage")
+
 const INSTRUMENTS = {
     extReasoning: {
         instrument: "assessmentday_logical_v1",
@@ -255,6 +257,7 @@ const createExtractionClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model 
         if (!response.ok) throw new Error(`Anthropic HTTP ${response.status} — ${(await response.text()).slice(0, 200)}`)
 
         const payload = await response.json()
+        recordUsage("screenshot_reader", model, payload)
         return payload.content.map((chunk) => chunk.text || "").join("")
     }
 )

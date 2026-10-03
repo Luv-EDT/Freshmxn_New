@@ -1,8 +1,12 @@
 const mongoose = require("mongoose")
 
-// TEMPORARY (V1): a self-declared "I have my parent's permission" checkbox for students under 18.
-// V2 replaces this with verified parental consent on this same collection —
-// every row with isTemporary: true is a student to ask again.
+// Parental consent for students under 18.
+//
+// V1 was a self-declared "I have my parent's permission" checkbox (isTemporary: true). Round 10 adds
+// the verified step on this same row: a 6-digit code emailed to the PARENT, entered back here. A
+// verified row is consentMethod "otp_email", isTemporary false, with verifiedAt. Every row still
+// isTemporary: true is a student whose parent has not confirmed yet — the dashboard asks them to.
+// SMS codes come later (V2); the row shape will not change.
 
 const consentSchema = new mongoose.Schema(
     {
@@ -26,7 +30,7 @@ const consentSchema = new mongoose.Schema(
         },
         consentMethod: {
             type: String,
-            default: "self_declared_checkbox", // self_declared_checkbox | otp (V2)
+            default: "self_declared_checkbox", // self_declared_checkbox | otp_email (Round 10) | otp_sms (V2)
         },
         isTemporary: {
             type: Boolean,
@@ -40,6 +44,36 @@ const consentSchema = new mongoose.Schema(
             type: String,
         },
         policyVersion: {
+            type: String,
+        },
+        // ── the verified step (Round 10) ──
+        parentEmail: {
+            type: String,
+            lowercase: true,
+            trim: true,
+        },
+        // the current code, hashed — never stored as typed — with its clock and its tries
+        otpHash: {
+            type: String,
+            default: null,
+        },
+        otpExpiresAt: {
+            type: Date,
+            default: null,
+        },
+        otpAttempts: {
+            type: Number,
+            default: 0,
+        },
+        otpSentAt: {
+            type: Date,
+            default: null,
+        },
+        verifiedAt: {
+            type: Date,
+            default: null,
+        },
+        ipAtVerify: {
             type: String,
         },
     },

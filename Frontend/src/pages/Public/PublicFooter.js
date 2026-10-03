@@ -19,7 +19,7 @@ function PublicFooter() {
                             </a>
                         </p>
                         <p>
-                            <strong>WhatsApp / Call:</strong> <a href="tel:8882756287">8882756287</a>
+                            <strong>Call:</strong> <a href="tel:8882756287">8882756287</a>
                             <br />
                             <strong>Email:</strong> <a href="mailto:luvgoel@freshmxn.com">luvgoel@freshmxn.com</a>
                         </p>

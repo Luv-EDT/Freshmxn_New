@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import DegreeFields from "./DegreeFields"
 import { useNavigate, Link } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { registerUser, getGoogleSignInUrl } from "../apiCall/userApi"
@@ -16,11 +17,12 @@ function Register() {
     const [password, setPassword] = useState("")
     const [age, setAge] = useState("")
     const [journey, setJourney] = useState("")
-    const [journeyDetail, setJourneyDetail] = useState({ class: "", stream: [], collegeStage: "", courseYear: "", experienceYears: "" })
+    const [journeyDetail, setJourneyDetail] = useState({ class: "", stream: [], collegeStage: "", courseYear: "", experienceYears: "", degree: "", subject: "", field: "" })
     // TEMPORARY (V1): self-declared parent permission for under-18 students
     const [parentConsentChecked, setParentConsentChecked] = useState(false)
     const [parentName, setParentName] = useState("")
     const [parentPhone, setParentPhone] = useState("")
+    const [parentEmail, setParentEmail] = useState("")
 
     // If already logged in, go to Home
     useEffect(() => {
@@ -61,6 +63,7 @@ function Register() {
             parentConsentChecked: parentConsentChecked,
             parentName: parentName,
             parentPhone: parentPhone,
+            parentEmail: parentEmail,
         }
 
         const registerResponse = await registerUser(payload)
@@ -129,7 +132,7 @@ function Register() {
                 <div>
                     <label>Where are you right now?</label>
                     <br />
-                    <select value={journey} onChange={(e) => setJourney(e.target.value)} required>
+                    <select value={journey} onChange={(e) => { setJourney(e.target.value); setJourneyDetail({ class: "", stream: [], collegeStage: "", courseYear: "", experienceYears: "", degree: "", subject: "", field: "" }) }} required>
                         <option value="">-- Select --</option>
                         {JOURNEY_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
@@ -205,7 +208,10 @@ function Register() {
                     </div>
                 )}
 
-                {/* TEMPORARY (V1): parent permission for under-18 — a proper parental consent step comes in V2 */}
+                {/* Round 10: the degree, so the years already in it are not counted as switching cost */}
+                <DegreeFields journey={journey} detail={journeyDetail} onChange={handleDetailChange} />
+
+                {/* under-18: the student's tick here, then the parent's own confirmation by an emailed code (Round 10) */}
                 {isMinor && (
                     <div>
                         <p><strong>You're under 18</strong></p>
@@ -223,6 +229,12 @@ function Register() {
                             <label>Parent/guardian mobile (10 digits)</label>
                             <br />
                             <input value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} pattern="[0-9]{10}" required />
+                        </div>
+                        <div>
+                            <label>Parent/guardian email</label>
+                            <br />
+                            <input type="email" value={parentEmail} onChange={(e) => setParentEmail(e.target.value)} required />
+                            <p className="legal-agree">We email them a 6-digit code so they can confirm their permission themselves.</p>
                         </div>
                     </div>
                 )}

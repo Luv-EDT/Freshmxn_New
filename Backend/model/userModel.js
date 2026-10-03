@@ -58,6 +58,19 @@ const userSchema = new mongoose.Schema(
             experienceYears: {
                 type: Number,
             },
+            // Round 10: the degree a college student is doing (or joining) and a working student
+            // holds — a family from data/degree_options.json, and its subject where it has one —
+            // plus a working student's field in their own words. Matching uses the degree so it is
+            // not counted as switching cost for careers it already leads to (degree_families.json).
+            degree: {
+                type: String,
+            },
+            subject: {
+                type: String,
+            },
+            field: {
+                type: String,
+            },
         },
         preferredLanguage: {
             type: String,
@@ -108,6 +121,30 @@ const userSchema = new mongoose.Schema(
         // `progress.report` value: refunds and "Tier 1 delivered" read `report !== "locked"`, and a
         // failure must never count as delivery. Cleared on a successful report, a new submit or a retry.
         reportFailedAt: {
+            type: Date,
+            default: null,
+        },
+        // Round 10: the student asked not to be emailed the 6- and 12-month follow-up questions
+        followUpOptOut: {
+            type: Boolean,
+            default: false,
+        },
+        // Round 11: WHEN THE 6/12-MONTH FOLLOW-UP CLOCK STARTED. Set at the first assessment submit,
+        // and moved only when the student says they are heading somewhere NEW (asked on a resubmit
+        // and on "Update my report"). A report rebuilt for any other reason never moves it.
+        followUpAnchorAt: {
+            type: Date,
+            default: null,
+            index: true,
+        },
+        // every answer to "same way, or something new?" — outcome data in its own right
+        directionChanges: {
+            type: [{ at: Date, via: String, choice: String }],   // via: resubmit | update · choice: same | new
+            default: [],
+        },
+        // Round 11: the student pressed "Update my report" — the page shows "being updated" until a
+        // report newer than this exists
+        reportUpdateRequestedAt: {
             type: Date,
             default: null,
         },

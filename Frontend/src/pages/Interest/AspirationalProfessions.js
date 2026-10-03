@@ -103,15 +103,16 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
                 }}
             />
 
-            <div>
+            <div className="if-step-head">
                 <h2>🌟 Professions You're Drawn To</h2>
                 <p>Which professions do you think you'd like to be in, based on what you currently fancy or think is good?</p>
-                <p><em>This is optional — skip it completely if nothing comes to mind.</em></p>
+                <p><em>Nothing comes to mind? Leave it empty and press Finish.</em></p>
             </div>
 
             <form onSubmit={handleContinue}>
+                <section className="if-card">
                 {localFormData.map((row, idx) => (
-                    <div key={`aspiration${idx}`}>
+                    <div key={`aspiration${idx}`} className="if-aspiration">
                         <AutoComplete
                             style={{ width: "100%", maxWidth: 360 }}
                             value={row.professionText}
@@ -126,10 +127,11 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
                         <button type="button" onClick={() => handleRemove(idx)}>Remove</button>
                     </div>
                 ))}
-                <button type="button" onClick={handleAddMore}>Add Another Profession</button>
+                <button type="button" className="if-add" onClick={handleAddMore}>+ Add another profession</button>
+                </section>
 
                 {/* Navigation Buttons */}
-                <div>
+                <div className="if-nav">
                     <button type="button" onClick={handleContinuePrevious} disabled={isSaving}>Previous</button>
                     {" "}
                     <button type="button" onClick={handleSaveForLater} disabled={isSaving}>Save</button>

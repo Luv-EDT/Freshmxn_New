@@ -13,13 +13,17 @@ import DigitSpan from "./DigitSpan"
 import StoryRecall from "./StoryRecall"
 import ExternalTest from "./ExternalTest"
 import Sart from "./Sart"
+import ReasoningTest from "./ReasoningTest"
+import WordRecallTest from "./WordRecallTest"
+import InterestsModule from "./InterestsModule"
 import LikertModule from "./LikertModule"
+import DirectionModal from "../DirectionModal"
 import {
     ROSENBERG_ITEMS, ROSENBERG_SCALE, ROSENBERG_ATTRIBUTION,
     CONFIDENCE_ITEMS,
     MI_ITEMS, MI_SCALE,
 } from "./moduleItems"
-import { ASSESSMENT_MODULES, moduleByKey, completedModules, startedModules, canSubmit } from "./assessmentModules"
+import { moduleByKey, completedModules, startedModules, canSubmit, visibleModules } from "./assessmentModules"
 
 // Stage 2 — the psychometric assessment. Same shape as InterestForm.js, deliberately: one shell
 // holding state, saving to the server whenever the student leaves a module, so the assessment
@@ -47,7 +51,7 @@ const DRAFT_DEBOUNCE_MS = 400
 // student would see "Could not save" on a section that had in fact saved everything already, which
 // is the worst possible thing to tell someone about their own data. Each of these has its own way
 // out, and "← All sections" is always there.
-const SELF_SAVING = ["digitSpan", "storyRecall", "extReasoning", "extVerbal", "sartRaw"]
+const SELF_SAVING = ["digitSpan", "wordRecall", "storyRecall", "extReasoning", "extVerbal", "sartRaw", "reasoning", "interests60"]
 
 function AssessmentShell() {
     const navigate = useNavigate()
@@ -194,6 +198,18 @@ function AssessmentShell() {
         }
     }
 
+    // The support answer (and any skips it opens) is saved straight away — it changes what the list
+    // below it offers, so it must not wait for the student to leave a section.
+    const handleSaveAccommodations = async (block) => {
+        try {
+            await savePsychometric({ module: "accommodations", block })
+            await loadSaved()
+            message.success("Saved")
+        } catch (error) {
+            message.error("Could not save — check your connection and try again")
+        }
+    }
+
     const handleModuleDone = async () => {
         const saved = await saveModule()
         if (saved) navigate("/assessment/start")
@@ -222,11 +238,24 @@ function AssessmentShell() {
         }
     }
 
-    const handleSubmit = async () => {
+    // A RESUBMIT asks "same way, or something new?" first (Round 11, DirectionModal); the first
+    // submit asks nothing.
+    const [directionOpen, setDirectionOpen] = useState(false)
+
+    const requestSubmit = () => {
+        if (user.progress.psychometric === "done") {
+            setDirectionOpen(true)
+            return
+        }
+        handleSubmit(null)
+    }
+
+    const handleSubmit = async (direction) => {
         setIsSubmitting(true)
 
         try {
-            await submitPsychometric()
+            await submitPsychometric(direction)
+            setDirectionOpen(false)
             setDirtySinceSubmit(false)
             setStamps((previous) => ({ ...previous, psychometricSubmittedAt: new Date().toISOString() }))
             dispatch(setUser({ ...user, progress: { ...user.progress, psychometric: "done" } }))
@@ -265,17 +294,28 @@ function AssessmentShell() {
                 <Navbar />
                 <JourneyProgress user={user} current="assessment" />
                 <AssessmentIntro
-                    modules={ASSESSMENT_MODULES}
+                    modules={visibleModules(psychometric)}
                     completed={done}
                     started={startedModules(psychometric)}
                     storyState={storyState}
                     onOpen={(key) => navigate(`/assessment/${key}`)}
-                    onSubmit={handleSubmit}
+                    onSubmit={requestSubmit}
                     canSubmit={canSubmit(psychometric)}
                     isSubmitting={isSubmitting}
                     alreadySubmitted={user.progress.psychometric === "done"}
                     hasNewAnswers={hasNewAnswers}
                     onReadReport={() => navigate("/report")}
+                    retakeGranted={psychometric.retakeGranted || {}}
+                    accommodations={psychometric.accommodations || null}
+                    onSaveAccommodations={handleSaveAccommodations}
+                />
+                <DirectionModal
+                    open={directionOpen}
+                    title="Submit again"
+                    okText="Submit and rebuild my report"
+                    busy={isSubmitting}
+                    onCancel={() => setDirectionOpen(false)}
+                    onConfirm={handleSubmit}
                 />
             </div>
         )
@@ -364,6 +404,24 @@ function AssessmentShell() {
                     moduleKey={moduleKey}
                     onDone={handleServerSavedDone}
                 />
+            )}
+
+            {moduleKey === "wordRecall" && (
+                <WordRecallTest
+                    alreadyTaken={Boolean(psychometric.wordRecall && psychometric.wordRecall.completedAt)}
+                    onDone={handleServerSavedDone}
+                />
+            )}
+
+            {moduleKey === "reasoning" && (
+                <ReasoningTest
+                    alreadyTaken={Boolean(psychometric.reasoning && psychometric.reasoning.completedAt)}
+                    onDone={handleServerSavedDone}
+                />
+            )}
+
+            {moduleKey === "interests60" && (
+                <InterestsModule saved={psychometric.interests60} onDone={handleServerSavedDone} />
             )}
 
             {moduleKey === "sartRaw" && (

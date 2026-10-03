@@ -1,7 +1,6 @@
 # Report output — brainstorm (Sept 2026)
 
-**Status:** discussion document, nothing built yet. The questions at the end (§7) are for the owner. Once
-they're answered, this becomes the spec for the report rebuild.
+**Status:** answered by the owner (2026-09-29) and built in Round 9 — see §8 and the handover.
 
 **The problem (owner):** the report gives a superficial understanding. A student sees which careers fit
 but not **what to do next** — this year, at their stage. `Backend/data/ALL-professions.json` holds much
@@ -192,3 +191,19 @@ door). It's cheap to build because every field is already on the page.
 3. Next steps.
 4. Compare view.
 5. Exam calendar.
+
+---
+
+## 8. Owner's answers (2026-09-29) and what was built
+
+1. **Why it fits you** — yes. Built from data, one or two plain lines, never a number.
+2. **Next steps** — both per card and report-level, and everything collapsible so the report is not overwhelming.
+3. **Stream map** — built as the class 9–10 headline.
+4. **Money** — ranges only; no payback.
+5. **Compare** — its own page (`/report/compare`), linked from the top of the report; the student picks the careers.
+6. **Shrink the prose** — `report@3.0.0`: three lines, no model-written next steps, readers 14–25.
+7. **Exam calendar** — explained, not built: an alias map from the 174 exam spellings to ~55 real exams, each with "usually opens {months}" plus the official link, re-checked yearly with a staleness fixture.
+
+Later decisions in the same round: `filter_rules.json`'s pay rule becomes a **pay caution** (nothing hidden);
+"Show first: core engineering"; a reviewed **blue-collar** list with a tag and an opt-out **filter** (no sort).
+

@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom"
 import { useEffect } from "react"
 import { Form, Input, Modal, Select, Popconfirm, message } from "antd"
 import { requestAccess } from "../../apiCall/paymentsApi"
@@ -6,6 +7,7 @@ import { CALLBACK_DAY_OPTIONS, CALLBACK_SLOT_OPTIONS } from "./callbackOptions"
 // manual payment mode: the student leaves a callback request; an admin collects payment and grants access
 function RequestAccessForm({ visible, onClose, quote, defaultName, defaultPhone, onAddSuccess }) {
     const [form] = Form.useForm()
+    const navigate = useNavigate()
 
     // Pre-fill from the account
     useEffect(() => {
@@ -35,6 +37,13 @@ function RequestAccessForm({ visible, onClose, quote, defaultName, defaultPhone,
             form.resetFields()
         } catch (error) {
             if (error?.errorFields) return // antd validation error, already shown inline
+            // under 18 with no parent confirmation yet: send them where they can finish it
+            if (error.response?.data?.data?.code === "PARENT_CONSENT_REQUIRED") {
+                message.error(error.response.data.message)
+                onClose()
+                navigate("/parent-consent")
+                return
+            }
             message.error(
                 error.response?.data?.message || "Something went wrong"
             )

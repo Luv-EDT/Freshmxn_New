@@ -101,7 +101,9 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
     const columns = [
         { title: "Student", render: (_, record) => `${record.student?.name} (${record.student?.email})` },
         { title: "Phone", render: (_, record) => record.student?.phone || "—" },
-        { title: "Chosen career", render: (_, record) => record.chosenProfessionName || "—" },
+        { title: "Chosen career — job role", render: (_, record) => (record.chosenProfessionName ? `${record.chosenProfessionName}${record.chosenJobRole ? ` — ${record.chosenJobRole}` : ""}` : "—") },
+        // shared only when the student ticked "my mentor can know" on the assessment page
+        { title: "Support needs (shared)", render: (_, record) => ((record.sharedSupportNeeds || []).length > 0 ? record.sharedSupportNeeds.join(", ") : "—") },
         { title: "Chosen on", render: (_, record) => (record.choiceSentAt ? dayjs(record.choiceSentAt).format("DD MMM YYYY") : "—") },
         {
             title: "Due by",

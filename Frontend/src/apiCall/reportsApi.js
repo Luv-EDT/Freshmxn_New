@@ -16,3 +16,8 @@ export async function retryMyReport() {
     const response = await axiosInstance.post("/reports/retryMyReport")
     return response
 }
+
+export async function updateMyReport(direction) {
+    const response = await axiosInstance.post("/reports/updateMyReport", { direction })
+    return response
+}

@@ -12,7 +12,7 @@ as needed.
 
 ---
 
-# Part 1 — Where things stand (September 2026)
+# Part 1 — Where things stand (October 2026)
 
 **Freshmxn's Lab** — a career-guidance web app for Indian students (Class 9 → early career), run by
 Freshmxn Education India Private Limited. A student pays, fills an interest form (their story), takes
@@ -25,8 +25,8 @@ mentor match.
 | **Code** | `main` (after the Day 5 merge). The cloud work happened on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`): Tier 1 ₹3,500 · Tier 2 ₹6,500 · upgrade ₹3,000 |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · interest form · 12-part assessment incl. SART and external tests · scoring (`profile@1.0.1`) · matching (16 tiers + switching cost) · report (one sortable list) · profile · mentor tier (mentor sign-up, admin approval, student waitlist, 20-business-day match) · admin dashboard |
-| **Tests** | fixtures 22 (scoring) / 51 (matching) / 102 (workers) — all offline, all green |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment with SART, digit span, story recall, the in-house reasoning test and the O\*NET activities checklist · disability accommodations ("not measured", never low) · our own word-memory test · scoring (`profile@1.3.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, coverage line, compare page) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes |
+| **Tests** | fixtures 22 (scoring) / 58 (matching) / 155 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -58,8 +58,8 @@ cd Backend && npm run seed:admin                  # once — the admin account
 **Test**
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
-node Backend/matching/fixtures/runFixtures.js    # 51/51
-node Backend/workers/fixtures/runFixtures.js     # 102/102 — offline, no DB, no API key
+node Backend/matching/fixtures/runFixtures.js    # 58/58
+node Backend/workers/fixtures/runFixtures.js     # 155/155 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -67,8 +67,9 @@ The fixtures read some frontend sources and two docs **as text** (the rubrics in
 `Backend/workers/gradeOpenItems.js`). Renaming those docs, or the strings the fixtures look for,
 breaks the pipeline — the fixtures say which.
 
-The Day 5 browser suites (`uiFlow` 63 checks, `round3` 39, `round5` 38) and the API suite (42) ran in
-the cloud session against FerretDB + Playwright; they were scratch scripts and are **not in the repo**.
+The browser suites (`uiFlow`, `round3`, `round5`, the Round 9, 10 and 11 suites) and the API suite (46)
+ran in the cloud sessions against FerretDB + Playwright; they were scratch scripts and are **not in the
+repo** (a committed suite is in V2).
 To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.js` for screenshots.
 
 ---
@@ -78,47 +79,78 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 **Block real students (owner's call):**
 | Item | Notes |
 |---|---|
-| DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice. Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
-| Report prompt `report@2.0.0` (`Backend/workers/reportComposer.js`) | Approve before it runs on a real student — most readers are minors |
+| DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice (Privacy now has the sensitive-answers section, email-verified parental consent and the study-abroad partner on opt-in, policy `v1.2`). Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
+| Report prompt `report@3.0.0` (`Backend/workers/reportComposer.js`) | Three short lines; approve against a live run before real students |
+| Human review of the 223 baseline ratings (`baseline_rating.json`) | All still `unreviewed`. They drive matching |
+| **Disability support facts** (`Backend/data/disability_support.json`) | `verified_by_owner: false` — the report's support section stays hidden until the owner checks each row against its official source and sets it to true (Round 10) |
+| **Combined careers** (`Backend/data/combined_careers.json`, 42 careers, 54 side groups) | Owner approved the list (Appendix C); re-check the side groups once — they decide when a combined career appears |
+| **Degree → careers** (`Backend/data/degree_families.json`) | Owner approved (Appendix D). Only careers listed there waive the undergrad switching cost |
+| In-house reasoning test | Scored `provisional_norms` until there are real answers (V2: norms). The generator was checked on 32,000 items, never on students |
 | The five LLM rubrics (`llm_scoring_prompts.md`) and the 132 interest-form problem prompts | Never reviewed |
 | Razorpay KYC | Then `PAYMENT_MODE=razorpay` |
 | SART on a real low-end Android | The 20 ms timing gate has never run on physical budget hardware |
-| External tests against the live vision API | Fixture-proven with a stub only |
-| P22 and LR_FREE_RECALL against the live API | Never exercised live |
+| External tests, P22 and LR_FREE_RECALL against the live API | Fixture-proven with stubs only |
+| First live run of the data refresh, the scout and the study bot | Adzuna, NIRF and the exam sites are unreachable from the cloud container, so all three are proven with stubs. Use **Run now** in admin (Data updates / Emerging careers) and read the `housekeeping … done` line in the Render logs |
+| **Where to study** (`Backend/data/study_places.json`, Round 11) | 23 disciplines, 170 institutions, public and private. NIRF 2025 ranks where NIRF ranks the field; elsewhere "Suggested — check" (Claude's judgement, labelled). **The institution lists stay hidden** until the owner reads them and sets `review.reviewed_by_owner` to `true`; the official links show already. NIRF 2026 was not out on 3 Oct 2026 — the study bot proposes it when it is |
+| **Exam calendar** (`Backend/data/exam_calendar.json`, Round 11) | 61 exams; 23 checked against published reporting of the official notices, **38 still `draft`** (name and official link only). Read the rows once; the study bot re-checks 15 a month on their own sites. A fixture fails if a checked row is over 13 months old |
+| **Studying abroad** (`Backend/data/abroad.json`, Round 11) | 25 careers flagged "helps" or "often part of the route", drafted by Claude — read them once. **Name the study-abroad partner** and share leads from the admin "Study abroad" tab (consent and policy version are on each row) |
+| **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
-**Product decisions pending:**
-- `profession.filter` is read nowhere — 12 professions marked `filter: false` are shown. Wire it or leave it.
-- 90 nuances are withheld from students (builder phrasing / identifiers); a copy pass would recover many. Some still say "taxonomy" or "Sector 5".
+**Owner to know (Round 10):**
+- **Existing students** pick up the new scoring (persistence items, second calibration item, O\*NET
+  activities, in-house reasoning) only when they answer the new parts and resubmit. Their old report
+  stays until then. The new questions show as unanswered on their assessment page.
+- **Refund wording** now promises the Tier 2 → Tier 1 difference (from `getPricing`), as the owner meant;
+  the code already did exactly that.
+- **Claude calls in the refresh, the scout, the study bot and career drafting** use server-side fallbacks
+  (`fallbacks: "default"`): if the model declines, Anthropic's recommended fallback model answers
+  instead. Default model `claude-opus-5-5` (`REFRESH_MODEL` to change).
+- **AI cost is now measured** (Round 11): every Claude call logs its tokens, and the admin dashboard's
+  "AI usage" card shows the month by job at list prices. The Round 11 estimate was about $1.45 per
+  student at launch, falling to $0.55–0.75, plus $15–40 a month of fixed jobs; compare it with the card
+  after the first month. The grading rubric and the research instructions are now cached.
+- **Adzuna**: India salary data is thin, so a median is shown only with 20+ salaried postings behind
+  it. Calls are spaced to stay inside the free tier.
+
+**Product decisions still open:**
+- **Data debt:** 56 careers carry `admin_review.required` (almost all pay). The monthly refresh now proposes pay and demand updates for the admin to approve.
+- **Core engineering list** (63 careers, owner: keep). It only reorders.
+- 90 nuances are withheld from students (builder phrasing / identifiers); a copy pass would recover many.
 - Two flagged baseline professions (Railway Operations Professional, Model) need the admin screen.
 - `User/Mentorship.js` "How it works" mentions booking further sessions in-app — V1 has none; reword or keep.
-- The report output is superficial — see `docs/2_build/Report_Output_Brainstorm.md` and answer its §7 questions before the rebuild.
+- The careers the owner thinks are skills-based but the data marks `undergrad` (UI/UX Designer, Game Designer, Content Writer, …) — a reviewed data patch under DECISIONS §3, if the owner wants it.
 
-**Backend review (Sept 2026) — still open** (the three high-severity ones were fixed in Round 7):
-forbidden-term rejection can be triggered by a student's own words (now ends in "failed + Try again",
-not a spinner) · a resubmit during an active job can be lost · `reports.generatedAt` is overwritten on
-every run (house rule says never) · story-recall rescaling when free recall is missing · digit-span
-`completedAt` ignored · `savePsychometric` accepts server-owned fields · age hard filter reads the wrong
-field (low) · undergrad waste non-monotonic (spec question).
+**Backend review (Sept 2026):** all findings are now fixed (the three high ones in Round 7, the rest in
+Round 10 S1). Nothing from it is open.
 
 **Ops:**
-- Server waker: turn on UptimeRobot (HTTP, every 10 min, `https://www.freshmxn.com/robots.txt`) before sharing with students — the free service otherwise sleeps after 15 min.
-- Bare domain `freshmxn.com`: needs `CNAME @ → freshmxn.onrender.com` (DNS only) in Cloudflare and the domain added in Render, if not done yet. Google Search Console: verify + submit the sitemap.
-- `RESEND_API_KEY` missing crashes the server at boot — keep it set (or make the client lazy).
+- Uptime ping: on (owner, Round 10). Render logs show no lines for it — the server does not log requests; check UptimeRobot's response times instead.
+- Adzuna keys: in Render (owner, Round 10).
+- Bare domain `freshmxn.com` and Google Search Console: see Day 5 round 3, if not done yet.
 
-Everything deferred beyond V1 is in `docs/4_v2/06_V2_and_Beyond.md`.
+Everything not built yet is in `docs/4_v2/06_V2_and_Beyond.md` — future scope only.
 
 ---
 
 # Part 4 — Decisions that must not drift
 
-- `match_confidence` and `data_quality` are never shown to a student; confidence is never a score; uncertainty tolerance is a position, not a level.
+- `match_confidence` and `data_quality` are never shown to a student; confidence is never a score; uncertainty tolerance is a position, not a level. **The one owner-approved exception (Round 10):** the coverage line "Partial · N% measured" beside a career, on the compare page and on the Profile — a share of what was measured, never the raw field.
+- Disability answers are used for support and for marking affected timed tasks "not measured" — **never** to rank, hide or score a career. Trauma answers are kept and used nowhere.
+- Data-refresh overrides change what a career page shows, never matching; nothing from the refresh or the scout changes the product without an admin approval, and the scout never publishes a career.
+- Performance tests are one attempt. Only a technical failure gets a retry: SART's one automatic retry, or a retake the admin grants from Assessment issues (the old attempt is kept in `psychometric.history`, never scored).
 - The word "optional" never appears in student-facing assessment code (fixture).
 - SART stimulus rendering (`Sart.js` stimulus block, `FONT_SIZES`, `sartTask.js`) is untouched.
-- The report never hides a career: no filters on the page; "Best fit, ignoring switching cost" always surfaces the worth-the-switch careers (DECISIONS §5).
+- The report never hides a career **except** the owner-approved "Leave out blue-collar careers" filter (off by default, says how many it hid). "Best fit, ignoring switching cost" always surfaces the worth-the-switch careers (DECISIONS §5). "Show first" only reorders.
+- The blue-collar list is `Backend/data/blue_collar.json`, reviewed by the owner (30 careers; Chef & Professional Cook deliberately excluded). Change it there, never in code.
+- Next steps, why-it-fits and the journey headline are built from data (`Report/reportPlan.js`), never by the model; the model writes only three short lines.
 - A failed pipeline is `User.reportFailedAt`, never a `progress.report` value (refunds read `report !== "locked"`).
 - Prices are always read from the server, never from copy.
 - API route prefixes must not equal a page URL (a refresh would 404).
-- Parental consent in V1 is the self-declared checkbox + parent name/mobile, recorded with time, IP and policy version; the legal pages say verified consent is coming.
+- Parental consent: an under-18 needs a parent's email-verified code (`/parent-consent`) before paying; older accounts with the self-declared checkbox see a banner, and are never locked out.
+- **A report changes only when the student acts** (Round 11): a resubmit, or "Update my report" after a matching or scoring improvement. A deploy never rebuilds a report by itself, and data-refresh overrides change career pages, never reports.
+- **The follow-up clock** counts from the student's latest submission and moves only when they answer "something new" to the direction question; the scan runs monthly.
+- Exams are shown as what **usually** happens, with the official link — never this year's exact dates (fixture). Where-to-study rows always carry their basis; a judgement says "Suggested — check".
+- Study abroad is about whether a career needs it, never which university; a student's details go to the partner only after the consent box is ticked.
 
 ---
 
@@ -1552,3 +1584,117 @@ field (low). Full report: ask Claude for `backend_review.md`, or rerun the revie
   ₹7,000 — the pages will read `GET /payments/getPricing`, so the server's number wins; the copy doc
   should be corrected.
 - `RESEND_API_KEY` crash-at-boot (§2) — a one-line lazy construction would fix it; owner's call.
+
+### Round 8 — docs reorganised, merged to main (2026-09-29)
+Every doc moved under `docs/` (research / build / handover / v2 / finalized / media), the five day
+handovers folded into this file, the master plan given a current-state table, V2 updated, a plain-language
+explainer (`docs/HOW_FRESHMXN_WORKS.md`), an index (`docs/README.md`) and a root `CLAUDE.md` added.
+`gradeOpenItems.js` reads its rubrics from `docs/5_finalized/algorithms/`. `render.yaml` deploys from
+`main`. Merged as PR #1 (Day 5) and PR #2 (the report brainstorm).
+
+### Round 9 — the deeper report (2026-09-30)
+Owner answers to the brainstorm: why-it-fits yes · next steps both per card and report-level, all
+collapsible · stream map for class 9–10 · money as ranges only · a compare page · shrink the prompt ·
+exam calendar explained (not built). Then: pay caution from `filter_rules.json`, "Show first: core
+engineering", and a blue-collar tag with an opt-out filter (no blue-collar sort).
+
+| Area | What changed |
+|---|---|
+| `Report/reportPlan.js` (new, pure) | `whyFits` (top strengths by plain label, never confidence or uncertainty tolerance; the activity that led there; one "would stretch you" factor) · `cardSteps` (≤3, stage-aware, only from data) · `streamMap` (5 streams, the engine's own prerequisite rule) · `journeyHeadline` (stream map / exam map / "what you can move into" + what carries over) |
+| Card (`ProfessionCard.js`) | Opened card = What it is · **Why it fits you** · **Your next steps** always visible; **The road** (path, subjects, degree needed, can you switch in, master's, licence, exams + competition + private-seat cost + "if it doesn't work out", deadline + other ways in) · **Money** (ranges, cost, "estimate / checked {month}", what mid-career means, uneven-pay caveat, **pay caution**) · **The future** (demand, "for clients anywhere", AI with which part of the work + sign-off accountability, working for yourself) · **More about the work** — each collapsed. **Blue-collar** tag on the row |
+| Report page | "Compare careers →" beside "Your matches" · "What to do next — your next 12 months" (collapsible, open) leads with the journey headline, then the derived actions · Sort menu: **Show first: core engineering** and **Leave out blue-collar careers** (off by default; the page says how many were hidden, one tap to undo) |
+| Compare (`/report/compare`, new) | Pick 2–3 of your careers (top 3 preselected, choice kept in `?ids=`), side-by-side table with a sticky label column on phones |
+| API (`professionsRouter`) | `payCaution` (from `filter`), `blueCollar` (from `data/blue_collar.json`, new), `coreEngineering` (from `filter_rules.json`), `economics.checked/checkedOn`, `aiExposure.workMostly/legalAccountability`, `entryGate.typicalTotalCostLakh/ifUnsuccessful` |
+| Prompt | `report@3.0.0`: three sections (`opening` ≤30 words, `yourMatches` ≤20, `readiness` ≤20), **no `nextSteps`**, readers "between 14 and 25". A 2.x report's `nextSteps` still renders |
+
+Fixtures: **102 → 105** (stream map agrees with `journey.js` for every career × stream; next steps ≤3 and never
+blank for every career × journey, why-it-fits never names confidence; blue-collar list valid and Chef-free,
+core engineering covers sector 2 + also_include, pay cautions = `filter:false`). Changed on the owner's
+decisions: the prompt fixture (three sections, 3.x, 14–25) and the no-hiding fixture (now "nothing hides
+except the blue-collar opt-out, off by default, with a hidden count"). Browser: new Round 9 suite 38/38,
+uiFlow 63, round3 39, round5 38, API 42.
+
+
+### Round 10 — the 22-item request (2026-09-30 → 2026-10-02)
+The owner sent a 22-item list plus a preamble. Core engineering stays at 63 careers. The exam calendar
+moved to V2, and IPIP-NEO-120 was dropped (below). Built in eleven slices on
+`claude/peaceful-bohr-rkxau6`, each one tested and pushed.
+
+| Slice | What shipped |
+|---|---|
+| **S1** backend review + refunds + grit (`56c8417`) | **The report check:** the forbidden-term check fails only on engine identifiers, or on a spaced phrase the student didn't write; it re-asks once, then fails for good, so there are no 5× billed retries. **Resubmits:** a resubmit during a job is caught (`sourceSubmittedAt`, and a rebuild when the job completes). **Report timestamps:** `generatedAt` is set on insert only, with a separate `lastGeneratedAt`; the report is composed before anything is written; a stale report rebuilds itself. **Report client:** 429/5xx/408/409 are retried with `retry-after`; a 120 s timeout. **Scoring fixes:** story recall renormalises when free recall can't be graded; digit span unfinished → not measured, and a refresh re-serves the same sequence. **`savePsychometric`:** an allow-list of what the page may write; server-owned blocks are refused; `sartRaw` is write-once; grades and answer keys are stripped from what the page reads back. **Written answers:** edited answers are re-graded (text hash). **External tests:** an unconfirmed or disputed result scores as partial with a flag. **Profile levels:** thirds with a rounding tolerance. **Matching:** age is read from `user.age`; undergrad switching cost never goes down in a later year (1, 2, 2.5, 3). **Redis:** an 8 s queue timeout, and a failed enqueue shows "Try again". **Grit:** the persistence items PS1–PS4 are now asked. **Refunds:** Tier 2→1 refunds `balance − tierOne` from the newest Tier-2 payment only (no double refund); a late Razorpay failure can be retried; "₹0 back" is never offered; the mentor-waitlist row is closed (`left_tier2`) and reopened on re-upgrade |
+| **S2** quick design (`6ef7ce1`) | Hero: new copy and a student illustration (inline SVG) instead of the ranked box. About: the gap removed and a less-cropped photo. Footer reads "Call:". A profile icon in the public nav. Illustrative testimonials (Dhvanika, Dhriti, Raghav, clearly labelled). AI exposure as a value ("53/100, medium") on the card, the compare page and the AI sub-sort. Review buttons say "Review and edit" only where the answers can still be edited, otherwise "Review answers" / "Review scores" |
+| **S3** transparency + issues (`9579617`) | A "Why we do this" research box and a "?" on each section, with references. "N of 31 factors measured so far" on the assessment page. "Partial · N% measured" on careers, the compare page and the Profile (owner's exception to the house rule). **Assessment issues:** SART invalid runs, digit span left unfinished, grading failures, failed reports, disputed results and the student's own "Something went wrong" button all make an admin row, with an email to `ADMIN_EMAIL` for the serious ones. The admin can **Allow one retake** (the old attempt is kept in `psychometric.history`). SART gets one automatic retry |
+| **S4** in-house tests (`459141b`) | A 16-item reasoning test (matrices, letter–number series, verbal, 3D rotation), generated from a seed on the server, so the answer never reaches the page; scored `provisional_norms`. The O\*NET Interest Profiler Short Form (60 items, verbatim, attributed) is used **only** to score the intelligences: affinity = 0.7 self-report + 0.3 O\*NET; spatial/logical/verbal = 0.5 affinity + 0.5 reasoning part. RIASEC totals are stored, never shown. U8, a second calibration item: both C/D → uncalibrated, one → mixed blend |
+| **S5** degree, roles, disability (`f33782e`) | College students give degree + subject, working students degree + field. `degree_families.json` (Appendix D) waives undergrad waste where the degree already counts, and the card says so. `role_spread` is now used: a career's fit is the better of the whole and its best role group, shown as "roles that suit you". `entryRoute` labels from `degree_dependency` + `mid_stream_entry`. Four "any stream but the path says B.Tech" texts fixed (DECISIONS.md). Disability: declared needs → skip affected timed tasks as "not measured"; a support section from `disability_support.json` (hidden until verified); shared with the mentor only with consent. Privacy: the sensitive-answers section |
+| **S6** parent consent (`7f8742b`) | Under-18s give a parent email. A 6-digit code is emailed to the parent (hashed, 10 min, 5 tries, 60 s resend). Payment is gated until it is verified. Existing students see a banner and are not locked out. A shared lazy mailer, so the server no longer crashes without `RESEND_API_KEY` |
+| **S7** follow-up (`a7c6d10`) | A `housekeeping` queue with three schedules (follow-up scan daily 09:00 IST, data refresh monthly, scout weekly, Asia/Kolkata). At 6 and 12 months after the **first** report, one email plus one reminder, with a hashed 60-day link to `/follow-up/:token` (five questions, opt-out). Admin "Follow-ups" tab and Run now |
+| **S8** combined careers (`2a53223`) | `combined_careers.json`: 42 careers, each with two sides that are groups of our careers across sectors. A side is lit by a top-30 career or by the student's own activity; both lit → shown (max 5). Blue-collar flags reviewed (EV Service Technician, Solar PV Installer). Core engineering is inherited |
+| **S9** data refresh + scout (`d66d697`) | The monthly refresh: Adzuna counts and pay plus Claude web search limited to MoSPI/PIB, NCS, India Skills Report, Naukri, LinkedIn Economic Graph → proposals for demand and pay → admin approves → a DB override layer the career page reads (never matching) → Export patch + `tools/applyDataPatch.js`. The weekly scout: job-board titles seen 3+ times and students' unmatched aspirations → embedded → "nothing close" or "between two sectors" → Claude assessment → one watchlist tagged job board / students / both. Admin tabs "Data updates" and "Emerging careers". No structured-output mode with web search (the API rejects it alongside citations), so the JSON is validated by hand |
+| **S10** interest form (`6ae4a42`) | Cards, plain-language questions, "See examples", chips, "Step N of M" with the step list folded, Background in three cards, inline messages instead of `alert()`, and the stale "unlocks here soon" removed. No payload change |
+| **S11** docs | V2 rewritten to future scope only; this record; Part 3 and Part 4 updated; `HOW_FRESHMXN_WORKS.md` and `CLAUDE.md` updated |
+
+**Owner answers recorded this round:**
+- **IPIP-NEO-120: not needed.** Consistency is already built from conscientiousness, focus,
+  decision-making and now PS1–PS4. Matching never uses facets, and it would add about 10 minutes.
+  Moved to "Considered and rejected" in V2.
+- **Grit formula:**
+  `consistency_grit = combine(0.35·conscientiousness [primary], 0.20·persistence PS1–4, 0.30·focus, 0.15·decision-making)`.
+- **Fitted weights are supervised machine learning.** They need follow-up answers from 220–440 students.
+- **Retakes:**
+  - questionnaires stay editable until Submit;
+  - performance tests are one attempt (practice effects, Hausknecht 2007);
+  - technical failures get a retry.
+- **"Skills route" careers:** no new field. `degree_dependency` says what stops the first job;
+  `mid_stream_entry` is the door from where you stand, and it already waives the study cost.
+
+**Fixtures:** scoring 22, matching 51 → 58, workers 105 → 131. The tests that changed:
+- **Because the owner changed the product:**
+  - the undergrad-waste expectation is now monotonic, as the owner directed;
+  - the version pins moved to `profile@1.2.0` and `matching@1.2.0`;
+  - the house-rule fixture now allows the coverage line;
+  - the review-label and module lists gained the new modules.
+- **Because the tests had to follow new rules:**
+  - the external-reasoning fixture now confirms its result first, because an unconfirmed result
+    is partial;
+  - the modules-missing count includes the new modules.
+- **Browser suites:**
+  - round3's group count went from 4 to 5 (the new "People and practical sense" group);
+  - round5's photo check went from 250 to 400 px (the owner's less-cropped photo).
+
+No test was weakened to pass: every other failure was fixed in the code.
+
+
+### Round 11 — the owner's follow-ups to Round 10 (2026-10-02 → 2026-10-03)
+Asked after Round 10: a job-role choice for mentors, a word test of our own, reports that change only
+when the student acts, a follow-up clock from the latest submission, a smarter scout, and much more on
+exams, colleges, master's and studying abroad — plus a measured AI cost. Built in eight commits.
+
+| Item | What shipped |
+|---|---|
+| **A** mentor picker (`64f0eae`) | The student opens each of their ranked careers and chooses **one job role** (roles that suit them first). The server checks the role belongs to that career; the admin sees "career — role" |
+| **M** word test (`d34c4c8`) | Our own word-memory test replaces the AssessmentDay screenshot: two lists of 15 words, 1.5 s each, typed recall, marked on the server (plurals and one-letter typos forgiven). Short-term memory = digit span + word recall. `profile@1.3.0`; old uploads still count |
+| **I + C** report updates and follow-up (`3821efe`) | A matching or scoring improvement shows a banner, "Update my report"; nothing rebuilds on its own. Update and resubmit ask "same way or something new?" — only "something new" restarts the 6/12-month follow-up clock (`followUpAnchorAt`). The scan runs monthly with a 45-day catch-up window |
+| **B + J** scout and drafts (`3bd4d31`) | Titles we already list are dropped by name (1,861 job titles) or by meaning (embedding ≥ 0.8). The official reports are a third source of new titles. Approving a title drafts the full career the way the 223 were built (DECISIONS.md, three rating passes, embedding, the data checks); the admin accepts or sends it back with a note; Export patch writes accepted ones into the data files |
+| **E** exam calendar (`40873ad`) | 61 real exams; all 174 exam spellings in the data mapped to a row or given a reason. The card shows who runs each exam, its official site, and — once checked — when applications usually open |
+| **F + G + D** study info (`432488f`) | Where to study (23 disciplines, NIRF first, public and private, lists hidden until reviewed). A monthly study bot proposes college and exam changes (exams checked on their own sites only); the admin approves in Data updates (Kind column). "Your master's options" for college and working students |
+| **K + L** abroad and AI cost (`e07260a`) | `abroad.json`: whether studying abroad is needed, per career. The report offers a study-abroad partner connection when a top-ten career needs it, behind a consent box; admin "Study abroad" tab; Privacy policy `v1.2`. Every Claude call logs its tokens; an "AI usage" card shows the month's cost; grading and research prompts are cached |
+| **H** docs | This record; Parts 1–4; `HOW_FRESHMXN_WORKS.md`; V2; `CLAUDE.md` |
+
+**Fixtures:** scoring 22, matching 58, workers 131 → 155. Changed because the owner changed the product:
+- the scoring version pins (`profile@1.2.0` → `1.3.0`, the word test);
+- the scout's sources fixture (one `source` became a `sources` list with reports);
+- the follow-up fixtures (the clock now runs from the student's own anchor, monthly).
+
+Every other failure along the way was fixed in the code. Browser and API checks ran in the cloud
+scratchpad (picker 8/8, word test 9/9, update banner 5/5, follow-up clock 5/5, scout and drafts 14/14,
+study info API 17/18 — the one was the test expecting 200 where the route answers 202 —, study info
+browser 10/12 — the two were the intended "Checked Oct 2026" labels —, study abroad API 11/11, study
+abroad browser 8/8).
+
+**Found and fixed while testing:** two AI calls finishing together could both try to create the day's
+usage row, and one lost its counts — the write now retries once.
+
+**Deferred (V2):** a one-time Sonnet-vs-Opus comparison on 20 careers before setting `REFRESH_MODEL`;
+the Batch API for the monthly jobs, only if web search works inside a batch; Haiku for simple grading
+after an eval; specific programmes and cut-offs.

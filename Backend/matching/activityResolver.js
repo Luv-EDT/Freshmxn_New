@@ -22,6 +22,7 @@
 
 const VOYAGE_ENDPOINT = "https://api.voyageai.com/v1/embeddings"
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
+const { recordUsage } = require("../utils/aiUsage")
 
 // Two activities closer than this are treated as the same activity and share one rating.
 // "playing cricket" and "i play cricket for my school team" must fold together or the same student
@@ -121,6 +122,7 @@ const callClaude = async (systemPrompt, userMessage, { apiKey, model }) => {
             if (!response.ok) throw new Error(`Anthropic HTTP ${response.status} — ${(await response.text()).slice(0, 300)}`)
 
             const payload = await response.json()
+            recordUsage("activity_resolver", model, payload)
 
             // A reply cut off mid-number parses as a syntax error three lines later and reads like
             // a malformed model. Say what actually happened.
@@ -424,6 +426,7 @@ module.exports = {
     canonicalise,
     cosine,
     topProfessionsByVector,
+    embedQuery,    // also used by the weekly careers scout (housekeeping/careerScout.js)
     DEDUP_COSINE,
     RETRIEVE_K,
     RERANK_KEEP,

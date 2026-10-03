@@ -33,8 +33,12 @@ const readJourney = (user) => {
         preAdmission: Boolean(detail.preAdmission) || detail.collegeStage === "pre_admission",
         courseYear: typeof detail.courseYear === "number" ? detail.courseYear : null,
         experienceYears: typeof detail.experienceYears === "number" ? detail.experienceYears : null,
-        age: typeof detail.age === "number" ? detail.age : null,
+        // Age lives on the user, not in journeyDetail — reading it from journeyDetail meant the
+        // age limit could never fire (backend review #15). Both are accepted, user first.
+        age: typeof (user && user.age) === "number" ? user.age : (typeof detail.age === "number" ? detail.age : null),
         yearsSinceClass12: typeof detail.yearsSinceClass12 === "number" ? detail.yearsSinceClass12 : null,
+        degree: typeof detail.degree === "string" ? detail.degree : null,
+        subject: typeof detail.subject === "string" ? detail.subject : null,
     }
 }
 
@@ -68,9 +72,25 @@ const class12Satisfied = (profession, journey) => {
 // their employment years still count at 0.3. Both the table and the override then hold.
 const studyWasteWaived = (profession) => profession.mid_stream_entry === "after_any_degree" || profession.mid_stream_entry === "open"
 
+// THE STUDENT'S OWN DEGREE ALREADY LEADS HERE (Round 10). A B.Tech Civil student is not "abandoning"
+// anything to become a Civil Engineer, though the record says civil engineering means restarting
+// for everyone else. degree_families.json (owner-approved) lists which degree — family, or family
+// and subject — leads to which careers; any bachelor's counts for the "any graduate" ones.
+// Read once, as data: the function stays pure.
+const DEGREE_FAMILIES = require("../data/degree_families.json")
+const DEGREE_OPTIONS = require("../data/degree_options.json")
+const BACHELOR = new Set(DEGREE_OPTIONS.families.filter((family) => family.bachelor).map((family) => family.id))
+
+const degreeCounts = (profession, journey) => {
+    if (!journey || !journey.degree || (journey.stage !== "college" && journey.stage !== "early_professional")) return false
+    const keys = [journey.degree, journey.subject ? `${journey.degree}:${journey.subject}` : null].filter(Boolean)
+    if (keys.some((key) => (DEGREE_FAMILIES.by_degree[key] || []).includes(profession.id))) return true
+    return BACHELOR.has(journey.degree) && DEGREE_FAMILIES.any_bachelors.includes(profession.id)
+}
+
 const wasteFor = (profession, journey) => {
     const breakdown = {}
-    const waived = studyWasteWaived(profession)
+    const waived = studyWasteWaived(profession) || degreeCounts(profession, journey)
 
     // Class 11-12 in the wrong stream, for someone already past it. A class 11-12 student is
     // filtered out instead — see hardFilterReason.
@@ -81,10 +101,14 @@ const wasteFor = (profession, journey) => {
     if (journey.stage === "college" && !waived) {
         // Nothing has been invested yet, so there is nothing to abandon.
         if (!journey.preAdmission) {
+            // PER YEAR, by the year it is: years 1-2 at the early rate, each year from 3 on at the
+            // late one (DECISIONS §5's table read as marginal rates). Applying the late rate to ALL
+            // years made a third-year student look less invested than a second-year one — 1.5
+            // against 2 (backend review #16). Now it only ever rises: 1, 2, 2.5, 3.
             const year = journey.courseYear || 0
-            breakdown.undergrad = year >= 3
-                ? year * WASTE_WEIGHTS.undergrad_late
-                : year * WASTE_WEIGHTS.undergrad_early
+            const early = Math.min(year, 2)
+            const late = Math.max(year - 2, 0)
+            breakdown.undergrad = early * WASTE_WEIGHTS.undergrad_early + late * WASTE_WEIGHTS.undergrad_late
         }
     }
 
@@ -126,8 +150,10 @@ const hardFilterReason = (profession, journey) => {
     const window = profession.entry_window
     if (!window || !window.is_hard_block) return null
 
-    // A bypass named on the record is the record saying the door is not actually shut.
-    if (Array.isArray(window.bypass) && window.bypass.length > 0) return null
+    // A bypass named on the record is the record saying the door is not actually shut. Three
+    // records store it as a sentence rather than a list; a non-empty sentence is a bypass too.
+    const bypass = Array.isArray(window.bypass) ? window.bypass : (typeof window.bypass === "string" && window.bypass.trim() !== "" ? [window.bypass] : [])
+    if (bypass.length > 0) return null
 
     if (typeof window.max_age === "number" && typeof journey.age === "number" && journey.age > window.max_age) {
         return `entry closes at age ${window.max_age}`
@@ -142,4 +168,4 @@ const hardFilterReason = (profession, journey) => {
     return null
 }
 
-module.exports = { readJourney, tauFor, wasteFor, journeyMultiplier, hardFilterReason, class12Satisfied }
+module.exports = { readJourney, tauFor, wasteFor, journeyMultiplier, hardFilterReason, class12Satisfied, degreeCounts }

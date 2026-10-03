@@ -71,6 +71,8 @@ function StudentsList({ dataVersion, onDataChanged }) {
         { title: "Phone", render: (_, record) => record.phone || "—" },
         { title: "Role", dataIndex: "role" },
         { title: "Age", dataIndex: "age" },
+        // under-18s: has a parent confirmed by the emailed code? (Round 10)
+        { title: "Parent consent", render: (_, record) => ({ verified: "Confirmed", waiting_for_parent: "Waiting for parent", missing: "Missing", not_needed: "—" }[record.parentConsent] || "—") },
         { title: "Journey", dataIndex: "journey" },
         { title: "Paid", render: (_, record) => (record.paid ? "Yes" : "No") },
         { title: "Tier", dataIndex: "currentTier" },

@@ -6,7 +6,10 @@ const scoreRosenberg = require("./rosenberg")
 const scoreConfidenceItems = require("./confidenceItems")
 const scoreDigitSpan = require("./digitSpan")
 const scoreVerbalMemory = require("./verbalMemory")
+const scoreWordRecall = require("./wordRecall")
 const scoreReasoning = require("./reasoning")
+const scoreReasoningInHouse = require("./reasoningInHouse")
+const scoreInterests60 = require("./interests60")
 const scoreStoryRecall = require("./storyRecall")
 const { combine, worstQuality, round2 } = require("./scoringHelpers")
 
@@ -44,20 +47,48 @@ const { combine, worstQuality, round2 } = require("./scoringHelpers")
      digitSpan:   { trials: [{ length, presented, response, correct, ms }] },
      sartRaw:     "<tab-separated PsyToolkit text>",
      extReasoning:{ percentile, score_raw, seconds_per_question, extraction_confidence },
-     extVerbal:   { your_score, peer_average, extraction_confidence },
+     extVerbal:   { your_score, peer_average, extraction_confidence },   // retired upload (Round 11)
+     wordRecall:  { trials: [{ list, correct, intrusions, ms }], completedAt },
      storyRecall: { storyId, delayHours, facts: {…}, structured: {…},
                     free: { score, subScores } },   // free already LLM-scored
    }
    ========================================================================== */
 
-const SCORING_VERSION = "profile@1.0.1" // 1.0.1: P13 grades stored flat now count (asP13Criteria)
+// 1.0.1: P13 grades stored flat now count (asP13Criteria)
+// 1.2.0 (Round 10): the in-house reasoning test (provisional, raw share) replaces the external one
+// when present; six intelligences take the O*NET activities as a second interest input, and spatial,
+// logical and verbal take their reasoning-test part as a performance half; U8 joins U7 as the
+// uncertainty calibration check.
+// 1.1.0 (Round 10): an abandoned digit span is not measured (it was a full-quality 0); an ungraded
+// free recall renormalises over the structured points; an unconfirmed or disputed external result is
+// partial; PS1-PS4 are now asked, so grit has its persistence input; factor_coverage is reported.
+// 1.3.0 (Round 11): the in-house word-memory test (provisional, raw share) replaces the outside upload
+// as the verbal half of short-term memory when present.
+const SCORING_VERSION = "profile@1.3.0"
 
 const COMPONENT_VERSIONS = {
     perspective: "perspective@5.0.0",
     sart: "sart@1.0.0",
     instrument: "instrument@1.0.0",
     story: "story@1.0.0",
+    reasoning: "reasoning-inhouse@0.1.0",   // provisional — no norms yet
+    interests: "onet-ip-short@1",
 }
+
+// Owner, Round 10: each intelligence is built from up to three parts — the MI self-report (primary),
+// the O*NET activities that point at it, and, for the three a browser can test fairly, the matching
+// part of the reasoning test. Existential has no O*NET activity and no test, so it stays self-report.
+const MI_AFFINITY_WEIGHTS = { selfReport: 0.7, activities: 0.3 }
+const MI_PERFORMANCE_WEIGHT = 0.5
+const MI_PERFORMANCE_PART = {
+    spatial_intelligence: "spatial",
+    logical_intelligence: "logical",
+    verbal_intelligence: "verbal",
+}
+const MI_FACTORS = [
+    "verbal_intelligence", "spatial_intelligence", "musical_intelligence", "bodily_intelligence",
+    "naturalistic_intelligence", "existential_intelligence", "logical_intelligence",
+]
 
 // STM is half digit span, half the external verbal-memory test (04_Item_Bank.md §5)
 const STM_WEIGHTS = { digitSpan: 0.5, verbalMemory: 0.5 }
@@ -190,7 +221,15 @@ const callPerspective = (perspective, sart, traits) => {
     )
 }
 
-const scoreProfile = (psychometric = {}) => {
+const scoreProfile = (submitted = {}) => {
+    // A TEST SKIPPED FOR A DECLARED DIFFICULTY IS NOT MEASURED (Round 10). Its block — if any — is
+    // set aside before anything is scored, so the factors it feeds are dropped and renormalised the
+    // way a section never taken is: never read as low. accommodations.skipped is written by the
+    // student's own choice on the assessment page.
+    const skippedForSupport = Object.keys((submitted.accommodations && submitted.accommodations.skipped) || {})
+        .filter((key) => submitted.accommodations.skipped[key] === true)
+    const psychometric = Object.fromEntries(Object.entries(submitted || {}).filter(([key]) => !skippedForSupport.includes(key)))
+
     const raw_scores = {}
     const data_quality = {}
     const flags = {}
@@ -219,8 +258,17 @@ const scoreProfile = (psychometric = {}) => {
     const rosenberg = scoreRosenberg(psychometric.rosenberg)
     const ownConfidence = scoreConfidenceItems(psychometric.confidence)
     const digitSpan = scoreDigitSpan(psychometric.digitSpan)
-    const verbalMemory = scoreVerbalMemory(psychometric.extVerbal)
-    const reasoning = scoreReasoning(psychometric.extReasoning)
+    // The in-house word test wins when it is finished (Round 11); the outside upload is kept for
+    // students who took it before ours existed. Same rule as reasoning.
+    const wordRecall = scoreWordRecall(psychometric.wordRecall)
+    const externalVerbal = scoreVerbalMemory(psychometric.extVerbal)
+    const verbalMemory = wordRecall.score !== null ? wordRecall : externalVerbal
+    // The in-house test wins when it is finished; the external upload is kept for students who took
+    // it before the in-house one existed.
+    const inHouseReasoning = scoreReasoningInHouse(psychometric.reasoning)
+    const externalReasoning = scoreReasoning(psychometric.extReasoning)
+    const reasoning = inHouseReasoning.score !== null ? inHouseReasoning : externalReasoning
+    const interests = scoreInterests60(psychometric.interests60)
     const storyRecall = scoreStoryRecall(psychometric.storyRecall, psychometric.storyRecall && psychometric.storyRecall.free)
 
     const sartResult = psychometric.sartRaw ? scoreSart(psychometric.sartRaw) : null
@@ -234,13 +282,14 @@ const scoreProfile = (psychometric = {}) => {
     if (!psychometric.rosenberg) modules_missing.push("rosenberg")
     if (!psychometric.confidence) modules_missing.push("confidence")
     if (!psychometric.digitSpan) modules_missing.push("digitSpan")
-    if (!psychometric.extVerbal) modules_missing.push("extVerbal")
-    if (!psychometric.extReasoning) modules_missing.push("extReasoning")
+    if (!psychometric.extVerbal && !psychometric.wordRecall) modules_missing.push("wordRecall")
+    if (!psychometric.extReasoning && !psychometric.reasoning) modules_missing.push("reasoning")
+    if (!psychometric.interests60) modules_missing.push("interests60")
     if (!psychometric.storyRecall) modules_missing.push("storyRecall")
     if (!psychometric.sartRaw) modules_missing.push("sart")
     if (!psychometric.perspective) modules_missing.push("perspective")
 
-    ;[ipip, mi, rosenberg, ownConfidence, digitSpan, verbalMemory, reasoning, storyRecall].forEach((result) => {
+    ;[ipip, mi, rosenberg, ownConfidence, digitSpan, wordRecall, externalVerbal, inHouseReasoning, externalReasoning, interests, storyRecall].forEach((result) => {
         mergeFlags(result.flags)
     })
 
@@ -265,6 +314,38 @@ const scoreProfile = (psychometric = {}) => {
         }
     })
 
+    // ── the intelligences as composites (Round 10) ──
+    const miCoverage = {}
+    MI_FACTORS.forEach((factor) => {
+        const selfReport = mi.scores[factor]
+        const activities = interests.mi[factor]
+        const hasActivityItems = factor !== "existential_intelligence"
+
+        const affinityParts = [{ value: selfReport, weight: MI_AFFINITY_WEIGHTS.selfReport, quality: mi.quality[factor], primary: true }]
+        if (hasActivityItems) affinityParts.push({ value: activities, weight: MI_AFFINITY_WEIGHTS.activities, quality: "full" })
+        const affinity = combine(affinityParts, { minUsedWeight: MI_AFFINITY_WEIGHTS.selfReport })
+
+        let result = affinity
+        const selfCoverage = typeof mi.coverage[factor] === "number" ? mi.coverage[factor] : 0
+        let coverage = hasActivityItems
+            ? MI_AFFINITY_WEIGHTS.selfReport * selfCoverage + MI_AFFINITY_WEIGHTS.activities * (typeof activities === "number" ? 1 : 0)
+            : selfCoverage
+
+        const part = MI_PERFORMANCE_PART[factor]
+        if (part) {
+            const performance = inHouseReasoning.parts ? inHouseReasoning.parts[part] : undefined
+            result = combine([
+                { value: affinity.value, weight: 1 - MI_PERFORMANCE_WEIGHT, quality: affinity.quality, primary: true },
+                { value: performance, weight: MI_PERFORMANCE_WEIGHT, quality: inHouseReasoning.quality },
+            ], { minUsedWeight: 1 - MI_PERFORMANCE_WEIGHT })
+            coverage = (1 - MI_PERFORMANCE_WEIGHT) * coverage + MI_PERFORMANCE_WEIGHT * (typeof performance === "number" ? 1 : 0)
+        }
+
+        raw_scores[factor] = result.value
+        data_quality[factor] = result.quality
+        miCoverage[factor] = result.value === null ? null : round2(coverage)
+    })
+
     raw_scores.reasoning = reasoning.score
     data_quality.reasoning = reasoning.quality
     raw_scores.long_term_memory = storyRecall.score
@@ -276,23 +357,25 @@ const scoreProfile = (psychometric = {}) => {
     }
 
     // ── STAGE 2 — short-term memory ──────────────────────────────────────────
-    set("short_term_memory", combine([
+    const stmResult = combine([
         { value: digitSpan.score, weight: STM_WEIGHTS.digitSpan, quality: digitSpan.quality },
         { value: verbalMemory.score, weight: STM_WEIGHTS.verbalMemory, quality: verbalMemory.quality },
-    ], { minUsedWeight: 0.5 }))     // either half alone carries it, marked partial
+    ], { minUsedWeight: 0.5 })     // either half alone carries it, marked partial
+    set("short_term_memory", stmResult)
 
     // ── STAGE 3 — confidence ─────────────────────────────────────────────────
     // Both directly-measured components missing means there is nothing left but supporting traits,
     // and a confidence score built only from traits is the circular derivation Principle 1 forbids.
     const hasMeasuredConfidence = rosenberg.score !== null || ownConfidence.score !== null
 
-    set("confidence", hasMeasuredConfidence ? combine([
+    const confidenceResult = hasMeasuredConfidence ? combine([
         { value: rosenberg.score, weight: CONFIDENCE_WEIGHTS.rosenberg, quality: rosenberg.quality },
         { value: ownConfidence.score, weight: CONFIDENCE_WEIGHTS.ownItems, quality: ownConfidence.quality },
         { value: raw_scores.conscientiousness, weight: CONFIDENCE_WEIGHTS.conscientiousness, quality: data_quality.conscientiousness },
         { value: raw_scores.emotional_stability, weight: CONFIDENCE_WEIGHTS.emotionalStability, quality: data_quality.emotional_stability },
         { value: reasoning.score, weight: CONFIDENCE_WEIGHTS.reasoning, quality: reasoning.quality },
-    ]) : { value: null, quality: null })
+    ]) : { value: null, quality: null }
+    set("confidence", confidenceResult)
 
     // ── STAGE 4 — the ported perspective scorer ──────────────────────────────
     const perspective = callPerspective(psychometric.perspective, sart, {
@@ -343,43 +426,108 @@ const scoreProfile = (psychometric = {}) => {
     }
 
     // ── STAGE 5 — learning capacity and the differentiating minors ───────────
-    set("learning_capacity", combine([
+    const learningResult = combine([
         { value: raw_scores.reasoning, weight: LEARNING_CAPACITY_WEIGHTS.reasoning, quality: data_quality.reasoning },
         { value: raw_scores.focus, weight: LEARNING_CAPACITY_WEIGHTS.focus, quality: data_quality.focus },
         { value: raw_scores.openness, weight: LEARNING_CAPACITY_WEIGHTS.openness, quality: data_quality.openness },
         { value: raw_scores.long_term_memory, weight: LEARNING_CAPACITY_WEIGHTS.longTermMemory, quality: data_quality.long_term_memory },
         { value: raw_scores.processing_speed, weight: LEARNING_CAPACITY_WEIGHTS.processingSpeed, quality: data_quality.processing_speed },
-    ]))
+    ])
+    set("learning_capacity", learningResult)
 
-    set("convergent_thinking", combine([
+    const convergentResult = combine([
         { value: raw_scores.conscientiousness, weight: CONVERGENT_WEIGHTS.conscientiousness, quality: data_quality.conscientiousness },
         { value: raw_scores.reasoning, weight: CONVERGENT_WEIGHTS.reasoning, quality: data_quality.reasoning },
         { value: raw_scores.short_term_memory, weight: CONVERGENT_WEIGHTS.shortTermMemory, quality: data_quality.short_term_memory },
         { value: raw_scores.long_term_memory, weight: CONVERGENT_WEIGHTS.longTermMemory, quality: data_quality.long_term_memory },
         { value: raw_scores.logical_intelligence, weight: CONVERGENT_WEIGHTS.logical, quality: data_quality.logical_intelligence },
         { value: raw_scores.processing_speed, weight: CONVERGENT_WEIGHTS.processingSpeed, quality: data_quality.processing_speed },
-    ]))
+    ])
+    set("convergent_thinking", convergentResult)
 
+    const provisionalResults = {}
     Object.entries(WEIGHTS_PROVISIONAL).forEach(([factor, inputs]) => {
         const weight = 1 / inputs.length
 
-        set(factor, combine(inputs.map((input) => ({
+        provisionalResults[factor] = combine(inputs.map((input) => ({
             value: raw_scores[input],
             weight,
             quality: data_quality[input],
-        }))))
+        })))
+        set(factor, provisionalResults[factor])
+    })
+
+    // ── COVERAGE — how much of each factor's input was present, 0-1 ─────────────
+    // The profile shows "Partial · N%" below 100 (owner, Round 10). Leaves report their own share
+    // (items answered, recall points markable); composites the share of their weight that survived.
+    const factor_coverage = {}
+    const coverOf = (result) => (result && typeof result.coverage === "number" ? result.coverage : null)
+    const present = (factor) => raw_scores[factor] !== null && raw_scores[factor] !== undefined
+
+    Object.entries(ipip.coverage || {}).forEach(([factor, value]) => { factor_coverage[factor] = value })
+    Object.entries(miCoverage).forEach(([factor, value]) => { factor_coverage[factor] = value })
+    factor_coverage.reasoning = present("reasoning") ? 1 : null
+    factor_coverage.long_term_memory = present("long_term_memory") ? coverOf(storyRecall) : null
+    factor_coverage.processing_speed = present("processing_speed") ? 1 : null
+
+    const answeredU = ["U1", "U2", "U3", "U4", "U5", "U6"]
+        .filter((id) => psychometric.perspective && psychometric.perspective.answers && psychometric.perspective.answers[id] !== undefined).length
+    factor_coverage.uncertainty_tolerance = present("uncertainty_tolerance") ? round2(answeredU / 6) : null
+
+    const portedCoverage = perspective.coverage || {}
+    const portedNames = {
+        emotional_intelligence: "ei", firmness: "firmness", focus: "focus",
+        intrapersonal_intelligence: "intrapersonal", consistency_grit: "consistency", informed_decision_making: "idm",
+    }
+    Object.entries(portedNames).forEach(([factor, key]) => {
+        factor_coverage[factor] = present(factor) && typeof portedCoverage[key] === "number" ? portedCoverage[key] : null
+    })
+    // Without SART the ported scorer hands SART's weight to clm and reports a whole picture; its
+    // strongest input is absent, so it is not one. Same correction as data_quality above.
+    if (flags.sart_not_taken && typeof factor_coverage.focus === "number") {
+        factor_coverage.focus = round2(Math.max(factor_coverage.focus - 0.3, 0))
+    }
+
+    ;[
+        ["short_term_memory", stmResult], ["confidence", confidenceResult], ["learning_capacity", learningResult],
+        ["convergent_thinking", convergentResult], ...Object.entries(provisionalResults),
+    ].forEach(([factor, result]) => {
+        factor_coverage[factor] = present(factor) ? coverOf(result) : null
     })
 
     // ── STAGE 6 — matching adjustment, completeness ──────────────────────────
     // Part 7: U7 never removes a profession from a student's list. A single item qualifies, it does
     // not gate. Both figures are stored — raw for the record, adjusted for matching.
     const uncertaintyRaw = raw_scores.uncertainty_tolerance
-    const uncertainty_tolerance_matching = flags.risk_uncalibrated && uncertaintyRaw !== null
-        ? round2(0.7 * uncertaintyRaw + 0.3 * 5)
-        : uncertaintyRaw
+
+    // U8, THE SECOND CALIBRATION CHECK (Round 10; 06_V2 "two items is still thin but twice as
+    // reliable"). Same shape as U7 — an unexplained "sure thing", in a different area of life — and
+    // like U7 it is never scored into the scale. Applied here rather than inside the ported scorer,
+    // whose 53 positional arguments are not worth disturbing for one more letter:
+    //   both U7 and U8 accept the sure thing   → risk_uncalibrated (as before, now on two items)
+    //   only one of them does                  → risk_calibration_mixed, a half-strength adjustment
+    //   U8 not answered (older submissions)    → U7 alone decides, exactly as before
+    const answers = (psychometric.perspective && psychometric.perspective.answers) || {}
+    const acceptsSureThing = (answer) => typeof answer === "string" && ["C", "D"].includes(answer.trim().charAt(0).toUpperCase())
+    if (answers.U8 !== undefined && answers.U8 !== null && uncertaintyRaw !== null) {
+        const high = uncertaintyRaw >= 7
+        const u7 = acceptsSureThing(answers.U7)
+        const u8 = acceptsSureThing(answers.U8)
+        delete flags.risk_uncalibrated
+        delete flags.risk_calibration_mixed
+        if (high && u7 && u8) flags.risk_uncalibrated = true
+        else if (high && (u7 || u8)) flags.risk_calibration_mixed = true
+    }
+
+    let uncertainty_tolerance_matching = uncertaintyRaw
+    if (uncertaintyRaw !== null && flags.risk_uncalibrated) uncertainty_tolerance_matching = round2(0.7 * uncertaintyRaw + 0.3 * 5)
+    else if (uncertaintyRaw !== null && flags.risk_calibration_mixed) uncertainty_tolerance_matching = round2(0.85 * uncertaintyRaw + 0.15 * 5)
 
     if (modules_missing.length > 0) {
         flags.modules_missing = modules_missing
+    }
+    if (skippedForSupport.length > 0) {
+        flags.not_measured_for_support = skippedForSupport
     }
 
     const countScored = (factors) => factors.filter((factor) => raw_scores[factor] !== null && raw_scores[factor] !== undefined).length
@@ -416,6 +564,7 @@ const scoreProfile = (psychometric = {}) => {
             ...perspective.components,
             digit_span: digitSpan.score,
             verbal_memory: verbalMemory.score,
+            verbal_memory_source: wordRecall.score !== null ? "in_house" : (externalVerbal.score !== null ? "external" : null),
             rosenberg: rosenberg.score,
             own_confidence_items: ownConfidence.score,
             persistence_raw: perspective.persistence_raw,
@@ -424,6 +573,11 @@ const scoreProfile = (psychometric = {}) => {
             numeric_recall: storyRecall.numeric_recall === undefined ? null : storyRecall.numeric_recall,
             verbal_recall: storyRecall.verbal_recall === undefined ? null : storyRecall.verbal_recall,
             uncertainty_tolerance_matching,
+            mi_self_report: mi.scores,
+            interests_mi: interests.mi,
+            riasec: interests.riasec,            // stored for V2 career matching; never shown to a student
+            reasoning_source: inHouseReasoning.score !== null ? "in_house" : (externalReasoning.score !== null ? "external" : null),
+            reasoning_parts: inHouseReasoning.parts || {},
             sart: sartResult ? sartResult.descriptives : null,
         },
         values_profile: perspective.values_profile,
@@ -431,6 +585,7 @@ const scoreProfile = (psychometric = {}) => {
         momentum_blocker: perspective.momentum_blocker,
         flags,
         completeness: { matching, overall, release },
+        factor_coverage,
     }
 }
 
@@ -442,3 +597,4 @@ module.exports.MAJOR_FACTORS = MAJOR_FACTORS
 module.exports.MINOR_FACTORS = MINOR_FACTORS
 module.exports.UNIVERSAL_FACTORS = UNIVERSAL_FACTORS
 module.exports.MATCHING_FACTORS = MATCHING_FACTORS
+module.exports.SCORING_VERSION = SCORING_VERSION

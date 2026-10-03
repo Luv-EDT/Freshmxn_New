@@ -7,6 +7,24 @@ const AccessRequest = require("../model/accessRequestsModel")
 const RefundRequest = require("../model/refundRequestsModel")
 const FinancialAidRequest = require("../model/financialAidRequestsModel")
 const Coupon = require("../model/couponsModel")
+const MentorWaitlist = require("../model/mentorWaitlistModel")
+const Consent = require("../model/consentModel")
+const { isMinor, isVerified } = require("../utils/parentConsent")
+
+// NO PAYMENT FROM AN UNDER-18 UNTIL THEIR PARENT HAS CONFIRMED (Round 10). Asked once, at the two
+// doors to paying: a manual access request and a Razorpay order. A student already paying before
+// this existed is not locked out — the dashboard asks their parent to confirm.
+const parentConsentMissing = async (user) => {
+    if (!isMinor(user)) return false
+    const consent = await Consent.findOne({ user: user._id }).lean()
+    return !isVerified(consent)
+}
+
+const PARENT_CONSENT_REPLY = {
+    success: false,
+    message: "Your parent needs to confirm their permission before you can pay — we've emailed them a code",
+    data: { code: "PARENT_CONSENT_REQUIRED" },
+}
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const requirePaid = require("../middlewares/requirePaid")
@@ -285,32 +303,47 @@ const sendRefund = async (originalPayment, amountInr, refundContext) => {
 // Shared by the student's rollover quote, the admin's rollover approval and the admin downgrade,
 // so all three always name the same figure.
 const getRolloverRefund = async (user) => {
-    // the most recent Tier-2 money: an upgrade, or a direct Tier-2 purchase
-    const tierTwoPayments = await Payment.find({
+    // THE PAYMENT THAT PUT THEM ON TIER 2 — the newest paid upgrade or direct Tier-2 purchase, and
+    // only that one. The old loop skipped a newest payment with nothing left on it and fell through
+    // to an OLDER one, so a student who moved back to Tier 1, re-upgraded with a 100% coupon and
+    // asked again was refunded a second ₹3,000 from the original purchase (Round 10 refund check).
+    const latest = await Payment.findOne({
         user: user._id,
+        status: "paid",
         $or: [{ action: "upgrade" }, { action: "purchase", tier: 2 }],
     }).sort({ createdAt: -1 })
 
-    for (const payment of tierTwoPayments) {
-        const balance = await getRefundableBalance(payment)
+    if (!latest) return { originalPayment: null, amountInr: 0 }
 
-        if (balance <= 0) continue
+    const balance = await getRefundableBalance(latest)
 
-        if (payment.action === "upgrade") {
-            // upgraded from Tier 1 → return what they paid for the upgrade
-            return { originalPayment: payment, amountInr: balance }
-        }
-
-        // bought Tier 2 directly → return what they paid minus Tier 1 at the same discount
-        const tierOneAtSameDiscount = Math.round((TIER_PRICE_INR[1] * (100 - payment.discountPct)) / 100)
-
-        return {
-            originalPayment: payment,
-            amountInr: Math.min(Math.max(payment.amountInr - tierOneAtSameDiscount, 0), balance),
-        }
+    if (latest.action === "upgrade") {
+        // upgraded from Tier 1 → return what is left of what they paid for the upgrade
+        return { originalPayment: latest, amountInr: balance }
     }
 
-    return { originalPayment: null, amountInr: 0 }
+    // bought Tier 2 directly → return what is LEFT on it minus Tier 1 at the same discount. Measured
+    // against the remaining balance, not the original amount, so a payment that already gave back
+    // its Tier-2 part has nothing more to give.
+    const tierOneAtSameDiscount = Math.round((TIER_PRICE_INR[1] * (100 - latest.discountPct)) / 100)
+
+    return {
+        originalPayment: latest,
+        amountInr: Math.max(balance - tierOneAtSameDiscount, 0),
+    }
+}
+
+// A student who leaves Tier 2 leaves the mentor waitlist too. Their row is closed with the reason
+// rather than deleted, and a later re-upgrade starts a fresh one (mentorWaitlistRouter getMyWaitlist).
+// Before, the row was left as it was: a re-upgraded student saw their old choice and a deadline
+// that had already passed, and could not choose again.
+// Its own resolution value, "left_tier2", so it is never confused with an admin's "refunded" on an
+// unmatchable case — only this one is re-opened by a re-upgrade.
+const closeMentorWaitlist = async (userId) => {
+    await MentorWaitlist.updateOne(
+        { user: userId, resolution: { $in: [null, undefined] } },
+        { $set: { resolution: "left_tier2", adminNote: "Closed automatically when the student left Tier 2" } }
+    )
 }
 
 // everything paid, minus everything already refunded
@@ -578,6 +611,10 @@ router.post("/requestAccess", express.json(), authMiddleware, async (req, res) =
     try {
         const { tier, coupon, name, phone, callbackDay, callbackSlot } = req.body
 
+        if (await parentConsentMissing(req.user)) {
+            return res.status(403).json(PARENT_CONSENT_REPLY)
+        }
+
         // an address nobody can open must never be attached to money — see /user/verifyEmail
         if (req.user.isEmailVerified !== true) {
             return res.status(403).json({
@@ -665,6 +702,10 @@ router.post("/requestAccess", express.json(), authMiddleware, async (req, res) =
 
 router.post("/create-order", express.json(), authMiddleware, async (req, res) => {
     try {
+        if (await parentConsentMissing(req.user)) {
+            return res.status(403).json(PARENT_CONSENT_REPLY)
+        }
+
         // dormant at launch — PAYMENT_MODE=manual until Razorpay KYC clears
         if (process.env.PAYMENT_MODE !== "razorpay" || !razorpay) {
             return res.status(400).json({
@@ -1146,6 +1187,8 @@ router.put("/downgradeForAdmin/:id", express.json(), authMiddleware, adminAuthMi
             { returnDocument: "after" }
         ).select("-password")
 
+        await closeMentorWaitlist(id)
+
         return res.status(200).json({
             success: true,
             message: refundPayment && refundPayment.status === "refund_pending"
@@ -1175,8 +1218,11 @@ router.get("/getRefundOptions", authMiddleware, requirePaid, async (req, res) =>
     try {
         const isEligible = hasCompletedTierOne(req.user)
 
-        // a Tier 1 student has nothing to roll back to, so only a full refund is offered
-        const canRollover = req.user.currentTier === 2
+        // a Tier 1 student has nothing to roll back to, so only a full refund is offered — and nor
+        // does a Tier 2 student whose Tier-2 money has nothing left to give (financial aid, a 100%
+        // coupon): offering "move back and get ₹0" only to refuse it on submit helps nobody
+        const rolloverAmountInr = req.user.currentTier === 2 ? await getRefundAmount(req.user, "rollover") : 0
+        const canRollover = req.user.currentTier === 2 && rolloverAmountInr > 0
 
         return res.status(200).json({
             success: true,
@@ -1185,7 +1231,7 @@ router.get("/getRefundOptions", authMiddleware, requirePaid, async (req, res) =>
                 isEligible,
                 canRollover,
                 fullAmountInr: await getFullRefundAmount(req.user),
-                rolloverAmountInr: canRollover ? await getRefundAmount(req.user, "rollover") : 0,
+                rolloverAmountInr,
             },
         })
 
@@ -1399,14 +1445,33 @@ router.put("/refundForAdmin/:id", express.json(), authMiddleware, adminAuthMiddl
 
         if (refundRequest.refundType === "rollover") {
             // Mentorship → Career Discovery: only the Tier-2 part comes back, access continues
-            if (student.currentTier !== 2) {
-                return res.status(400).json({
-                    success: false,
-                    message: "This student is no longer on Tier 2",
-                })
-            }
+            //
+            // A RETRY AFTER A LATE FAILURE. With Razorpay, the tier drops as soon as the refund is
+            // accepted for processing; if Razorpay later reports it failed, the student is already on
+            // Tier 1 and the "no longer on Tier 2" check refused the retry for good. So a failed
+            // request whose refund row is on file is retried from that row — same payment, same
+            // amount — whatever the student's tier is now.
+            const failedRow = refundRequest.status === "refund_failed"
+                ? await Payment.findOne({ refundRequest: refundRequest._id, action: "refund", status: "failed" }).sort({ createdAt: -1 })
+                : null
 
-            const { originalPayment, amountInr } = await getRolloverRefund(student)
+            let originalPayment = null
+            let amountInr = 0
+
+            if (failedRow && student.currentTier !== 2) {
+                originalPayment = await Payment.findById(failedRow.refundOfPayment)
+                amountInr = failedRow.amountInr
+            } else {
+                if (student.currentTier !== 2) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "This student is no longer on Tier 2",
+                    })
+                }
+                const rollover = await getRolloverRefund(student)
+                originalPayment = rollover.originalPayment
+                amountInr = rollover.amountInr
+            }
 
             if (!originalPayment || amountInr <= 0) {
                 return res.status(400).json({
@@ -1424,13 +1489,13 @@ router.put("/refundForAdmin/:id", express.json(), authMiddleware, adminAuthMiddl
             newRefunds.push(rolloverRefund)
 
             // only drop the tier once the money is actually on its way — otherwise a failed refund
-            // would leave them on Tier 1 with nothing back, and the retry would be refused
-            // because they are no longer on Tier 2
+            // would leave them on Tier 1 with nothing back
             if (rolloverRefund.status !== "failed") {
                 await User.findByIdAndUpdate(refundRequest.user, {
                     currentTier: 1,                         // paid stays true — Tier 1 continues
                     "progress.mentor": "not_applicable",
                 })
+                await closeMentorWaitlist(refundRequest.user)
             }
 
         } else {
@@ -1440,6 +1505,7 @@ router.put("/refundForAdmin/:id", express.json(), authMiddleware, adminAuthMiddl
                 currentTier: 0,
                 "progress.mentor": "not_applicable",
             })
+            await closeMentorWaitlist(refundRequest.user)
 
             // Refund every payment that still has money on it. On a retry, failed refunds don't count
             // against the balance, so only the part that failed is attempted again.

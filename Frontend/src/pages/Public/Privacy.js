@@ -115,6 +115,35 @@ const SECTIONS = [
         ),
     },
     {
+        id: "sensitive",
+        title: "Sensitive answers: disability and difficult experiences",
+        body: (
+            <>
+                <p>
+                    The interest form asks whether you have a disability and whether you or your family have been
+                    through difficult or traumatic experiences. Every one of these questions has a "Prefer not to
+                    say" answer, and the details box is always up to you.
+                </p>
+                <p>
+                    <strong>Disability.</strong> If you tell us about a difficulty that would make a timed or
+                    on-screen test harder, we use it to let you skip that test — it is then marked "not measured",
+                    never counted as low — and, once our team has checked it, to show you the support you are
+                    entitled to (reserved seats, a scribe, extra exam time). We share it with your mentor only if
+                    you tick the box that says they can know. It is <strong>never used to rank or remove a
+                    career</strong>.
+                </p>
+                <p>
+                    <strong>Difficult experiences (trauma).</strong> These answers are kept, and are{" "}
+                    <strong>not used for anything today</strong> — not in your scores, not in your matches, not in
+                    your report, and they are never sent to the AI services we use. We keep them because we intend
+                    to build support features around them, and only after those have been reviewed; we will update
+                    this policy, and tell you, before they are used for anything. They are never shared, and you can
+                    ask us to delete them at any time without deleting the rest of your account.
+                </p>
+            </>
+        ),
+    },
+    {
         id: "children",
         title: "Children and parental consent",
         body: (
@@ -124,15 +153,15 @@ const SECTIONS = [
                     lawful guardian before we process a child's personal data, and we take that seriously.
                 </p>
                 <p>
-                    <strong>How it works today:</strong> a student under 18 must confirm that they have their
-                    parent or guardian's permission and give that parent's name and mobile number. We record the
-                    confirmation with the time, the IP address and the version of this policy that applied. We may
-                    contact the parent to confirm.
+                    <strong>How it works:</strong> a student under 18 confirms that they have their parent or
+                    guardian's permission and gives that parent's name, mobile number and email address. We then
+                    email the <strong>parent</strong> a 6-digit code; the parent confirms by giving that code back
+                    (or entering it themselves). We record each step with the time, the IP address and the version
+                    of this policy that applied. Until the parent has confirmed, nothing can be paid for.
                 </p>
                 <p>
-                    <strong>What is coming:</strong> we are introducing a verified parental consent step, in which
-                    the parent confirms directly. When it launches, we will ask existing under-18 users' parents to
-                    confirm through it.
+                    Students who signed up before this step existed are asked to have their parent confirm in the
+                    same way. Confirmation by SMS is coming later.
                 </p>
                 <p>
                     <strong>Parents and guardians</strong> can at any time ask to see their child's data, withdraw
@@ -182,6 +211,12 @@ const SECTIONS = [
                     We also share data where the law requires it — for example, with a court or government
                     authority acting lawfully. When we match you with a mentor, we share only what they need to
                     prepare, such as your name and the career you chose.
+                </p>
+                <p>
+                    <strong>Study-abroad partner — only if you ask.</strong> If studying abroad helps for one of your
+                    top career matches, your report offers to connect you with a study-abroad partner. We share your
+                    name, email, phone and those careers with that partner only after you tick the box agreeing to it
+                    and press "Connect me". You can ask us to withdraw this at any time.
                 </p>
             </>
         ),

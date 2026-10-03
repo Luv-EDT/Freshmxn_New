@@ -137,23 +137,21 @@ function Challenges({ persistentData, currentData, extractedProblems, updatePers
                 goToStep={goToStep}
                 onStepClick={(targetIndex) => {
                     // Only validate for forward navigation
-                    if (targetIndex > currentStepIndex && !validateForm()) {
-                        alert("Please fill in all required fields before proceeding.")
-                        return false
-                    }
+                    // the rows that need finishing are marked inline, with a message by Next
+                    if (targetIndex > currentStepIndex && !validateForm()) return false
                     saveBoth()
                     return true
                 }}
             />
 
-            <div>
+            <div className="if-step-head">
                 <h2>♾️ Your Challenges</h2>
                 <p>First the problems we already picked up from your answers, then anything else on your mind right now.</p>
             </div>
 
             <form onSubmit={handleContinue}>
                 {/* ─── Part 1: which of these keep coming back ──────────────── */}
-                <div>
+                <div className="if-card">
                     <h3>Which of these still affect you today?</h3>
                     <p>These come from what you told us about each stage of your life. Tick the ones that haven't gone away.</p>
 
@@ -181,10 +179,8 @@ function Challenges({ persistentData, currentData, extractedProblems, updatePers
                     })}
                 </div>
 
-                <hr />
-
                 {/* ─── Part 2: anything else, right now ─────────────────────── */}
-                <div>
+                <div className="if-card">
                     <h3>Anything else troubling you right now?</h3>
                     <p>
                         {selectedCount > 0
@@ -193,7 +189,7 @@ function Challenges({ persistentData, currentData, extractedProblems, updatePers
                     </p>
 
                     {(localCurrent.presentConcerns || []).map((val, idx) => (
-                        <div key={`presentConcerns${idx}`}>
+                        <div key={`presentConcerns${idx}`} className={`if-problem${showValidationErrors && concernErrors[idx] ? " has-error" : ""}`}>
                             <input
                                 placeholder={`Describe the present concern ${idx + 1}`}
                                 id={`presentConcernsProblem${idx + 1}`}
@@ -225,11 +221,15 @@ function Challenges({ persistentData, currentData, extractedProblems, updatePers
                         </div>
                     ))}
 
-                    <button type="button" onClick={handleAddMore}>Add More Problems</button>
+                    <button type="button" className="if-add" onClick={handleAddMore}>+ Add another concern</button>
                 </div>
 
+                {showValidationErrors && Object.keys(concernErrors).length > 0 && (
+                    <p className="if-error" role="alert">Finish or delete the concern marked above before moving on.</p>
+                )}
+
                 {/* Navigation Buttons */}
-                <div>
+                <div className="if-nav">
                     <button type="button" onClick={handleContinuePrevious} disabled={isSaving}>Previous</button>
                     {" "}
                     <button type="button" onClick={handleSaveForLater} disabled={isSaving}>Save</button>

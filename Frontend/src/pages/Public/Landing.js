@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
+import HappyStudent from "./HappyStudent"
 import { StepIcon, ArrowDoodle } from "./illustrations"
 
 // The public landing page. Copy comes from landing_page_content_v3.md — every statistic there
@@ -90,9 +91,8 @@ function Landing() {
                             {/* the company tagline leads; "Careers that fit you" closes the page (owner, 2026-09-24) */}
                             <h1 className="tagline"><span>Explore.</span> <span>Get clarity.</span> <span className="accent">Take action.</span></h1>
                             <p className="lead">
-                                Everyone gets the same career advice — but you aren't everyone. Freshmxn's Lab matches
-                                your story and strengths to careers that are{" "}
-                                <strong className="highlight-pink">in demand and AI-resilient</strong>, then helps you
+                                We match your story and strengths to careers that are{" "}
+                                <strong className="highlight-pink">in demand and AI-resilient</strong>, then help you
                                 get there with mentors who've done it.
                             </p>
                             <div className="btn-row">
@@ -101,27 +101,12 @@ function Landing() {
                             </div>
                         </div>
 
-                        {/* an illustration of what a student gets — labelled, never a real result */}
+                        {/* a picture, not a mock result list (owner, Round 10: the ranked-matches card was text-heavy) */}
                         <div className="hero-visual" aria-hidden="true">
                             <div className="blob" />
                             <div className="dot-pink" />
                             <ArrowDoodle className="doodle" />
-                            <div className="preview-card">
-                                <div className="preview-title">Your ranked matches</div>
-                                {[
-                                    ["1", "Product / Industrial Designer", ["Fits your story", "In demand"]],
-                                    ["2", "UX / Interaction Designer", ["AI-resilient", "Pays well"]],
-                                    ["3", "Architect", ["Fits how you think"]],
-                                ].map(([rank, name, chips]) => (
-                                    <div className="preview-row" key={rank}>
-                                        <strong><span className="preview-rank">{rank}</span>{name}</strong>
-                                        <span className="preview-chips">
-                                            {chips.map((chip) => <span className="chip" key={chip}>{chip}</span>)}
-                                        </span>
-                                    </div>
-                                ))}
-                                <p className="preview-note">Illustrative example</p>
-                            </div>
+                            <HappyStudent className="hero-student" />
                         </div>
                     </div>
                 </section>

@@ -23,16 +23,26 @@ export const ASSESSMENT_MODULES = [
     { key: "storyRecall", title: "A short story", minutes: 10, built: true, note: "Starts a one-hour clock. You are asked about it tomorrow, and the questions stay open for two days." },
     { key: "ipip50", title: "How you see yourself", minutes: 8, built: true },
     { key: "mi", title: "What you are drawn to", minutes: 6, built: true },
+    { key: "interests60", title: "Activities you would enjoy", minutes: 4, built: true },
     { key: "rosenberg", title: "How you rate yourself", minutes: 3, built: true },
     { key: "confidence", title: "Confidence in six situations", minutes: 4, built: true },
     { key: "perspective", title: "How you think", minutes: 20, built: true },
     { key: "digitSpan", title: "Remembering numbers", minutes: 5, built: true },
-    { key: "extReasoning", title: "Reasoning test", minutes: 15, built: true, external: true, note: "Taken on another website while ours is being built. One attempt only — you upload a screenshot of the result." },
-    { key: "extVerbal", title: "Word memory test", minutes: 10, built: true, external: true, note: "Taken on another website while ours is being built. One attempt only — you upload a screenshot of the result." },
+    { key: "wordRecall", title: "Remembering words", minutes: 5, built: true, note: "Two lists of fifteen words, each shown once. One attempt." },
+    { key: "reasoning", title: "Reasoning puzzles", minutes: 15, built: true, note: "Sixteen puzzles of four kinds. One attempt — take it somewhere quiet." },
+    // RETIRED (Round 10): the in-house puzzles replaced this upload. It stays registered so a student
+    // who already took it still sees it and keeps their result; nobody new is asked to take it.
+    { key: "extReasoning", title: "Reasoning test (other website)", minutes: 15, built: true, retired: true, external: true, note: "Taken on another website before our own puzzles existed. Your result still counts." },
+    // RETIRED (Round 11): our own word test replaced this upload. Kept for students who already took it.
+    { key: "extVerbal", title: "Word memory test (other website)", minutes: 10, built: true, retired: true, external: true, note: "Taken on another website before our own word test existed. Your result still counts." },
     { key: "sartRaw", title: "Staying focused", minutes: 6, built: true, note: "A fast, timed task. One attempt only." },
 ]
 
-export const BUILT_MODULES = ASSESSMENT_MODULES.filter((module) => module.built)
+export const BUILT_MODULES = ASSESSMENT_MODULES.filter((module) => module.built && !module.retired)
+
+// What the assessment page lists for this student: every live section, plus a retired one only if
+// they have already taken it.
+export const visibleModules = (psychometric) => ASSESSMENT_MODULES.filter((module) => !module.retired || Boolean((psychometric || {})[module.key]))
 
 export const moduleByKey = (key) => ASSESSMENT_MODULES.find((module) => module.key === key) || null
 
@@ -77,6 +87,10 @@ const isModuleComplete = (key, block) => {
     // only check that ever catches it — so it is the thing that counts as done.
     if (key === "extReasoning" || key === "extVerbal") return Boolean(block.studentConfirmedAt)
 
+    // The in-house reasoning puzzles are done when the server stamps the sixteenth answer; the
+    // activity checklist when the student presses Done (an unticked box only means "no" then).
+    if (key === "reasoning" || key === "interests60" || key === "wordRecall") return Boolean(block.completedAt)
+
     // SART saves the PsyToolkit rows as a plain string, and saves NOTHING when the device failed
     // its timing check. So a non-empty string here means a session that is actually scoreable, and
     // a student whose phone could not hold 1150ms is honestly incomplete rather than falsely done.
@@ -97,7 +111,10 @@ const isModuleComplete = (key, block) => {
 
 export const completedModules = (psychometric) => {
     const saved = psychometric || {}
-    return BUILT_MODULES.filter((module) => isModuleComplete(module.key, saved[module.key])).map((module) => module.key)
+    const skipped = (saved.accommodations && saved.accommodations.skipped) || {}
+    // retired modules count when they were completed — a student's old reasoning upload still measures
+    // A test skipped because of a declared difficulty is finished too — as "not measured" (Round 10).
+    return ASSESSMENT_MODULES.filter((module) => module.built && (isModuleComplete(module.key, saved[module.key]) || skipped[module.key])).map((module) => module.key)
 }
 
 // Started but not finished — the state that needs "Continue", not "Review answers".
@@ -106,7 +123,7 @@ export const startedModules = (psychometric) => {
     return BUILT_MODULES.filter((module) => {
         const block = saved[module.key]
         if (!block || isModuleComplete(module.key, block)) return false
-        const answered = Object.keys(block.answers || {}).length + (block.trials || []).length
+        const answered = Object.keys(block.answers || {}).length + (block.trials || []).length + (block.answered || 0)
         return answered > 0
     }).map((module) => module.key)
 }

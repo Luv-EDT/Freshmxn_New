@@ -1,4 +1,12 @@
 import { TOTAL_MINUTES } from "./assessmentModules"
+import { reviewLabel } from "./moduleLabels"
+import { factorCoverage } from "./factorFeeds"
+import { ResearchBox, ModuleWhy, ReportProblem } from "./ResearchBox"
+import AccommodationsBox from "./AccommodationsBox"
+import { affectedModules } from "./accommodations"
+
+// the tests a student can raise a technical problem about (and the admin can reopen)
+const PERFORMANCE_TESTS = ["storyRecall", "digitSpan", "wordRecall", "sartRaw", "reasoning", "extReasoning", "extVerbal"]
 
 // The assessment's landing page — every section, what is done, what is still to come.
 //
@@ -46,23 +54,28 @@ const storyNote = (module, storyState) => {
 //
 // So the list says nothing about which sections gate submission. A student who finishes everything
 // gets the best report; a student who cannot finish one is not stuck.
-function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport }) {
+function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, accommodations = null, onSaveAccommodations }) {
     const built = modules.filter((module) => module.built)
     const comingSoon = modules.filter((module) => !module.built)
     const unfinished = built.filter((module) => !completed.includes(module.key))
+    // a section skipped for a declared difficulty is finished, but it measured nothing
+    const skipped = (accommodations && accommodations.skipped) || {}
+    const coverage = factorCoverage(completed.filter((key) => !skipped[key]))
+    const skippable = affectedModules(accommodations && accommodations.needs)
 
     // One renderer for both lists. They differ in what the heading above them says, not in how a
     // section behaves — and having two copies of this is how "Continue" stopped matching the story's
     // clock the first time.
     const renderModule = (module) => {
-        const isDone = completed.includes(module.key)
+        const isSkipped = Boolean(skipped[module.key])
+        const isDone = completed.includes(module.key) && !isSkipped
         const isStarted = started.includes(module.key)
         const note = storyNote(module, storyState)
 
         // Three states, not two. "Review answers" on a module the student has barely begun tells
         // them they have finished something they have not, and they stop returning to it. A
         // started-but-unfinished module says Continue.
-        let label = isDone ? "Review answers" : isStarted ? "Continue" : "Start"
+        let label = isDone ? reviewLabel(module) : isStarted ? "Continue" : "Start"
 
         // The story's button follows its clock, not its answers. "Continue" during the 24-hour wait
         // invites a student to open a section that can only tell them to come back later — and
@@ -74,24 +87,49 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 waiting: "Check the time left",
                 recall: "Answer the questions",
                 expired: "See what happened",
-                submitted: "Review answers",
+                submitted: reviewLabel(module),
             }
             label = byPhase[storyState.phase] || label
         }
 
-        // "Review answers" is wrong for a one-attempt test: there is nothing to change, and
-        // offering it invites a student to go looking for an edit button that does not exist.
-        if (isDone && (module.external || module.key === "sartRaw")) label = "See what was saved"
+        // The finished label itself says whether anything can still be changed — see reviewLabel.
+
+        // an admin reopened this test after a technical problem, and it has not been taken again yet
+        const reopened = Boolean(retakeGranted[module.key]) && !isDone
 
         return (
             <div key={module.key} className={`module-row${isDone ? " is-done" : ""}`}>
-                <p className="module-title">
-                    <strong>{module.title}</strong> · about {module.minutes} minutes
-                    {isDone && <span> · done</span>}
-                    {isStarted && <span> · in progress</span>}
-                </p>
+                <div className="module-title-row">
+                    <p className="module-title">
+                        <strong>{module.title}</strong> · about {module.minutes} minutes
+                        {isDone && <span> · done</span>}
+                        {isStarted && <span> · in progress</span>}
+                    </p>
+                    <ModuleWhy moduleKey={module.key} />
+                </div>
+                {reopened && (
+                    <p className="retake-note">
+                        <strong>Retake available</strong> — your earlier attempt had a technical problem, so this is open
+                        again for one more try. Press Submit again afterwards so your report is updated.
+                    </p>
+                )}
                 {note && <p><em>{note}</em></p>}
-                <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
+                {isSkipped ? (
+                    <p className="retake-note">
+                        Skipped because of the difficulty you told us about — <strong>not measured</strong>, never counted as low.{" "}
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: false } })}>Take it after all</button>
+                    </p>
+                ) : (
+                    <>
+                        <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
+                        {!isDone && skippable.includes(module.key) && (
+                            <button type="button" className="btn btn-ghost btn-sm skip-btn" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: true } })}>
+                                Skip this — mark it not measured
+                            </button>
+                        )}
+                    </>
+                )}
+                {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && <ReportProblem moduleKey={module.key} />}
             </div>
         )
     }
@@ -109,6 +147,17 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
             <p>
                 <strong>About {TOTAL_MINUTES} minutes</strong> in total, across all the sections below.
             </p>
+
+            <ResearchBox />
+
+            <AccommodationsBox saved={accommodations} onSave={onSaveAccommodations} />
+
+            {/* how much of the picture the finished sections already measure (owner, Round 10) */}
+            <p className="coverage-line">
+                <strong>{coverage.count} of {coverage.total} factors</strong> can be measured from what you have
+                finished — {coverage.pct}%.
+            </p>
+            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${coverage.pct}%` }} /></div>
 
             {alreadySubmitted && (
                 <p>

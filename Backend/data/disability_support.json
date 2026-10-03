@@ -1,0 +1,36 @@
+{
+ "schema_version": "disability_support@1.0.0",
+ "verified_by_owner": false,
+ "checked_on": null,
+ "note": "Shown in the report ONLY to a student who declared a difficulty on the assessment page, and ONLY once verified_by_owner is true and checked_on is set (owner gate, Round 10). Every line names its official source; check each against that source before switching this on. Re-check yearly: rules change.",
+ "rows": [
+  {
+   "id": "reservation_higher_education",
+   "title": "Reserved seats in higher education",
+   "text": "Government colleges and universities, and those receiving government aid, must reserve at least 5% of seats for students with a benchmark disability (40% or more of a specified disability, certified).",
+   "source": "Rights of Persons with Disabilities Act, 2016 — Section 32",
+   "url": "https://www.indiacode.nic.in/handle/123456789/2155"
+  },
+  {
+   "id": "reservation_government_jobs",
+   "title": "Reserved posts in government jobs",
+   "text": "At least 4% of vacancies in government establishments are reserved for persons with benchmark disabilities.",
+   "source": "Rights of Persons with Disabilities Act, 2016 — Section 34",
+   "url": "https://www.indiacode.nic.in/handle/123456789/2155"
+  },
+  {
+   "id": "exam_scribe_time",
+   "title": "A scribe and extra time in written exams",
+   "text": "In written exams, candidates with a benchmark disability can ask for a scribe and compensatory time — at least 20 minutes for every hour of the exam. National entrance exams (JEE, NEET, CUET) follow these guidelines; apply for it when you register for the exam.",
+   "source": "Department of Empowerment of Persons with Disabilities — Guidelines for conducting written examinations for persons with benchmark disabilities (2018)",
+   "url": "https://depwd.gov.in/"
+  },
+  {
+   "id": "udid",
+   "title": "Get your disability certificate (UDID card) early",
+   "text": "Every reservation and exam facility above asks for a disability certificate. The Unique Disability ID (UDID) card is applied for online; start early, because assessment by a medical board takes time.",
+   "source": "Ministry of Social Justice and Empowerment — Unique Disability ID",
+   "url": "https://www.swavlambancard.gov.in/"
+  }
+ ]
+}

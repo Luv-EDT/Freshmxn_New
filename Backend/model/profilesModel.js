@@ -81,6 +81,18 @@ const profileSchema = new mongoose.Schema(
             type: Object,
             default: {}, // { matching, overall, release } — drives the release rule, not a score
         },
+        // How much of each factor's input was actually present, 0-1 (combine()'s weight share).
+        // Shown on the Profile only as "Partial · N%" below 100 — owner decision, Round 10.
+        factor_coverage: {
+            type: Object,
+            default: {},
+        },
+        // The submission.psychometricSubmittedAt this profile was scored from. A newer submit means
+        // this profile is about to be replaced.
+        sourceSubmittedAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

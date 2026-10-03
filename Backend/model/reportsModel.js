@@ -28,9 +28,27 @@ const reportSchema = new mongoose.Schema(
             required: true,
             unique: true, // one current report per student
         },
+        // When this student's FIRST report was written. Never overwritten — it anchors the 6- and
+        // 12-month follow-up. Written only with $setOnInsert; every rebuild moves lastGeneratedAt.
         generatedAt: {
             type: Date,
             required: true,
+        },
+        lastGeneratedAt: {
+            type: Date,
+            default: null,
+        },
+        // The submit this report was built from (copied from the profile). The page compares it
+        // with the latest submit to know whether a newer report is on its way.
+        sourceSubmittedAt: {
+            type: Date,
+            default: null,
+        },
+        // The prose could not be written (the model kept breaking a rule). The report still stands
+        // on its data — the careers, the roads, the plan — just without the three short lines.
+        composeFailed: {
+            type: Boolean,
+            default: false,
         },
         report_version: {
             type: String,
@@ -85,9 +103,11 @@ const reportSchema = new mongoose.Schema(
 )
 
 // The review queue reads newest first, and a prompt change re-reads by version to find what needs
-// regenerating.
-reportSchema.index({ report_version: 1, generatedAt: -1 })
-reportSchema.index({ "adminReview.required": 1, generatedAt: -1 })
+// regenerating. Both sort on lastGeneratedAt, because generatedAt is frozen at the first report.
+reportSchema.index({ report_version: 1, lastGeneratedAt: -1 })
+reportSchema.index({ "adminReview.required": 1, lastGeneratedAt: -1 })
+// the follow-up scan finds reports that turned 6 or 12 months old
+reportSchema.index({ generatedAt: 1 })
 
 const Report = mongoose.model("Report", reportSchema)
 

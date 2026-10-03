@@ -1,0 +1,854 @@
+{
+ "schema_version": "combined_careers@1.0.0",
+ "generated_on": "2026-10-01",
+ "review": "Hand-checked; approved with the Round 10 plan (Appendix C and the owner's cluster rule), 2026-10-01. Solar PV Installer and EV Service Technician are blue-collar (owner).",
+ "rule": "A combined career appears when both its sides are lit for a student: a side is lit when any career in its group is in the student's ranked list (which only careers their own activities point to reach). At most 5 are shown, ordered by the sum of each side's best position. Never generated per student; new ones come from the weekly scout after the owner approves them.",
+ "groups": {
+  "electrical_electronics": {
+   "label": "electrical and electronics work",
+   "careers": [
+    "eng-electrical-engineer",
+    "eng-electronics-communication-engineer",
+    "eng-electrician",
+    "swc-embedded-iot-developer"
+   ]
+  },
+  "mechanical_automotive": {
+   "label": "machines and vehicles",
+   "careers": [
+    "eng-mechanical-engineer",
+    "eng-automobile-mechanic",
+    "eng-fitter-machinist",
+    "eng-robotics-automation-engineer"
+   ]
+  },
+  "renewable_energy": {
+   "label": "clean energy",
+   "careers": [
+    "env-renewable-energy",
+    "env-sustainability-esg",
+    "env-environmental-engineer"
+   ]
+  },
+  "civil_construction": {
+   "label": "building and construction",
+   "careers": [
+    "eng-civil-engineer",
+    "eng-architect",
+    "eng-mason-construction-technician",
+    "eng-land-surveyor"
+   ]
+  },
+  "digital_drafting": {
+   "label": "digital drawing and modelling",
+   "careers": [
+    "eng-cad-draughtsman",
+    "env-gis-analyst",
+    "des-interior-designer"
+   ]
+  },
+  "physics": {
+   "label": "physics",
+   "careers": [
+    "sci-physicist",
+    "sci-materials-scientist",
+    "sci-space-scientist",
+    "eng-nuclear-engineer"
+   ]
+  },
+  "medical_technology": {
+   "label": "medical technology",
+   "careers": [
+    "hlt-radiology-technologist",
+    "hlt-medical-lab-technologist",
+    "eng-biomedical-engineer",
+    "hlt-ot-anaesthesia-technologist"
+   ]
+  },
+  "chemical_process": {
+   "label": "chemistry and process work",
+   "careers": [
+    "eng-chemical-engineer",
+    "sci-chemist",
+    "sci-materials-scientist",
+    "eng-precision-manufacturing-technician"
+   ]
+  },
+  "chip_electronics": {
+   "label": "chips and electronics",
+   "careers": [
+    "eng-chip-design-engineer",
+    "eng-electronics-communication-engineer",
+    "swc-embedded-iot-developer"
+   ]
+  },
+  "software": {
+   "label": "software",
+   "careers": [
+    "swc-software-developer",
+    "swc-ai-ml-engineer",
+    "swc-data-engineer",
+    "swc-embedded-iot-developer",
+    "sci-computer-science-researcher",
+    "swc-game-developer"
+   ]
+  },
+  "aerospace_aviation": {
+   "label": "aircraft and flying",
+   "careers": [
+    "eng-aerospace-engineer",
+    "eng-commercial-pilot",
+    "eng-aircraft-maintenance-engineer",
+    "eng-drone-pilot"
+   ]
+  },
+  "quality_regulation": {
+   "label": "quality and regulation",
+   "careers": [
+    "sci-quality-control-analyst",
+    "law-patent-agent",
+    "sci-clinical-research-associate"
+   ]
+  },
+  "biomedical": {
+   "label": "biomedical science",
+   "careers": [
+    "eng-biomedical-engineer",
+    "sci-biotechnologist",
+    "sci-drug-discovery-scientist"
+   ]
+  },
+  "drones": {
+   "label": "drones",
+   "careers": [
+    "eng-drone-pilot",
+    "eng-aerospace-engineer"
+   ]
+  },
+  "agriculture": {
+   "label": "farming and crops",
+   "careers": [
+    "agr-agronomist",
+    "agr-farmer",
+    "agr-horticulture",
+    "agr-agricultural-engineer",
+    "agr-extension-agribusiness"
+   ]
+  },
+  "mapping": {
+   "label": "maps and land",
+   "careers": [
+    "env-gis-analyst",
+    "eng-land-surveyor",
+    "sci-geologist",
+    "eng-urban-planner"
+   ]
+  },
+  "sustainability": {
+   "label": "sustainability",
+   "careers": [
+    "env-sustainability-esg",
+    "env-environmental-scientist",
+    "env-environmental-engineer",
+    "env-renewable-energy"
+   ]
+  },
+  "architecture": {
+   "label": "architecture and spaces",
+   "careers": [
+    "eng-architect",
+    "des-interior-designer",
+    "eng-urban-planner"
+   ]
+  },
+  "heritage": {
+   "label": "history and heritage",
+   "careers": [
+    "hum-heritage-management",
+    "hum-archaeologist",
+    "hum-historian",
+    "hum-museum-archive",
+    "hum-conservator"
+   ]
+  },
+  "teaching": {
+   "label": "teaching",
+   "careers": [
+    "edu-school-teacher",
+    "edu-coaching-faculty",
+    "edu-vocational-trainer",
+    "edu-instructional-designer",
+    "edu-early-childhood"
+   ]
+  },
+  "robotics_making": {
+   "label": "robots and making things",
+   "careers": [
+    "eng-robotics-automation-engineer",
+    "swc-embedded-iot-developer",
+    "eng-mechanical-engineer",
+    "eng-industrial-product-designer"
+   ]
+  },
+  "journalism_writing": {
+   "label": "writing and reporting",
+   "careers": [
+    "med-journalist",
+    "med-content-writer",
+    "med-pr-communications",
+    "des-advertising-creative"
+   ]
+  },
+  "sport": {
+   "label": "sport",
+   "careers": [
+    "spt-athlete",
+    "spt-coach",
+    "spt-sports-scientist",
+    "spt-fitness-trainer",
+    "spt-official"
+   ]
+  },
+  "nutrition_food": {
+   "label": "nutrition and food",
+   "careers": [
+    "hlt-dietitian",
+    "agr-food-technologist",
+    "hos-chef"
+   ]
+  },
+  "physio_rehab": {
+   "label": "rehabilitation",
+   "careers": [
+    "hlt-physiotherapist",
+    "hlt-occupational-therapist",
+    "soc-disability-inclusion"
+   ]
+  },
+  "data": {
+   "label": "data and numbers",
+   "careers": [
+    "swc-data-analyst",
+    "sci-statistician",
+    "swc-data-engineer",
+    "sci-mathematician",
+    "soc-me-analyst"
+   ]
+  },
+  "psychology": {
+   "label": "psychology and counselling",
+   "careers": [
+    "soc-counsellor",
+    "soc-clinical-psychologist",
+    "sci-research-psychologist",
+    "edu-career-counsellor"
+   ]
+  },
+  "marketing_business": {
+   "label": "marketing and business",
+   "careers": [
+    "mgt-marketing-specialist",
+    "mgt-sales-professional",
+    "mgt-entrepreneur",
+    "mgt-product-manager"
+   ]
+  },
+  "law": {
+   "label": "law",
+   "careers": [
+    "law-lawyer",
+    "law-judicial-services-officer",
+    "law-paralegal",
+    "law-public-policy-professional",
+    "law-company-secretary"
+   ]
+  },
+  "cybersecurity": {
+   "label": "security and networks",
+   "careers": [
+    "swc-cybersecurity-specialist",
+    "swc-it-support-network-technician",
+    "swc-cloud-devops-engineer"
+   ]
+  },
+  "accounting": {
+   "label": "accounts and audit",
+   "careers": [
+    "fin-chartered-accountant",
+    "fin-accounts-executive",
+    "fin-financial-analyst",
+    "law-company-secretary"
+   ]
+  },
+  "environment_science": {
+   "label": "nature and the environment",
+   "careers": [
+    "env-environmental-scientist",
+    "sci-biologist",
+    "env-forest-officer",
+    "sci-atmospheric-ocean-scientist",
+    "agr-fisheries"
+   ]
+  },
+  "maths_quant": {
+   "label": "maths",
+   "careers": [
+    "sci-mathematician",
+    "sci-statistician",
+    "fin-actuary"
+   ]
+  },
+  "finance": {
+   "label": "finance and markets",
+   "careers": [
+    "fin-financial-analyst",
+    "fin-investment-wealth-manager",
+    "fin-banking-professional"
+   ]
+  },
+  "insurance_risk": {
+   "label": "insurance and risk",
+   "careers": [
+    "fin-insurance-professional",
+    "fin-actuary"
+   ]
+  },
+  "climate": {
+   "label": "weather, climate and disasters",
+   "careers": [
+    "sci-atmospheric-ocean-scientist",
+    "env-disaster-resilience",
+    "sci-geologist"
+   ]
+  },
+  "product": {
+   "label": "building products",
+   "careers": [
+    "mgt-product-manager",
+    "mgt-project-manager",
+    "des-ux-designer"
+   ]
+  },
+  "public_health": {
+   "label": "health care",
+   "careers": [
+    "hlt-public-health-professional",
+    "hlt-nurse",
+    "hlt-doctor",
+    "hlt-pharmacist"
+   ]
+  },
+  "operations": {
+   "label": "running organisations",
+   "careers": [
+    "mgt-operations-manager",
+    "mgt-project-manager",
+    "hos-hotel-manager"
+   ]
+  },
+  "clinical_research": {
+   "label": "clinical research and medicines",
+   "careers": [
+    "sci-clinical-research-associate",
+    "sci-drug-discovery-scientist",
+    "hlt-pharmacist"
+   ]
+  },
+  "forensics": {
+   "label": "forensics and investigation",
+   "careers": [
+    "sci-forensic-scientist",
+    "law-police-officer"
+   ]
+  },
+  "clinical_psychology": {
+   "label": "mental health",
+   "careers": [
+    "soc-clinical-psychologist",
+    "soc-counsellor"
+   ]
+  },
+  "music": {
+   "label": "music",
+   "careers": [
+    "prf-musician",
+    "prf-music-producer",
+    "prf-dj",
+    "med-sound-designer"
+   ]
+  },
+  "fine_art": {
+   "label": "art and drawing",
+   "careers": [
+    "des-fine-artist",
+    "des-illustrator",
+    "des-graphic-designer",
+    "des-animator-vfx"
+   ]
+  },
+  "life_science": {
+   "label": "biology and life science",
+   "careers": [
+    "sci-biologist",
+    "sci-microbiologist",
+    "sci-biotechnologist",
+    "hlt-medical-lab-technologist"
+   ]
+  },
+  "ux_design": {
+   "label": "design for people",
+   "careers": [
+    "des-ux-designer",
+    "des-graphic-designer",
+    "des-game-designer"
+   ]
+  },
+  "research_psychology": {
+   "label": "how people think and choose",
+   "careers": [
+    "sci-research-psychologist",
+    "mgt-market-research-analyst"
+   ]
+  },
+  "games": {
+   "label": "games",
+   "careers": [
+    "swc-game-developer",
+    "des-game-designer",
+    "spt-esports"
+   ]
+  },
+  "sound": {
+   "label": "sound",
+   "careers": [
+    "med-sound-designer",
+    "prf-music-producer",
+    "prf-live-sound"
+   ]
+  },
+  "learning_design": {
+   "label": "designing how people learn",
+   "careers": [
+    "edu-instructional-designer",
+    "edu-school-teacher",
+    "edu-corporate-trainer"
+   ]
+  },
+  "cooking": {
+   "label": "cooking",
+   "careers": [
+    "hos-chef",
+    "hos-fb-service"
+   ]
+  },
+  "fashion": {
+   "label": "fashion and clothing",
+   "careers": [
+    "des-fashion-designer",
+    "des-apparel-production",
+    "des-tailor"
+   ]
+  },
+  "photo_film": {
+   "label": "photography and film",
+   "careers": [
+    "med-photographer",
+    "med-cinematographer",
+    "med-filmmaker",
+    "med-content-creator",
+    "med-film-editor"
+   ]
+  },
+  "nature_wildlife": {
+   "label": "nature and wildlife",
+   "careers": [
+    "env-forest-officer",
+    "env-environmental-scientist",
+    "sci-biologist",
+    "agr-fisheries",
+    "agr-horticulture",
+    "env-gis-analyst"
+   ]
+  }
+ },
+ "careers": [
+  {
+   "id": "cmb-ev-powertrain-engineer",
+   "name": "EV Powertrain Engineer",
+   "oneLiner": "Designs the motors, batteries and drive systems that make electric vehicles move.",
+   "howToGetThere": "B.Tech in Electrical or Mechanical Engineering, then EV-focused projects or an M.Tech; EV makers hire from both sides.",
+   "sideA": "electrical_electronics",
+   "sideB": "mechanical_automotive",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-ev-service-technician",
+   "name": "EV Service Technician",
+   "oneLiner": "Diagnoses and repairs electric two-wheelers, cars and their batteries.",
+   "howToGetThere": "ITI Electrician or Mechanic Motor Vehicle, then an EV service course (often given by the maker).",
+   "sideA": "electrical_electronics",
+   "sideB": "mechanical_automotive",
+   "blueCollar": true
+  },
+  {
+   "id": "cmb-solar-pv-installer",
+   "name": "Solar PV Installer & Technician",
+   "oneLiner": "Installs and maintains rooftop and field solar panels and their wiring.",
+   "howToGetThere": "ITI Electrician, then a solar PV installer course (NSQF / SCGJ aligned).",
+   "sideA": "electrical_electronics",
+   "sideB": "renewable_energy",
+   "blueCollar": true
+  },
+  {
+   "id": "cmb-bim-specialist",
+   "name": "BIM (Building Information Modelling) Specialist",
+   "oneLiner": "Builds the detailed 3D models that buildings are planned and built from.",
+   "howToGetThere": "Civil engineering, architecture or a CAD diploma, then Revit / BIM training.",
+   "sideA": "civil_construction",
+   "sideB": "digital_drafting",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-medical-physicist",
+   "name": "Medical Physicist",
+   "oneLiner": "Makes sure radiation used in scans and cancer treatment is safe and precise.",
+   "howToGetThere": "B.Sc and M.Sc Physics, then a one-year diploma in radiological / medical physics recognised by AERB.",
+   "sideA": "physics",
+   "sideB": "medical_technology",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-semiconductor-process-engineer",
+   "name": "Semiconductor Process Engineer",
+   "oneLiner": "Runs and improves the chemical steps that turn silicon wafers into chips.",
+   "howToGetThere": "B.Tech in Chemical, Electronics or Materials, then fab training; India's new chip plants are hiring.",
+   "sideA": "chemical_process",
+   "sideB": "chip_electronics",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-avionics-software-engineer",
+   "name": "Avionics & Aerospace Software Engineer",
+   "oneLiner": "Writes the safety-critical software that flies aircraft, drones and satellites.",
+   "howToGetThere": "B.Tech in CSE, ECE or Aerospace, then embedded and safety-critical software (DO-178C) experience.",
+   "sideA": "aerospace_aviation",
+   "sideB": "software",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-regulatory-affairs-specialist",
+   "name": "Regulatory Affairs Specialist (medical devices & pharma)",
+   "oneLiner": "Gets medical devices and medicines approved and keeps them within the rules.",
+   "howToGetThere": "A degree in pharmacy, biomedical engineering or life sciences, then a regulatory affairs certificate.",
+   "sideA": "biomedical",
+   "sideB": "quality_regulation",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-agricultural-drone-specialist",
+   "name": "Agricultural Drone Specialist",
+   "oneLiner": "Flies drones to survey, spray and monitor crops for farmers.",
+   "howToGetThere": "A DGCA Remote Pilot Certificate plus agriculture training; Krishi Vigyan Kendras and agri-drone firms train.",
+   "sideA": "drones",
+   "sideB": "agriculture",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-precision-agriculture-specialist",
+   "name": "Precision Agriculture Specialist",
+   "oneLiner": "Uses satellite maps, sensors and data to tell farmers exactly what each field needs.",
+   "howToGetThere": "B.Sc Agriculture plus GIS / remote sensing skills.",
+   "sideA": "agriculture",
+   "sideB": "mapping",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-green-building-consultant",
+   "name": "Green Building Consultant",
+   "oneLiner": "Helps buildings use less energy and water, and certifies them (IGBC, GRIHA).",
+   "howToGetThere": "Architecture, civil engineering or environmental science, then an IGBC / GRIHA accreditation.",
+   "sideA": "architecture",
+   "sideB": "sustainability",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-conservation-architect",
+   "name": "Conservation Architect",
+   "oneLiner": "Restores and protects historic buildings without losing what made them special.",
+   "howToGetThere": "B.Arch, then a master's in architectural conservation.",
+   "sideA": "architecture",
+   "sideB": "heritage",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-stem-robotics-educator",
+   "name": "STEM & Robotics Educator",
+   "oneLiner": "Teaches children to build and program robots in schools and labs (e.g. Atal Tinkering Labs).",
+   "howToGetThere": "Any engineering or science degree plus hands-on robotics; many schools hire through ed-tech partners.",
+   "sideA": "teaching",
+   "sideB": "robotics_making",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-sports-journalist",
+   "name": "Sports Journalist",
+   "oneLiner": "Reports, analyses and tells the stories of sport for papers, TV and digital media.",
+   "howToGetThere": "Any degree with journalism or mass communication training, and a portfolio of sports writing.",
+   "sideA": "journalism_writing",
+   "sideB": "sport",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-sports-nutritionist",
+   "name": "Sports Nutritionist",
+   "oneLiner": "Plans what athletes eat to train, perform and recover.",
+   "howToGetThere": "B.Sc Nutrition & Dietetics, then a sports nutrition specialisation.",
+   "sideA": "nutrition_food",
+   "sideB": "sport",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-sports-physiotherapist",
+   "name": "Sports Physiotherapist",
+   "oneLiner": "Prevents and treats sports injuries and gets athletes back to play.",
+   "howToGetThere": "BPT, then an MPT in sports physiotherapy.",
+   "sideA": "physio_rehab",
+   "sideB": "sport",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-sports-data-analyst",
+   "name": "Sports Data Analyst",
+   "oneLiner": "Turns match and training data into decisions for teams and coaches.",
+   "howToGetThere": "Statistics, data analytics or sports science, plus a portfolio of sports analysis.",
+   "sideA": "data",
+   "sideB": "sport",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-sports-psychologist",
+   "name": "Sports Psychologist",
+   "oneLiner": "Helps athletes handle pressure, focus and confidence.",
+   "howToGetThere": "BA / B.Sc and MA / M.Sc Psychology, then sports psychology training.",
+   "sideA": "psychology",
+   "sideB": "sport",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-sports-marketing-manager",
+   "name": "Sports Marketing & Management Professional",
+   "oneLiner": "Runs the business side of leagues, teams and sports brands.",
+   "howToGetThere": "Any degree, often a BBA / MBA in sports management, plus internships with leagues or agencies.",
+   "sideA": "marketing_business",
+   "sideB": "sport",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-legal-journalist",
+   "name": "Legal Journalist",
+   "oneLiner": "Explains court judgments and laws in plain words for the public.",
+   "howToGetThere": "LLB or journalism, ideally both; many start reporting for legal news sites.",
+   "sideA": "journalism_writing",
+   "sideB": "law",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-cyber-law-specialist",
+   "name": "Cyber Law Specialist",
+   "oneLiner": "Handles the law around data, privacy, online fraud and cybercrime.",
+   "howToGetThere": "LLB, then a cyber law diploma or LLM; technical security knowledge helps.",
+   "sideA": "law",
+   "sideB": "cybersecurity",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-forensic-accountant",
+   "name": "Forensic Accountant",
+   "oneLiner": "Traces fraud and hidden money for courts, companies and regulators.",
+   "howToGetThere": "CA or B.Com, then a forensic accounting certification (e.g. ICAI's FAFD).",
+   "sideA": "accounting",
+   "sideB": "law",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-environmental-lawyer",
+   "name": "Environmental Lawyer",
+   "oneLiner": "Uses the law to protect forests, rivers and communities, often before the National Green Tribunal.",
+   "howToGetThere": "LLB, then environmental law practice or an LLM.",
+   "sideA": "law",
+   "sideB": "sustainability",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-quantitative-analyst",
+   "name": "Quantitative Analyst",
+   "oneLiner": "Builds mathematical models that price and manage risk in financial markets.",
+   "howToGetThere": "A degree in maths, statistics, engineering or economics, then programming and a master's or CFA / FRM.",
+   "sideA": "finance",
+   "sideB": "maths_quant",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-climate-risk-analyst",
+   "name": "Climate Risk Analyst",
+   "oneLiner": "Measures how floods, heat and storms will hit property, crops and investments.",
+   "howToGetThere": "Atmospheric science, geography, statistics or actuarial training, plus climate-risk modelling.",
+   "sideA": "insurance_risk",
+   "sideB": "climate",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-fintech-product-manager",
+   "name": "FinTech Product Manager",
+   "oneLiner": "Decides what a payments, lending or investing app should do next.",
+   "howToGetThere": "Any degree, a few years in product or banking, then the switch into fintech product.",
+   "sideA": "product",
+   "sideB": "finance",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-data-journalist",
+   "name": "Data Journalist",
+   "oneLiner": "Finds the story in numbers and shows it with charts and maps.",
+   "howToGetThere": "Journalism plus data skills (spreadsheets, SQL, charts), or data analysis plus writing.",
+   "sideA": "journalism_writing",
+   "sideB": "data",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-health-informatics-specialist",
+   "name": "Health Data & Informatics Specialist",
+   "oneLiner": "Makes hospital and public-health data useful — records, dashboards, disease tracking.",
+   "howToGetThere": "A health, statistics or computing degree, then health informatics training.",
+   "sideA": "data",
+   "sideB": "public_health",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-hospital-administrator",
+   "name": "Hospital Administrator",
+   "oneLiner": "Runs the beds, staff, budgets and quality of a hospital.",
+   "howToGetThere": "Any degree (health degrees help), then an MBA / MHA in hospital administration.",
+   "sideA": "operations",
+   "sideB": "public_health",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-medical-writer",
+   "name": "Medical Writer",
+   "oneLiner": "Writes clinical study reports, drug documents and patient information.",
+   "howToGetThere": "A life-sciences or pharmacy degree plus strong writing; many start in pharma or CROs.",
+   "sideA": "journalism_writing",
+   "sideB": "clinical_research",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-forensic-psychologist",
+   "name": "Forensic Psychologist",
+   "oneLiner": "Applies psychology to crime, courts and prisons.",
+   "howToGetThere": "MA / M.Sc Psychology, then forensic psychology training; RCI registration for clinical work.",
+   "sideA": "clinical_psychology",
+   "sideB": "forensics",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-music-therapist",
+   "name": "Music Therapist",
+   "oneLiner": "Uses music to help people with stress, disability, dementia or recovery.",
+   "howToGetThere": "Musical training plus psychology, then a music therapy certificate or diploma.",
+   "sideA": "music",
+   "sideB": "psychology",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-art-therapist",
+   "name": "Art Therapist",
+   "oneLiner": "Uses drawing and making to help people express and work through difficult experiences.",
+   "howToGetThere": "An art or psychology background, then an art therapy diploma.",
+   "sideA": "fine_art",
+   "sideB": "psychology",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-scientific-illustrator",
+   "name": "Scientific & Medical Illustrator",
+   "oneLiner": "Draws the anatomy, cells and processes that textbooks and journals explain with.",
+   "howToGetThere": "Fine art or design plus biology, and a portfolio of scientific drawing.",
+   "sideA": "fine_art",
+   "sideB": "life_science",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-science-communicator",
+   "name": "Science Communicator",
+   "oneLiner": "Explains science to the public through writing, video, museums and talks.",
+   "howToGetThere": "A science degree plus writing or media work; science museums and media hire.",
+   "sideA": "journalism_writing",
+   "sideB": "physics",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-ux-researcher",
+   "name": "UX Researcher",
+   "oneLiner": "Studies how people use apps and products, so designers build the right thing.",
+   "howToGetThere": "Psychology, design or HCI, then user-research practice; a portfolio of studies.",
+   "sideA": "ux_design",
+   "sideB": "research_psychology",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-technical-writer",
+   "name": "Technical Writer",
+   "oneLiner": "Writes the guides and documentation that explain software and machines.",
+   "howToGetThere": "Any degree with strong writing; tech background helps; a portfolio of docs.",
+   "sideA": "journalism_writing",
+   "sideB": "software",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-game-audio-designer",
+   "name": "Game Audio Designer",
+   "oneLiner": "Creates the music, effects and voice that make a game feel alive.",
+   "howToGetThere": "Sound engineering or music production, then game-audio tools (Wwise, FMOD).",
+   "sideA": "sound",
+   "sideB": "games",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-educational-game-designer",
+   "name": "Educational Game Designer",
+   "oneLiner": "Designs games that teach — for schools, apps and training.",
+   "howToGetThere": "Game design or instructional design, ideally both; a portfolio of learning games.",
+   "sideA": "games",
+   "sideB": "learning_design",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-therapeutic-nutrition-chef",
+   "name": "Therapeutic & Clinical-Nutrition Chef",
+   "oneLiner": "Cooks for hospitals, wellness centres and special diets (diabetes, kidney, allergies).",
+   "howToGetThere": "A hotel-management or culinary course, then clinical-nutrition cooking training.",
+   "sideA": "cooking",
+   "sideB": "nutrition_food",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-sustainable-fashion-specialist",
+   "name": "Sustainable Fashion Specialist",
+   "oneLiner": "Makes clothing with less waste and fairer supply chains.",
+   "howToGetThere": "Fashion design or textiles, then sustainability and sourcing know-how.",
+   "sideA": "fashion",
+   "sideB": "sustainability",
+   "blueCollar": false
+  },
+  {
+   "id": "cmb-wildlife-photographer-filmmaker",
+   "name": "Wildlife Photographer & Filmmaker",
+   "oneLiner": "Photographs and films wildlife and nature for documentaries, magazines and conservation.",
+   "howToGetThere": "Photography or film training plus field knowledge of nature; most build a portfolio first.",
+   "sideA": "photo_film",
+   "sideB": "nature_wildlife",
+   "blueCollar": false
+  }
+ ]
+}

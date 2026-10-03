@@ -9,6 +9,22 @@ const MIN_LENGTH = 3
 const MAX_LENGTH = 9
 const FAST_SUBMIT_MS = 300
 
+// A RUN THAT WAS ABANDONED IS NOT A RESULT (backend review #8). One correct trial at length 3 and
+// then closing the tab used to score as a full-quality 0 — a "floor" the student never reached.
+// A run counts only once it actually ended: the server stamped completedAt, or the trials
+// themselves show the end — both trials failed at one length, or 9 digits were cleared. Anything
+// else is "not measured", which the profile drops and renormalises rather than reading as low.
+const runEnded = (block, trials) => {
+    if (block && block.completedAt) return true
+    if (trials.some((trial) => trial.length >= MAX_LENGTH && trial.correct === true)) return true
+
+    const failsAt = {}
+    trials.forEach((trial) => {
+        if (trial.correct !== true) failsAt[trial.length] = (failsAt[trial.length] || 0) + 1
+    })
+    return Object.values(failsAt).some((count) => count >= 2)
+}
+
 const scoreDigitSpan = (block) => {
     const trials = (block && block.trials) || []
     const flags = {}
@@ -42,6 +58,12 @@ const scoreDigitSpan = (block) => {
 
     if (repeatedDigit) {
         flags.digit_span_repeated_digit = true
+    }
+
+    // flags are recorded above even for an unfinished run — rushing is worth knowing either way
+    if (!runEnded(block, trials)) {
+        flags.digit_span_unfinished = true
+        return { score: null, quality: null, flags }
     }
 
     if (correctLengths.length === 0) {

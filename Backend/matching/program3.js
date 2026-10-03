@@ -6,13 +6,14 @@
 // the numbers the report needs to explain itself.
 
 const { weightedMatch } = require("./similarity")
-const { journeyMultiplier, hardFilterReason } = require("./journey")
+const { journeyMultiplier, hardFilterReason, degreeCounts } = require("./journey")
 const {
     COMFORT_THRESHOLD,
     EXPLAIN_FACTOR_COUNT,
     EXPLAIN_MIN_WEIGHT,
     SUPPORTING_SIMILARITY,
     DIVERGING_SIMILARITY,
+    ROLE_SHIFT,
 } = require("./constants")
 
 const round4 = (value) => Math.round(value * 10000) / 10000
@@ -59,8 +60,36 @@ const displayFields = (profession) => ({
     entryWindowBypass: profession.entry_window ? profession.entry_window.bypass || [] : [],
 })
 
+// THE ROLES IN A CAREER THAT SUIT THIS STUDENT BEST (owner, Round 10: "I hope we are using role
+// spread for matching a job role"). Until now role_spread was only displayed. Each role group is
+// scored like the career itself, with its `higher` factors raised and `lower` ones lowered by
+// ROLE_SHIFT; the career's fit is the better of the whole and its best group — the career really
+// does contain that role — so a fit can only rise. `bestRoles` says which roles did it.
+const clamp10 = (value) => Math.min(Math.max(value, 0), 10)
+
+const bestRoleGroup = (profession, rating, studentVector, base) => {
+    const groups = (profession.role_spread && Array.isArray(profession.role_spread.deviating_roles)) ? profession.role_spread.deviating_roles : []
+    let best = null
+
+    groups.forEach((group) => {
+        if (!Array.isArray(group.roles) || group.roles.length === 0) return
+        const factors = { ...rating.factors }
+        ;(group.higher || []).forEach((slug) => { if (typeof factors[slug] === "number") factors[slug] = clamp10(factors[slug] + ROLE_SHIFT) })
+        ;(group.lower || []).forEach((slug) => { if (typeof factors[slug] === "number") factors[slug] = clamp10(factors[slug] - ROLE_SHIFT) })
+
+        const fit = weightedMatch(factors, rating.weights, studentVector)
+        if (fit.score === null) return
+        if (!best || fit.score > best.fit.score) best = { fit, group }
+    })
+
+    if (!best || base.score === null || best.fit.score <= base.score) return null
+    return best
+}
+
 const scoreOne = ({ profession, rating, studentVector, journey, candidate }) => {
-    const comfort = weightedMatch(rating.factors, rating.weights, studentVector)
+    const whole = weightedMatch(rating.factors, rating.weights, studentVector)
+    const role = bestRoleGroup(profession, rating, studentVector, whole)
+    const comfort = role ? role.fit : whole
     const cost = journeyMultiplier(profession, journey)
 
     // fit × exp(−effective_waste / τ). fit is the comfort match — the person against the work.
@@ -91,6 +120,11 @@ const scoreOne = ({ profession, rating, studentVector, journey, candidate }) => 
 
         comfortScore: comfort.score,
         comfort: comfort.score !== null && comfort.score >= COMFORT_THRESHOLD,
+        // the role group that fits better than the career as a whole, when one does
+        bestRoles: role ? { roles: role.group.roles, why: role.group.why || null, wholeCareerFit: whole.score } : null,
+        // the student's degree already leads here (degree_families.json) — no restart, and the
+        // card says so
+        degreeCounts: degreeCounts(profession, journey),
 
         // Stored, never displayed, never an input. See similarity.js.
         match_confidence: comfort.match_confidence,

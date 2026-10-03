@@ -16,6 +16,20 @@ const scoreVerbalMemory = (block) => {
         return { score: null, quality: null, flags }
     }
 
+    // NOT TRUSTED IN FULL UNLESS THE STUDENT CONFIRMED IT (backend review #11). Before, a number read
+    // from a screenshot counted at full quality whether or not its owner agreed with it.
+    //   unconfirmed — used, marked partial and flagged;
+    //   disputed    — used, marked partial and sent for admin review. NOT dropped: if pressing
+    //                 "that's not my score" removed the result, it would be a way to erase a low one
+    //                 (externalTestsRouter.js makes the same point about the stored block).
+    const confirmed = Boolean(block.studentConfirmedAt) && !block.disputedAt
+    if (block.disputedAt) {
+        flags.verbal_memory_disputed = true
+        flags.admin_review = true
+    } else if (!confirmed) {
+        flags.verbal_memory_unconfirmed = true
+    }
+
     // outside the instrument's own range means the extraction is wrong, not that the student is
     if (block.your_score < 0 || block.your_score > MAX_SCORE) {
         flags.verbal_memory_out_of_range = true
@@ -32,7 +46,7 @@ const scoreVerbalMemory = (block) => {
 
     return {
         score: round2(clamp(block.your_score / MAX_SCORE, 0, 1) * 10),
-        quality: "full",
+        quality: confirmed ? "full" : "partial",
         flags,
     }
 }

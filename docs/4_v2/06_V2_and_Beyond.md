@@ -1,109 +1,203 @@
 # Version 2 and Beyond
-## What is deliberately NOT in V1
+## Future scope only
 
-Everything here was considered and deferred. Each entry records why, and what triggers it.
+Everything here is **not built**. Each entry says why it waits and what should trigger it. What has
+been built lives in `docs/3_handover/HANDOVER.md` (Part 5 is the record), not here. When something
+below ships, delete it from this file and record it there.
 
 **The point of this document:** stop good ideas being re-litigated, and stop them being forgotten.
 
+*Rewritten in Round 10 (October 2026). Earlier versions of this file, which mixed done and not-done,
+are in git history.*
+
 ---
 
-# V1.1 — SOON AFTER LAUNCH
+# SOON — before or just after real students
+
+## Specific programmes and cut-offs
+Round 11 added the exam calendar, where to study (by discipline) and a master's summary. Still not
+built: the specific programme at each college, seat counts and last year's cut-offs or closing ranks.
+They change every year and differ by category and state quota, so they need a source that is checked
+every admission cycle — never a number from memory.
+
+## AI cost — the measured next steps
+Every Claude call is now logged and the admin "AI usage" card shows the month. Once a month of real
+numbers exists:
+- **Model for the monthly jobs:** run the data refresh, scout and study bot on Sonnet 5.5 *once*,
+  side by side with Opus 5.5 on 20 careers, compare, then set `REFRESH_MODEL` for good. Nothing is
+  ever generated twice after that.
+- **Batch API** (half price, answers within hours) for the monthly jobs — only after confirming in
+  Anthropic's docs that web search works inside a batch. If it does not, those jobs stay as they are.
+- **Haiku for simple grading items**, only after an eval against the current grades.
+
+## Parent consent by SMS
+Parent consent is verified by an emailed code today (`/parent-consent`). Add the same flow by SMS for
+parents without email: an Indian DLT-registered sender and template, a 6-digit code, the same
+expiry, attempt and resend limits, and rate limits.
+
+**Not phone OTP for student login** — see Considered and rejected.
+
+## Accommodated versions of the timed tasks
+Today a student who declares a need can skip an affected timed task, and it is recorded as "not
+measured", never as low. The next step is to offer adapted versions instead of only skipping:
+- a larger-target SART;
+- untimed digit span with audio;
+- a screen-reader-friendly reasoning set.
+
+Each adapted version must be normed separately before its score counts.
+
+## A committed end-to-end test suite
+The browser and API suites used in the cloud sessions (`uiFlow`, `round3/5/6`, the Round 10 suites,
+the API suite) are scratch scripts outside the repo. Turn them into a committed Playwright suite with
+a seeded test database, and run it in CI.
+
+## Paid background workers
+On the free plan both workers and the housekeeping jobs run inside the web service, and the uptime
+ping keeps it awake. Once traffic justifies it:
+- switch to Render starter workers (about $7 a month each), using the commented block in
+  `render.yaml`;
+- set `RUN_WORKERS_IN_WEB=false`.
+
+## Report filters — keep or delete
+The AI, demand and pay filters were taken off the report page in Round 6. `missedBy`, `optionCounts`
+and `hasData` in `Report/reportFilters.js` are fixture-covered and unused. Either:
+- bring them back as a "refine" drawer, if students ask; or
+- delete them together with their fixtures.
 
 ## Hindi language support
-**Deferred because** story equivalence across languages needs native adaptation and back-translation checking, plus 8 human audio recordings per language. That is weeks of work by people who are not you, and it blocks nothing in English.
+**Deferred because** story equivalence across languages needs native adaptation and back-translation
+checking, plus 8 human audio recordings per language.
 
-**Needs:** English master → LLM translation → bilingual human edit → back-translation → fact-list comparison → 2 reviewers agreeing on difficulty within 1 point → human audio recording at ~130 wpm.
+**Needs, in order:**
+1. English master → LLM translation.
+2. A bilingual human edit.
+3. Back-translation and a fact-list comparison.
+4. Two reviewers agreeing on difficulty within 1 point.
+5. Human audio recording at about 130 wpm.
 
-**Trigger:** when a meaningful share of pilot students select Hindi as preferred language at intake. That field is collected from day one specifically to answer this.
+**Trigger:** a meaningful share of students choosing Hindi at intake.
 
-**Note:** open-ended answers already accept English, Hindi, or a mix in V1. Only the *presented* material is English-only.
+Written answers already accept English, Hindi or a mix; only the material we present is English-only.
 
-## Replace the reasoning instrument
-**The single highest-priority upgrade in the whole product.** Reasoning feeds six downstream factors and currently rests on a 10-item free external sample that is copyrighted commercial practice material and offers one form only.
-
-**Replacement:** ICAR (International Cognitive Ability Resource) — openly available, documented in Condon & Revelle (2014). Its four subtests map onto verbal, matrix, letter–number and 3D rotation.
-
-**Gains:** removes a screenshot, removes the one-attempt limitation, removes the licensing question, and gives real per-item timing instead of a self-reported average.
-
-**Trigger:** immediately after pilot.
-
-## Displaying per-profession match confidence
-
-**The number is computed and stored from V1.** What is deferred is only showing it to students.
-
-```
-match_confidence = 1 − (weight of missing factors in THIS profession ÷ total weight)
-```
-
-If reasoning is null, Software Engineer (reasoning at 0.25) scores 0.75 while Sales Manager (0.05) scores 0.95 — the same gap damaging one match and barely touching another.
-
-**Deferred because** it puts an uncertainty mark on individual recommendations, which is a concept a student has to decode, and there is no evidence yet that low-confidence matches are actually worse.
-
-**Trigger:** Stage 4b in the Learning From Data roadmap — at 150 recommendations containing a null, compare mentor override rates and 6-month outcomes between high and low confidence groups. Display it if the difference is real; drop the field if it is not.
-
-## Mental rotation — one real domain ability
-
-The battery currently measures **general reasoning ability plus felt affinity** for seven domains. It does not measure spatial, musical, bodily or naturalistic ability at all, because the MI block is self-report.
-
-**If one real domain ability is added, make it spatial.** Mental rotation is buildable in a browser in about a week, it is the most career-relevant of the untested domains (engineering, design, surgery, architecture), and it is where self-rating and measured performance diverge most.
-
-Musical, bodily and naturalistic ability are not practically testable in a browser and should stay as affinity measures.
-
-**Free precursor, available from V1:** `MI_L` is self-rated logical ability while Reasoning is measured. **The gap between them is a domain-specific calibration signal** — a student rating themselves high on logical while scoring low on reasoning is over-confident in that area. Store both and compute the gap; it costs nothing and it previews what a spatial task would give you across a second domain.
-
-## Second calibration item for uncertainty tolerance
-U7 is currently a single item driving `risk_uncalibrated`. Two items is still thin but twice as reliable, and would let the flag move from qualifying a score to acting on it.
+## Design polish
+One design pass shipped (Kira-style, teal and navy, a pink accent, Orelega One + Lato). Still to do
+after launch: a deeper motion, illustration and brand system.
 
 ---
 
-# V2 — AFTER 150+ RESPONSES
+# V2 — AFTER 150+ COMPLETED ASSESSMENTS
+
+## Norms for the in-house reasoning test
+The in-house reasoning test (`assessment/reasoningBank.js`) is scored `correct ÷ 16 × 10` and flagged
+`provisional_norms`. Once there are enough answers:
+1. Estimate each item type's difficulty from real answers, and check that the generator's
+   difficulty steps are real steps.
+2. Replace raw-share scoring with age-band percentile bands.
+3. Drop the "provisional" label at 500+ answers per age band.
 
 ## Item analysis and the first instrument revision
-The first MAJOR `instrument_version` bump. Expect to cut 4–6 questions with no information loss.
+The first MAJOR `instrument_version` bump. Expect to cut 4–6 questions with no loss of information.
+This covers the questionnaires and the reasoning bank.
 
-**Requires the instrument to have been frozen for the first 150 responses.** Batch all changes into one release — fixing one question in March and another in April splits the data into pools too small to analyse.
+**It needs the instrument frozen for the first 150 responses.** Batch every change into one release —
+fixing one question in March and another in April splits the data into pools too small to analyse.
 
-## Provisional norms
-Raw scores become percentile bands. The "provisional" label stays visible until 500+ per age band.
+## Provisional norms for every factor
+Raw scores become percentile bands, and the "provisional" label stays visible until there are 500+
+per age band.
 
-**Needed first:** enough responses per age band, and a check for ceiling or floor effects above 20% on any factor.
+**Needed first:** enough responses per age band, and a check for ceiling or floor effects above 20%
+on any factor.
 
-## RIASEC interests
-The evidenced replacement for using Multiple Intelligences as a proxy for interest. O\*NET Interest Profiler is public domain, and O\*NET already publishes RIASEC codes for occupations — meaning a large share of the 223 professions could inherit validated interest matching rather than being hand-rated.
+## RIASEC in matching
+The O\*NET Interest Profiler answers are collected (`interests60`). Today they only strengthen the
+intelligence scores, and the six RIASEC totals are stored but never shown or matched. O\*NET publishes
+RIASEC codes for occupations, so:
+1. Map the 223 careers to O\*NET occupation codes, by hand-checked crosswalk.
+2. Give each career a RIASEC code.
+3. Add interest fit as a matching input **alongside** the 31 factors, not instead of them.
 
-**Would sit alongside MI, not replace it** — MI stays as a diversity layer in the profile.
-
-## IPIP-NEO-120 for conscientiousness facets
-IPIP-50 gives domain scores only. Self-discipline and achievement-striving — the two facets most relevant to consistency — are not separable. NEO-120 costs ~10 extra minutes and would matter if consistency becomes a headline output.
+It needs its own fixtures and a version bump.
 
 ## Adaptive item selection
-Stop asking questions whose answer is already predictable from earlier responses. Could cut 20–30% of assessment length at no cost to reliability.
+Stop asking questions whose answer is already predictable from earlier responses. This could cut
+20–30% of the assessment's length at no cost to reliability.
 
-**Needs:** item-level response data from 300+ students. Genuinely cannot be built earlier.
+**Needs:** item-level response data from 300+ students. It genuinely cannot be built earlier.
 
 ## Longitudinal delay comparison
-The 24-hour vs same-session question, settled with data rather than argument. `delay_minutes` is stored on every record from V1 precisely so this is possible later.
+The 24-hour versus same-session question for story recall, settled with data. `delay_minutes` is
+stored on every record for exactly this.
 
-## Mentor / counsellor portal
-Currently `mentor_overrides` is a schema field with no interface. Fifty logged overrides will teach you more about Baseline_Rating errors than a thousand assessments will.
+## Mentor tier — full automation
+V1 has mentor onboarding, a paid waitlist and admin matching within 20 business days. Still to build:
+- automatic mentor-to-student matching, keyed on the student's chosen career;
+- in-app scheduling for the two sessions (a 1-hour clarity session and a 20-minute follow-up);
+- session delivery and mentor payouts;
+- **a mentor / counsellor portal** for `mentor_overrides` (a schema field with no interface today),
+  and the loop that refreshes the baseline ratings from those overrides. Fifty logged overrides will
+  teach more about rating errors than a thousand assessments. **Trigger:** about 50 overrides.
+
+## Payments — Razorpay live
+V1 runs in `manual` payment mode. Razorpay is built and dormant behind `PAYMENT_MODE`.
+- Turning it on is blocked on Razorpay KYC. It is the same `grantAccess` seam, so there is no rework.
+- Razorpay Offers could replace the server-side coupon maths.
+
+## Auth — richer flows
+- Magic-link login.
+- Redis-backed rate limiting, needed only once there is more than one server instance.
+
+## ⚠ DPDP under-18 behavioural tracking
+There is still **no events collection, no counters and no `dwell_ms`** anywhere — which is the safe
+state, because no per-child trail exists. What is lost until then is the content signal "is this
+career ever expanded?".
+
+**⚠ THE TRAP:** the split between aggregate and per-user data must be in place the **first time a single
+event is written**. Ship both halves in the same release, or every event in the gap is a per-child
+behavioural record that should never have existed.
+
+## Data refresh into the source files
+The monthly refresh's approved values are a database layer, and are exported as a patch
+(`tools/applyDataPatch.js`). If the per-sector source files behind `ALL-professions.json` come back
+into the repo, the patch should write to them instead.
 
 ---
 
 # V3 — AFTER OUTCOME DATA (18–24 MONTHS)
 
-## Fitted weights
-Every weight in the model is currently expert judgement. Replacing them needs 220–440 students who completed **and** returned 6–12 months later.
+The 6- and 12-month follow-up now runs (a monthly scan from each student's latest assessment, emailed form). The first answers arrive six months
+after the first real reports. Everything below waits for them.
 
-Ridge regression, 80/20 split. **If fitted weights do not beat equal weights on the held-out set, keep equal weights** — a common result and not a failure.
+## Fitted weights (machine learning)
+Every weight in the model is expert judgement today. Replacing them needs 220–440 students who
+completed the assessment **and** answered the follow-up.
 
-## Learned ranking for Part 2
-Target = outcome satisfaction. **Never clicks.** Tuning on engagement would learn to surface pilot, actor and entrepreneur, and would look like it was improving the entire time it got worse.
+The method:
+- ridge regression with an 80/20 split;
+- **if fitted weights do not beat equal weights on the held-out set, keep equal weights.** That is a
+  common result and not a failure.
+
+No model fine-tuning is involved; the AI only writes text and grades answers.
+
+## Learned ranking
+The target is outcome satisfaction from the follow-up. **Never clicks:** tuning on engagement would
+learn to surface pilot, actor and entrepreneur, and would look like it was improving the entire time
+it got worse.
+
+## Showing match confidence beside a career
+Students see "Partial · N% measured" today, which is coverage, not confidence. Whether a separate
+confidence mark helps is a question for outcome data. At about 150 recommendations containing a null,
+compare follow-up outcomes between the high- and low-coverage groups:
+- if low-coverage matches really fare worse, say so more strongly;
+- if they do not, keep the plain coverage line.
 
 ## Professional benchmarking at scale
-15–20 professions × 20–30 professionals, compared on **ipsatised profile shape**, never absolute levels — because a professional's profile is an endpoint shaped by years in the role, not an entry requirement, and they are older than students in ways that affect processing speed directly.
+15–20 careers × 20–30 professionals each, compared on **ipsatised profile shape**, never absolute
+levels. A professional's profile is an endpoint shaped by years in the role, not an entry requirement.
 
 ## Correcting effective-weight leakage
-The effective-weight table shows emotional stability stated at 0.20 in firmness but running at 0.270 across all paths. Left uncorrected in V1 by decision. Worth revisiting once weights are fitted rather than judged.
+Emotional stability is stated at 0.20 in firmness but runs at 0.270 across all paths. It was left
+uncorrected in V1 by decision. Revisit once the weights are fitted rather than judged.
 
 ---
 
@@ -113,157 +207,13 @@ Not "later" — decided against.
 
 | Idea | Why not |
 |---|---|
-| **Fine-tuning an LLM on responses** | Wrong tool. Rubric scoring and report writing are both controlled better by prompts, and fine-tuning freezes the rubric into weights so every revision means retraining. Rubric tightening plus worked examples gets you there. |
-| **Lateral thinking as a factor** | Built from four of the same inputs as divergent thinking. Would correlate ~0.8 and add a dimension without adding discrimination. |
-| **Introversion as a separate factor** | The low pole of Extraversion, already measured. What was actually wanted was self-knowledge, now Factor 20. |
-| **Grit as its own scale** | Credé et al. (2017): grit is largely conscientiousness relabelled. Conscientiousness at 0.35 in consistency is the honest version. |
-| **Optimising recommendations on clicks** | Would systematically degrade advice while every dashboard metric improved. |
-| **Phone OTP for student login** | SMS pumping fraud. Parent consent OTP is different — one per account, after signup, rate-limited. |
-| **Imputing averages for invalid modules** | Records a measurement that was not taken and becomes invisible downstream. |
-| **Values gap in the Part 1 report** | Directional rather than developmental, and a difference score compounds the error of both measures it is built from. Stays as Part 2 input. |
-
----
-
-# THE ONE THING THAT CANNOT WAIT
-
-**The 6- and 12-month follow-up must ship in V1.**
-
-It is a scheduled job and an email template. But a follow-up added in month 12 produces no usable data until month 18, and every V3 item above depends on it.
-
-Nothing else in this document is time-sensitive in the same way. Everything else can be added when it is needed; this one has to exist before it is needed.
-
----
-
-# ADDENDUM — PRODUCT & PLATFORM DEFERRALS (added during the V1 build)
-
-The sections above cover the *psychometric instrument*. This addendum records everything
-deferred on the *product/platform* side (auth, payments, mentor tier, public site, ops) so it
-isn't re-litigated or lost.
-
-## Mentor tier — full automation (V2)
-V1 ships mentor **onboarding + a paid waitlist + manual admin matching within 20 business days**.
-Deferred to V2:
-- Automated mentor↔student matching (keyed on the student's chosen profession)
-- In-app scheduling / calendar for the two sessions (1-hr clarity + 20-min follow-up)
-- In-app session delivery and mentor payouts
-- **The mentor-override → Baseline_Rating refresh loop** — re-scoring profession factors using
-  mentor-override data. Deferred not because it's hard but because it has no fuel in V1 (no
-  mentor sessions exist yet). Switches on once mentor session/override data accumulates.
-  **Trigger:** ~50 logged mentor overrides.
-
-## Payments — Razorpay live + upgrade automation (V2/go-live)
-V1 launches in **`manual` payment mode** (student requests access → admin collects offline →
-admin Grants via `grantAccess`). Razorpay is fully built but **dormant** behind `PAYMENT_MODE`.
-Deferred:
-- Flipping `PAYMENT_MODE=razorpay` with live keys — blocked on **Razorpay KYC**, which needs the
-  **Pvt Ltd company registration + business bank account** (CA-led, real timeline). Same
-  `grantAccess` seam, so the switch is zero-rework.
-- Razorpay Offers/coupons wired natively (V1 computes discounts server-side + records them).
-
-## Auth — richer flows (V1.1)
-V1 has email+password+JWT+bcrypt, Google OAuth, forgot-password. Deferred: magic-link login,
-and hardening (Redis-backed rate limiting — only needed once running >1 server instance).
-
-## Parental consent — verified OTP (V2)
-V1 is a **self-declared checkbox** with a parent's name + mobile; nobody is age-blocked.
-`Consent.isTemporary: true` on every row so V2 can find everyone to re-consent. V2 replaces it
-with a **verified parent-OTP flow** — gated on the **DPDP legal sign-off** (a lawyer's hour on
-parental consent + minor behavioural-tracking).
-
-## ⚠ DPDP under-18 behavioural tracking (DEFERRED to V2 — Day 4 §2.1)
-Contrary to an earlier plan, this was **deferred, not built in V1**. Today there is **no events
-collection, no counters, no `dwell_ms` anywhere** — which is the *safe* state (no per-child trail
-exists). What's lost until V2: the "is this profession never expanded?" content-quality signal.
-**⚠ THE TRAP:** the aggregate-vs-per-user split must be in place the **first time a single event
-is ever written**. If V2 ships events, it ships BOTH halves in the same release — otherwise every
-event in the gap is an un-collectable per-child behavioural record that shouldn't exist.
-
-## ⚠ 6- and 12-month follow-up (DEFERRED to V2 — Day 4 §2.2)
-Contrary to the Part-1 brief's "must ship in V1" and my earlier plan, the owner **deferred this to
-V2** on 2026-09-24. Consequence stated plainly: first outcome data now arrives 6 months after *V2*
-ships, not V1 — so every weight in `constants.js` / `baseline_rating.json` stays an approved guess
-until then. **The cheap mitigation, already done:** `report.generatedAt` + a contactable email are
-captured on every V1 record, so V2 can retrospectively mail the whole V1 cohort. **DO NOT delete or
-overwrite `reports.generatedAt`** — it's the anchor the deferred job will use. This remains the
-single highest-value thing to build early in V2.
-
-## match_confidence display (V1.1)
-Computed + stored per profession from V1; **never displayed, never an input**. Shown to students
-only after Stage-4b validation proves low-confidence matches are actually worse (mentor-override
-rates / 6-month outcomes at ~150 null-containing recommendations).
-
-## Aspiration coverage gaps (ongoing admin)
-Unmatched aspirations (`professionId: null`) are kept, not discarded — they are exactly the
-careers the 223-profession taxonomy doesn't yet cover. Review them **as a set** periodically;
-they're the demand-driven signal for what to add to the taxonomy next.
-
-## Design — the full visual system (V1.1 polish)
-V1 gets one design pass (Kira-style, light-mode, teal-navy, pastel-pink `#FFB3C7` accent,
-Orelega One + Lato). Deeper motion/illustration/brand system is post-launch polish.
-
-## Content review debts (pre-real-launch, not V2)
-- `problemPrompts.js` — 132 interest-form prompts, some sensitive (discrimination, illness,
-  family money) — need a human read-through before real students.
-- **The report prompt** (`reportComposer.js`, now `report@2.0.0`) — owner must approve before it
-  runs on a real (mostly-minor) student.
-- **90 withheld nuances** — excluded from students for builder-phrasing/raw identifiers; several
-  are genuinely useful and a copy pass would recover them. Plus nuances still saying "taxonomy"/
-  "Sector 5" (meaningless to a student) need a copy review.
-- **`profession.filter` is unused** — 12 professions marked `filter: false` (Anganwadi Educator,
-  Sanitation Worker, Commercial Driver, Housekeeping…) are ranked and shown today. Owner decides:
-  wire the flag on, or keep them shown (their own nuances argue listing them is the point).
-- Pre-email-verification legacy accounts can't pay until `isEmailVerified` is set.
-
-## Never validated on real hardware (pre-real-launch)
-- **SART's 20ms timing gate has never run on a low-end Android.** The refusal path is proven safe,
-  but if most cheap Androids fail the gate, that's a product decision (loosen the gate, or ship
-  without processing speed) — not a code fix.
-- **The external tests have never hit the live vision API** — every gate is fixture-proven with a
-  stubbed Haiku client; no real screenshot has been through Haiku 4.5. Validate before real use.
-
-## ~~THE STANDING V1 TASK — get everything into git~~ ✅ done
-Committed (`269dfa5`) and, since Day 5, everything lives on GitHub and deploys from `main`.
-
----
-
-# ADDENDUM 2 — DEFERRED DURING DAY 5 (the cloud session, Sept 2026)
-
-## Report output — a deeper, journey-shaped report (next build)
-The report shows names, then one expandable card per career. The owner judges it superficial: a
-student should learn **what to do next**, not just which careers fit. `ALL-professions.json` holds
-far more than the report uses. The brainstorm is `docs/2_build/Report_Output_Brainstorm.md`.
-
-## Backend-review findings not yet fixed (V1.1 — before real volume)
-From the read-only review in Round 6 (the three high-severity ones were fixed in Round 7):
-- **Forbidden-term rejection** matches plain English ("data quality"), which a student's own words
-  can trigger; the report job then fails. It now ends in "failed + Try again", not a spinner — fix
-  the matcher (engine identifiers only) and add a safe fallback.
-- **A resubmit during an active job can be lost**, and the old report then looks fresh. Needs a
-  `sourceSubmittedAt` on the report and a re-enqueue when the submission changed mid-job.
-- **`reports.generatedAt` is overwritten on every run** — against the rule above. Use
-  `$setOnInsert` + a separate `lastGeneratedAt`.
-- **Story recall:** a missing free-recall answer counts as zero instead of being rescaled.
-- **Digit span:** an abandoned attempt scores as a full-quality 0 (`completedAt` ignored).
-- **`savePsychometric` accepts server-owned fields** (digit-span correctness, grades, percentiles) —
-  allow-list per module.
-- Low: the age hard filter reads `journeyDetail.age` instead of `user.age`; undergrad waste is
-  non-monotonic (spec question); a 429 is treated as non-transient in report retries;
-  `getMyReport.readiness` sends raw confidence numbers the page doesn't render.
-
-## Report filters (removed from the page, kept in code)
-The owner removed the AI / demand / pay filters from the report (Round 6) — students found them
-noisy. `missedBy`, `optionCounts`, `hasData` in `Report/reportFilters.js` stay, fixture-covered and
-unused. Bring back as a "refine" drawer only if students ask; otherwise delete with their fixtures.
-
-## Ops
-- **Paid background workers** (Render starter, $7/month each) once traffic justifies it — the
-  commented block in `render.yaml`; set `RUN_WORKERS_IN_WEB=false`.
-- **Uptime ping** (UptimeRobot, 10 min) — needed on the free plan; not needed on a paid instance.
-- **Admin alert on a failed report** — today it is a loud log line plus `User.reportFailedAt`; an
-  admin list or an email would surface it without reading logs.
-- The browser and API test suites used in the cloud session were scratch scripts; make a committed
-  e2e suite (Playwright) part of the repo.
-
-## Legal
-- DPDP lawyer review of `/terms` and `/privacy`; confirm the Grievance Officer.
-- Verified parental consent (above) — the privacy page already promises it is coming.
+| **Fine-tuning an LLM on responses** | Rubric scoring and report writing are controlled better by prompts. Fine-tuning freezes the rubric, so every revision means retraining. |
+| **Lateral thinking as a factor** | Built from four of the same inputs as divergent thinking. It would correlate about 0.8 and add a dimension without adding discrimination. |
+| **Introversion as a separate factor** | It is the low pole of Extraversion, which is already measured. |
+| **Grit as its own scale** | Credé et al. (2017): grit is largely conscientiousness relabelled. The persistence items feed consistency; they are not a separate score. |
+| **IPIP-NEO-120 for facets** | About 10 extra minutes for facets that matching never uses. Consistency is already built from conscientiousness, focus, decision-making and the persistence items (owner, Round 10). |
+| **Optimising recommendations on clicks** | It would degrade the advice while every dashboard metric improved. |
+| **Phone OTP for student login** | SMS-pumping fraud. Parent consent by SMS is different: one per account, after signup, rate-limited. |
+| **Imputing averages for invalid or skipped modules** | That records a measurement that was never taken, and it becomes invisible downstream. A skipped task is "not measured". |
+| **Values gap in the report** | It is directional rather than developmental, and a difference score compounds the error of both measures it is built from. |
+| **Scraping LinkedIn or X for the data refresh** | Terms of service, legal risk, and personal data under the DPDP Act. Only licensed APIs and published reports are used. |

@@ -9,9 +9,24 @@ the one they chose, and where they are now.
 
 > **Round 6 (owner, 2026-09-24):** rewritten as three realistic stories, one per audience (school,
 > college, early career), with plausible timelines and careers under their real taxonomy names.
-> They are representative composites, not individual students. The page carries ONE quiet note at
-> the bottom (owner's choice): *"Names and details changed; stories are representative of real
-> student journeys."* The earlier per-card "(Illustrative example.)" labels stay removed.
+> They are representative composites, not individual students.
+
+> **Round 10 (owner, 2026-10-01):** the cards are now light testimonials — a quote, the name and
+> where they started, and the career they chose — with the full story folded under "Read the
+> story". Renamed **Dhvanika** (Class 12, PCM — she), **Dhriti** (B.Com 2nd year — she) and
+> **Raghav** (2 years in IT support — he). **Illustrative, clearly marked** (owner's choice): an
+> "Illustrative" badge on every card and a line above them — *"Illustrative examples. These are not
+> real students — they are representative of the journeys we see, with names and details
+> invented."* The quotes:
+> - Dhvanika: "Everyone said JEE, then computer science. I had never even heard of product design —
+>   now it's the thing I wake up wanting to do."
+> - Dhriti: "I thought caring about the planet meant giving up commerce. It turns out my accounts
+>   classes are exactly what ESG work runs on."
+> - Raghav: "I assumed switching meant quitting and a two-year degree. It took one certification and
+>   eight months — from the same desk."
+>
+> The stories below keep their original names; read Aarav as Dhvanika (she), Meera as Dhriti and
+> Rohan as Raghav.
 
 ---
 

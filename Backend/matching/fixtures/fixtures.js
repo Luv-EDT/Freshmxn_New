@@ -328,9 +328,27 @@ const fixtures = [
         expect: { years: 2 },
     },
     {
-        name: "undergrad year 3 is waste at 0.5 a year — close to done, skills carry",
+        name: "undergrad year 3 adds 0.5 on top of years 1-2 — close to done, skills carry",
+        // Round 10 (owner-approved fix, backend review #16): the late rate applies to the years
+        // from 3 on, not to all of them, so a later year never counts as less invested.
         run: () => wasteFor(professions[0], { stage: "college", stream: [], preAdmission: false, courseYear: 3 }),
-        expect: { years: 1.5 },
+        expect: { years: 2.5 },
+    },
+    {
+        name: "undergrad switching cost never falls as the years go up",
+        run: () => {
+            const years = [1, 2, 3, 4].map((courseYear) => wasteFor(professions[0], { stage: "college", stream: [], preAdmission: false, courseYear }).years)
+            return years.every((value, index) => index === 0 || value >= years[index - 1]) ? null : `not monotonic: ${years.join(", ")}`
+        },
+        expect: null,
+    },
+    {
+        name: "the age limit reads the student's own age",
+        run: () => {
+            const { readJourney } = require("../journey")
+            return readJourney({ journey: "early_professional", age: 66, journeyDetail: {} }).age
+        },
+        expect: 66,
     },
     {
         name: "after_any_degree waives study waste entirely — finish, then switch",
@@ -778,6 +796,98 @@ const fixtures = [
             { id: "near", profession: "Near", embedding: [1, 0.1] },
         ], 2).map((entry) => entry.id),
         expect: ["near", "far"],
+    },
+
+    // ── Round 10: role groups and the student's own degree ───────────────────────────────────────
+    {
+        name: "role groups: a student who fits a role group better gets that group, and the fit only rises",
+        run: () => {
+            const { runProgramThree } = require("../program3")
+            const rating = { id: "rg-x", factors: { openness: 5, conscientiousness: 5 }, weights: { openness: 1, conscientiousness: 1 } }
+            const wide = { id: "rg-x", profession: "Wide", mid_stream_entry: "open", role_spread: { spread: "wide", deviating_roles: [{ roles: ["Role A"], higher: ["openness"], lower: [], why: "needs more openness" }] } }
+            const narrow = { ...wide, role_spread: { spread: "narrow", deviating_roles: [] } }
+            const run = (profession, vector) => runProgramThree({
+                candidates: [{ professionId: "rg-x" }], studentVector: vector, professions: [profession],
+                baselineById: { "rg-x": rating }, journey: { stage: "class9_10", stream: [] },
+            }).ranked[0]
+            const open = run(wide, { openness: 7, conscientiousness: 5 })
+            const plain = run(narrow, { openness: 7, conscientiousness: 5 })
+            const away = run(wide, { openness: 3, conscientiousness: 5 })
+            if (!open.bestRoles || open.bestRoles.roles[0] !== "Role A") return "the matching role group was not named"
+            if (!(open.comfortScore > plain.comfortScore)) return "the role group should lift the fit above the whole career's"
+            if (plain.bestRoles !== null) return "a narrow career has no role groups"
+            if (away.bestRoles !== null || away.comfortScore !== run(narrow, { openness: 3, conscientiousness: 5 }).comfortScore) return "a group that fits worse must change nothing"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "degree: a B.Tech Civil student pays no switching cost for Civil Engineer; a B.Com student still does",
+        run: () => {
+            const { wasteFor, degreeCounts } = require("../journey")
+            const civil = { id: "eng-civil-engineer", mid_stream_entry: "restart_undergrad", class12_prerequisite: ["physics", "chemistry", "maths"] }
+            const journey = (degree, subject) => ({ stage: "college", stream: [], preAdmission: false, courseYear: 2, degree, subject })
+            const own = wasteFor(civil, journey("btech", "civil"))
+            const other = wasteFor(civil, journey("bcom", null))
+            if (!degreeCounts(civil, journey("btech", "civil"))) return "B.Tech Civil should count for Civil Engineer"
+            if (own.years !== 0) return `own degree should cost nothing, got ${own.years}`
+            if (!(other.years > 0)) return "an unrelated degree should still cost years"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "degree: every career id in degree_families.json exists, and every key is a real degree option",
+        run: () => {
+            const families = require("../../data/degree_families.json")
+            const options = require("../../data/degree_options.json")
+            const ids = new Set(require("../../data/ALL-professions.json").professions.map((profession) => profession.id))
+            const unknown = [...families.any_bachelors, ...Object.values(families.by_degree).flat()].filter((id) => !ids.has(id))
+            if (unknown.length > 0) return `unknown career ids: ${[...new Set(unknown)].join(", ")}`
+            const badKeys = Object.keys(families.by_degree).filter((key) => {
+                const [family, subject] = key.split(":")
+                const option = options.families.find((entry) => entry.id === family)
+                return !option || (subject && !option.subjects.some((entry) => entry.id === subject))
+            })
+            return badKeys.length > 0 ? `keys that are not degree options: ${badKeys.join(", ")}` : null
+        },
+        expect: null,
+    },
+    {
+        name: "combined: shown only when both sides are lit, ordered by how high the sides sit, at most five",
+        run: () => {
+            const { findCombined } = require("../combined")
+            const data = {
+                groups: { photo: { label: "photography", careers: ["p1", "p2"] }, nature: { label: "nature", careers: ["n1"] }, law: { label: "law", careers: ["l1"] } },
+                careers: [
+                    { id: "cmb-wild", name: "Wildlife Photographer", sideA: "photo", sideB: "nature" },
+                    { id: "cmb-legal", name: "Legal Photographer", sideA: "photo", sideB: "law" },
+                ],
+            }
+            const entry = (id, comfortScore) => ({ professionId: id, profession: id, comfortScore, supportingFactors: [] })
+            const found = findCombined({ ranked: [entry("p2", 0.8), entry("x", 0.7), entry("n1", 0.6)], universe: null, data })
+            if (found.length !== 1 || found[0].combinedId !== "cmb-wild") return `expected only the wildlife one, got ${found.map((item) => item.combinedId).join(", ")}`
+            if (found[0].sideA.via !== "p2" || found[0].comfortScore !== 0.7) return `wrong side or fit: ${JSON.stringify(found[0])}`
+            if (findCombined({ ranked: [entry("p1", 0.9)], universe: null, data }).length !== 0) return "one lit side must not be enough"
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "combined: every career in combined_careers.json names real groups whose careers all exist",
+        run: () => {
+            const data = require("../../data/combined_careers.json")
+            const ids = new Set(require("../../data/ALL-professions.json").professions.map((profession) => profession.id))
+            const problems = []
+            Object.entries(data.groups).forEach(([key, group]) => group.careers.filter((id) => !ids.has(id)).forEach((id) => problems.push(`${key}: ${id}`)))
+            data.careers.forEach((career) => {
+                if (!data.groups[career.sideA] || !data.groups[career.sideB]) problems.push(`${career.id}: unknown side`)
+                if (career.sideA === career.sideB) problems.push(`${career.id}: both sides are the same group`)
+            })
+            if (new Set(data.careers.map((career) => career.id)).size !== data.careers.length) problems.push("duplicate ids")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
     },
 ]
 

@@ -154,4 +154,21 @@ const attachConnectionLogging = (emitter, label) => {
     })
 }
 
-module.exports = { addOnce, IN_FLIGHT, attachConnectionLogging, withDnsWorkaround, idleTimings }
+// ── a bound on "Redis is unreachable" ──────────────────────────────────────────────────────────
+//
+// With maxRetriesPerRequest: null (which BullMQ requires) a first connection that never comes up
+// does not fail — it waits, forever, and the student's Submit request hangs with it (backend review
+// #17). A finite retry count does not bound that first wait either: the queue waits for 'ready'. So
+// the bound is here, around the call: after QUEUE_TIMEOUT_MS the request gives up with a clear error
+// and the caller decides what the student sees.
+const QUEUE_TIMEOUT_MS = Number(process.env.QUEUE_TIMEOUT_MS) || 8000
+
+const withTimeout = (promise, what) => {
+    let timer
+    const timeout = new Promise((resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(`timed out ${what} — the job queue did not answer within ${QUEUE_TIMEOUT_MS / 1000}s`)), QUEUE_TIMEOUT_MS)
+    })
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
+module.exports = { addOnce, IN_FLIGHT, attachConnectionLogging, withDnsWorkaround, idleTimings, withTimeout }

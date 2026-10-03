@@ -269,7 +269,7 @@ const byRawFit = (left, right) => (
     || String(left.professionId).localeCompare(String(right.professionId))
 )
 
-export const buildList = (ranked, switchList, primary, secondary, details = {}) => {
+export const buildList = (ranked, switchList, primary, secondary, details = {}, options = {}) => {
     const base = ranked || []
     let list
 
@@ -281,9 +281,32 @@ export const buildList = (ranked, switchList, primary, secondary, details = {}) 
         list = base.map(asListEntry)
     }
 
-    if (!secondary) return list
+    if (secondary) {
+        // Decorated copies: the position is the PRIMARY order, so a secondary tie keeps it.
+        const positioned = list.map((entry, index) => ({ ...entry, rankedPosition: index + 1 }))
+        list = sortRanked(positioned, secondary, details)
+    }
 
-    // Decorated copies: the position is the PRIMARY order, so a secondary tie keeps it.
-    const positioned = list.map((entry, index) => ({ ...entry, rankedPosition: index + 1 }))
-    return sortRanked(positioned, secondary, details)
+    // "Show first" (filter_rules.json's core_engineering_track, computed on the server as
+    // `coreEngineering`): a STABLE PARTITION — matching careers move up in their current order, the
+    // rest follow in theirs. Nothing is removed.
+    if (options.showFirst) {
+        const hit = (entry) => Boolean((details[entry.professionId] || {})[options.showFirst])
+        list = [...list.filter(hit), ...list.filter((entry) => !hit(entry))]
+    }
+
+    // THE ONE CONTROL THAT MAY HIDE ROWS (owner, 2026-09-30): "Leave out blue-collar careers", off by
+    // default. The list is data/blue_collar.json, reviewed by the owner; the page always says how
+    // many were hidden and that some of the most AI-proof careers are among them.
+    if (options.excludeBlueCollar) {
+        list = list.filter((entry) => !(details[entry.professionId] || {}).blueCollar)
+    }
+
+    return list
 }
+
+// The "Show first" choices. Only core engineering: the two manual-work presets in filter_rules.json
+// are covered by the blue-collar tag and its filter (owner, 2026-09-30).
+export const SHOW_FIRST = [
+    { value: "coreEngineering", label: "Core engineering and around it", hint: "Engineering careers and the roles around them move to the top. Nothing is hidden." },
+]

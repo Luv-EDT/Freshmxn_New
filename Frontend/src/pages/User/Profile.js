@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import ParentConsentBanner from "./ParentConsentBanner"
 import { useSelector, useDispatch } from "react-redux"
 import { Table, Collapse, message } from "antd"
 import dayjs from "dayjs"
@@ -189,6 +190,7 @@ function Profile() {
                 <h2>Your profile</h2>
 
                 {/* every section starts folded — the student opens what they came for */}
+                <ParentConsentBanner />
                 <Collapse items={panels} />
 
                 <p>

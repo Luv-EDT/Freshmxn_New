@@ -14,7 +14,11 @@ site and both workers (`render.yaml`, deploys from `main`).
   `{ success, message, data }`, one try/catch returning 500 per handler, double quotes, **no
   semicolons**, 4-space indent. Match the comment density of the file you're in.
 - Never show a student `match_confidence` or `data_quality`; confidence is never a score;
-  uncertainty tolerance is a position, not a level.
+  uncertainty tolerance is a position, not a level. The one owner-approved exception is the coverage
+  line "Partial · N% measured" (a share, never the raw field).
+- Disability answers never rank, hide or score a career; a skipped task is "not measured", never low.
+- Nothing from the data refresh or the careers scout changes the product without an admin approval,
+  and matching never reads the overrides.
 - The word "optional" never appears in student-facing assessment code.
 - Don't touch SART stimulus rendering (`Sart.js` stimulus block, `FONT_SIZES`, `sartTask.js`).
 - Prices come from the server (`GET /payments/getPricing`), never from copy.
@@ -27,8 +31,8 @@ site and both workers (`render.yaml`, deploys from `main`).
 ## Test before every commit
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
-node Backend/matching/fixtures/runFixtures.js    # 51/51
-node Backend/workers/fixtures/runFixtures.js     # 102/102
+node Backend/matching/fixtures/runFixtures.js    # 58/58
+node Backend/workers/fixtures/runFixtures.js     # 155/155
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

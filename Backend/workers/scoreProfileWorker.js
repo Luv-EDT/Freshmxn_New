@@ -24,6 +24,7 @@ require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
 const { Queue, Worker } = require("bullmq")
 const { addOnce, attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
+const { raiseIssue } = require("../utils/assessmentIssues")
 const mongoose = require("mongoose")
 
 const scoreProfile = require("../scoring/scoreProfile")
@@ -98,6 +99,15 @@ const runOne = async (userId, { lastAttempt = false } = {}) => {
         )
         submission.psychometric.perspective.open = graded.open
         console.log(`${QUEUE_NAME} ${userId} — graded ${Object.keys(graded.open).join(", ") || "nothing new"}`)
+
+        // On the last attempt a failed call is stored as a blank grade so the student still gets a
+        // report; the admin is told which written answers that cost them.
+        const lost = Object.entries(graded.meta || {})
+            .filter(([itemId, meta]) => graded.open[itemId] === null && meta && typeof meta.unscoreable_reason === "string" && meta.unscoreable_reason.startsWith("call_failed"))
+            .map(([itemId]) => itemId)
+        if (lost.length > 0) {
+            await raiseIssue({ user: userId, module: "perspective", kind: "grading_failed", detail: `written answers not graded: ${lost.join(", ")}` })
+        }
     }
 
     // The story's free recall, same separation: `freeText` is what the student narrated, `free` is
@@ -146,12 +156,35 @@ const runOne = async (userId, { lastAttempt = false } = {}) => {
                 components: profile.components || {},
                 values_profile: profile.values_profile || {},
                 completeness: profile.completeness || {},
+                factor_coverage: profile.factor_coverage || {},
+                // which submit this profile was scored from — the report page compares it with the
+                // latest submit to tell "up to date" from "a newer submit is still being worked on"
+                sourceSubmittedAt: submission.psychometricSubmittedAt || null,
             },
         },
         { upsert: true, returnDocument: "after" }
     )
 
     return profile
+}
+
+// A resubmit that lands WHILE this job is running is not picked up by it — the job read the
+// submission once, at the start — and addOnce hands back the running job instead of queueing a
+// new one. So once a job finishes, check whether a newer submit arrived meanwhile, and if it did,
+// run again. Done after completion because a re-enqueue from inside the job would find itself
+// still active and return itself.
+const rerunIfResubmitted = async (userId) => {
+    const [submission, profile] = await Promise.all([
+        Submission.findOne({ user: userId }, { psychometricSubmittedAt: 1 }).lean(),
+        Profile.findOne({ user: userId }, { sourceSubmittedAt: 1 }).lean(),
+    ])
+    const latest = submission && submission.psychometricSubmittedAt
+    const scoredFrom = profile && profile.sourceSubmittedAt
+
+    if (latest && (!scoredFrom || new Date(scoredFrom).getTime() < new Date(latest).getTime())) {
+        console.log(`${QUEUE_NAME} ${userId} — a newer submit arrived while scoring, running again`)
+        await enqueueScoreProfile(userId)
+    }
 }
 
 const start = async () => {
@@ -179,8 +212,13 @@ const start = async () => {
     // queueHelpers.js — a successful job once vanished inside forty ENOTFOUND stack traces.
     attachConnectionLogging(worker, QUEUE_NAME)
 
-    worker.on("completed", (job, result) => {
+    worker.on("completed", async (job, result) => {
         console.log(`${QUEUE_NAME} ${job.id} — scored ${result.scoring_version}, matching completeness ${result.completeness && result.completeness.matching}`)
+        try {
+            await rerunIfResubmitted(job.data.userId)
+        } catch (error) {
+            console.error(`${QUEUE_NAME} ${job.data.userId}: could not check for a newer submit — ${error.message}`)
+        }
     })
 
     // A failure is logged loudly and the job is retried. It is never swallowed: a student whose
@@ -194,6 +232,8 @@ const start = async () => {
             console.error(`${QUEUE_NAME} GAVE UP for student ${job.data.userId} — their report page now offers a retry`)
             try {
                 await User.updateOne({ _id: job.data.userId }, { reportFailedAt: new Date() })
+                // and the team hears about it — the student sees "Try again", the admin sees why
+                await raiseIssue({ user: job.data.userId, module: "report", kind: "report_failed", detail: `${QUEUE_NAME}: ${error.message.slice(0, 300)}`, notify: true })
             } catch (markError) {
                 console.error(`${QUEUE_NAME} could not mark ${job.data.userId} as failed — ${markError.message}`)
             }
@@ -226,4 +266,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { QUEUE_NAME, scoreProfileQueue, enqueueScoreProfile, runOne, start }
+module.exports = { QUEUE_NAME, scoreProfileQueue, enqueueScoreProfile, runOne, start, rerunIfResubmitted }

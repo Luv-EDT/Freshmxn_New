@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { getMyReport, retryMyReport } from "../../apiCall/reportsApi"
+import { getMyReport, retryMyReport, updateMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
 import JourneyProgress from "../JourneyProgress"
@@ -10,6 +10,11 @@ import ProfessionCard, { levelPath, JOURNEY_LEVEL } from "./ProfessionCard"
 import ReportSortMenu from "./ReportSortMenu"
 import { studentTags } from "./reportTags"
 import { buildList } from "./reportFilters"
+import { journeyHeadline, mastersOptions } from "./reportPlan"
+import StudyAbroadCard from "./StudyAbroadCard"
+import ReportHeadline from "./ReportHeadline"
+import CombinedCareers from "./CombinedCareers"
+import DirectionModal from "../DirectionModal"
 
 // Stage 3 — the report.
 //
@@ -138,9 +143,14 @@ function ReportPage() {
     const [detailsLoaded, setDetailsLoaded] = useState(false)
     const [primary, setPrimary] = useState("best")
     const [secondary, setSecondary] = useState(null)
+    const [showFirst, setShowFirst] = useState(null)
+    // Off by default. The only control that may hide careers (owner, 2026-09-30).
+    const [excludeBlueCollar, setExcludeBlueCollar] = useState(false)
     // Bumped after a retry so the polling effect below starts again.
     const [reloadKey, setReloadKey] = useState(0)
     const [retrying, setRetrying] = useState(false)
+    const [updateOpen, setUpdateOpen] = useState(false)
+    const [updating, setUpdating] = useState(false)
 
     // Polls while the pipeline is running, and stops the moment it is not. A student who has just
     // pressed Submit is looking at this page NOW — telling them to come back later and leaving it
@@ -158,6 +168,8 @@ function ReportPage() {
                 const data = response.data.data
                 setState({ loading: false, data, error: "" })
 
+                // Only "generating" polls. A report built by older scoring or matching is NOT rebuilt
+                // behind the student's back (owner, Round 11) — it offers "Update my report" instead.
                 if (data.status === "generating") timer = setTimeout(load, 5000)
             } catch (error) {
                 if (!cancelled) setState({ loading: false, data: null, error: "Could not load your report" })
@@ -185,6 +197,21 @@ function ReportPage() {
             window.alert("We could not restart it just now. Please try again in a minute, or message us on WhatsApp.")
         }
         setRetrying(false)
+    }
+
+    // "Update my report" — only on the student's word, after "same way or something new?"
+    const startUpdate = async (direction) => {
+        setUpdating(true)
+        try {
+            const response = await updateMyReport(direction)
+            if (response && response.data && response.data.success === false) throw new Error(response.data.message)
+            setUpdateOpen(false)
+            setState({ loading: false, data: { status: "generating" }, error: "" })
+            setReloadKey((key) => key + 1)
+        } catch (error) {
+            window.alert("We could not start the update just now. Please try again in a minute, or message us on WhatsApp.")
+        }
+        setUpdating(false)
     }
 
     // ONE REQUEST FOR EVERY PROFESSION IN THE REPORT, fired once the ranking arrives rather than on
@@ -242,9 +269,17 @@ function ReportPage() {
 
     // THE LIST THE STUDENT SEES — see buildList in reportFilters.js. No filter ever hides a career.
     const ordered = useMemo(
-        () => buildList(ranked, switchList, primary, secondary, details),
-        [ranked, switchList, primary, secondary, details]
+        () => buildList(ranked, switchList, primary, secondary, details, { showFirst, excludeBlueCollar }),
+        [ranked, switchList, primary, secondary, details, showFirst, excludeBlueCollar]
     )
+
+    // How many the blue-collar filter hid, so the page can say so — a filter that hides silently is
+    // the thing this report was rebuilt to avoid.
+    const hiddenBlueCollar = useMemo(() => {
+        if (!excludeBlueCollar) return 0
+        const all = buildList(ranked, switchList, primary, secondary, details, { showFirst })
+        return all.length - ordered.length
+    }, [excludeBlueCollar, ranked, switchList, primary, secondary, details, showFirst, ordered])
 
     // The engine's top three keep their colours under every order, so "my best matches" never
     // gets lost when a student sorts by pay.
@@ -408,10 +443,26 @@ function ReportPage() {
                 </div>
             )}
 
-            {status === "stale" && (
-                <p><em>Your matches have been recalculated since this was written. A fresh version is
-                   on the way.</em></p>
+            {data.updateAvailable && !data.rebuildFailed && (
+                <div className="report-banner">
+                    <p>
+                        <strong>We've improved how we match careers.</strong> Your report stays exactly as it is
+                        unless you choose to update it.
+                    </p>
+                    <button type="button" className="btn btn-primary btn-sm tap" onClick={() => setUpdateOpen(true)}>
+                        Update my report
+                    </button>
+                </div>
             )}
+
+            <DirectionModal
+                open={updateOpen}
+                title="Update your report"
+                okText="Update my report"
+                busy={updating}
+                onCancel={() => setUpdateOpen(false)}
+                onConfirm={startUpdate}
+            />
 
             {release === "release_with_note" && (
                 <p>
@@ -428,7 +479,11 @@ function ReportPage() {
 
             <hr />
 
-            <h2>Your matches</h2>
+            <div className="report-matches-head">
+                <h2>Your matches</h2>
+                {/* Its own page (owner): the student picks 2-3 careers and sees them side by side. */}
+                <Link to="/report/compare" className="btn btn-ghost btn-sm tap">Compare careers →</Link>
+            </div>
             {framing.runwayNote && <p><em>{framing.runwayNote}</em></p>}
 
             <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
@@ -439,6 +494,10 @@ function ReportPage() {
                 secondary={secondary}
                 onSecondary={setSecondary}
                 noCostHint={framing.switchIsDistinct ? framing.switchIntro : null}
+                showFirst={showFirst}
+                onShowFirst={setShowFirst}
+                excludeBlueCollar={excludeBlueCollar}
+                onExcludeBlueCollar={setExcludeBlueCollar}
             />
 
             {/* THE RANKING EXPLAINS ITSELF, in one place. A student who cannot see why one career
@@ -498,10 +557,96 @@ function ReportPage() {
                             journey={journey}
                             topRank={topRank}
                             switchCost={primary === "noCost" ? entry.wastedYears : 0}
+                            showAi={secondary === "ai"}
+                            degreeLabel={data.degree || null}
                         />
                     )
                 })}
             </div>
+
+            {hiddenBlueCollar > 0 && (
+                <p className="report-hidden-note">
+                    {hiddenBlueCollar} blue-collar {hiddenBlueCollar === 1 ? "career is" : "careers are"} hidden — some of the most
+                    AI-proof careers are among them.{" "}
+                    <button type="button" className="link-button" onClick={() => setExcludeBlueCollar(false)}>Show them again</button>
+                </p>
+            )}
+
+            {/* COMBINED CAREERS (Round 10) — beside the list, never in it */}
+            <CombinedCareers combined={data.combined} details={details} showFirst={showFirst} />
+
+            {/* SUPPORT FOR YOUR EXAMS (Round 10) — only for a student who told us about a difficulty,
+                and only once the owner has checked every line against its official source. */}
+            {data.support && (
+                <details className="report-details">
+                    <summary className="report-summary"><strong>Support you are entitled to</strong></summary>
+                    <ul className="support-list">
+                        {data.support.rows.map((row) => (
+                            <li key={row.id}>
+                                <strong>{row.title}.</strong> {row.text}{" "}
+                                <a href={row.url} target="_blank" rel="noreferrer">{row.source}</a>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="report-small">Checked {data.support.checkedOn}. Rules change — confirm with the exam body when you apply.</p>
+                </details>
+            )}
+
+            {/* WHAT TO DO NEXT — the report-level plan (owner: both a report-level plan and per-card
+                steps, all collapsible). It opens with the picture for this student's stage — the
+                stream map, the exam map, or what they can move into — then the concrete actions
+                derived from the top matches. Collapsible, open by default. */}
+            <details className="report-details" open>
+                <summary className="report-summary">
+                    <strong>What to do next</strong> — your next 12 months
+                </summary>
+
+                <ReportHeadline headline={journeyHeadline(journey, ranked, details)} />
+
+                {/* A report written before report@3.0.0 still carries the model's own next steps. */}
+                {sections.nextSteps && <p>{sections.nextSteps}</p>}
+
+                {nextActions.length > 0 && (
+                    <ul>
+                        {nextActions.map((action, index) => (
+                            <li key={index}>{action}</li>
+                        ))}
+                    </ul>
+                )}
+
+                {/* Round 11: for college and working students, the master's picture across the top matches */}
+                {(journey === "college" || journey === "early_professional") && (() => {
+                    const masters = mastersOptions(ranked, details)
+                    if (masters.groups.length === 0) return null
+                    return (
+                        <details className="report-details report-nested">
+                            <summary className="report-summary"><strong>Your master's options</strong></summary>
+                            {masters.groups.map((group) => (
+                                <div key={group.key}>
+                                    <p><strong>{group.title}</strong></p>
+                                    <ul>
+                                        {group.careers.map((career) => (
+                                            <li key={career.professionId}>
+                                                {career.profession}
+                                                {career.step && <span className="report-small"> — {career.step}</span>}
+                                                {career.exams.length > 0 && <span className="report-small"> · Exams: {career.exams.join(", ")}</span>}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                            {masters.notNeeded > 0 && (
+                                <p className="report-small">For {masters.notNeeded} of your top matches a master's isn't needed — you can start working after your degree.</p>
+                            )}
+                        </details>
+                    )
+                })()}
+
+                <p className="report-small"><em>Each career above also has its own next steps — open it to see them.</em></p>
+            </details>
+
+            {/* Round 11: offered only when a top-ten match is one where studying abroad helps */}
+            <StudyAbroadCard ranked={ranked} details={details} />
 
             {/* THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —
@@ -659,28 +804,6 @@ function ReportPage() {
                     {sections.yourMatches && <p>{sections.yourMatches}</p>}
                 </>
             )}
-
-            {(sections.readiness || sections.nextSteps) && <hr />}
-
-            {/* COLLAPSIBLE, AND BACKED BY DATA RATHER THAN ONLY PROSE. The model writes three
-                generic-ish actions; the concrete ones can be derived — the actual next step on the
-                actual top matches, the exams those need, and the sections still unfinished. A
-                student who opens this should find things with names in them, not advice. */}
-            <details className="report-details" open>
-                <summary className="report-summary">
-                    <strong>What to do next</strong>
-                </summary>
-
-                {sections.nextSteps && <p>{sections.nextSteps}</p>}
-
-                {nextActions.length > 0 && (
-                    <ul>
-                        {nextActions.map((action, index) => (
-                            <li key={index}>{action}</li>
-                        ))}
-                    </ul>
-                )}
-            </details>
 
             {sections.readiness && (
                 <details className="report-details">

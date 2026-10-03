@@ -31,6 +31,7 @@ const scoreIpip50 = (block) => {
     const answers = (block && block.answers) || {}
     const scores = {}
     const quality = {}
+    const coverage = {}
     const flags = {}
 
     Object.entries(TRAITS).forEach(([trait, { prefix, reversed }]) => {
@@ -38,6 +39,7 @@ const scoreIpip50 = (block) => {
         const prefixed = itemIds.map((id) => `IPIP_${id}`)
         const ratio = coverageOf(answers, prefixed)
         const traitQuality = qualityFromCoverage(ratio)
+        coverage[trait] = traitQuality === null ? null : round2(ratio)
 
         if (traitQuality === null) {
             scores[trait] = null
@@ -80,7 +82,7 @@ const scoreIpip50 = (block) => {
         flags.careless_responding = true
     }
 
-    return { scores, quality, flags }
+    return { scores, quality, coverage, flags }
 }
 
 module.exports = scoreIpip50

@@ -1,0 +1,1678 @@
+{
+  "schema_version": "study_places@1.0.0",
+  "generated_on": "2026-10-02",
+  "note": "Where to study, by discipline. Each institution carries its basis: an NIRF India Rankings 2025 rank (the main source — the latest published when this was written; NIRF 2026 had not appeared), or 'Suggested — check' where no ranking covers the field, which is a judgement and is always shown as one. Public and private institutions are both listed. The official links show at once; the institution lists stay hidden until the owner has read them (review.reviewed_by_owner). The monthly study bot (housekeeping/studyRefresh.js) proposes changes; the admin approves them.",
+  "review": {
+    "reviewed_by_owner": false,
+    "note": "Owner gate (Round 11): read the institution lists once, then set reviewed_by_owner to true."
+  },
+  "allowed_link_domains": [
+    "nirfindia.org",
+    "gov.in",
+    "nic.in",
+    "org.in",
+    "aicte-india.org",
+    "nmc.org.in",
+    "ncismindia.org",
+    "barcouncilofindia.org",
+    "indiannursingcouncil.org",
+    "nid.edu",
+    "nift.ac.in",
+    "ugc.gov.in",
+    "icar.org.in",
+    "icai.org",
+    "ftii.ac.in",
+    "imu.edu.in"
+  ],
+  "nirf_2025_read_from": [
+    "https://zeenews.india.com/photos/india/top-10-nirf-ranked-engineering-colleges-in-india-2026-check-rankings-courses-and-admission-details-3045103",
+    "https://medicaldialogues.in/news/education/medical-colleges/nirf-2025-rankings-aiims-new-delhi-stays-no-1-check-indias-top-50-medical-colleges-here-154674",
+    "https://medicaldialogues.in/news/education/dentistry/nirf-2025-rankings-aiims-new-delhi-in-no-1-spot-here-are-indias-top-40-dental-colleges-154767",
+    "https://www.careers360.com/mba/articles/nirf-mba-ranking-2025-top-10-mba-colleges-india-management-nirf-ranking",
+    "https://www.barandbench.com/news/lawschools/nirf-rankings-2025-nlus-dominate-top-5-nlsiu-nlu-delhi-nalsar-retain-top-spots",
+    "https://krishijagran.com/news/nirf-rankings-2025-iari-tops-agriculture-category-ndri-and-pau-retain-second-and-third-spot-check-full-list-here",
+    "https://www.shiksha.com/news/architecture-planning-nirf-ranking-2025-released-top-architecture-and-planning-colleges-in-india-listed-here-blogId-209662",
+    "https://www.buddy4study.com/article/nirf-college-rankings-2025-hindu-college-tops-again",
+    "https://studyriserr.com/news/nirf-pharmacy-ranking-2025",
+    "https://news.careers360.com/nirf-ranking-2025-university-iisc-bangalore-top-jnu-mahe-manipal-bits-pilani-du-amrita-vishwa-vidyapeetham-amu-jamia-millia"
+  ],
+  "disciplines": [
+    {
+      "id": "engineering",
+      "name": "Engineering and technology",
+      "links": [
+        {
+          "label": "NIRF 2025 — Engineering",
+          "url": "https://www.nirfindia.org/Rankings/2025/EngineeringRanking.html"
+        },
+        {
+          "label": "AICTE — approved institutions",
+          "url": "https://www.aicte-india.org"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "IIT Madras",
+          "city": "Chennai",
+          "ownership": "public",
+          "basis": "NIRF 2025 Engineering #1"
+        },
+        {
+          "name": "IIT Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Engineering #2"
+        },
+        {
+          "name": "IIT Bombay",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "NIRF 2025 Engineering #3"
+        },
+        {
+          "name": "IIT Kanpur",
+          "city": "Kanpur",
+          "ownership": "public",
+          "basis": "NIRF 2025 Engineering #4"
+        },
+        {
+          "name": "IIT Kharagpur",
+          "city": "Kharagpur",
+          "ownership": "public",
+          "basis": "NIRF 2025 Engineering #5"
+        },
+        {
+          "name": "IIT Roorkee",
+          "city": "Roorkee",
+          "ownership": "public",
+          "basis": "NIRF 2025 Engineering #6"
+        },
+        {
+          "name": "NIT Tiruchirappalli",
+          "city": "Tiruchirappalli",
+          "ownership": "public",
+          "basis": "NIRF 2025 Engineering #9"
+        },
+        {
+          "name": "BITS Pilani",
+          "city": "Pilani",
+          "ownership": "private",
+          "basis": "NIRF 2025 Engineering #11"
+        },
+        {
+          "name": "SRM Institute of Science and Technology",
+          "city": "Chennai",
+          "ownership": "private",
+          "basis": "NIRF 2025 Engineering #14"
+        },
+        {
+          "name": "Vellore Institute of Technology",
+          "city": "Vellore",
+          "ownership": "private",
+          "basis": "NIRF 2025 Engineering #16"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "medical",
+      "name": "Medicine (MBBS)",
+      "links": [
+        {
+          "label": "NIRF 2025 — Medical",
+          "url": "https://www.nirfindia.org/Rankings/2025/MedicalRanking.html"
+        },
+        {
+          "label": "National Medical Commission — recognised colleges",
+          "url": "https://www.nmc.org.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "AIIMS New Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Medical #1"
+        },
+        {
+          "name": "PGIMER",
+          "city": "Chandigarh",
+          "ownership": "public",
+          "basis": "NIRF 2025 Medical #2",
+          "note": "Postgraduate only — for MD/MS after MBBS"
+        },
+        {
+          "name": "Christian Medical College",
+          "city": "Vellore",
+          "ownership": "private",
+          "basis": "NIRF 2025 Medical #3"
+        },
+        {
+          "name": "JIPMER",
+          "city": "Puducherry",
+          "ownership": "public",
+          "basis": "NIRF 2025 Medical #4"
+        },
+        {
+          "name": "Institute of Medical Sciences, BHU",
+          "city": "Varanasi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Medical #6"
+        },
+        {
+          "name": "King George's Medical University",
+          "city": "Lucknow",
+          "ownership": "public",
+          "basis": "NIRF 2025 Medical #8"
+        },
+        {
+          "name": "Amrita Vishwa Vidyapeetham",
+          "city": "Kochi",
+          "ownership": "private",
+          "basis": "NIRF 2025 Medical #9"
+        },
+        {
+          "name": "Kasturba Medical College",
+          "city": "Manipal",
+          "ownership": "private",
+          "basis": "NIRF 2025 Medical #10"
+        },
+        {
+          "name": "Madras Medical College",
+          "city": "Chennai",
+          "ownership": "public",
+          "basis": "NIRF 2025 Medical #16"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "dental",
+      "name": "Dentistry (BDS)",
+      "links": [
+        {
+          "label": "NIRF 2025 — Dental",
+          "url": "https://www.nirfindia.org/Rankings/2025/DentalRanking.html"
+        },
+        {
+          "label": "Dental Council of India",
+          "url": "https://dciindia.gov.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "AIIMS New Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Dental #1"
+        },
+        {
+          "name": "Saveetha Institute of Medical and Technical Sciences",
+          "city": "Chennai",
+          "ownership": "private",
+          "basis": "NIRF 2025 Dental #2"
+        },
+        {
+          "name": "Maulana Azad Institute of Dental Sciences",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Dental #3"
+        },
+        {
+          "name": "Dr D Y Patil Vidyapeeth",
+          "city": "Pune",
+          "ownership": "private",
+          "basis": "NIRF 2025 Dental #4"
+        },
+        {
+          "name": "Manipal College of Dental Sciences",
+          "city": "Manipal",
+          "ownership": "private",
+          "basis": "NIRF 2025 Dental #5"
+        },
+        {
+          "name": "A B Shetty Memorial Institute of Dental Sciences",
+          "city": "Mangaluru",
+          "ownership": "private",
+          "basis": "NIRF 2025 Dental #6"
+        },
+        {
+          "name": "King George's Medical University",
+          "city": "Lucknow",
+          "ownership": "public",
+          "basis": "NIRF 2025 Dental #7"
+        },
+        {
+          "name": "SRM Dental College",
+          "city": "Chennai",
+          "ownership": "private",
+          "basis": "NIRF 2025 Dental #8"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "ayush",
+      "name": "Ayurveda, Unani, Siddha and Homoeopathy",
+      "links": [
+        {
+          "label": "NCISM — Indian system of medicine colleges",
+          "url": "https://ncismindia.org"
+        },
+        {
+          "label": "National Commission for Homoeopathy",
+          "url": "https://www.nch.org.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "All India Institute of Ayurveda",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Postgraduate"
+        },
+        {
+          "name": "National Institute of Ayurveda",
+          "city": "Jaipur",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Faculty of Ayurveda, IMS BHU",
+          "city": "Varanasi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Institute of Teaching and Research in Ayurveda",
+          "city": "Jamnagar",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "National Institute of Homoeopathy",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Nehru Homoeopathic Medical College",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "veterinary",
+      "name": "Veterinary science",
+      "links": [
+        {
+          "label": "NIRF 2025 — Agriculture and allied",
+          "url": "https://www.nirfindia.org/Rankings/2025/AgricultureRanking.html"
+        },
+        {
+          "label": "Veterinary Council of India",
+          "url": "https://vci.dahd.gov.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "ICAR – Indian Veterinary Research Institute",
+          "city": "Izatnagar",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #5"
+        },
+        {
+          "name": "Guru Angad Dev Veterinary and Animal Sciences University",
+          "city": "Ludhiana",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Tamil Nadu Veterinary and Animal Sciences University",
+          "city": "Chennai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Lala Lajpat Rai University of Veterinary and Animal Sciences",
+          "city": "Hisar",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Karnataka Veterinary, Animal and Fisheries Sciences University",
+          "city": "Bidar",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "pharmacy",
+      "name": "Pharmacy",
+      "links": [
+        {
+          "label": "NIRF 2025 — Pharmacy",
+          "url": "https://www.nirfindia.org/Rankings/2025/PharmacyRanking.html"
+        },
+        {
+          "label": "Pharmacy Council of India — approved institutions",
+          "url": "https://www.pci.nic.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Jamia Hamdard",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Pharmacy #1"
+        },
+        {
+          "name": "BITS Pilani",
+          "city": "Pilani",
+          "ownership": "private",
+          "basis": "NIRF 2025 Pharmacy #2"
+        },
+        {
+          "name": "Panjab University",
+          "city": "Chandigarh",
+          "ownership": "public",
+          "basis": "NIRF 2025 Pharmacy #3"
+        },
+        {
+          "name": "JSS College of Pharmacy",
+          "city": "Ooty",
+          "ownership": "private",
+          "basis": "NIRF 2025 Pharmacy #4"
+        },
+        {
+          "name": "NIPER Hyderabad",
+          "city": "Hyderabad",
+          "ownership": "public",
+          "basis": "NIRF 2025 Pharmacy #5"
+        },
+        {
+          "name": "Institute of Chemical Technology",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "NIRF 2025 Pharmacy #6"
+        },
+        {
+          "name": "Manipal College of Pharmaceutical Sciences",
+          "city": "Manipal",
+          "ownership": "private",
+          "basis": "NIRF 2025 Pharmacy #8"
+        },
+        {
+          "name": "NIPER Mohali",
+          "city": "Mohali",
+          "ownership": "public",
+          "basis": "NIRF 2025 Pharmacy #9"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "nursing_allied",
+      "name": "Nursing and allied health",
+      "links": [
+        {
+          "label": "Indian Nursing Council — recognised institutions",
+          "url": "https://www.indiannursingcouncil.org"
+        },
+        {
+          "label": "NIRF 2025 — Medical (the hospitals these colleges belong to)",
+          "url": "https://www.nirfindia.org/Rankings/2025/MedicalRanking.html"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "College of Nursing, AIIMS New Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "National Institute of Nursing Education, PGIMER",
+          "city": "Chandigarh",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "College of Nursing, CMC Vellore",
+          "city": "Vellore",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Rajkumari Amrit Kaur College of Nursing",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Manipal College of Health Professions",
+          "city": "Manipal",
+          "ownership": "private",
+          "basis": "Suggested — check",
+          "note": "Allied health — physiotherapy, optometry, lab and imaging technology"
+        },
+        {
+          "name": "College of Nursing, JIPMER",
+          "city": "Puducherry",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "All India Institute of Speech and Hearing",
+          "city": "Mysuru",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Audiology and speech therapy"
+        },
+        {
+          "name": "All India Institute of Physical Medicine and Rehabilitation",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Physiotherapy and occupational therapy"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "law",
+      "name": "Law",
+      "links": [
+        {
+          "label": "NIRF 2025 — Law",
+          "url": "https://www.nirfindia.org/Rankings/2025/LawRanking.html"
+        },
+        {
+          "label": "Bar Council of India — approved law colleges",
+          "url": "https://www.barcouncilofindia.org"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "National Law School of India University",
+          "city": "Bengaluru",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #1"
+        },
+        {
+          "name": "National Law University",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #2"
+        },
+        {
+          "name": "NALSAR University of Law",
+          "city": "Hyderabad",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #3"
+        },
+        {
+          "name": "West Bengal National University of Juridical Sciences",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #4"
+        },
+        {
+          "name": "Gujarat National Law University",
+          "city": "Gandhinagar",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #5"
+        },
+        {
+          "name": "IIT Kharagpur (Rajiv Gandhi School of IP Law)",
+          "city": "Kharagpur",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #6"
+        },
+        {
+          "name": "Symbiosis Law School",
+          "city": "Pune",
+          "ownership": "private",
+          "basis": "NIRF 2025 Law #7"
+        },
+        {
+          "name": "Jamia Millia Islamia",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #8"
+        },
+        {
+          "name": "Aligarh Muslim University",
+          "city": "Aligarh",
+          "ownership": "public",
+          "basis": "NIRF 2025 Law #9"
+        },
+        {
+          "name": "Siksha 'O' Anusandhan",
+          "city": "Bhubaneswar",
+          "ownership": "private",
+          "basis": "NIRF 2025 Law #10"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "management",
+      "name": "Management (MBA)",
+      "links": [
+        {
+          "label": "NIRF 2025 — Management",
+          "url": "https://www.nirfindia.org/Rankings/2025/ManagementRanking.html"
+        },
+        {
+          "label": "AICTE — approved institutions",
+          "url": "https://www.aicte-india.org"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "IIM Ahmedabad",
+          "city": "Ahmedabad",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management #1"
+        },
+        {
+          "name": "IIM Bangalore",
+          "city": "Bengaluru",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management #2"
+        },
+        {
+          "name": "IIM Kozhikode",
+          "city": "Kozhikode",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management #3"
+        },
+        {
+          "name": "IIT Delhi (Department of Management Studies)",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management #4"
+        },
+        {
+          "name": "IIM Lucknow",
+          "city": "Lucknow",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management #5"
+        },
+        {
+          "name": "IIM Mumbai",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management #6"
+        },
+        {
+          "name": "IIM Calcutta",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management top 10"
+        },
+        {
+          "name": "IIM Indore",
+          "city": "Indore",
+          "ownership": "public",
+          "basis": "NIRF 2025 Management top 10"
+        },
+        {
+          "name": "Management Development Institute",
+          "city": "Gurugram",
+          "ownership": "private",
+          "basis": "NIRF 2025 Management #9"
+        },
+        {
+          "name": "XLRI – Xavier School of Management",
+          "city": "Jamshedpur",
+          "ownership": "private",
+          "basis": "NIRF 2025 Management #10"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "architecture_planning",
+      "name": "Architecture and planning",
+      "links": [
+        {
+          "label": "NIRF 2025 — Architecture and planning",
+          "url": "https://www.nirfindia.org/Rankings/2025/ArchitectureRanking.html"
+        },
+        {
+          "label": "Council of Architecture — approved institutions",
+          "url": "https://www.coa.gov.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "IIT Roorkee",
+          "city": "Roorkee",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #1"
+        },
+        {
+          "name": "NIT Calicut",
+          "city": "Kozhikode",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #2"
+        },
+        {
+          "name": "IIT Kharagpur",
+          "city": "Kharagpur",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #3"
+        },
+        {
+          "name": "IIEST Shibpur",
+          "city": "Howrah",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #4"
+        },
+        {
+          "name": "Jamia Millia Islamia",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #5"
+        },
+        {
+          "name": "CEPT University",
+          "city": "Ahmedabad",
+          "ownership": null,
+          "basis": "NIRF 2025 Architecture #6"
+        },
+        {
+          "name": "NIT Rourkela",
+          "city": "Rourkela",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #7"
+        },
+        {
+          "name": "School of Planning and Architecture",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #8"
+        },
+        {
+          "name": "NIT Tiruchirappalli",
+          "city": "Tiruchirappalli",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #9"
+        },
+        {
+          "name": "VNIT Nagpur",
+          "city": "Nagpur",
+          "ownership": "public",
+          "basis": "NIRF 2025 Architecture #10"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "design",
+      "name": "Design",
+      "links": [
+        {
+          "label": "National Institute of Design",
+          "url": "https://www.nid.edu"
+        },
+        {
+          "label": "NIFT",
+          "url": "https://www.nift.ac.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "National Institute of Design",
+          "city": "Ahmedabad",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "IDC School of Design, IIT Bombay",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Department of Design, IIT Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Department of Design, IIT Guwahati",
+          "city": "Guwahati",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Department of Design, IIT Hyderabad",
+          "city": "Hyderabad",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "NIFT",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Fashion, textile and accessory design"
+        },
+        {
+          "name": "Footwear Design and Development Institute",
+          "city": "Noida",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Footwear and leather design"
+        },
+        {
+          "name": "Srishti Manipal Institute of Art, Design and Technology",
+          "city": "Bengaluru",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "MIT Institute of Design",
+          "city": "Pune",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Pearl Academy",
+          "city": "New Delhi",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "fine_arts",
+      "name": "Fine arts",
+      "links": [
+        {
+          "label": "UGC — recognised universities",
+          "url": "https://www.ugc.gov.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Faculty of Fine Arts, M S University of Baroda",
+          "city": "Vadodara",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Sir J J School of Art",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Kala Bhavana, Visva-Bharati",
+          "city": "Santiniketan",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "College of Art",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Faculty of Visual Arts, BHU",
+          "city": "Varanasi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "agriculture",
+      "name": "Agriculture, food and fisheries",
+      "links": [
+        {
+          "label": "NIRF 2025 — Agriculture and allied",
+          "url": "https://www.nirfindia.org/Rankings/2025/AgricultureRanking.html"
+        },
+        {
+          "label": "ICAR — agricultural universities",
+          "url": "https://icar.org.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "ICAR – Indian Agricultural Research Institute",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #1"
+        },
+        {
+          "name": "ICAR – National Dairy Research Institute",
+          "city": "Karnal",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #2"
+        },
+        {
+          "name": "Punjab Agricultural University",
+          "city": "Ludhiana",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #3"
+        },
+        {
+          "name": "Banaras Hindu University",
+          "city": "Varanasi",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #4"
+        },
+        {
+          "name": "Tamil Nadu Agricultural University",
+          "city": "Coimbatore",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #6"
+        },
+        {
+          "name": "Sher-e-Kashmir University of Agricultural Sciences and Technology",
+          "city": "Srinagar",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #7"
+        },
+        {
+          "name": "ICAR – Central Institute of Fisheries Education",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #8"
+        },
+        {
+          "name": "G B Pant University of Agriculture and Technology",
+          "city": "Pantnagar",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #9"
+        },
+        {
+          "name": "Chaudhary Charan Singh Haryana Agricultural University",
+          "city": "Hisar",
+          "ownership": "public",
+          "basis": "NIRF 2025 Agriculture #10"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "science",
+      "name": "Sciences (B.Sc and onward)",
+      "links": [
+        {
+          "label": "NIRF 2025 — Universities",
+          "url": "https://www.nirfindia.org/Rankings/2025/UniversityRanking.html"
+        },
+        {
+          "label": "NIRF 2025 — Colleges",
+          "url": "https://www.nirfindia.org/Rankings/2025/CollegeRanking.html"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Indian Institute of Science",
+          "city": "Bengaluru",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #1"
+        },
+        {
+          "name": "Jawaharlal Nehru University",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #2"
+        },
+        {
+          "name": "Manipal Academy of Higher Education",
+          "city": "Manipal",
+          "ownership": "private",
+          "basis": "NIRF 2025 University #3"
+        },
+        {
+          "name": "University of Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #5"
+        },
+        {
+          "name": "Banaras Hindu University",
+          "city": "Varanasi",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #6"
+        },
+        {
+          "name": "Jadavpur University",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #9"
+        },
+        {
+          "name": "Hindu College",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 College #1"
+        },
+        {
+          "name": "Miranda House",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 College #2"
+        },
+        {
+          "name": "IISER Pune",
+          "city": "Pune",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Five-year BS-MS; admission through IISER's own test"
+        },
+        {
+          "name": "NISER",
+          "city": "Bhubaneswar",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Five-year integrated M.Sc"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "arts_social_sciences",
+      "name": "Arts, humanities and social sciences",
+      "links": [
+        {
+          "label": "NIRF 2025 — Universities",
+          "url": "https://www.nirfindia.org/Rankings/2025/UniversityRanking.html"
+        },
+        {
+          "label": "NIRF 2025 — Colleges",
+          "url": "https://www.nirfindia.org/Rankings/2025/CollegeRanking.html"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Jawaharlal Nehru University",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #2"
+        },
+        {
+          "name": "Jamia Millia Islamia",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #4"
+        },
+        {
+          "name": "University of Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #5"
+        },
+        {
+          "name": "Jadavpur University",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #9"
+        },
+        {
+          "name": "Aligarh Muslim University",
+          "city": "Aligarh",
+          "ownership": "public",
+          "basis": "NIRF 2025 University #10"
+        },
+        {
+          "name": "Hindu College",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 College #1"
+        },
+        {
+          "name": "Miranda House",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 College #2"
+        },
+        {
+          "name": "St. Stephen's College",
+          "city": "New Delhi",
+          "ownership": null,
+          "basis": "NIRF 2025 College #5"
+        },
+        {
+          "name": "St. Xavier's College",
+          "city": "Kolkata",
+          "ownership": null,
+          "basis": "NIRF 2025 College #8"
+        },
+        {
+          "name": "Tata Institute of Social Sciences",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Master's in social work, psychology and development"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "commerce",
+      "name": "Commerce, accounting and economics",
+      "links": [
+        {
+          "label": "NIRF 2025 — Colleges",
+          "url": "https://www.nirfindia.org/Rankings/2025/CollegeRanking.html"
+        },
+        {
+          "label": "ICAI — the CA course",
+          "url": "https://www.icai.org"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Hindu College",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 College #1"
+        },
+        {
+          "name": "Hans Raj College",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 College #3"
+        },
+        {
+          "name": "Kirori Mal College",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "NIRF 2025 College #4"
+        },
+        {
+          "name": "St. Xavier's College",
+          "city": "Kolkata",
+          "ownership": null,
+          "basis": "NIRF 2025 College #8"
+        },
+        {
+          "name": "Shri Ram College of Commerce",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Lady Shri Ram College for Women",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Loyola College",
+          "city": "Chennai",
+          "ownership": null,
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Christ University",
+          "city": "Bengaluru",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "NMIMS",
+          "city": "Mumbai",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Delhi School of Economics",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Master's in economics"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "education",
+      "name": "Teaching (B.Ed and special education)",
+      "links": [
+        {
+          "label": "NCTE — recognised teacher education institutions",
+          "url": "https://ncte.gov.in"
+        },
+        {
+          "label": "Rehabilitation Council of India — special education",
+          "url": "https://rehabcouncil.nic.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Regional Institute of Education (NCERT)",
+          "city": "Ajmer",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Integrated B.Sc/B.A. B.Ed"
+        },
+        {
+          "name": "Regional Institute of Education (NCERT)",
+          "city": "Mysuru",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Integrated B.Sc/B.A. B.Ed"
+        },
+        {
+          "name": "Regional Institute of Education (NCERT)",
+          "city": "Bhopal",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Integrated B.Sc/B.A. B.Ed"
+        },
+        {
+          "name": "Central Institute of Education, University of Delhi",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Faculty of Education, BHU",
+          "city": "Varanasi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Faculty of Education, Jamia Millia Islamia",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "hotel_management",
+      "name": "Hotel management and culinary arts",
+      "links": [
+        {
+          "label": "NCHMCT — Institutes of Hotel Management",
+          "url": "https://nchm.gov.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Institute of Hotel Management, Pusa",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Institute of Hotel Management",
+          "city": "Mumbai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Institute of Hotel Management",
+          "city": "Bengaluru",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Institute of Hotel Management",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Institute of Hotel Management",
+          "city": "Chennai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Welcomgroup Graduate School of Hotel Administration",
+          "city": "Manipal",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "The Oberoi Centre of Learning and Development",
+          "city": "New Delhi",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Institute of Hotel Management (Taj)",
+          "city": "Aurangabad",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "media_film",
+      "name": "Journalism, media, film and theatre",
+      "links": [
+        {
+          "label": "Indian Institute of Mass Communication",
+          "url": "https://iimc.gov.in"
+        },
+        {
+          "label": "FTII Pune",
+          "url": "https://www.ftii.ac.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Indian Institute of Mass Communication",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "AJK Mass Communication Research Centre, Jamia Millia Islamia",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Film and Television Institute of India",
+          "city": "Pune",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Satyajit Ray Film and Television Institute",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "National School of Drama",
+          "city": "New Delhi",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Theatre and acting"
+        },
+        {
+          "name": "Asian College of Journalism",
+          "city": "Chennai",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Symbiosis Institute of Media and Communication",
+          "city": "Pune",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Xavier Institute of Communications",
+          "city": "Mumbai",
+          "ownership": "private",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "MICA",
+          "city": "Ahmedabad",
+          "ownership": "private",
+          "basis": "Suggested — check",
+          "note": "Advertising, brand and communication management"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "sports",
+      "name": "Sports coaching and sports science",
+      "links": [
+        {
+          "label": "Sports Authority of India",
+          "url": "https://sportsauthorityofindia.nic.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Lakshmibai National Institute of Physical Education",
+          "city": "Gwalior",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Netaji Subhas National Institute of Sports",
+          "city": "Patiala",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Coaching diplomas"
+        },
+        {
+          "name": "National Sports University",
+          "city": "Imphal",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Swarnim Gujarat Sports University",
+          "city": "Gandhinagar",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Tamil Nadu Physical Education and Sports University",
+          "city": "Chennai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "vocational",
+      "name": "ITI trades and vocational training",
+      "links": [
+        {
+          "label": "Directorate General of Training — ITIs",
+          "url": "https://dgt.gov.in"
+        },
+        {
+          "label": "Skill India Digital",
+          "url": "https://www.skillindiadigital.gov.in"
+        }
+      ],
+      "institutions": [],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "aviation",
+      "name": "Aviation",
+      "links": [
+        {
+          "label": "DGCA — approved flying and engineering schools",
+          "url": "https://www.dgca.gov.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Indira Gandhi Rashtriya Uran Akademi",
+          "city": "Fursatganj (Amethi)",
+          "ownership": "public",
+          "basis": "Suggested — check",
+          "note": "Commercial pilot training"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    },
+    {
+      "id": "maritime",
+      "name": "Merchant navy and marine engineering",
+      "links": [
+        {
+          "label": "Directorate General of Shipping — approved institutes",
+          "url": "https://www.dgshipping.gov.in"
+        },
+        {
+          "label": "Indian Maritime University",
+          "url": "https://www.imu.edu.in"
+        }
+      ],
+      "institutions": [
+        {
+          "name": "Indian Maritime University",
+          "city": "Chennai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Indian Maritime University (T S Chanakya campus)",
+          "city": "Navi Mumbai",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        },
+        {
+          "name": "Indian Maritime University",
+          "city": "Kolkata",
+          "ownership": "public",
+          "basis": "Suggested — check"
+        }
+      ],
+      "checked_on": "2026-10-02"
+    }
+  ],
+  "careers": {
+    "swc-software-developer": "engineering",
+    "swc-website-store-builder": null,
+    "swc-game-developer": null,
+    "swc-ai-ml-engineer": "engineering",
+    "swc-data-analyst": null,
+    "swc-data-engineer": "engineering",
+    "swc-cybersecurity-specialist": null,
+    "swc-cloud-devops-engineer": null,
+    "swc-software-tester": null,
+    "swc-it-support-network-technician": "vocational",
+    "swc-embedded-iot-developer": "engineering",
+    "swc-enterprise-software-consultant": null,
+    "swc-it-business-systems-analyst": null,
+    "swc-vfx-graphics-developer": "engineering",
+    "eng-civil-engineer": "engineering",
+    "eng-mechanical-engineer": "engineering",
+    "eng-electrical-engineer": "engineering",
+    "eng-electronics-communication-engineer": "engineering",
+    "eng-chip-design-engineer": "engineering",
+    "eng-chemical-engineer": "engineering",
+    "eng-aerospace-engineer": "engineering",
+    "eng-mining-engineer": "engineering",
+    "eng-metallurgical-materials-engineer": "engineering",
+    "eng-marine-engineer": "maritime",
+    "eng-petroleum-engineer": "engineering",
+    "eng-robotics-automation-engineer": "engineering",
+    "eng-architect": "architecture_planning",
+    "eng-commercial-pilot": "aviation",
+    "eng-aircraft-maintenance-engineer": "aviation",
+    "eng-electrician": "vocational",
+    "eng-welder": "vocational",
+    "eng-fitter-machinist": "vocational",
+    "eng-plumber": "vocational",
+    "eng-carpenter-furniture-maker": "vocational",
+    "eng-mason-construction-technician": "vocational",
+    "eng-hvac-refrigeration-technician": "vocational",
+    "eng-automobile-mechanic": "vocational",
+    "eng-heavy-equipment-operator": "vocational",
+    "eng-land-surveyor": "vocational",
+    "eng-cad-draughtsman": "vocational",
+    "eng-textile-engineer": "engineering",
+    "eng-biomedical-engineer": "engineering",
+    "eng-fire-safety-engineer": "engineering",
+    "eng-drone-pilot": "aviation",
+    "eng-precision-manufacturing-technician": "vocational",
+    "eng-nuclear-engineer": "engineering",
+    "eng-urban-planner": "architecture_planning",
+    "eng-air-traffic-controller": "engineering",
+    "eng-railway-operations": "vocational",
+    "eng-merchant-navy-deck-officer": "maritime",
+    "eng-industrial-product-designer": "design",
+    "sci-physicist": "science",
+    "sci-chemist": "science",
+    "sci-biologist": "science",
+    "sci-microbiologist": "science",
+    "sci-biotechnologist": "science",
+    "sci-bioinformatics-scientist": "science",
+    "sci-geologist": "science",
+    "sci-atmospheric-ocean-scientist": "science",
+    "sci-space-scientist": "science",
+    "sci-materials-scientist": "science",
+    "sci-statistician": "science",
+    "sci-research-psychologist": "arts_social_sciences",
+    "sci-forensic-scientist": "science",
+    "sci-clinical-research-associate": "science",
+    "sci-drug-discovery-scientist": "science",
+    "sci-laboratory-technician": "science",
+    "sci-quality-control-analyst": "science",
+    "sci-computer-science-researcher": "engineering",
+    "sci-mathematician": "science",
+    "hlt-doctor": "medical",
+    "hlt-dentist": "dental",
+    "hlt-ayurveda-doctor": "ayush",
+    "hlt-homeopathy-doctor": "ayush",
+    "hlt-veterinary-doctor": "veterinary",
+    "hlt-nurse": "nursing_allied",
+    "hlt-pharmacist": "pharmacy",
+    "hlt-physiotherapist": "nursing_allied",
+    "hlt-optometrist": "nursing_allied",
+    "hlt-audiologist-speech-therapist": "nursing_allied",
+    "hlt-occupational-therapist": "nursing_allied",
+    "hlt-dietitian": "nursing_allied",
+    "hlt-medical-lab-technologist": "nursing_allied",
+    "hlt-radiology-technologist": "nursing_allied",
+    "hlt-ot-anaesthesia-technologist": "nursing_allied",
+    "hlt-dialysis-technologist": "nursing_allied",
+    "hlt-emergency-medical-technician": "nursing_allied",
+    "hlt-public-health-professional": null,
+    "hlt-home-care-attendant": "vocational",
+    "hlt-general-duty-assistant": "vocational",
+    "mgt-marketing-specialist": "management",
+    "mgt-sales-professional": null,
+    "mgt-hr-professional": "management",
+    "mgt-operations-manager": "management",
+    "mgt-supply-chain-manager": "management",
+    "mgt-logistics-warehouse-operator": "vocational",
+    "mgt-retail-store-operations": "vocational",
+    "mgt-product-manager": "management",
+    "mgt-project-manager": null,
+    "mgt-management-consultant": "management",
+    "mgt-market-research-analyst": "management",
+    "mgt-entrepreneur": null,
+    "mgt-commercial-driver": null,
+    "fin-chartered-accountant": "commerce",
+    "fin-accounts-executive": "commerce",
+    "fin-financial-analyst": "commerce",
+    "fin-banking-professional": null,
+    "fin-insurance-professional": null,
+    "fin-investment-wealth-manager": "commerce",
+    "fin-actuary": null,
+    "fin-economist": "arts_social_sciences",
+    "law-lawyer": "law",
+    "law-company-secretary": "commerce",
+    "law-civil-services-officer": null,
+    "law-police-officer": null,
+    "law-armed-forces-officer": null,
+    "law-judicial-services-officer": "law",
+    "law-public-policy-professional": null,
+    "law-paralegal": null,
+    "law-firefighter": null,
+    "law-patent-agent": null,
+    "law-political-electoral": null,
+    "des-graphic-designer": "design",
+    "des-ux-designer": "design",
+    "des-animator-vfx": "design",
+    "des-illustrator": null,
+    "des-game-designer": null,
+    "des-interior-designer": "design",
+    "des-fashion-designer": "design",
+    "des-apparel-production": "design",
+    "des-tailor": null,
+    "des-handloom-weaver": null,
+    "des-handicraft-artisan": null,
+    "des-jeweller": "design",
+    "des-advertising-creative": null,
+    "des-fine-artist": "fine_arts",
+    "des-footwear-designer": "design",
+    "med-journalist": "media_film",
+    "med-content-writer": null,
+    "med-filmmaker": "media_film",
+    "med-cinematographer": "media_film",
+    "med-film-editor": "media_film",
+    "med-sound-designer": "media_film",
+    "med-photographer": null,
+    "med-production-designer": null,
+    "med-content-creator": null,
+    "med-voice-artist": null,
+    "med-pr-communications": "media_film",
+    "med-production-crew": null,
+    "prf-musician": null,
+    "prf-music-producer": null,
+    "prf-dancer": null,
+    "prf-actor": "media_film",
+    "prf-dj": null,
+    "prf-folk-performer": null,
+    "prf-live-sound": null,
+    "prf-instrument-maker": null,
+    "prf-theatre-practitioner": "media_film",
+    "prf-model": null,
+    "spt-athlete": null,
+    "spt-coach": "sports",
+    "spt-fitness-trainer": null,
+    "spt-official": null,
+    "spt-adventure-instructor": null,
+    "spt-esports": null,
+    "spt-sports-scientist": "sports",
+    "spt-facility-turf": null,
+    "edu-school-teacher": "education",
+    "edu-special-educator": "education",
+    "edu-college-teacher": null,
+    "edu-coaching-faculty": null,
+    "edu-early-childhood": null,
+    "edu-vocational-trainer": "vocational",
+    "edu-corporate-trainer": null,
+    "edu-instructional-designer": null,
+    "edu-librarian": null,
+    "edu-career-counsellor": null,
+    "soc-clinical-psychologist": "arts_social_sciences",
+    "soc-counsellor": "arts_social_sciences",
+    "soc-social-worker": "arts_social_sciences",
+    "soc-development-professional": null,
+    "soc-me-analyst": null,
+    "soc-community-worker": null,
+    "soc-disability-inclusion": null,
+    "soc-child-protection": null,
+    "env-environmental-engineer": "engineering",
+    "env-environmental-scientist": "science",
+    "env-gis-analyst": null,
+    "env-forest-officer": null,
+    "env-sustainability-esg": null,
+    "env-renewable-energy": "engineering",
+    "env-sanitation-worker": null,
+    "env-disaster-resilience": null,
+    "agr-farmer": null,
+    "agr-agronomist": "agriculture",
+    "agr-agricultural-engineer": "agriculture",
+    "agr-food-technologist": "agriculture",
+    "agr-dairy-livestock": "agriculture",
+    "agr-horticulture": "agriculture",
+    "agr-fisheries": "agriculture",
+    "agr-extension-agribusiness": "agriculture",
+    "hos-chef": "hotel_management",
+    "hos-fb-service": "hotel_management",
+    "hos-housekeeping": null,
+    "hos-hotel-manager": "hotel_management",
+    "hos-travel-tourism": null,
+    "hos-event-manager": null,
+    "hos-cabin-crew": null,
+    "hum-archaeologist": "arts_social_sciences",
+    "hum-anthropologist": "arts_social_sciences",
+    "hum-historian": "arts_social_sciences",
+    "hum-museum-archive": "arts_social_sciences",
+    "hum-conservator": null,
+    "hum-religious-professional": null,
+    "hum-classical-language": "arts_social_sciences",
+    "hum-heritage-management": null,
+    "hum-funeral-mortuary": null,
+    "pcw-yoga-instructor": null,
+    "pcw-beautician": null,
+    "pcw-hair-stylist": null,
+    "pcw-makeup-artist": null,
+    "pcw-spa-therapist": null,
+    "pcw-tattoo-artist": null
+  }
+}

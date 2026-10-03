@@ -26,8 +26,8 @@ the real picture of the field, not the glossy one.
 Do your career discovery and profile, and get your ranked matches. Mentorship only works once you
 know which direction you're exploring — so this comes first.
 
-**2. Choose a career and send it to us.**
-Pick the profession from your matches that you'd genuinely like to move toward, and let us know.
+**2. Choose a job role and send it to us.**
+Open a career from your matches and pick the one job role you'd genuinely like to move toward, and let us know.
 
 **3. We find your best-fit mentor — within 20 business days.**
 Once we have your chosen direction, we work to match you with a mentor actually inside that field.
@@ -63,10 +63,13 @@ choice.
 
 **If we can't match you — rollover first, refund on request.** If we cannot find a suitable
 mentor in your chosen field within 20 business days, your payment **rolls over**: we keep
-searching, or you can redirect it to a mentor for a *different* career from your matches, or apply
-it toward your Career Discovery profile if you haven't bought that yet. Prefer your money back
-instead? **Ask us and we'll refund you in full, no questions.** You're never stuck and never out
-of pocket for a match we couldn't make.
+searching, or you can redirect it to a mentor for a *different* career from your matches. Prefer
+your money back instead? **Ask us and we'll move you back to Career Discovery and refund the
+difference — {upgrade price, from the server} — no questions.** You keep everything Career
+Discovery gives you, and you're never out of pocket for a match we couldn't make.
+
+*(Round 10, owner: the refund here is the Tier 2 → Tier 1 difference, not a full refund — that is
+what the refund tooling does. The amount on the site is read from `GET /payments/getPricing`.)*
 
 ---
 

@@ -88,7 +88,15 @@ const EXPLAIN_MIN_WEIGHT = 0.3
 const SUPPORTING_SIMILARITY = 0.85
 const DIVERGING_SIMILARITY = 0.6
 
+// ROLE GROUPS (Round 10). A "wide" career lists role groups that ask for more or less of a few
+// factors than the career as a whole (role_spread.deviating_roles: `higher` / `lower`). A group's
+// demand is the career's, moved by this much on those factors (0-10 scale, clamped) — a judgement,
+// like every number here: big enough to tell an AR developer from a game developer, small enough
+// that a group never becomes a different career.
+const ROLE_SHIFT = 1.5
+
 module.exports = {
+    ROLE_SHIFT,
     ACTIVITY_MATCH_FLOOR,
     COMFORT_THRESHOLD,
     MINOR_GROUP_WEIGHT,

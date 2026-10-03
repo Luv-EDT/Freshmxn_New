@@ -24,6 +24,12 @@
     padding: 0 var(--space-4) var(--space-2);
 }
 
+/* a collapsible inside a collapsible (Your master's options) — no second box, no second gutter */
+.report-details.report-nested {
+    margin: var(--space-3) 0;
+    border-style: dashed;
+}
+
 .report-page .app-header ~ details.report-details {
     padding-left: var(--space-4);
     padding-right: var(--space-4);
@@ -190,6 +196,23 @@ button.pc-toggle:hover:not(:disabled) {
 
 .pc-small.tight {
     margin: 2px 0;
+}
+
+/* the exam calendar rows inside "Exams" (Round 11) */
+.pc-exams {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 8px;
+}
+
+.pc-exams li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line, #e6e6e6);
+    overflow-wrap: anywhere;
+}
+
+.pc-exams li:last-child {
+    border-bottom: 0;
 }
 
 .pc-group {
@@ -661,4 +684,1095 @@ button.sort-primary.is-on {
 
 .report-banner p {
     margin: 0 0 var(--space-2);
+}
+
+/* ── Round 9: the deeper report — card sections, plan, compare ─────────────────────────────────── */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* the blue-collar tag travels with the name everywhere (owner, 2026-09-30) */
+.pc-tag {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: var(--cream);
+    border: 1px solid var(--line);
+    color: var(--navy);
+    font-size: 0.72rem;
+    font-weight: 700;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.pc-what {
+    margin-top: var(--space-4);
+}
+
+.pc-what .pc-oneliner {
+    margin: 0 0 4px;
+}
+
+.pc-steps {
+    margin: 0;
+    padding-left: 1.2em;
+}
+
+.pc-steps li {
+    margin: 6px 0;
+}
+
+/* the collapsed sub-sections inside an opened card */
+.pc-more {
+    border-top: 1px solid var(--line);
+}
+
+.pc-more summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--navy);
+}
+
+.pc-more summary::-webkit-details-marker {
+    display: none;
+}
+
+.pc-more summary::after {
+    content: "+";
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    font-weight: 900;
+}
+
+.pc-more[open] summary::after {
+    content: "−";
+}
+
+.pc-more-body {
+    padding-bottom: var(--space-3);
+}
+
+.pc-facts {
+    display: grid;
+    grid-template-columns: minmax(120px, 40%) 1fr;
+    gap: 6px var(--space-3);
+    margin: var(--space-3) 0;
+}
+
+.pc-facts dt {
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.pc-facts dd {
+    margin: 0;
+}
+
+.pc-source {
+    font-style: italic;
+}
+
+.pc-caution {
+    background: var(--pink-tint);
+    border-left: 4px solid var(--pink);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.95rem;
+}
+
+/* the report-level plan */
+.report-matches-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.report-matches-head h2 {
+    margin-bottom: 0;
+}
+
+.report-headline {
+    background: var(--teal-tint);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-2) 0 var(--space-4);
+}
+
+.report-headline-title {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+}
+
+.muted-line {
+    color: var(--navy-soft);
+}
+
+.stream-map {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-3);
+}
+
+.stream-map li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px var(--space-3);
+    font-size: 0.95rem;
+}
+
+.stream-name {
+    font-weight: 700;
+}
+
+.stream-count {
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+.stream-bar {
+    grid-column: 1 / -1;
+    height: 8px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    overflow: hidden;
+}
+
+.stream-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.stream-closes {
+    grid-column: 1 / -1;
+    font-size: 0.85rem;
+    color: var(--navy-soft);
+}
+
+.report-hidden-note {
+    max-width: 800px;
+    background: var(--cream);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.92rem;
+}
+
+button.link-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    min-height: 0;
+    color: var(--teal-dark);
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+button.link-button:hover:not(:disabled) {
+    background: none;
+    color: var(--teal);
+}
+
+.sort-filter {
+    margin-top: var(--space-4);
+}
+
+/* compare page */
+.compare-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 16px var(--space-6);
+}
+
+.compare-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: var(--space-3) 0 var(--space-5);
+}
+
+.compare-scroll {
+    max-width: 100%;
+}
+
+.compare-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 560px;
+    background: var(--surface);
+    font-size: 0.92rem;
+}
+
+.compare-table th,
+.compare-table td {
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.compare-table thead th {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.05rem;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+/* the row labels stay visible while the table scrolls sideways on a phone */
+.compare-table tbody th,
+.compare-table thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--cream);
+    min-width: 130px;
+    max-width: 160px;
+}
+
+/* Round 10: a career whose picture is incomplete says how much was measured; the AI sub-sort shows
+   its number. Both small and quiet — the name stays the thing you read. */
+.pc-partial,
+.pc-ai {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.pc-partial {
+    background: var(--pink-tint);
+    color: var(--navy);
+}
+
+.pc-ai {
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+.is-top-1 .pc-partial,
+.is-top-1 .pc-ai,
+.is-top-2 .pc-partial,
+.is-top-2 .pc-ai {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--navy);
+}
+
+/* ── assessment page: research box, the "?" per section, coverage, problems (Round 10) ───────── */
+.research-box {
+    margin: var(--space-4) 0;
+}
+
+.research-body h3 {
+    font-size: 1.05rem;
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+.factor-chips {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.factor-chips li {
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.research-refs {
+    font-size: 0.85rem;
+    color: var(--navy-soft);
+    padding-left: 1.1rem;
+}
+
+.research-refs li {
+    margin-bottom: 4px;
+}
+
+.module-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.module-why {
+    flex: 0 0 auto;
+}
+
+.module-why > summary {
+    list-style: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--teal);
+    color: var(--teal-dark);
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.module-why > summary::-webkit-details-marker {
+    display: none;
+}
+
+.module-why[open] {
+    flex: 1 1 100%;
+}
+
+.module-why-body {
+    margin-top: var(--space-2);
+    padding: var(--space-3);
+    background: var(--cream);
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+}
+
+.module-row .module-title-row:has(.module-why[open]) {
+    flex-wrap: wrap;
+}
+
+.coverage-line {
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+.coverage-bar {
+    height: 8px;
+    background: var(--line);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin-bottom: var(--space-4);
+}
+
+.coverage-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.retake-note {
+    background: var(--pink-tint);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+}
+
+.report-problem {
+    margin-top: var(--space-2);
+    font-size: 0.9rem;
+}
+
+.report-problem summary {
+    color: var(--navy-soft);
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.report-problem label {
+    display: block;
+    margin: var(--space-2) 0;
+}
+
+.report-problem textarea {
+    width: 100%;
+    max-width: 480px;
+    display: block;
+    margin-bottom: var(--space-2);
+}
+
+.report-problem-sent {
+    font-size: 0.9rem;
+    color: var(--teal-dark);
+}
+
+/* ── the in-house reasoning puzzles (Round 10) ───────────────────────────────────────────────── */
+.reasoning-progress {
+    font-weight: 700;
+    color: var(--teal-dark);
+    margin-bottom: var(--space-2);
+}
+
+.reasoning-bar {
+    height: 6px;
+    background: var(--line);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    margin-bottom: var(--space-4);
+}
+
+.reasoning-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.reasoning-prompt {
+    font-size: 1.2rem;
+    line-height: 1.45;
+}
+
+.matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    max-width: 330px;
+    margin: var(--space-3) 0 var(--space-4);
+}
+
+.matrix-cell {
+    aspect-ratio: 1;
+    min-width: 0;
+}
+
+.reasoning-option svg {
+    max-width: 100%;
+}
+
+.series-terms {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin: var(--space-3) 0 var(--space-4);
+    overflow-wrap: anywhere;
+}
+
+.rotation-target {
+    display: flex;
+    justify-content: center;
+    background: var(--cream);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    margin: var(--space-3) 0 var(--space-4);
+}
+
+.reasoning-options {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.reasoning-options-matrix,
+.reasoning-options-rotation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+    .reasoning-options-matrix {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .reasoning-options-rotation {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.reasoning-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--navy);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+}
+
+.reasoning-options-matrix .reasoning-option,
+.reasoning-options-rotation .reasoning-option {
+    flex-direction: column;
+    justify-content: center;
+}
+
+.reasoning-option.is-picked {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.reasoning-option-letter {
+    font-weight: 900;
+    color: var(--teal-dark);
+}
+
+/* ── the 60-activity checklist (Round 10) ─────────────────────────────────────────────────────── */
+.interest-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+@media (min-width: 720px) {
+    .interest-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.interest-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.interest-item.is-on {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.interest-item input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--teal);
+    flex: 0 0 auto;
+}
+
+/* ── parent consent (Round 10) ───────────────────────────────────────────────────────────────── */
+.consent-step {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+    margin: var(--space-4) 0;
+}
+
+.consent-step label {
+    flex: 1 1 100%;
+}
+
+.consent-step input {
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    max-width: 200px;
+    text-align: center;
+}
+
+.consent-banner {
+    margin: var(--space-3) 0;
+}
+
+.accommodations-box {
+    margin: var(--space-3) 0;
+}
+
+.needs-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.skip-btn {
+    margin-left: var(--space-2);
+}
+
+.support-list li {
+    margin-bottom: var(--space-2);
+}
+
+/* ── the follow-up form (Round 10) ───────────────────────────────────────────────────────────── */
+.follow-up fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0 0 var(--space-4);
+    display: grid;
+    gap: 6px;
+}
+
+.follow-up legend {
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.rating-row {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.rating-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.rating-dot input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rating-dot.is-on {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+/* ── combined careers (Round 10) — the same card as the list, as a native <details> ─────────── */
+.combined-careers {
+    margin: var(--space-6) 0 var(--space-4);
+}
+
+.combined-card > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    cursor: pointer;
+}
+
+.combined-card > summary::-webkit-details-marker {
+    display: none;
+}
+
+.combined-card .pc-sign::before {
+    content: "+";
+}
+
+.combined-card[open] .pc-sign::before {
+    content: "−";
+}
+
+/* ── the interest form (Round 10, S10): cards, plain questions, chips ─────────────────────────── */
+
+.if-progress {
+    max-width: 720px;
+    margin-bottom: var(--space-5);
+}
+
+.if-progress-label {
+    margin: 0 0 var(--space-2);
+    color: var(--navy-soft);
+}
+
+.if-progress-bar {
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    overflow: hidden;
+}
+
+.if-progress-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+    border-radius: var(--radius-pill);
+}
+
+.if-steps {
+    margin-top: var(--space-2);
+}
+
+.if-steps summary,
+.if-examples summary {
+    cursor: pointer;
+    color: var(--teal-dark);
+    font-weight: 700;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.if-steps ol {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.app-header ~ * button.if-step-link {
+    margin: 0;
+    padding: 8px 14px;
+    min-height: 40px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--navy);
+    font-weight: 400;
+}
+
+.app-header ~ * button.if-step-link.is-current {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #ffffff;
+    opacity: 1;
+}
+
+.if-intro,
+.if-step-head {
+    max-width: 720px;
+}
+
+.if-lead {
+    font-size: var(--text-lead);
+}
+
+.if-step-head p {
+    color: var(--navy-soft);
+}
+
+.if-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-5) var(--space-4);
+    margin: 0 0 var(--space-5);
+    max-width: 720px;
+}
+
+@media (min-width: 640px) {
+    .if-card {
+        padding: var(--space-5) var(--space-6);
+    }
+}
+
+.if-card > div + div {
+    margin-top: var(--space-5);
+}
+
+.if-card-title {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+    color: var(--navy);
+}
+
+.if-question {
+    padding: var(--space-4) 0;
+    border-top: 1px solid var(--line);
+}
+
+.if-card-title + .if-question,
+.if-card-title + .if-examples + .if-question,
+.if-card-title + .if-question-prompt + .if-question {
+    border-top: 0;
+}
+
+.if-question-title {
+    display: block;
+    margin: 0 0 var(--space-1);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--navy);
+}
+
+.if-question-prompt {
+    margin: 0 0 var(--space-2);
+    color: var(--navy-soft);
+    font-size: 0.95rem;
+}
+
+.if-examples {
+    margin: 0 0 var(--space-2);
+}
+
+.if-examples > :not(summary) {
+    color: var(--navy-soft);
+    font-size: 0.95rem;
+}
+
+.if-examples[open] {
+    padding-bottom: var(--space-2);
+}
+
+.if-reference ul {
+    columns: 2 180px;
+    padding-left: 1.1em;
+}
+
+.if-small-label {
+    display: block;
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--navy-soft);
+}
+
+.if-problem {
+    border-left: 3px solid var(--teal-tint);
+    padding: var(--space-1) 0 var(--space-2) var(--space-3);
+    margin: var(--space-3) 0;
+}
+
+.if-problem.has-error {
+    border-left-color: var(--pink);
+}
+
+.if-pair {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+@media (min-width: 640px) {
+    .if-pair {
+        grid-template-columns: 1fr 1fr;
+        max-width: 640px;
+    }
+}
+
+.if-aspiration {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+/* the chips: what has been added, then one box to add the next */
+.chip-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.chip-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 100%;
+    padding: 4px 4px 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    color: var(--navy);
+    overflow-wrap: anywhere;
+}
+
+.app-header ~ * button.chip-remove {
+    margin: 0;
+    min-width: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--teal-dark);
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.chip-entry {
+    display: flex;
+    gap: var(--space-2);
+    max-width: 560px;
+}
+
+.app-header ~ * .chip-entry input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.app-header ~ * button.chip-add {
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.app-header ~ * button.if-add,
+.app-header ~ * button.if-link-button {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 8px 0;
+    min-height: 44px;
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+.if-prompt-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.app-header ~ * button.if-prompt-chip {
+    margin: 0;
+    text-align: left;
+    border-radius: var(--radius-pill);
+    padding: 8px 14px;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    font-weight: 400;
+}
+
+.app-header ~ * button.if-prompt-chip.is-used {
+    background: var(--teal-tint);
+}
+
+.if-error {
+    max-width: 720px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius);
+    background: var(--pink-tint);
+    color: var(--navy);
+    font-weight: 700;
+}
+
+.if-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: var(--space-4) 0 var(--space-7);
+}
+
+.if-done h1 {
+    margin-top: 0;
+}
+
+/* ── mentor picker: careers that open to their job roles, one role chosen (Round 11) ─────────────── */
+
+.role-picker {
+    max-width: 720px;
+    display: grid;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+}
+
+.role-picker-career {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+.role-picker-career[open] {
+    border-color: var(--teal);
+}
+
+.role-picker-career summary {
+    cursor: pointer;
+    min-height: 48px;
+    padding: var(--space-3) var(--space-4);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.role-picker-chosen {
+    font-weight: 700;
+    color: var(--teal-dark);
+    font-size: 0.9rem;
+}
+
+.role-picker-roles {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0 var(--space-4) var(--space-4);
+}
+
+.role-picker-suits {
+    margin-left: auto;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ── the word-memory test (Round 11): one large word at a time, nothing else on screen ───────────── */
+
+.word-recall-progress {
+    color: var(--navy-soft);
+    font-weight: 700;
+}
+
+.word-recall-stage {
+    min-height: 45vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.word-recall-stage span {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 11vw, 4rem);
+    color: var(--navy);
+    overflow-wrap: anywhere;
+}
+
+.app-header ~ * textarea.word-recall-input {
+    width: 100%;
+    max-width: 560px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* the study-abroad consent (Round 11) — a 44px tap target */
+.abroad-consent {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    min-height: 44px;
+    margin: 8px 0 12px;
+    cursor: pointer;
+}
+
+.abroad-consent input {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex: none;
 }

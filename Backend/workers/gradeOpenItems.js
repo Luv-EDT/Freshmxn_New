@@ -17,6 +17,8 @@
 // profile after a formula change never re-bills a single model call. That is the same property that
 // lets the whole scoring engine stay pure and re-runnable.
 
+const { recordUsage } = require("../utils/aiUsage")
+const crypto = require("crypto")
 const fs = require("fs")
 const path = require("path")
 
@@ -68,14 +70,24 @@ const createGradingClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = p
             body: JSON.stringify({
                 model,
                 max_tokens: 1500,
-                system,
+                // CACHED (Round 11): every student's answer is graded against the same rubric text,
+                // so the rubric is read from the cache at a fraction of the price after the first.
+                system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
                 messages: [{ role: "user", content: user }],
             }),
+            signal: AbortSignal.timeout(90000),
         })
 
         if (!response.ok) throw new Error(`Anthropic HTTP ${response.status} — ${(await response.text()).slice(0, 200)}`)
 
         const payload = await response.json()
+        recordUsage("grading", model, payload)
+
+        // A truncated reply is not a grade; and it will truncate again, so it is said plainly
+        // rather than left to look like a malformed (and therefore retryable) one.
+        if (payload.stop_reason === "max_tokens") throw new Error("reply hit max_tokens")
+        if (!Array.isArray(payload.content)) throw new Error("reply had no content")
+
         return payload.content.map((block) => block.text || "").join("")
     }
 )
@@ -91,7 +103,20 @@ const createGradingClient = ({ apiKey = process.env.ANTHROPIC_API_KEY, model = p
 // attempt, when the null is stored (with its reason) so the student still gets a profile with one
 // factor dropped rather than no report at all. A stored transient null is graded again on the
 // next run; a genuine unscoreable answer (blank, off-topic) never is, so it is never re-billed.
-const isTransient = (reason) => typeof reason === "string" && (reason.startsWith("call_failed") || reason === "malformed_json")
+//
+// Within call_failed, two failures will repeat however often they are retried, so they are not
+// transient: a reply cut off at max_tokens, and a 4xx that is not a rate limit or timeout (the
+// request itself is wrong). 429 / 408 / 409 and 5xx are the service being busy.
+const PERMANENT_CALL_FAILURE = /max_tokens|HTTP 4(?!08|09|29)\d\d/
+
+const isTransient = (reason) => typeof reason === "string"
+    && ((reason.startsWith("call_failed") && !PERMANENT_CALL_FAILURE.test(reason)) || reason === "malformed_json")
+
+// A short fingerprint of the text a grade was given for. Before this, an edited answer kept its old
+// grade forever — only ungraded items were ever sent (backend review #10). Now a grade whose text has
+// changed is graded again, and an answer that was cleared loses its grade. Grades from before this
+// field existed have no fingerprint and are kept as they are — never re-billed on a guess.
+const textHash = (text) => crypto.createHash("sha256").update(String(text).trim(), "utf8").digest("hex").slice(0, 16)
 
 // ── the story's free recall ─────────────────────────────────────────────────────────────────────
 //
@@ -103,7 +128,13 @@ const isTransient = (reason) => typeof reason === "string" && (reason.startsWith
 // The rubric lives in 05_Story_Bank.md rather than llm_scoring_prompts.md, and it needs the
 // STORY'S FACTS to mark against — problem, cause and resolution differ per story, so a generic
 // prompt would be scoring recall against nothing.
-const loadStoryRubric = () => {
+//
+// THE PLACEHOLDERS ARE FILLED HERE. The story bank writes them with SINGLE braces ({STUDENT_TEXT},
+// {DELAY_HOURS}, {slot_10}…); this used to strip only a double-braced {{STUDENT_TEXT}}, so the model
+// was handed a literal "{slot_10}" as the fact list plus a stray empty response block, and the real
+// facts only as an afterthought below it. Called with no story it returns the template with only
+// the response block removed, which is what the "every rubric is findable" fixture checks.
+const loadStoryRubric = (story) => {
     const doc = fs.readFileSync(path.join(DOCS, "05_Story_Bank.md"), "utf8")
     const section = doc.split("# LLM SCORING PROMPT — FREE RECALL")[1]
     if (!section) throw new Error("no free-recall scoring prompt in 05_Story_Bank.md")
@@ -111,7 +142,18 @@ const loadStoryRubric = () => {
     const block = section.match(/```\n([\s\S]*?)\n```/)
     if (!block) throw new Error("no fenced rubric under the free-recall prompt")
 
-    return block[1].replace(/<response>\s*\{\{STUDENT_TEXT\}\}\s*<\/response>/, "").trim()
+    let rubric = block[1].replace(/<response>\s*\{\{?STUDENT_TEXT\}?\}\s*<\/response>/, "").trim()
+    if (!story) return rubric
+
+    const facts = story.facts || {}
+    const hours = typeof story.delayHours === "number" ? String(Math.round(story.delayHours)) : "several"
+    rubric = rubric
+        .replace(/\{DELAY_HOURS\}/g, hours)
+        .replace(/\{slot_10\}/g, facts.problem || "(not recorded)")
+        .replace(/\{slot_11\}/g, facts.cause || "(not recorded)")
+        .replace(/\{slot_12\}/g, facts.resolution || "(not recorded)")
+
+    return rubric
 }
 
 const gradeStoryRecall = async ({ psychometric, callLlm, force = false, acceptTransient = false }) => {
@@ -125,9 +167,9 @@ const gradeStoryRecall = async ({ psychometric, callLlm, force = false, acceptTr
     const narrated = ["LR1", "LR2", "LR3"].map((id) => freeText[id]).filter((text) => typeof text === "string" && text.trim() !== "")
     if (narrated.length === 0) return null
 
-    // The facts are handed to the model as the mark scheme. Without them "what was the problem"
-    // has no correct answer to compare against.
-    const rubric = `${loadStoryRubric()}\n\nTHE STORY'S FACTS, for marking:\nproblem: ${block.facts && block.facts.problem}\ncause: ${block.facts && block.facts.cause}\nresolution: ${block.facts && block.facts.resolution}`
+    // The facts are handed to the model as the mark scheme, filled into the rubric's own fact list.
+    // Without them "what was the problem" has no correct answer to compare against.
+    const rubric = loadStoryRubric(block)
 
     const answer = ["LR1", "LR2", "LR3"].map((id) => `${id}: ${freeText[id] || ""}`).join("\n\n")
     const result = await scoreOpenItem("LR_FREE_RECALL", answer, rubric, callLlm)
@@ -155,19 +197,38 @@ const gradeOpenItems = async ({ psychometric, callLlm, force = false, acceptTran
     const alreadyGraded = perspective.open || {}
     const previousMeta = perspective.openMeta || {}
 
-    const todo = OPEN_ITEMS.filter((itemId) => {
-        const text = openText[itemId]
-        if (typeof text !== "string" || text.trim() === "") return false
-        if (force || alreadyGraded[itemId] === undefined) return true
-        return alreadyGraded[itemId] === null && Boolean(previousMeta[itemId]) && isTransient(previousMeta[itemId].unscoreable_reason)
-    })
-
-    if (todo.length === 0) return null
-
-    const rubrics = loadRubrics()
     const open = { ...alreadyGraded }
     // Merged, not replaced: the meta of items graded on an earlier run is kept.
     const meta = { ...previousMeta }
+    let housekeeping = false
+
+    const todo = OPEN_ITEMS.filter((itemId) => {
+        const text = openText[itemId]
+        const blank = typeof text !== "string" || text.trim() === ""
+
+        // CLEARED since it was graded — the text is there and empty — so the grade no longer
+        // describes anything the student wrote. (No text record at all is not a clearing; a grade
+        // with nothing beside it is carried through as before.)
+        if (blank) {
+            if (typeof text === "string" && open[itemId] !== undefined) {
+                delete open[itemId]
+                delete meta[itemId]
+                housekeeping = true
+            }
+            return false
+        }
+
+        if (force || alreadyGraded[itemId] === undefined) return true
+
+        const previous = previousMeta[itemId]
+        if (previous && previous.textHash && previous.textHash !== textHash(text)) return true
+
+        return alreadyGraded[itemId] === null && Boolean(previous) && isTransient(previous.unscoreable_reason)
+    })
+
+    if (todo.length === 0) return housekeeping ? { open, meta, transient: [] } : null
+
+    const rubrics = loadRubrics()
     const transient = []
 
     for (const itemId of todo) {
@@ -178,6 +239,7 @@ const gradeOpenItems = async ({ psychometric, callLlm, force = false, acceptTran
             unscoreable_reason: result.unscoreable_reason,
             problems: result.problems,
             gradedAt: new Date().toISOString(),
+            textHash: textHash(openText[itemId]),
         }
 
         if (isTransient(result.unscoreable_reason) && !acceptTransient) {
@@ -196,4 +258,4 @@ const gradeOpenItems = async ({ psychometric, callLlm, force = false, acceptTran
     return { open, meta, transient }
 }
 
-module.exports = { gradeOpenItems, gradeStoryRecall, createGradingClient, loadRubrics, loadStoryRubric, OPEN_ITEMS, isTransient }
+module.exports = { gradeOpenItems, gradeStoryRecall, createGradingClient, loadRubrics, loadStoryRubric, OPEN_ITEMS, isTransient, textHash }

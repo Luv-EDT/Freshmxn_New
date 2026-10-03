@@ -11,6 +11,8 @@ import Landing from "./pages/Public/Landing.js"
 import ProtectedRoute from "./pages/User/ProtectedRoute.js"
 import CompleteProfile from "./pages/User/CompleteProfile.js"
 import Paywall from "./pages/User/Paywall.js"
+import ParentConsent from "./pages/User/ParentConsent"
+import FollowUpPage from "./pages/Public/FollowUpPage"
 import Profile from "./pages/User/Profile.js"
 import Mentorship from "./pages/User/Mentorship.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
@@ -18,6 +20,7 @@ import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
 import InterestForm from "./pages/Interest/InterestForm.js"
 import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
 import ReportPage from "./pages/Report/ReportPage.js"
+import ComparePage from "./pages/Report/ComparePage.js"
 import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
 import HowItWorks from "./pages/Public/HowItWorks.js"
@@ -48,6 +51,7 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />
+                <Route path="/follow-up/:token" element={<FollowUpPage />} />
 
                 {/* The company's landing page — for everyone, logged in or not. The logo always
                     leads here; a logged-in student's own space is /dashboard. */}
@@ -77,6 +81,12 @@ function App() {
                 <Route path="/paywall" element={
                     <ProtectedRoute>
                         <Paywall />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/parent-consent" element={
+                    <ProtectedRoute>
+                        <ParentConsent />
                     </ProtectedRoute>
                 } />
 
@@ -112,6 +122,11 @@ function App() {
                 <Route path="/report" element={
                     <ProtectedRoute requirePaid={true}>
                         <ReportPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/report/compare" element={
+                    <ProtectedRoute requirePaid={true}>
+                        <ComparePage />
                     </ProtectedRoute>
                 } />
 

@@ -3,7 +3,8 @@ const mongoose = require("mongoose")
 // a Tier-2 student's place on the mentor waitlist (PRD §B.10).
 //
 // The PAYMENT is not recorded here — grantAccess already writes it and flips progress.mentor to
-// "waitlisted". This row records what happens after: the career they choose, and the match.
+// "waitlisted". This row records what happens after: the career and the ONE job role in it they choose (Round 11),
+// and the match.
 //
 // THE 20-BUSINESS-DAY CLOCK STARTS AT choiceSentAt, NEVER AT PAYMENT. Both the PRD and the public
 // waitlist page promise that; a student who pays today and chooses in a month must not find their
@@ -23,6 +24,9 @@ const mentorWaitlistSchema = new mongoose.Schema(
         chosenProfessionName: {
             type: String,
         },
+        chosenJobRole: {
+            type: String, // one of that career's job_roles (Round 11) — read from the data file, never trusted from the body
+        },
         choiceSentAt: {
             type: Date, // the clock starts here
         },
@@ -38,7 +42,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
             type: Date,
         },
         resolution: {
-            type: String, // matched | rolled_over | refunded — recorded here; money still moves through the refund tooling
+            type: String, // matched | rolled_over | refunded | left_tier2 (set automatically when the student moves off Tier 2) — recorded here; money still moves through the refund tooling
         },
         adminNote: {
             type: String,

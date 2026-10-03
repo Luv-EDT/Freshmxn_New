@@ -9,6 +9,7 @@
         "seed:admin": "node seedAdmin.js",
         "worker:score": "nodemon workers/scoreProfileWorker.js",
         "worker:report": "nodemon workers/generateReportWorker.js",
+        "worker:housekeeping": "node workers/housekeepingWorker.js",
         "pipeline:status": "node tools/pipelineStatus.js"
     },
     "dependencies": {
