@@ -4019,7 +4019,8 @@ const fixtures = [
             if (!cleanReview({ qualities: [{ factor: "telepathy", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
             if (!cleanReview({}, qualities).error) problems.push("an empty review was kept")
             const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
-            if (!/mentorNotes: suggestionRows\.flatMap\(\(row\) => \(row\.approved/.test(updates)) problems.push("approved mentor suggestions do not reach Export patch")
+            // Round 16 (owner, one queue): the Round 15 approvals plus the mentor wording approved in Data updates
+            if (!/mentorNotes: \[\s*\.\.\.suggestionRows\.flatMap\(\(row\) => \(row\.approved/.test(updates) || !/\.\.\.mentorTexts\.map\(/.test(updates)) problems.push("approved mentor suggestions do not reach Export patch")
             const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
             if (!/app\.use\("\/mentorReviews", mentorReviewsRouter\)/.test(server)) problems.push("the router is not mounted")
             return problems.length > 0 ? problems.join("; ") : null
@@ -4354,7 +4355,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "MENTOR SUGGESTIONS — only changes reach the admin; one row per profession that mentors add to; approving empties it; the data file mirrors it",
+        name: "MENTOR SUGGESTIONS — only changes reach the admin; one row per profession that mentors add to; the monthly check empties it; the data file mirrors it",
         // Round 15 (owner): "only the suggestions that suggest a change … a single entry for that
         // profession … once approved this should be empty"
         run: () => {
@@ -4377,14 +4378,101 @@ const fixtures = [
             const resaved = mergeSuggestions(second, "m1", [{ mentor: "m1", section: "nuances" }])
             if (resaved.length !== 3 || resaved.some((entry) => entry.section === "pay")) problems.push("a mentor's re-save did not replace their own earlier suggestions")
 
-            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
-            const decide = router.slice(router.indexOf('router.put("/decideSuggestionsForAdmin'))
-            if (!/mentor_suggestions: pending\.filter/.test(decide) || !/approved: action === "approve"/.test(decide)) problems.push("approving does not empty the waiting list into `approved`")
+            // Round 16 (owner, one queue): the list is no longer emptied by an admin button here but by
+            // Claude's monthly check (housekeeping/mentorPass.js), which moves every handled suggestion
+            // to `processed`. The MENTOR PASS fixture below drives it.
+            const pass = fs.readFileSync(path.join(__dirname, "../../housekeeping/mentorPass.js"), "utf8")
+            if (!/mentor_suggestions: \(row\.mentor_suggestions \|\| \[\]\)\.filter\(\(suggestion\) => !handled\.has/.test(pass) || !/processed: \[\.\.\.\(row\.processed \|\| \[\]\), \.\.\.processed\]/.test(pass)) problems.push("the monthly check does not empty the waiting list into `processed`")
             const tool = fs.readFileSync(path.join(__dirname, "../../tools/applyDataPatch.js"), "utf8")
             if (!/record\.mentor_suggestions = list/.test(tool)) problems.push("Export patch does not write mentor_suggestions into ALL-professions.json")
             const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
             if (!/mentorSuggestions: suggestionRows\.map/.test(updates)) problems.push("Export patch does not carry each profession's list")
             if (/mentorId|mentor: mentor\b|email/.test(updates.slice(updates.indexOf("mentorSuggestions:"), updates.indexOf("mentorSuggestions:") + 600))) problems.push("a mentor id or email would be written into the data file")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MENTOR PASS — Claude's monthly check turns what a source supports into ordinary proposals, discards the rest with a reason, and empties the list",
+        // Round 16 (owner): "send these suggestions to our monthly data updates, where Claude will scan
+        // these and make use of relevant ones and discard the other ones" — one queue, no clash
+        run: () => {
+            const { pickProfessionsWithSuggestions, decide, prepareItem, signatureOf } = require("../../housekeeping/mentorPass")
+            const { mergeSuggestions } = require("../../Routers/mentorReviewsRouter")
+            const problems = []
+
+            const at = (day) => new Date(`2026-10-${day}T00:00:00Z`)
+            const rows = [
+                { professionId: "swc-software-developer", mentor_suggestions: [{ section: "pay", suggestedAt: at(20) }] },
+                { professionId: "hlt-dietitian", mentor_suggestions: [{ section: "path", suggestedAt: at(3) }, { section: "ai", suggestedAt: at(25) }] },
+                { professionId: "med-journalist", mentor_suggestions: [] },
+                { professionId: "not-a-career", mentor_suggestions: [{ section: "pay", suggestedAt: at(1) }] },
+            ]
+            const picked = pickProfessionsWithSuggestions(rows, 5).map((row) => row.professionId)
+            if (picked.join(",") !== "hlt-dietitian,swc-software-developer") problems.push(`wrong order or rows picked: ${picked.join(",")}`)
+            if (pickProfessionsWithSuggestions(rows, 1).length !== 1) problems.push("the monthly limit is not kept")
+
+            const suggestions = [
+                { mentor: "m1", mentorName: "Asha", section: "pay", note: "Freshers start at 5-9L now", suggestedAt: at(1) },
+                { mentor: "m2", mentorName: "Ravi", section: "pay", note: "Starting pay is higher", suggestedAt: at(2) },
+                { mentor: "m1", mentorName: "Asha", section: "masters", note: "An M.Tech is how most get in", suggestedAt: at(1) },
+                { mentor: "m2", mentorName: "Ravi", section: "qualities", factor: "focus", direction: "higher", note: "", suggestedAt: at(2) },
+                { mentor: "m3", mentorName: "Meena", section: "nuances", note: "Remote roles are common", suggestedAt: at(3) },
+                { mentor: "m3", mentorName: "Meena", section: "demand", note: "It is declining", suggestedAt: at(3) },
+                { mentor: "m3", mentorName: "Meena", section: "exams", note: "GATE matters", suggestedAt: at(3) },
+            ]
+            const sheet = { profession: "Software Developer", sections: { nuances: ["Long hours"] }, qualities: [{ factor: "focus", label: "Focus", level: "Medium" }] }
+            const current = { career: { india_demand: "high", early_earnings_lpa: "3.5-8.0", mid_career_lpa: "8.0-20.0" }, fact: { after_undergrad: "work_first", abroad: null } }
+            const item = prepareItem({ professionId: "swc-software-developer", mentor_suggestions: suggestions }, sheet, current)
+            if (!/Freshers start at 5-9L now/.test(item.request.user) || !/WHAT WE SHOW TODAY/.test(item.request.user)) problems.push("Claude is not shown the suggestions beside what we show")
+            const sources = [{ url: "https://www.naukri.com/jobspeak", title: "JobSpeak" }]
+            const reply = {
+                sources,
+                json: {
+                    decisions: [
+                        { indexes: [0, 1], outcome: "use", reason: "JobSpeak puts fresher pay at 5-9 LPA", change: { field: "early_earnings_lpa", proposed: "5.0-9.0", confidence: "medium" } },
+                        { indexes: [2], outcome: "use", reason: "IIT pages", change: { proposed: "masters_is_the_entry", confidence: "low" } },
+                        { indexes: [3], outcome: "use", reason: "Job ads stress deep focus", change: { text: "Focus should be High: long debugging sessions are routine.", confidence: "low" } },
+                        { indexes: [4, 1], outcome: "use", reason: "NCS lists remote roles", change: { text: "Many roles can be done remotely." } },
+                        { indexes: [5], outcome: "use", reason: "", change: { field: "india_demand", proposed: "high" } },
+                        { indexes: [99], outcome: "use" },
+                    ],
+                },
+            }
+            const outcomes = decide(item, reply)
+            const byIndex = new Map(outcomes.flatMap((outcome) => outcome.indexes.map((index) => [index, outcome])))
+            const pay = byIndex.get(0)
+            if (!pay || pay.kind !== "career" || pay.change.field !== "early_earnings_lpa" || pay.change.proposedValue !== "5.0-9.0") problems.push(`pay did not become a career proposal: ${JSON.stringify(pay)}`)
+            if (byIndex.get(1) !== pay) problems.push("two mentors saying the same thing did not share one proposal")
+            if (!byIndex.get(2) || byIndex.get(2).kind !== "study_fact" || byIndex.get(2).change.field !== "after_undergrad") problems.push("a master's suggestion did not become a study_fact proposal")
+            const quality = byIndex.get(3)
+            if (!quality || quality.kind !== "mentor_text" || quality.change.factor !== "focus" || quality.change.direction !== "higher" || quality.change.currentValue !== "Focus: Medium") problems.push(`a quality did not become a mentor_text proposal: ${JSON.stringify(quality)}`)
+            if (!byIndex.get(4) || byIndex.get(4).kind !== "mentor_text" || byIndex.get(4).indexes.includes(1)) problems.push("a suggestion was covered twice, or a section's wording was lost")
+            if (!byIndex.get(5) || byIndex.get(5).outcome !== "discarded" || !byIndex.get(5).reason) problems.push("a change to what we already show was not discarded with a reason")
+            if (byIndex.has(6)) problems.push("a suggestion with no decision was handled — it must keep waiting for next month")
+            if (outcomes.some((outcome) => outcome.indexes.includes(99))) problems.push("an out-of-range index was used")
+
+            const unsourced = decide(item, { sources: [], json: { decisions: [{ indexes: [4], outcome: "use", reason: "I think so", change: { text: "Remote is common" } }] } })
+            if (unsourced[0].outcome !== "discarded") problems.push("a use with no page behind it was not discarded")
+            if (decide(item, { sources, json: { decisions: [{ indexes: [0], outcome: "use", change: { field: "india_demand", proposed: "low" } }] } })[0].outcome !== "discarded") problems.push("a pay suggestion could change demand")
+
+            // a re-send of something already checked is not queued again; new words are
+            const processed = [{ ...suggestions[0], outcome: "used" }]
+            const resent = mergeSuggestions([], "m1", [{ mentor: "m1", section: "pay", note: "Freshers start at 5-9L now" }, { mentor: "m1", section: "path", note: "Add bootcamps" }], processed)
+            if (resent.length !== 1 || resent[0].section !== "path") problems.push(`a re-send re-queued a checked suggestion: ${JSON.stringify(resent)}`)
+            if (signatureOf({ section: "pay", note: " Freshers START at 5-9L now " }) !== signatureOf(suggestions[0])) problems.push("the same words are not recognised as the same suggestion")
+
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
+            if (/decideSuggestionsForAdmin|can't be changed now/.test(router)) problems.push("the admin still decides in Mentor reviews, or a sent review still locks")
+            const refresh = fs.readFileSync(path.join(__dirname, "../../housekeeping/dataRefresh.js"), "utf8")
+            if (!/require\("\.\/mentorPass"\)\.runMentorPass/.test(refresh)) problems.push("the monthly refresh does not run the mentor pass")
+            const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/kind: "mentor_text", status: "approved"/.test(updates)) problems.push("approved mentor wording does not reach Export patch")
+            const approve = updates.slice(updates.indexOf('proposal.kind === "mentor_text"'), updates.indexOf('proposal.kind === "mentor_text"') + 400)
+            if (/ProfessionOverride|StudyFactOverride|updateOne/.test(approve)) problems.push("approving mentor wording changes a live page")
+            const matching = fs.readdirSync(path.join(__dirname, "../../matching")).filter((file) => file.endsWith(".js"))
+                .map((file) => fs.readFileSync(path.join(__dirname, "../../matching", file), "utf8")).join("\n")
+            if (/professionSuggestions|mentorPass|mentor_text|dataProposals/.test(matching)) problems.push("matching reads mentors' suggestions")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
