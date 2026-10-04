@@ -101,14 +101,18 @@ function InterestForm() {
         // the server wins unless this browser holds something newer (e.g. a crash mid-section)
         const preferDraft = draft && (!serverSavedAt || (draftSavedAt && new Date(draftSavedAt) > new Date(serverSavedAt)))
 
+        // A form saved before Round 13 has no record of how far it got. Rather than send that student
+        // back to the first stage, it keeps the freedom it had: every stage up to Aspirations is open.
+        const legacy = { lastStep: null, reachedStep: "aspirations" }
+
         if (preferDraft) {
-            if (draft.progress) setProgress(draft.progress)
+            setProgress(draft.progress || legacy)
             setFormState(normalizeFormState(draft.formState))
             return
         }
 
         if (submission?.interest && Object.keys(submission.interest).length > 0) {
-            if (submission.interest.formProgress) setProgress(submission.interest.formProgress)
+            setProgress(submission.interest.formProgress || legacy)
             setFormState(fromSubmissionInterest(submission.interest))
             return
         }

@@ -34,7 +34,10 @@ function Home() {
     // The first stage that is open and not finished — what "carry on" means for this student right
     // now. Read from the same function the bar uses, so the button and the bar can never disagree
     // about where they are.
-    const nextStage = journeyStages(user).find((stage) => stage.open && stage.state !== "done")
+    const stages = journeyStages(user)
+    const nextStage = stages.find((stage) => stage.open && stage.state !== "done")
+    const doneCount = stages.filter((stage) => stage.state === "done").length
+    const share = stages.length ? doneCount / stages.length : 0
 
     return (
         <div>
@@ -57,23 +60,16 @@ function Home() {
             {user.paid && (
                 <div>
                     {/* Round 13 (owner): a rewarding look — how far they are, at a glance */}
-                    {(() => {
-                        const stages = journeyStages(user)
-                        const doneCount = stages.filter((stage) => stage.state === "done").length
-                        const share = stages.length ? doneCount / stages.length : 0
-                        return (
-                            <div className="home-ring">
-                                <svg viewBox="0 0 36 36" aria-hidden="true">
-                                    <circle cx="18" cy="18" r="15.9155" className="home-ring-track" />
-                                    <circle cx="18" cy="18" r="15.9155" className="home-ring-fill" strokeDasharray={`${share * 100} 100`} />
-                                </svg>
-                                <p>
-                                    <strong>{doneCount} of {stages.length} done</strong>
-                                    <span>{doneCount === stages.length ? "Every stage finished — well done." : doneCount === 0 ? "Let's get you started." : "You're on your way."}</span>
-                                </p>
-                            </div>
-                        )
-                    })()}
+                    <div className="home-ring">
+                        <svg viewBox="0 0 36 36" aria-hidden="true">
+                            <circle cx="18" cy="18" r="15.9155" className="home-ring-track" />
+                            <circle cx="18" cy="18" r="15.9155" className="home-ring-fill" strokeDasharray={`${share * 100} 100`} />
+                        </svg>
+                        <p>
+                            <strong>{doneCount} of {stages.length} done</strong>
+                            <span>{doneCount === stages.length ? "Every stage finished — well done." : doneCount === 0 ? "Let's get you started." : "You're on your way."}</span>
+                        </p>
+                    </div>
 
                     <JourneyProgress user={user} variant="home" />
 

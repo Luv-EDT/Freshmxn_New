@@ -101,14 +101,12 @@ router.post("/saveInterest", authMiddleware, requireDiscovery, async (req, res) 
         // on the assessment page (assessment/accommodations.js) — not measured, never low.
         const existing = await Submission.findOne({ user: req.user._id }).select("psychometric").lean()
         const accommodations = accommodationsFromInterest(cleanedInterest.backgroundInfo, (existing && existing.psychometric) || {})
-        const unset = {}
         if (accommodations) changes["psychometric.accommodations"] = accommodations
-        if (accommodations === null) unset["psychometric.accommodations"] = ""
 
         // interest is a Mixed field — always $set the whole object, never .push() + .save()
         const updatedSubmission = await Submission.findOneAndUpdate(
             { user: req.user._id },
-            { $set: changes, ...(Object.keys(unset).length > 0 ? { $unset: unset } : {}) },
+            { $set: changes, ...(accommodations === null ? { $unset: { "psychometric.accommodations": "" } } : {}) },
             { returnDocument: "after", upsert: true }
         )
 
@@ -509,7 +507,8 @@ router.post("/reasoningNext", authMiddleware, requireDiscovery, async (req, res)
         let block = psychometric.reasoning || {}
 
         const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
-        const form = block.form || ((psychometric.history && (psychometric.history.reasoning || []).length > 0) ? "B" : "A")
+        // a block with a seed and no form was dealt before forms existed — form A, even on a retake
+        const form = block.form || (typeof block.seed !== "number" && psychometric.history && (psychometric.history.reasoning || []).length > 0 ? "B" : "A")
 
         // a puzzle left on screen past its clock (a closed tab, a refresh) is recorded as out of
         // time before the next one is dealt

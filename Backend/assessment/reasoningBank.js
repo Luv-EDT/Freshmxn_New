@@ -215,7 +215,6 @@ const VERBAL_FORMS = {
         ],
     ],
 }
-const VERBAL = VERBAL_FORMS.A
 
 // How long each puzzle is on screen (owner, Round 13). The picture puzzles take longer to read.
 // When the time runs out the puzzle counts as not answered and the next one comes.
@@ -341,4 +340,4 @@ const publicItem = (item) => {
     return visible
 }
 
-module.exports = { ITEM_COUNT, TYPES, TIME_LIMIT_S, itemFor, publicItem, isTurnOf, mirror, VERBAL, VERBAL_FORMS, rng, shuffle }
+module.exports = { ITEM_COUNT, TYPES, TIME_LIMIT_S, itemFor, publicItem, isTurnOf, mirror, VERBAL_FORMS, rng, shuffle }

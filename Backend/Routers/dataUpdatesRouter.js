@@ -12,7 +12,7 @@ const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
 const { clearStudyOverrides } = require("../utils/studyPlaces")
 const { costOf } = require("../utils/aiUsage")
-const { validateExamChange, validateNewExam, validateFactChange, validateCutoffChange, cutoffDomains, validateLicenceChange, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
+const { validateExamChange, validateNewExam, validateFactChange, validateCutoffChange, cutoffDomains, validateLicenceChange, hostOf, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
 const { cutoffs: cutoffData } = require("../utils/cutoffs")
 const abroadWork = require("../data/abroad_work.json")
 const { qualitiesFor } = require("./mentorReviewsRouter")
@@ -63,7 +63,7 @@ const approveStudyProposal = async (proposal) => {
         const [careerId, country] = String(proposal.professionId).split(":")
         const current = ((abroadWork.licences[careerId] || {})[country]) || null
         if (!current || !value) return "That licence row is not in data/abroad_work.json"
-        const host = (() => { try { return new URL(current.url).hostname.replace(/^www\./, "") } catch (error) { return null } })()
+        const host = hostOf(current.url)
         const valid = validateLicenceChange({ field: "licence", proposed: value }, {}, [{ url: "checked" }], host ? [host] : [])
         if (!valid) return "The proposed route is not well formed, or its page is not the licensing body's own"
         const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")

@@ -143,7 +143,8 @@ export const progressPct = (key, block) => {
             total += 2
         }
     } else if (FIXED_LENGTH[key]) {
-        done = key === "wordRecall" ? (block.trials || []).length : (block.answered || 0)
+        // the page gets counts, not the marked rows (getMySubmission strips trials and responses)
+        done = key === "wordRecall" ? (block.written || 0) : (block.answered || 0)
         total = FIXED_LENGTH[key]
     }
     if (!total) return null

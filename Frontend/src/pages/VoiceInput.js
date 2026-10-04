@@ -53,10 +53,14 @@ function VoiceInput({ onText, compact = false }) {
         session.lang = language
         session.continuous = true
         session.interimResults = false
+        // every final phrase in one event goes over as one piece — two calls in a row would each
+        // append to the same old text, and the first phrase would be lost
         session.onresult = (event) => {
+            const said = []
             for (let index = event.resultIndex; index < event.results.length; index += 1) {
-                if (event.results[index].isFinal) latest.current(event.results[index][0].transcript)
+                if (event.results[index].isFinal) said.push(event.results[index][0].transcript.trim())
             }
+            if (said.length > 0) latest.current(said.join(" "))
         }
         session.onerror = (event) => {
             setError(event.error === "not-allowed" || event.error === "service-not-allowed"

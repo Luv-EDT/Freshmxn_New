@@ -582,6 +582,6 @@ const runStudyRefresh = async ({
 
 module.exports = {
     runStudyRefresh, handleItem, newResult, check, prepareItems, pickOldest, validateCollegeChange, validateExamChange, validateNewExam, validateFactChange, cleanInstitution,
-    validateCutoffChange, cutoffDomains, CUTOFF_SYSTEM, CUTOFF_MONTHS, validateLicenceChange, licenceRows, LICENCE_MONTHS, COLLEGE_MONTHS, FACT_MONTHS, windowMonth, examIsDue,
+    validateCutoffChange, cutoffDomains, CUTOFF_SYSTEM, CUTOFF_MONTHS, validateLicenceChange, licenceRows, hostOf, LICENCE_MONTHS, COLLEGE_MONTHS, FACT_MONTHS, windowMonth, examIsDue,
     EXACT_DATE, RANKING_DOMAINS, FACT_DOMAINS, COLLEGE_SYSTEM, EXAM_SYSTEM, FACT_SYSTEM, MASTERS_VALUES, ABROAD_NEEDS, ABROAD_STAGES,
 }

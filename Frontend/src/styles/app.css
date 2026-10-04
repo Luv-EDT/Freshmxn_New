@@ -515,6 +515,11 @@ button.filter-option.is-on {
     color: var(--navy);
 }
 
+/* a 150px tile at 360px is narrower than "Questions open tomorrow" on one line */
+.deck-tile .status-chip {
+    white-space: normal;
+}
+
 .assess-submit {
     border-top: 1px solid var(--line);
     padding-top: var(--space-4);
