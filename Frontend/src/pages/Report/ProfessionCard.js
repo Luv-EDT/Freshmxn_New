@@ -213,11 +213,6 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                     {topRank > 0 && <span className="pc-top">Top match</span>}
                     {entry.profession}
                     {blueCollar && <span className="pc-tag">Blue-collar</span>}
-                    {/* Round 10 (owner): when a career's picture is incomplete, say how much of what
-                        it needs was measured — and say nothing when it is complete */}
-                    {typeof entry.measuredPct === "number" && (
-                        <span className="pc-partial">Partial · {entry.measuredPct}% measured</span>
-                    )}
                     {/* the AI sub-sort shows the number it is sorting by */}
                     {showAi && aiValue && <span className="pc-ai">AI exposure {aiValue}</span>}
                 </span>
@@ -264,9 +259,9 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                         </Section>
                     )}
 
-                    {/* 3. YOUR NEXT STEPS — for this student's stage */}
+                    {/* 3. YOUR NEXT 12 MONTHS — for this student's stage, inside each career (Round 13, owner) */}
                     {(nextSteps.length > 0 || switchCost > 0 || (entry.degreeCounts && degreeLabel)) && (
-                        <Section title="Your next steps">
+                        <Section title="Your next 12 months">
                             {/* Round 10: the student's own degree already leads here */}
                             {entry.degreeCounts && degreeLabel && (
                                 <p className="pc-line">Your <strong>{degreeLabel}</strong> already counts towards this — no need to start again.</p>

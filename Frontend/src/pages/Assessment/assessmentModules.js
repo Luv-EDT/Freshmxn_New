@@ -126,6 +126,30 @@ export const startedModules = (psychometric) => {
     }).map((module) => module.key)
 }
 
+// How far into a started module the student is, as a whole-number percentage — for the "In progress ·
+// N% left" chip (Round 13). Counted from the same item lists as REQUIRED_ANSWERS. null when there is
+// no fixed length to count against (digit span stops when it stops; the story runs on its clock).
+const FIXED_LENGTH = { reasoning: 16, wordRecall: 2 }
+
+export const progressPct = (key, block) => {
+    if (!block || typeof block !== "object") return null
+    let done = null
+    let total = null
+    if (REQUIRED_ANSWERS[key] !== undefined) {
+        done = Object.keys(block.answers || {}).length
+        total = REQUIRED_ANSWERS[key]
+        if (key === "perspective") {
+            done += Math.min(Object.keys(block.narrative || {}).length, 2)
+            total += 2
+        }
+    } else if (FIXED_LENGTH[key]) {
+        done = key === "wordRecall" ? (block.trials || []).length : (block.answered || 0)
+        total = FIXED_LENGTH[key]
+    }
+    if (!total) return null
+    return Math.max(0, Math.min(99, Math.floor((done / total) * 100)))
+}
+
 // FOUR MODULES DO NOT GATE SUBMISSION. This is a SAFETY VALVE, NOT A FEATURE — nothing in the UI
 // says which sections these are, because a section students are told is skippable is a section most
 // of them skip, and a report built without the reasoning test is measurably worse at its only job.

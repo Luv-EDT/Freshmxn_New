@@ -22,7 +22,7 @@ import {
     CONFIDENCE_ITEMS,
     MI_ITEMS, MI_SCALE,
 } from "./moduleItems"
-import { moduleByKey, completedModules, startedModules, canSubmit, visibleModules } from "./assessmentModules"
+import { moduleByKey, completedModules, startedModules, canSubmit, visibleModules, progressPct } from "./assessmentModules"
 
 // Stage 2 — the psychometric assessment. Same shape as InterestForm.js, deliberately: one shell
 // holding state, saving to the server whenever the student leaves a module, so the assessment
@@ -296,6 +296,7 @@ function AssessmentShell() {
                     modules={visibleModules(psychometric)}
                     completed={done}
                     started={startedModules(psychometric)}
+                    progress={Object.fromEntries(startedModules(psychometric).map((key) => [key, progressPct(key, psychometric[key])]))}
                     storyState={storyState}
                     onOpen={(key) => navigate(`/assessment/${key}`)}
                     onSubmit={requestSubmit}

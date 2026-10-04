@@ -2295,25 +2295,27 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "NEXT STEPS — collapsible, and carries derived actions rather than prose alone",
+        name: "NEXT STEPS — the next 12 months live inside each career, built from its own data; the report keeps the overview",
+        // REPLACES "collapsible, and carries derived actions rather than prose alone" (owner, Round 13:
+        // "what to do next in 12 months should be inside each profession"). The report-level roll-up
+        // of the top three went; each card's own steps already named the same path step and exams.
         run: () => {
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            const plan = fs.readFileSync(path.join(REPORT_DIR, "reportPlan.js"), "utf8")
 
             const problems = []
+            if (/What to do next/.test(page)) problems.push("the report still has its own 'What to do next' section")
+            if (!/<strong>Your options at a glance<\/strong>/.test(page)) problems.push("the report-level overview is gone")
+            if (!/<Section title="Your next 12 months">/.test(card)) problems.push("the card has no 'Your next 12 months'")
 
-            if (!/const nextActions/.test(source)) problems.push("there are no derived next actions — the section is prose only")
-            if (!/<strong>What to do next<\/strong>/.test(source)) problems.push("what-to-do-next is no longer a collapsible section")
-
-            // The derived actions must be built from real data, not from a static list.
-            const block = (source.split("const nextActions = (() => {")[1] || "").split("\n    })()")[0]
-            if (!block) return "the nextActions derivation is gone"
-
-            ;["pathToEntry", "entranceExams", "aspirationSignals"].forEach((source_field) => {
-                if (!block.includes(source_field)) problems.push(`next steps ignores ${source_field}`)
-            })
-
-            // And it must reuse the card's path levelling rather than re-deriving it.
-            if (!/levelPath/.test(block)) problems.push("next steps re-derives path levels instead of reusing levelPath")
+            // the card's steps come from real data: its path step (levelPath) and its exams
+            if (!/levelPath\(detail\.pathToEntry/.test(card) || !/cardSteps\(entry, detail, journey, stepForPlan\)/.test(card)) {
+                problems.push("the card's next steps no longer start from its own levelled path")
+            }
+            const steps = (plan.split("export const cardSteps")[1] || "").split("\n}\n")[0]
+            if (!/examLine\(detail\)/.test(steps)) problems.push("the card's next steps ignore the exams")
+            if (!/entranceExams/.test(plan)) problems.push("the exam line no longer reads entranceExams")
 
             return problems.length > 0 ? problems.join("; ") : null
         },

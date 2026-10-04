@@ -66,16 +66,6 @@ const updateIsAvailable = (report, recommendation) => Boolean(report) && (
 // not return.
 const FORBIDDEN_FIELDS = ["match_confidence", "activity_match_confidence"]
 
-// THE ONE OWNER-APPROVED EXCEPTION (Round 10, item 3). The share of a career's weighted picture we
-// could actually see goes out as a whole-number percentage — and only when it is below 100, so the
-// page can say "Partial · 80% measured" and say nothing at all when the picture is complete. Never
-// the raw 0-1 number, never under its engine name.
-const measuredPctOf = (entry) => {
-    if (typeof entry.match_confidence !== "number") return null
-    const pct = Math.round(entry.match_confidence * 100)
-    return pct < 100 ? pct : null
-}
-
 // THE SLUGS ARE TRANSLATED HERE FOR THE SAME REASON match_confidence IS REMOVED HERE: the page
 // cannot leak what it never receives.
 //
@@ -98,8 +88,9 @@ const labelFactor = (entry) => ({
 const withLabels = (list) => (Array.isArray(list) ? list.map(labelFactor) : [])
 
 const stripInternal = (entry) => {
+    // Round 13 (owner): the "Partial · N% measured" coverage line moved off the careers to the
+    // assessment page and profile only, so nothing about coverage goes out with a career any more.
     const clean = { ...entry }
-    clean.measuredPct = measuredPctOf(entry)
     FORBIDDEN_FIELDS.forEach((field) => { delete clean[field] })
 
     clean.supportingFactors = withLabels(clean.supportingFactors)
@@ -429,4 +420,3 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
 
 module.exports = router
 module.exports.levelFor = levelFor
-module.exports.measuredPctOf = measuredPctOf

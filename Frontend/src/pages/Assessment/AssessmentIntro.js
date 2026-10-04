@@ -1,3 +1,4 @@
+import { useRef, useState } from "react"
 import { TOTAL_MINUTES } from "./assessmentModules"
 import { reviewLabel } from "./moduleLabels"
 import { factorCoverage } from "./factorFeeds"
@@ -53,7 +54,33 @@ const storyNote = (module, storyState) => {
 //
 // So the list says nothing about which sections gate submission. A student who finishes everything
 // gets the best report; a student who cannot finish one is not stuck.
-function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, accommodations = null, onSaveAccommodations }) {
+// The story's three beats, in short lines (Round 13, owner: the old paragraph was hard to read).
+const STORY_STEPS = [
+    ["📖", "Today: read a short story. It stays open for an hour."],
+    ["🌙", "Tomorrow: a few questions about it open."],
+    ["⏳", "They stay open for two days, then close."],
+]
+
+// One look for state, everywhere (components.css .status-chip): done, in progress with what is left,
+// set aside, and waiting on the student.
+const statusOf = ({ isDone, isSkipped, isStarted, pct, story }) => {
+    if (isSkipped) return { cls: "is-aside", text: "Set aside" }
+    if (story === "recall") return { cls: "is-pending", text: "Answer now" }
+    if (story === "waiting") return { cls: "is-progress", text: "Questions open tomorrow" }
+    if (story === "reading") return { cls: "is-progress", text: "Reading now" }
+    if (story === "expired") return { cls: "is-aside", text: "Closed" }
+    if (isDone) return { cls: "is-done", text: "✓ Done" }
+    if (isStarted) return { cls: "is-progress", text: pct === null || pct === undefined ? "In progress" : `In progress · ${100 - pct}% left` }
+    return { cls: "", text: "To do" }
+}
+
+const untilText = (hoursLeft) => new Date(Date.now() + hoursLeft * 3600 * 1000)
+    .toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric" })
+
+// THE PAGE IS A DECK (Round 13, owner): one big card for the section in hand, arrows (or a swipe) to
+// move between them, and a strip of small cards underneath showing every section's state at a
+// glance. Story questions that are waiting on the student come first, in bold, above everything.
+function AssessmentIntro({ modules, completed, started, progress = {}, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, accommodations = null, onSaveAccommodations }) {
     const built = modules.filter((module) => module.built)
     const comingSoon = modules.filter((module) => !module.built)
     const unfinished = built.filter((module) => !completed.includes(module.key))
@@ -62,15 +89,30 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
     const coverage = factorCoverage(completed.filter((key) => !skipped[key]))
     const needLabels = ((accommodations && accommodations.needs) || []).map((id) => (NEEDS.find((need) => need.id === id) || {}).label).filter(Boolean)
     const setAside = built.filter((module) => skipped[module.key])
+    const doneCount = built.filter((module) => completed.includes(module.key)).length
+    const storyPhase = storyState ? storyState.phase : null
 
-    // One renderer for both lists. They differ in what the heading above them says, not in how a
-    // section behaves — and having two copies of this is how "Continue" stopped matching the story's
-    // clock the first time.
-    const renderModule = (module) => {
+    // the deck opens on the first section still to do (the story is skipped while it is waiting)
+    const firstOpen = built.findIndex((module) => !completed.includes(module.key) && !skipped[module.key]
+        && !(module.key === "storyRecall" && storyPhase === "waiting"))
+    // until the student picks a card it follows the data, which arrives after the first render
+    const [picked, setIndex] = useState(null)
+    const index = picked === null ? Math.max(firstOpen, 0) : picked
+    const touchX = useRef(null)
+    const move = (step) => setIndex(Math.min(built.length - 1, Math.max(0, index + step)))
+
+    const stateOf = (module) => {
         const isSkipped = Boolean(skipped[module.key])
         const isDone = completed.includes(module.key) && !isSkipped
         const isStarted = started.includes(module.key)
+        const story = module.key === "storyRecall" && storyPhase && storyPhase !== "not_started" && storyPhase !== "submitted" ? storyPhase : null
+        return { isSkipped, isDone, isStarted, status: statusOf({ isDone, isSkipped, isStarted, pct: progress[module.key], story }) }
+    }
+
+    const renderCard = (module) => {
+        const { isSkipped, isDone, isStarted, status } = stateOf(module)
         const note = storyNote(module, storyState)
+        const storyFresh = module.key === "storyRecall" && (!storyState || storyPhase === "not_started")
 
         // Three states, not two. "Review answers" on a module the student has barely begun tells
         // them they have finished something they have not, and they stop returning to it. A
@@ -92,56 +134,82 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
             label = byPhase[storyState.phase] || label
         }
 
-        // The finished label itself says whether anything can still be changed — see reviewLabel.
-
         // an admin reopened this test after a technical problem, and it has not been taken again yet
         const reopened = Boolean(retakeGranted[module.key]) && !isDone
 
         return (
-            <div key={module.key} className={`module-row${isDone ? " is-done" : ""}${isSkipped ? " is-set-aside" : ""}`}>
+            <div
+                className={`deck-card module-row${isDone ? " is-done" : ""}${isSkipped ? " is-set-aside" : ""}`}
+                onTouchStart={(event) => { touchX.current = event.touches[0].clientX }}
+                onTouchEnd={(event) => {
+                    const dx = event.changedTouches[0].clientX - (touchX.current || 0)
+                    if (Math.abs(dx) > 60) move(dx < 0 ? 1 : -1)
+                }}
+            >
+                <div className="deck-card-top">
+                    <span className={`status-chip ${status.cls}`}>{status.text}</span>
+                    <span className="deck-count">{index + 1} of {built.length}</span>
+                </div>
                 <div className="module-title-row">
-                    <p className="module-title">
-                        <strong>{module.title}</strong> · about {module.minutes} minutes
-                        {isDone && <span> · done</span>}
-                        {isStarted && <span> · in progress</span>}
-                    </p>
+                    <h2 className="module-title">{module.title}</h2>
                     <ModuleWhy moduleKey={module.key} />
                 </div>
+                <p className="deck-minutes">About {module.minutes} minutes</p>
                 {reopened && (
                     <p className="retake-note">
                         <strong>Retake available</strong> — your earlier attempt had a technical problem, so this is open
                         again for one more try. Press Submit again afterwards so your report is updated.
                     </p>
                 )}
-                {note && <p><em>{note}</em></p>}
+                {storyFresh ? (
+                    <ul className="story-steps">
+                        {STORY_STEPS.map(([icon, text]) => <li key={text}><span aria-hidden="true">{icon}</span> {text}</li>)}
+                    </ul>
+                ) : note && <p className="deck-note">{note}</p>}
                 {isSkipped ? (
                     <p className="set-aside-note">
                         Set aside because of what you told us in your interest form — <strong>not measured</strong>, never counted as low.{" "}
                         <button type="button" className="link-btn" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: false } })}>I'd like to try this test anyway</button>
                     </p>
                 ) : (
-                    <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
+                    <button type="button" className={isDone ? "btn btn-ghost" : "btn btn-primary"} onClick={() => onOpen(module.key)}>{label}</button>
                 )}
                 {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && <ReportProblem moduleKey={module.key} />}
+                <div className="deck-nav">
+                    <button type="button" className="deck-arrow" onClick={() => move(-1)} disabled={index === 0} aria-label="Previous section">‹</button>
+                    <button type="button" className="deck-arrow" onClick={() => move(1)} disabled={index === built.length - 1} aria-label="Next section">›</button>
+                </div>
             </div>
         )
     }
 
     return (
-        <div>
+        <div className="assess-page">
+            {/* waiting on the student, so it comes first */}
+            {storyPhase === "recall" && (
+                <button type="button" className="assess-pending" onClick={() => onOpen("storyRecall")}>
+                    <span className="status-chip is-pending">Waiting for you</span>
+                    <strong>Answer your story questions — open until {untilText(storyState.hoursLeft)}</strong>
+                </button>
+            )}
+
             <h1>The assessment</h1>
 
             <p>
-                This is the part that measures how you think and work. It is not an exam and there is
-                nothing to revise for. Do it in as many sittings as you like — every section is saved
-                when you leave it.
+                It measures how you think and work. It is not an exam and there is nothing to revise for.
+                Do it in as many sittings as you like — every section saves when you leave it.
             </p>
 
-            <p>
-                <strong>About {TOTAL_MINUTES} minutes</strong> in total, across all the sections below.
+            <p className="assess-meta">
+                <strong>{doneCount} of {built.length} done</strong> · about {TOTAL_MINUTES} minutes in all
             </p>
 
-            <ResearchBox />
+            {/* how much of the picture the finished sections already measure (owner, Round 10) */}
+            <p className="coverage-line">
+                <strong>{coverage.count} of {coverage.total} factors</strong> can be measured from what you have
+                finished — {coverage.pct}%.
+            </p>
+            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${coverage.pct}%` }} /></div>
 
             {/* Round 13: what the student told us in the interest form decides which tests are set aside */}
             {needLabels.length > 0 && setAside.length > 0 && (
@@ -154,13 +222,6 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 </div>
             )}
 
-            {/* how much of the picture the finished sections already measure (owner, Round 10) */}
-            <p className="coverage-line">
-                <strong>{coverage.count} of {coverage.total} factors</strong> can be measured from what you have
-                finished — {coverage.pct}%.
-            </p>
-            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${coverage.pct}%` }} /></div>
-
             {alreadySubmitted && (
                 <p>
                     <strong>You have already submitted.</strong> You can still open a section to
@@ -169,13 +230,31 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 </p>
             )}
 
-            <hr />
+            {built[index] && renderCard(built[index])}
 
-            {built.map(renderModule)}
+            <ol className="deck-strip" aria-label="All sections">
+                {built.map((module, position) => {
+                    const { status } = stateOf(module)
+                    return (
+                        <li key={module.key}>
+                            <button
+                                type="button"
+                                className={`deck-tile${position === index ? " is-current" : ""}`}
+                                aria-current={position === index ? "true" : undefined}
+                                onClick={() => setIndex(position)}
+                            >
+                                <span className="deck-tile-title">{module.title}</span>
+                                <span className={`status-chip ${status.cls}`}>{status.text}</span>
+                            </button>
+                        </li>
+                    )
+                })}
+            </ol>
+
+            <ResearchBox />
 
             {comingSoon.length > 0 && (
                 <>
-                    <hr />
                     <h2>Still to come</h2>
                     <p>
                         These sections are not open yet. You can submit without them — your report
@@ -194,8 +273,7 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 </>
             )}
 
-            <hr />
-
+            <div className="assess-submit">
             {/* THREE STATES, AND THE MIDDLE ONE IS THE POINT. A student who has submitted and
                 changed nothing since already has a report waiting; offering them "Submit and build
                 my report" sends them round a minute-long pipeline to be handed what they could have
@@ -257,6 +335,7 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                     </em>
                 </p>
             )}
+            </div>
         </div>
     )
 }

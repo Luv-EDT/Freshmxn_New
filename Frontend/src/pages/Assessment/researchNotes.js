@@ -11,7 +11,7 @@
 export const WHY_WE_DO_THIS = [
     "Most career advice looks at marks and at what is popular. Neither tells you how you think, what you are drawn to, or how you work — and those are what decide whether a career fits you for years, not months.",
     "So this assessment measures you on factors that research links to how people learn, decide and work. It is not an exam: there is nothing to revise for, and no factor is good or bad on its own — it describes the kind of work that suits you.",
-    "Your answers are matched against what 223 Indian careers actually ask of people, together with what you told us in the interest form.",
+    "Your answers are matched against what 1,000+ Indian careers and job roles actually ask of people, together with what you told us in the interest form.",
 ]
 
 export const FACTOR_COUNT = 31

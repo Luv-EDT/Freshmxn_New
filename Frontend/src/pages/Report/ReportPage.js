@@ -6,7 +6,7 @@ import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
 import JourneyProgress from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
-import ProfessionCard, { levelPath, JOURNEY_LEVEL } from "./ProfessionCard"
+import ProfessionCard from "./ProfessionCard"
 import ReportSortMenu from "./ReportSortMenu"
 import { studentTags } from "./reportTags"
 import { buildList } from "./reportFilters"
@@ -333,7 +333,7 @@ function ReportPage() {
                 <h1>We are preparing your report</h1>
                 <p>
                     This usually takes about a minute. We are scoring your answers, matching them
-                    against 223 careers, and writing it up.
+                    against 1,000+ careers and job roles, and writing it up.
                 </p>
                 <p>
                     <em>This page checks for itself every few seconds — you can also close it and
@@ -364,65 +364,6 @@ function ReportPage() {
     }
 
     const myTags = studentTags(dominantReasons)
-
-    // ── CONCRETE NEXT STEPS, DERIVED ────────────────────────────────────────────────────────────
-    //
-    // The model's `nextSteps` is prose and can only be as specific as the payload it was given.
-    // These come from the ranking itself, so they carry actual names: the actual next step on the
-    // actual top matches, the exams those actually require, and the sections the student has
-    // actually left unfinished. Anything that cannot be derived is simply not listed — an empty
-    // list is better than a filler action.
-    const nextActions = (() => {
-        const actions = []
-        // Always the engine's top three — next steps do not change because the list was re-sorted.
-        const topThree = (ranked || []).slice(0, 3)
-
-        // The immediate path step, named, for the strongest matches that share one.
-        const steps = new Map()
-        topThree.forEach((entry) => {
-            const detail = details[entry.professionId]
-            if (!detail || !detail.pathToEntry || detail.pathToEntry.length === 0) return
-
-            const levelled = levelPath(detail.pathToEntry)
-            const level = JOURNEY_LEVEL[journey]
-            const next = level === undefined ? levelled[0] : levelled.find((step) => step.level >= level)
-            if (!next) return
-
-            const existing = steps.get(next.requirement) || []
-            steps.set(next.requirement, [...existing, entry.profession])
-        })
-
-        steps.forEach((professions, requirement) => {
-            actions.push(`For ${listOf(professions)}: ${requirement}`)
-        })
-
-        // Exams the top matches gate on — the single most actionable thing in the taxonomy.
-        const exams = new Set()
-        topThree.forEach((entry) => {
-            const detail = details[entry.professionId]
-            if (detail && detail.entranceExams) {
-                detail.entranceExams.publicRoutes.slice(0, 2).forEach((exam) => exams.add(exam))
-            }
-        })
-        if (exams.size > 0) {
-            actions.push(`Look up when these are held and who can sit them: ${[...exams].slice(0, 4).join(", ")}.`)
-        }
-
-        // An aspiration that reached nothing is a real, specific thing to act on.
-        const unreached = aspirationSignals.filter((signal) => signal.outcome === "unranked" || signal.outcome === "unmatched")
-        if (unreached.length > 0) {
-            actions.push(
-                `You named ${listOf(unreached.map((signal) => signal.professionText))} but nothing you told us about pointed there. Start doing something in it and add that to your interest form — it will change this list.`
-            )
-        }
-
-        // And the honest one: the assessment is not finished, and finishing it sharpens everything.
-        if (release === "release_with_note") {
-            actions.push("Finish the remaining assessment sections — the matches above get more specific, not replaced.")
-        }
-
-        return actions
-    })()
 
     return (
         <div className="report-page">
@@ -496,9 +437,20 @@ function ReportPage() {
                 noCostHint={framing.switchIsDistinct ? framing.switchIntro : null}
                 showFirst={showFirst}
                 onShowFirst={setShowFirst}
-                excludeBlueCollar={excludeBlueCollar}
-                onExcludeBlueCollar={setExcludeBlueCollar}
             />
+
+            {/* Round 13 (owner): the one filter sits in plain sight beside the sort, not inside it */}
+            <label className={`blue-collar-toggle${excludeBlueCollar ? " is-on" : ""}`}>
+                <input
+                    type="checkbox"
+                    checked={excludeBlueCollar}
+                    onChange={(event) => setExcludeBlueCollar(event.target.checked)}
+                />
+                <span>
+                    Leave out blue-collar careers
+                    <span className="sort-note"> — some of the most AI-proof careers are blue-collar</span>
+                </span>
+            </label>
 
             {/* THE RANKING EXPLAINS ITSELF, in one place. A student who cannot see why one career
                 sits above another has been handed an opinion with a number on it. */}
@@ -593,27 +545,19 @@ function ReportPage() {
                 </details>
             )}
 
-            {/* WHAT TO DO NEXT — the report-level plan (owner: both a report-level plan and per-card
-                steps, all collapsible). It opens with the picture for this student's stage — the
-                stream map, the exam map, or what they can move into — then the concrete actions
-                derived from the top matches. Collapsible, open by default. */}
-            <details className="report-details" open>
+            {/* YOUR OPTIONS AT A GLANCE (Round 13, owner). The next 12 months now live inside each
+                career; what stays here is the picture across the whole list for this student's stage —
+                the stream map, the exam map, or what they can move into — and, for college and working
+                students, the master's picture. */}
+            <details className="report-details">
                 <summary className="report-summary">
-                    <strong>What to do next</strong> — your next 12 months
+                    <strong>Your options at a glance</strong>
                 </summary>
 
                 <ReportHeadline headline={journeyHeadline(journey, ranked, details)} />
 
                 {/* A report written before report@3.0.0 still carries the model's own next steps. */}
                 {sections.nextSteps && <p>{sections.nextSteps}</p>}
-
-                {nextActions.length > 0 && (
-                    <ul>
-                        {nextActions.map((action, index) => (
-                            <li key={index}>{action}</li>
-                        ))}
-                    </ul>
-                )}
 
                 {/* Round 11: for college and working students, the master's picture across the top matches */}
                 {(journey === "college" || journey === "early_professional") && (() => {
@@ -643,7 +587,7 @@ function ReportPage() {
                     )
                 })()}
 
-                <p className="report-small"><em>Each career above also has its own next steps — open it to see them.</em></p>
+                <p className="report-small"><em>Your next 12 months for each career are inside it — open one to see them.</em></p>
             </details>
 
             {/* Round 11: offered only when a top-ten match is one where studying abroad helps */}
@@ -809,7 +753,7 @@ function ReportPage() {
             {sections.readiness && (
                 <details className="report-details">
                     <summary className="report-summary">
-                        <strong>Where you are right now</strong>
+                        <strong>One thing to build next</strong>
                     </summary>
                     <p>{sections.readiness}</p>
                 </details>
