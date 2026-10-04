@@ -9,7 +9,7 @@ const matchProfile = require("../matchProfile")
 const { weightedMatch } = require("../similarity")
 const { wasteFor, journeyMultiplier, hardFilterReason } = require("../journey")
 const { tierFor, applySort } = require("../tiers")
-const { canonicalise, cosine, topProfessionsByVector, createActivityResolver, needsTranslation } = require("../activityResolver")
+const { canonicalise, cosine, topProfessionsByVector, createActivityResolver, needsTranslation, thresholdFrom } = require("../activityResolver")
 const Profile = require("../../model/profilesModel")
 const ActivityFactors = require("../../model/activityFactorsModel")
 const {
@@ -935,6 +935,36 @@ const fixtures = [
             } finally {
                 globalThis.fetch = real
             }
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ACTIVITY CACHE — a fold records its similarity; a wording an admin split off never folds into that row again; the threshold is clamped",
+        // Round 14 (owner): keep 0.90, but measure it. The score of every near-hit is kept so the
+        // admin can read the closest calls, and "Not the same" must actually stop the merge.
+        run: async () => {
+            const problems = []
+            if (thresholdFrom(undefined) !== 0.9 || thresholdFrom("") !== 0.9 || thresholdFrom("0.5") !== 0.9 || thresholdFrom("junk") !== 0.9) problems.push("an unset or out-of-range threshold is not 0.90")
+            if (thresholdFrom("0.95") !== 0.95) problems.push("a valid threshold was ignored")
+
+            const cache = fakeCache([
+                { canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], embedding: [1, 0, 0], refusedFolds: ["watching cricket"] },
+                { canonicalActivity: "cricket commentary", rubricVersion: "2.0", factors: { ...flatFactors(5), linguistic_intelligence: 8 }, candidateProfessionIds: ["tst-beta"], embedding: [0.95, 0.31, 0] },
+            ])
+            await withStubbedEmbedding([[1, 0, 0]], async () => {
+                const resolver = createActivityResolver({
+                    ActivityFactors: cache.model,
+                    professionEmbeddings: { model: "voyage-4-large", dimensions: 3, embeddings: [] },
+                    anchors: { schema_version: "2.0", bands: [], factors: [] },
+                    factorSlugs: scoreProfile.MATCHING_FACTORS,
+                    voyageApiKey: "test",
+                })
+                const [watching] = await resolver.resolveActivities([{ activity: "Watching cricket", key: "watching cricket" }])
+                if (!watching || watching.factors.linguistic_intelligence !== 8) problems.push("a split-off wording folded into the row that refused it")
+                const fold = cache.updates.map((update) => update.$push && update.$push.folds && update.$push.folds.$each[0]).find(Boolean)
+                if (!fold || fold.text !== "watching cricket" || typeof fold.score !== "number" || fold.score < 0.9) problems.push(`the fold's similarity was not recorded: ${JSON.stringify(fold)}`)
+            })
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

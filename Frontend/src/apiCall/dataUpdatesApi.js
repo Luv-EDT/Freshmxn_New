@@ -44,3 +44,13 @@ export async function setResearchModelForAdmin(model) {
     const response = await axiosInstance.put("/dataUpdates/setResearchModelForAdmin", { model })
     return response
 }
+
+export async function getActivityFoldsForAdmin() {
+    const response = await axiosInstance.get("/dataUpdates/getActivityFoldsForAdmin")
+    return response
+}
+
+export async function splitActivityFoldForAdmin(rowId, text) {
+    const response = await axiosInstance.put(`/dataUpdates/splitActivityFoldForAdmin/${rowId}`, { text })
+    return response
+}

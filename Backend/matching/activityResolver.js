@@ -26,9 +26,16 @@ const { recordUsage } = require("../utils/aiUsage")
 
 // Two activities closer than this are treated as the same activity and share one rating.
 // "playing cricket" and "i play cricket for my school team" must fold together or the same student
-// pays twice for one answer. INVENTED, and the exampleRaw list on every cache row exists so the
-// threshold can be checked against what actually folded.
-const DEDUP_COSINE = 0.9
+// pays twice for one answer. INVENTED — Round 14 records every fold with its score (admin → Activity
+// matches) so it can be checked on real answers, and ACTIVITY_DEDUP_COSINE on Render changes it.
+// Anything outside 0.80-0.99 (or unset) keeps 0.90: lower merges different activities, higher
+// stops folding paraphrases at all.
+const thresholdFrom = (value) => {
+    const number = Number(value)
+    return Number.isFinite(number) && number >= 0.8 && number <= 0.99 ? number : 0.9
+}
+const DEDUP_COSINE = thresholdFrom(process.env.ACTIVITY_DEDUP_COSINE)
+const FOLDS_KEPT = 100
 
 const RETRIEVE_K = 25        // how many professions the vector search hands the reranker
 const RERANK_KEEP = 12       // how many survive it, at most
@@ -317,7 +324,9 @@ const createActivityResolver = ({
         return kept.length > 0 ? kept : retrieved.slice(0, RERANK_KEEP).map((item) => item.id)
     }
 
-    const findNearCachedEntry = async (embedding) => {
+    // `said` are this activity's wordings; a row an admin split them from is never folded into again
+    const findNearCachedEntry = async (embedding, said) => {
+        const usable = (entry) => !(entry.refusedFolds || []).some((text) => said.includes(text))
         // Atlas Vector Search when it is available; an exact scan otherwise. The scan is correct
         // and merely slower, so a missing index degrades latency rather than results.
         try {
@@ -335,7 +344,7 @@ const createActivityResolver = ({
                 { $addFields: { score: { $meta: "vectorSearchScore" } } },
             ])
 
-            const best = results.find((entry) => entry.score >= DEDUP_COSINE)
+            const best = results.find((entry) => entry.score >= DEDUP_COSINE && usable(entry))
             if (best) return best
             if (results.length > 0) return null
         } catch (error) {
@@ -347,7 +356,7 @@ const createActivityResolver = ({
 
         all.forEach((entry) => {
             const similarity = cosine(embedding, entry.embedding)
-            if (similarity >= DEDUP_COSINE && (!best || similarity > best.score)) best = { ...entry, score: similarity }
+            if (similarity >= DEDUP_COSINE && usable(entry) && (!best || similarity > best.score)) best = { ...entry, score: similarity }
         })
 
         return best
@@ -408,12 +417,16 @@ const createActivityResolver = ({
             const said = original ? [canonicalActivity, original] : [canonicalActivity]
             const embedding = embeddings[index]
 
-            const near = await findNearCachedEntry(embedding)
+            const near = await findNearCachedEntry(embedding, said)
 
             if (near) {
                 await ActivityFactors.updateOne(
                     { _id: near._id },
-                    { $inc: { timesUsed: 1 }, $addToSet: { exampleRaw: { $each: said } } }
+                    {
+                        $inc: { timesUsed: 1 },
+                        $addToSet: { exampleRaw: { $each: said } },
+                        $push: { folds: { $each: [{ text: original || canonicalActivity, score: Math.round(near.score * 1000) / 1000, at: new Date() }], $slice: -FOLDS_KEPT } },
+                    }
                 )
                 resolved.push({ key: row.key, activity: row.activity, canonicalActivity, factors: near.factors, candidateProfessionIds: near.candidateProfessionIds || [], cacheHit: "near" })
                 continue
@@ -469,6 +482,7 @@ module.exports = {
     embedQuery,    // also used by the weekly careers scout (housekeeping/careerScout.js)
     needsTranslation,
     DEDUP_COSINE,
+    thresholdFrom,
     RETRIEVE_K,
     RERANK_KEEP,
     SCORING_PASSES,

@@ -32,8 +32,8 @@ site and both workers (`render.yaml`, deploys from `main`).
 ## Test before every commit
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
-node Backend/matching/fixtures/runFixtures.js    # 59/59
-node Backend/workers/fixtures/runFixtures.js     # 168/168
+node Backend/matching/fixtures/runFixtures.js    # 60/60
+node Backend/workers/fixtures/runFixtures.js     # 169/169
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

@@ -163,15 +163,23 @@ you wait at the desk**. Instead:
      time) instead of giving you a zero;
    - **scores your whole profile** (`Backend/scoring/scoreProfile.js`): 22 main traits and 9 extra
      ones, each on a 0–10 scale. This part is pure maths — same answers, same result, every time.
-     The "ways of being smart" are built from up to three parts: how you rate yourself, the O\*NET
-     activities you ticked, and — for spatial, logical and verbal — your reasoning puzzles. It also
+     The "ways of being smart" are built from how you rate yourself and — for spatial, logical and
+     verbal — your reasoning puzzles too. It also
      records **how much of each trait was actually measured** (`factor_coverage`);
    - then **drops a second job in the tray**: `generate_report`.
 4. **Another worker picks that up** (`workers/generateReportWorker.js`) and:
    - **reads your activities** (`matching/activityResolver.js`) — Voyage turns each thing you've done
      into numbers so it can be compared with careers, and Claude rates any activity it hasn't seen
      before on the same 27-trait scale the careers were rated on (saved, so it's rated only once).
-     That's how "running the school fest stage design" can be compared with "Product Designer";
+     That's how "running the school fest stage design" can be compared with "Product Designer".
+     **How "the same activity" is decided:** the exact same words (ignoring capitals and spaces) reuse
+     the saved rating. Otherwise, if the meaning is at least **90% similar** (a cosine of 0.90 between
+     the two sets of numbers) to an activity already rated — "i play cricket for my school team" and
+     "playing cricket" — it reuses that rating too; below that it is rated fresh. Each such reuse is
+     recorded with its similarity, and the admin's **Activity matches** tab lists the closest calls
+     first with a **"Not the same"** button that splits a wrong one off for every later student. The
+     90% is a starting judgement; it can be changed on Render (`ACTIVITY_DEDUP_COSINE`) once real
+     answers show where it should sit (Round 14);
    - **matches you against 223 Indian careers** (`Backend/matching/`), in three steps:
      1. what you've done → which careers it points to;
      2. how well each career fits how you think and work;
@@ -277,8 +285,9 @@ finds changes the website until the admin approves it.
   role and industries are chosen from **our own lists**, so they can be matched exactly. The admin
   approves them, and can search every mentor in the admin's Mentors tab.
 - **Mentors check our data.** An approved mentor sees "Check our data for {their profession}": the
-  career exactly as students read it — path, exams, where to study, abroad, master's, pay, demand, AI,
-  things worth knowing — and every quality we rated for it, in words (the eight that matter most open,
+  career exactly as students read it — path, exams, where to study, studying abroad, **working abroad
+  (each country's licence route, drafts marked)**, **the degrees that already count towards it**,
+  master's, pay, demand, AI, things worth knowing — and every quality we rated for it, in words (the eight that matter most open,
   the rest folded). They mark each part "looks
   right" or "needs a change" (with a note and a link), and each quality "about right / higher /
   lower". The admin decides every item; accepted ones go into the data through a reviewed commit.

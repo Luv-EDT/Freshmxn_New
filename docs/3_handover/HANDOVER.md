@@ -27,7 +27,7 @@ job role, get a mentor; no assessment).
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
 | **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 22 (scoring) / 59 (matching) / 168 (workers) — all offline, all green |
+| **Tests** | fixtures 22 (scoring) / 60 (matching) / 169 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -59,8 +59,8 @@ cd Backend && npm run seed:admin                  # once — the admin account
 **Test**
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
-node Backend/matching/fixtures/runFixtures.js    # 59/59
-node Backend/workers/fixtures/runFixtures.js     # 168/168 — offline, no DB, no API key
+node Backend/matching/fixtures/runFixtures.js    # 60/60
+node Backend/workers/fixtures/runFixtures.js     # 169/169 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -140,6 +140,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **First live batch** (Round 12) | The monthly jobs now send one half-price batch. If Anthropic refuses the batch, the job asks directly as before (logged). After the 1st, look for `batch_collect: … — {…}` in the Render logs. `RESEARCH_BATCH=false` turns batching off |
 | **Mentor Only "Other" requests** (Round 12) | A Mentor Only student may describe a career we do not list; the admin's **Mentor Matches** shows it as "Other — find separately". Full refund on request if no mentor is found |
 | **Going abroad** (`Backend/data/abroad_work.json`, Round 13) | Top five countries from MEA's count of Indian students abroad (Canada, USA, UK, Australia, Germany). Every career: travels well (183) / re-qualify first (28) / India-based (12). Licence routes per country for 12 of the 28 re-qualify careers so far, each with the licensing body's own page — **5 rows are drafts and hidden** (clinical psychologist Canada and Germany, CA Germany, school teacher USA and Germany); the other 16 re-qualify careers show the portability line only. Read the file once; the study bot re-checks licences each January |
+| **Activity-cache threshold** (Round 14) | Two activities count as the same at a cosine of **0.90** (judgement, not measured). Every reuse is now recorded with its score. After about 200 students, read admin → **Activity matches** (closest calls first): split wrong merges with "Not the same"; if wrong merges keep appearing near the bottom, raise `ACTIVITY_DEDUP_COSINE` on Render (0.80–0.99; each step trades AI rating cost for accuracy); if the list is all obvious paraphrases rated separately, lower it. A split helps later students only — earlier reports are not recomputed |
 | **Voice typing and Hinglish** (Round 13) | Browser dictation only (Chrome/Edge/Android; no mic on Firefox). Never tried with real Hindi speakers — if accuracy is poor, V2 has a Hinglish speech service. Hindi/Hinglish activities are put into English before matching — proven with stubs, first live use on Render |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
@@ -1853,3 +1854,28 @@ The engine's top three keep their colours wherever they land. Browser check 6/6.
 - **What a student is pursuing now** drives matching: their stage, stream, degree and experience set the
   hard filters and the switching cost; their activities, long-term pursuits, passion and achievements
   decide which careers appear and their tier. Going-abroad hopes, disability and trauma answers never rank.
+
+### Round 14 — mentors check the going-abroad routes and degrees; the activity-cache threshold is measured (2026-10-04)
+The owner asked:
+- whether everything was done;
+- whether `abroad_work.json` and `degree_families.json` are shown to mentors (they were not);
+- how similar activities enter the cache and at what similarity — and whether to change it.
+
+| Item | What shipped |
+|---|---|
+| **A** mentor sheet | Two new sections: **Working abroad** (how the career travels, and each country's licence route with the body's page — drafts shown to mentors and marked "draft — please check") and **Degrees that already count** (`degree_families.json` read backwards, in the profile form's words, plus "any bachelor's degree"). Mentors answer them like the others; accepted notes go out in Export patch. The "other qualities" fold hides when empty |
+| **B** activity cache | The 0.90 threshold stays (owner) but is measured: every near-hit stores `{ text, score, at }` (last 100 per cached activity); `ACTIVITY_DEDUP_COSINE` on Render changes it (0.80–0.99, else 0.90). Admin **Activity matches** lists the reused matches lowest similarity first; **Not the same** removes the wording from that activity and stops it folding in again (`refusedFolds`), so the next student who writes it gets it rated on its own |
+| **C** leftover | The WhatsApp help line also shows while the mentorship page loads and on the no-mentor-plan page |
+
+**Fixtures:** matching 59 → 60 (ACTIVITY CACHE: score recorded, a refused wording skips that row, threshold
+clamped); workers 168 → 169 (MENTOR REVIEW: working abroad with drafts marked, degrees in words, both
+sections accepted). None changed.
+
+**Cloud checks:** 14/14 (mentor sheet API and browser at 360 px; admin activity matches lowest-first and
+split, in the browser too; students get 401; the help line while loading). FerretDB cannot do a
+projection or a conditional `$pull` inside `findOneAndUpdate`, so the split route filters in code and
+writes the arrays whole — same result on Atlas.
+
+**Owner answers this round:** Round 13 was complete apart from three small gaps — the help line on two
+mentorship states (fixed here), design screenshots sent once at the end rather than after each round,
+and the mentor-request flow, which is in Round 13's answers above.

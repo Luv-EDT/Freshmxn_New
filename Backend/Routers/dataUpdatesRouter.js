@@ -530,4 +530,74 @@ router.put("/setResearchModelForAdmin", authMiddleware, adminAuthMiddleware, asy
     }
 })
 
+// ========================
+// Activity Matches For Admin (Round 14)
+// ========================
+
+// Every time a student's activity was treated as one we had already rated, and how similar the two
+// were — lowest first, so the closest calls are read first. This is how the 0.90 threshold
+// (ACTIVITY_DEDUP_COSINE) gets checked against real answers. The similarity is shown to the admin
+// only; nothing about it reaches a student.
+router.get("/getActivityFoldsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const ActivityFactors = require("../model/activityFactorsModel")
+        const { DEDUP_COSINE } = require("../matching/activityResolver")
+        const rows = await ActivityFactors.find({ "folds.0": { $exists: true } }).select("canonicalActivity folds").lean()
+        const folds = rows
+            .flatMap((row) => row.folds.map((fold) => ({ rowId: row._id, cachedActivity: row.canonicalActivity, text: fold.text, score: fold.score, at: fold.at })))
+            .sort((left, right) => left.score - right.score)
+
+        return res.status(200).json({
+            success: true,
+            message: "Activity matches fetched",
+            data: {
+                threshold: DEDUP_COSINE,
+                cachedActivities: await ActivityFactors.countDocuments({}),
+                foldCount: folds.length,
+                closeCalls: folds.filter((fold) => fold.score < 0.93).length,
+                folds: folds.slice(0, 150),
+            },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch activity matches", error: error.message })
+    }
+})
+
+// "Not the same": the wording leaves that cached activity and is never folded into it again, so the
+// next student who writes it gets it rated on its own. Earlier reports are not recomputed.
+router.put("/splitActivityFoldForAdmin/:rowId", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const text = typeof req.body.text === "string" ? req.body.text.trim().toLowerCase().slice(0, 300) : ""
+        if (!text) {
+            return res.status(400).json({ success: false, message: "Which wording should be split off?" })
+        }
+
+        const ActivityFactors = require("../model/activityFactorsModel")
+        const current = await ActivityFactors.findById(req.params.rowId).select("exampleRaw folds").lean()
+        if (!current) {
+            return res.status(404).json({ success: false, message: "That cached activity no longer exists" })
+        }
+        // filtered here and written whole: a $pull with a condition on sub-documents is not supported
+        // everywhere this runs (the test database), and an admin click never races itself
+        const row = await ActivityFactors.findOneAndUpdate(
+            { _id: current._id },
+            {
+                $set: { exampleRaw: (current.exampleRaw || []).filter((wording) => wording !== text), folds: (current.folds || []).filter((fold) => fold.text !== text) },
+                $addToSet: { refusedFolds: text },
+            },
+            { returnDocument: "after" }
+        ).lean()
+
+        return res.status(200).json({
+            success: true,
+            message: `"${text}" will be rated on its own from now on`,
+            data: { rowId: row._id, cachedActivity: row.canonicalActivity, refusedFolds: row.refusedFolds },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to split the match", error: error.message })
+    }
+})
+
 module.exports = router
