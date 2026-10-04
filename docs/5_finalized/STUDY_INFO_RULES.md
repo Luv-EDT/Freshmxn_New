@@ -4,12 +4,14 @@
 card means, where the value came from, and how sure we are. Generated from the data files on 3 October 2026
 (Round 12) — if a table here and a file disagree, the file is right; regenerate this page.
 
-**The three labels used everywhere below and on the card:**
-| Label | Meaning | Card shows |
-|---|---|---|
-| **Checked** | an official rule says so (a regulator, UGC, UPSC or a recruitment notice), cited | "Checked against the official rules, Oct 2026" |
-| **Published evidence** | a published study, job-market or course information supports it; it is not a rule | "Based on published information, Oct 2026" |
-| **Our judgement** | no source looked up; Claude's judgement of how the career is entered | "Our estimate" |
+**The three statuses used everywhere below.** Since Round 13 (owner) the card does **not** show them — a
+student is shown the information, not where it came from; the statuses stay in the data, the admin and the
+mentor review sheet.
+| Status | Meaning |
+|---|---|
+| **Checked** | an official rule says so (a regulator, UGC, UPSC or a recruitment notice), cited |
+| **Published evidence** | a published study, job-market or course information supports it; it is not a rule |
+| **Our judgement** | no source looked up; Claude's judgement of how the career is entered |
 
 The sources live in `Backend/data/study_sources.json`. Every month the study bot re-checks up to 10 of these
 careers on official and academic Indian websites (`gov.in`, `nic.in`, `ac.in`, `res.in`, `edu.in`) and proposes
@@ -127,7 +129,8 @@ IISc, TIFR, IUCAA and RRI; the IITs and IISc). No career is "often needed" any m
 | Sustainability & ESG Professional | helps | masters | A master's in sustainability abroad helps for global ESG and climate roles | Our judgement | — |
 | Art Conservator & Restorer | helps | masters | Art conservation has few Indian programmes; many conservators train abroad, alongside the National Museum Institute in Delhi | Our judgement | — |
 
-**How the report uses it:** the career card shows a "Studying abroad" line for these careers, with its label. If one
+**How the report uses it:** the career card shows a "Studying abroad" line for these careers (since Round 13 without a
+source label, and for a student who hopes to go abroad inside the card's "Going abroad" part). If one
 of a student's top ten careers is here, the report offers a connection with a study-abroad partner — nothing is shared
 until the student ticks the consent box.
 

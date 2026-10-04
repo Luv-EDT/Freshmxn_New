@@ -73,7 +73,12 @@ checking, plus 8 human audio recordings per language.
 
 **Trigger:** a meaningful share of students choosing Hindi at intake.
 
-Written answers already accept English, Hindi or a mix; only the material we present is English-only.
+Written answers already accept English, Hindi or a mix (typed or, since Round 13, spoken through the
+browser's dictation); only the material we present is English-only.
+
+**A Hinglish speech service** (for example Sarvam) if browser dictation turns out poor for Hindi and
+Hinglish speakers — it would replace only the speech-to-text step in `Frontend/src/pages/VoiceInput.js`,
+and audio would then pass through us, so the Privacy Policy changes with it.
 
 ## Design polish
 One design pass shipped (Kira-style, teal and navy, a pink accent, Orelega One + Lato). Still to do
@@ -106,14 +111,22 @@ per age band.
 on any factor.
 
 ## RIASEC in matching
-The O\*NET Interest Profiler answers are collected (`interests60`). Today they only strengthen the
-intelligence scores, and the six RIASEC totals are stored but never shown or matched. O\*NET publishes
-RIASEC codes for occupations, so:
+The O\*NET Interest Profiler checklist was removed in Round 13 (it repeated the "what you're drawn to"
+items); answers already given are stored but no longer scored or asked. If interest fit is wanted in
+matching, it needs a deliberately non-repeating interest measure first. O\*NET publishes RIASEC codes for
+occupations, so:
 1. Map the 223 careers to O\*NET occupation codes, by hand-checked crosswalk.
 2. Give each career a RIASEC code.
 3. Add interest fit as a matching input **alongside** the 31 factors, not instead of them.
 
 It needs its own fixtures and a version bump.
+
+## Working abroad — beyond the licence route
+Round 13 says how each career travels and, for licensed careers, what the top five countries ask first.
+Still out on purpose: foreign pay and demand figures. Next step, once there are real students: an
+"also in demand abroad" link per career to the official occupation pages (US BLS Occupational Outlook,
+Canada Job Bank, UK National Careers Service, Australia's Your Career) after the careers are mapped to
+those countries' occupation codes; and licence routes for the other 16 re-qualify careers.
 
 ## Adaptive item selection
 Stop asking questions whose answer is already predictable from earlier responses. This could cut
