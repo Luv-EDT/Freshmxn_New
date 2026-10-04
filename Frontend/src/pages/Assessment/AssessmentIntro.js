@@ -2,8 +2,7 @@ import { TOTAL_MINUTES } from "./assessmentModules"
 import { reviewLabel } from "./moduleLabels"
 import { factorCoverage } from "./factorFeeds"
 import { ResearchBox, ModuleWhy, ReportProblem } from "./ResearchBox"
-import AccommodationsBox from "./AccommodationsBox"
-import { affectedModules } from "./accommodations"
+import { NEEDS } from "./accommodations"
 
 // the tests a student can raise a technical problem about (and the admin can reopen)
 const PERFORMANCE_TESTS = ["storyRecall", "digitSpan", "wordRecall", "sartRaw", "reasoning", "extReasoning", "extVerbal"]
@@ -61,7 +60,8 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
     // a section skipped for a declared difficulty is finished, but it measured nothing
     const skipped = (accommodations && accommodations.skipped) || {}
     const coverage = factorCoverage(completed.filter((key) => !skipped[key]))
-    const skippable = affectedModules(accommodations && accommodations.needs)
+    const needLabels = ((accommodations && accommodations.needs) || []).map((id) => (NEEDS.find((need) => need.id === id) || {}).label).filter(Boolean)
+    const setAside = built.filter((module) => skipped[module.key])
 
     // One renderer for both lists. They differ in what the heading above them says, not in how a
     // section behaves — and having two copies of this is how "Continue" stopped matching the story's
@@ -98,7 +98,7 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
         const reopened = Boolean(retakeGranted[module.key]) && !isDone
 
         return (
-            <div key={module.key} className={`module-row${isDone ? " is-done" : ""}`}>
+            <div key={module.key} className={`module-row${isDone ? " is-done" : ""}${isSkipped ? " is-set-aside" : ""}`}>
                 <div className="module-title-row">
                     <p className="module-title">
                         <strong>{module.title}</strong> · about {module.minutes} minutes
@@ -115,19 +115,12 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
                 )}
                 {note && <p><em>{note}</em></p>}
                 {isSkipped ? (
-                    <p className="retake-note">
-                        Skipped because of the difficulty you told us about — <strong>not measured</strong>, never counted as low.{" "}
-                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: false } })}>Take it after all</button>
+                    <p className="set-aside-note">
+                        Set aside because of what you told us in your interest form — <strong>not measured</strong>, never counted as low.{" "}
+                        <button type="button" className="link-btn" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: false } })}>I'd like to try this test anyway</button>
                     </p>
                 ) : (
-                    <>
-                        <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
-                        {!isDone && skippable.includes(module.key) && (
-                            <button type="button" className="btn btn-ghost btn-sm skip-btn" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: true } })}>
-                                Skip this — mark it not measured
-                            </button>
-                        )}
-                    </>
+                    <button type="button" className={isDone ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"} onClick={() => onOpen(module.key)}>{label}</button>
                 )}
                 {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && <ReportProblem moduleKey={module.key} />}
             </div>
@@ -150,7 +143,16 @@ function AssessmentIntro({ modules, completed, started, storyState, onOpen, onSu
 
             <ResearchBox />
 
-            <AccommodationsBox saved={accommodations} onSave={onSaveAccommodations} />
+            {/* Round 13: what the student told us in the interest form decides which tests are set aside */}
+            {needLabels.length > 0 && setAside.length > 0 && (
+                <div className="set-aside-box">
+                    <p>
+                        In your interest form you told us that <strong>{needLabels.join(", ").toLowerCase()}</strong> can
+                        be harder for you. So these tests are set aside — marked <strong>not measured</strong>, never
+                        counted as low: {setAside.map((module) => module.title).join(", ")}.
+                    </p>
+                </div>
+            )}
 
             {/* how much of the picture the finished sections already measure (owner, Round 10) */}
             <p className="coverage-line">

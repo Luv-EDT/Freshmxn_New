@@ -84,6 +84,8 @@ export const createInitialFormState = () => ({
         culturalIdentity: [""],     // an array now (was one comma-separated string)
         disability: "",
         disabilitySpecify: "",
+        disabilityNeeds: [],            // Round 13: what it can make harder — sets tests aside
+        disabilityShareWithMentor: false,
         academicClassification: "",
         familyTrauma: "",
         familyTraumaSpecify: "",

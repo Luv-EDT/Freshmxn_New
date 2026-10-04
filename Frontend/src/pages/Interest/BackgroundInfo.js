@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import InterestProgressBar from "./InterestProgressBar"
+import { NEEDS } from "../Assessment/accommodations"
 
 const PARENT_EDUCATION_OPTIONS = [
     { value: "No formal education", label: "No formal education" },
@@ -59,8 +60,15 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
             ...prev,
             [name]: value,
             ...(SPECIFY_FOR[name] && value !== "Yes" ? { [SPECIFY_FOR[name]]: "" } : {}),
+            // and the difficulties it named (Round 13) — they set tests aside on the assessment page
+            ...(name === "disability" && value !== "Yes" ? { disabilityNeeds: [], disabilityShareWithMentor: false } : {}),
         }))
     }
+
+    const toggleNeed = (id) => setLocalFormData((prev) => {
+        const needs = prev.disabilityNeeds || []
+        return { ...prev, disabilityNeeds: needs.includes(id) ? needs.filter((need) => need !== id) : [...needs, id] }
+    })
 
     // repeatable lists (supportNetwork, culturalIdentity)
     const handleListChange = (group, index, value) => {
@@ -299,6 +307,32 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
                                     onChange={handleInputChange}
                                     placeholder="Only if you're comfortable"
                                 />
+                                {/* Round 13: what it can make harder. The assessment sets the tests it
+                                    affects aside — marked not measured, never counted as low. */}
+                                <p className="if-subq">Which of these can it make harder? Tick any that apply.</p>
+                                <ul className="needs-list">
+                                    {NEEDS.map((need) => (
+                                        <li key={need.id}>
+                                            <label className="interest-item">
+                                                <input type="checkbox" checked={(localFormData.disabilityNeeds || []).includes(need.id)} onChange={() => toggleNeed(need.id)} />
+                                                <span>{need.label}</span>
+                                            </label>
+                                        </li>
+                                    ))}
+                                </ul>
+                                {(localFormData.disabilityNeeds || []).length > 0 && (
+                                    <>
+                                        <p className="report-small">The tests these affect will be set aside for you in the assessment — marked not measured, never counted as low. You can still choose to take one.</p>
+                                        <label className="interest-item">
+                                            <input
+                                                type="checkbox"
+                                                checked={Boolean(localFormData.disabilityShareWithMentor)}
+                                                onChange={() => setLocalFormData((prev) => ({ ...prev, disabilityShareWithMentor: !prev.disabilityShareWithMentor }))}
+                                            />
+                                            <span>My mentor can know about this, so they can help (only if I join the mentor plan)</span>
+                                        </label>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

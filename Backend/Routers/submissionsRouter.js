@@ -6,6 +6,7 @@ const requireDiscovery = require("../middlewares/requireDiscovery")
 
 const { raiseIssue } = require("../utils/assessmentIssues")
 const { directionUpdate } = require("../utils/direction")
+const { accommodationsFromInterest } = require("../assessment/accommodations")
 
 const router = express.Router()
 
@@ -96,10 +97,18 @@ router.post("/saveInterest", authMiddleware, requireDiscovery, async (req, res) 
             changes.submittedAt = new Date()
         }
 
+        // Round 13: a disability named here, with what it makes harder, sets the affected tests aside
+        // on the assessment page (assessment/accommodations.js) — not measured, never low.
+        const existing = await Submission.findOne({ user: req.user._id }).select("psychometric").lean()
+        const accommodations = accommodationsFromInterest(cleanedInterest.backgroundInfo, (existing && existing.psychometric) || {})
+        const unset = {}
+        if (accommodations) changes["psychometric.accommodations"] = accommodations
+        if (accommodations === null) unset["psychometric.accommodations"] = ""
+
         // interest is a Mixed field — always $set the whole object, never .push() + .save()
         const updatedSubmission = await Submission.findOneAndUpdate(
             { user: req.user._id },
-            { $set: changes },
+            { $set: changes, ...(Object.keys(unset).length > 0 ? { $unset: unset } : {}) },
             { returnDocument: "after", upsert: true }
         )
 

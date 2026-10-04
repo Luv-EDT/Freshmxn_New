@@ -4212,6 +4212,35 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "SET ASIDE — a disability named in the interest form sets the tests it affects aside; finished tests and 'try anyway' are kept",
+        run: () => {
+            const server = require("../../assessment/accommodations")
+            const problems = []
+            // the page's copy must say the same thing as the server's
+            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/accommodations.js"), "utf8")
+            Object.entries(server.AFFECTS).forEach(([need, modules]) => {
+                const line = page.match(new RegExp(`${need}: \\[([^\\]]*)\\]`))
+                const listed = line ? [...line[1].matchAll(/"(\w+)"/g)].map((match) => match[1]) : null
+                if (!listed || listed.join() !== modules.join()) problems.push(`the page and the server disagree on ${need}`)
+            })
+            const yes = { disability: "Yes", disabilityNeeds: ["reading"], disabilityShareWithMentor: true }
+            const fresh = server.accommodationsFromInterest(yes, {})
+            if (!fresh || !fresh.skipped.reasoning || !fresh.skipped.wordRecall || !fresh.skipped.storyRecall || fresh.source !== "interest_form" || !fresh.shareWithMentor) problems.push(`reading did not set its tests aside: ${JSON.stringify(fresh)}`)
+            const finished = server.accommodationsFromInterest(yes, { reasoning: { completedAt: new Date() } })
+            if (finished.skipped.reasoning) problems.push("a finished test was set aside")
+            const tryAnyway = server.accommodationsFromInterest(yes, { accommodations: { ...fresh, skipped: { ...fresh.skipped, wordRecall: false } } })
+            if (tryAnyway.skipped.wordRecall !== false) problems.push("'try anyway' was lost on a re-save")
+            if (server.accommodationsFromInterest({ disability: "No" }, { accommodations: fresh }) !== null) problems.push("answering No did not clear the interest-form block")
+            const older = { needs: ["motor"], declaredAt: "2026-09-30", skipped: { sartRaw: true } }
+            if (server.accommodationsFromInterest(yes, { accommodations: older }) !== undefined) problems.push("a block declared on the assessment page was overwritten")
+            if (server.accommodationsFromInterest({ disability: "Yes", disabilityNeeds: ["telepathy"] }, {}) !== undefined) problems.push("an unknown difficulty was accepted")
+            const intro = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentIntro.js"), "utf8")
+            if (/AccommodationsBox|Skip this — mark it not measured/.test(intro)) problems.push("the old 'Before you start' box or the skip button is still on the page")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

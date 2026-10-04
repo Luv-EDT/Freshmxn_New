@@ -1936,3 +1936,41 @@ button.link-button:hover:not(:disabled) {
         grid-template-columns: 1fr auto;
     }
 }
+
+/* a follow-up question inside an interest-form answer (Round 13) */
+.if-subq {
+    font-weight: 700;
+    margin: var(--space-3) 0 var(--space-2);
+}
+
+/* tests set aside because of what the student told us in the interest form (Round 13) */
+.set-aside-box {
+    background: var(--teal-tint);
+    border-left: 4px solid var(--teal);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+.module-row.is-set-aside .module-title-row {
+    filter: blur(1px);
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+}
+
+.set-aside-note {
+    color: var(--muted);
+}
+
+.link-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    min-height: 44px;
+    color: var(--teal-dark);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
