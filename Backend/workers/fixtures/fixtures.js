@@ -4319,6 +4319,39 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "MENTOR REVIEW — mentors check the going-abroad routes (drafts marked) and which degrees count, in words",
+        // Round 14 (owner): both files were drafted by us, so the mentors who do the work check them
+        run: () => {
+            const { buildSheet, cleanReview, qualitiesFor } = require("../../Routers/mentorReviewsRouter")
+            const taxonomy = require("../../data/ALL-professions.json")
+            const abroadWork = require("../../data/abroad_work.json")
+            const families = require("../../data/degree_families.json")
+            const problems = []
+            const empty = { exams: new Map(), places: new Map(), facts: new Map() }
+            const byId = (id) => taxonomy.professions.find((profession) => profession.id === id)
+
+            const psychologist = buildSheet(byId("soc-clinical-psychologist"), new Map(), empty).sections
+            const routes = psychologist.working_abroad
+            if (!routes || routes.portability !== "requalify") problems.push("a re-qualify career has no working-abroad section")
+            const drafts = Object.entries(abroadWork.licences["soc-clinical-psychologist"] || {}).filter(([, row]) => row.status !== "supported").length
+            if (!routes || routes.countries.filter((row) => row.draft).length !== drafts) problems.push("draft licence rows are not shown to mentors, or not marked")
+            const codes = abroadWork.countries.map((country) => country.code)
+            if (routes && routes.countries.some((row) => !row.country || (codes.includes(row.country) && !abroadWork.countries.some((country) => country.name === row.country)))) problems.push("a country went out as a code, not a name")
+
+            const civilId = Object.entries(families.by_degree).find(([key]) => key === "btech:civil")[1][0]
+            const degrees = buildSheet(byId(civilId), new Map(), empty).sections.degrees
+            if (!degrees || !degrees.degrees.some((label) => /B\.Tech.*Civil/.test(label))) problems.push(`the degree list is not in the form's words: ${JSON.stringify(degrees)}`)
+            const banking = buildSheet(byId(families.any_bachelors[0]), new Map(), empty).sections.degrees
+            if (!banking || banking.anyBachelors !== true) problems.push("an any-bachelor's career does not say so")
+            if (degrees && degrees.degrees.some((label) => /[a-z]+:[a-z_]+/.test(label))) problems.push("a raw degree key reached the sheet")
+
+            const clean = cleanReview({ sections: [{ section: "working_abroad", verdict: "change", note: "Germany needs B2 German too" }, { section: "degrees", verdict: "right" }] }, qualitiesFor("soc-clinical-psychologist"))
+            if (clean.error || clean.items.length !== 2) problems.push(`a review of the new sections was refused: ${clean.error}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

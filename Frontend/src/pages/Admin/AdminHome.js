@@ -14,6 +14,7 @@ import AssessmentIssuesList from "./AssessmentIssuesList"
 import FollowUpsList from "./FollowUpsList"
 import DataUpdatesList from "./DataUpdatesList"
 import EmergingCareersList from "./EmergingCareersList"
+import ActivityMatchesList from "./ActivityMatchesList"
 import StudyAbroadList from "./StudyAbroadList"
 import AiUsageCard from "./AiUsageCard"
 import { getAllIssuesForAdmin } from "../../apiCall/assessmentIssuesApi"
@@ -89,6 +90,11 @@ function AdminHome() {
             key: "emergingCareers",
             label: "Emerging careers",
             children: <EmergingCareersList />,
+        },
+        {
+            key: "activityMatches",
+            label: "Activity matches",
+            children: <ActivityMatchesList />,
         },
         {
             key: "studyAbroad",

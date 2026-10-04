@@ -23,11 +23,14 @@ const router = express.Router()
 const taxonomy = require("../data/ALL-professions.json")
 const baseline = require("../data/baseline_rating.json")
 const abroad = require("../data/abroad.json")
+const abroadWork = require("../data/abroad_work.json")
+const degreeFamilies = require("../data/degree_families.json")
+const degreeOptions = require("../data/degree_options.json")
 
 const professionById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
 const ratingById = new Map(baseline.ratings.map((rating) => [rating.id, rating]))
 
-const SECTIONS = ["what_it_is", "path", "exams", "where_to_study", "abroad", "masters", "pay", "demand", "ai", "nuances"]
+const SECTIONS = ["what_it_is", "path", "exams", "where_to_study", "abroad", "working_abroad", "degrees", "masters", "pay", "demand", "ai", "nuances"]
 const VERDICTS = ["right", "change"]
 const DIRECTIONS = ["right", "higher", "lower"]
 const DECISIONS = ["accepted", "noted", "rejected"]
@@ -50,6 +53,36 @@ const qualitiesFor = (professionId) => {
         .filter(([slug]) => typeof (rating.factors || {})[slug] === "number" && FACTOR_LABELS[slug])
         .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
         .map(([slug], position) => ({ factor: slug, label: FACTOR_LABELS[slug], level: describeLevel(slug, rating.factors[slug]), main: position < QUALITY_COUNT }))
+}
+
+// WORKING ABROAD AND DEGREES (Round 14, owner): both were drafted by us, so mentors check them too.
+// A mentor sees every licence row, drafts included and marked — the rows still waiting for a check
+// are exactly the ones a mentor can confirm — with any approved correction applied, as students get it.
+const workingAbroadFor = (professionId, licences = new Map()) => {
+    const career = abroadWork.careers[professionId]
+    if (!career) return null
+    const rows = abroadWork.licences[professionId] || {}
+    return {
+        portability: career.portability,
+        note: career.note,
+        countries: abroadWork.countries.filter((country) => rows[country.code]).map((country) => {
+            const override = licences.get(`${professionId}:${country.code}`)
+            const row = override && override.approvedAt && override.values ? { ...rows[country.code], ...override.values, status: "supported" } : rows[country.code]
+            return { country: country.name, body: row.body, exam: row.exam, steps: row.steps, url: row.url || null, draft: row.status !== "supported" }
+        }),
+    }
+}
+
+// degree_families.json read backwards: which degrees already count towards this career, in the
+// words the profile form uses ("B.Tech / B.E. — Civil")
+const DEGREE_LABELS = new Map(degreeOptions.families.flatMap((family) => [
+    [family.id, family.label],
+    ...(family.subjects || []).map((subject) => [`${family.id}:${subject.id}`, `${family.label} — ${subject.label}`]),
+]))
+const degreesFor = (professionId) => {
+    const degrees = Object.entries(degreeFamilies.by_degree).filter(([, ids]) => ids.includes(professionId)).map(([key]) => DEGREE_LABELS.get(key) || key)
+    const anyBachelors = degreeFamilies.any_bachelors.includes(professionId)
+    return degrees.length > 0 || anyBachelors ? { degrees, anyBachelors } : null
 }
 
 // What the mentor is shown: the student-facing record, plus the institution list even before the
@@ -81,6 +114,8 @@ const buildSheet = (profession, overrides, studyOverrides) => {
             },
             where_to_study: discipline ? { discipline: discipline.name, institutions } : null,
             abroad: abroadRow ? { need: abroadRow.need, stage: abroadRow.stage || null, why: abroadRow.why || null } : null,
+            working_abroad: workingAbroadFor(profession.id, studyOverrides.licences),
+            degrees: degreesFor(profession.id),
             masters: { afterUndergrad: facing.afterUndergrad || null },
             pay: facing.economics
                 ? { costOfEntryLakh: facing.economics.costOfEntryLakh, earlyEarningsLpa: facing.economics.earlyEarningsLpa, midCareerLpa: facing.economics.midCareerLpa }
@@ -318,3 +353,5 @@ module.exports.qualitiesFor = qualitiesFor
 module.exports.cleanReview = cleanReview
 module.exports.buildSheet = buildSheet
 module.exports.SECTIONS = SECTIONS
+module.exports.workingAbroadFor = workingAbroadFor
+module.exports.degreesFor = degreesFor

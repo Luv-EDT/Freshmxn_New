@@ -80,6 +80,13 @@ function Mentorship() {
         })
     }
 
+    // Round 13 (owner): help is one tap away on every state of this page
+    const help = (
+        <p className="help-line">
+            Need help? <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">WhatsApp us</a>
+        </p>
+    )
+
     if (!user) return null
 
     if (!isTier2) {
@@ -89,18 +96,12 @@ function Mentorship() {
                 <main className="page">
                     <h2>Mentorship</h2>
                     <p>Mentorship comes with the Discovery + Mentor and Mentor Only plans.</p>
+                    {help}
                     <button type="button" className="tap" onClick={() => navigate("/paywall")}>See plans</button>
                 </main>
             </div>
         )
     }
-
-    // Round 13 (owner): help is one tap away on every state of this page
-    const help = (
-        <p className="help-line">
-            Need help? <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">WhatsApp us</a>
-        </p>
-    )
 
     // NOTHING UNTIL THE WAITLIST IS IN. Rendering the static half first and the student's own state a
     // moment later read as the page loading twice (owner, Round 13).
@@ -113,6 +114,7 @@ function Mentorship() {
                     <div className="skeleton skeleton-line" />
                     <div className="skeleton skeleton-block" />
                     <div className="skeleton skeleton-line short" />
+                    {help}
                 </main>
             </div>
         )

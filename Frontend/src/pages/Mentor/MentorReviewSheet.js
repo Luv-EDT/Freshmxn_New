@@ -13,6 +13,8 @@ const SECTION_TITLES = {
     exams: "Exams",
     where_to_study: "Where to study",
     abroad: "Studying abroad",
+    working_abroad: "Working abroad",
+    degrees: "Degrees that already count",
     masters: "Master's degree",
     pay: "Pay",
     demand: "Demand in India",
@@ -31,6 +33,12 @@ const ABROAD_WORDS = {
     not_needed: "Not needed — the Indian routes are enough",
     helps: "Helps, but not needed",
     often_needed: "Often part of the route",
+}
+
+const PORTABILITY_WORDS = {
+    travels_well: "Travels well — the skills are recognised; the hurdles are the visa and the job",
+    requalify: "A licence first — each country's own exam or registration comes before work",
+    india_based: "India-based — an Indian government role, not a route abroad",
 }
 
 const DIRECTION_WORDS = { right: "About right", higher: "Should be higher", lower: "Should be lower" }
@@ -82,6 +90,35 @@ function SectionBody({ id, value }) {
         )
     }
     if (id === "abroad") return <p>{ABROAD_WORDS[value.need] || value.need}{value.why ? ` — ${value.why}` : ""}</p>
+    if (id === "working_abroad") {
+        return (
+            <>
+                <p>{PORTABILITY_WORDS[value.portability] || value.portability}{value.note ? `. ${value.note}` : ""}</p>
+                {value.countries.length > 0 && (
+                    <ul>
+                        {value.countries.map((row) => (
+                            <li key={row.country}>
+                                <strong>{row.country}:</strong> {row.body}{row.exam ? ` — ${row.exam}` : ""}{row.steps ? `. ${row.steps}` : ""}
+                                {row.url && <> · <a href={row.url} target="_blank" rel="noreferrer">official page ↗</a></>}
+                                {row.draft && <span className="report-small"> (draft — please check)</span>}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </>
+        )
+    }
+    if (id === "degrees") {
+        return (
+            <>
+                <p className="report-small">A student with one of these degrees is not counted as starting again for this career.</p>
+                <ul>
+                    {value.anyBachelors && <li>Any bachelor's degree</li>}
+                    {value.degrees.map((label) => <li key={label}>{label}</li>)}
+                </ul>
+            </>
+        )
+    }
     if (id === "masters") return <p>{MASTERS_WORDS[value.afterUndergrad] || "—"}</p>
     if (id === "pay") {
         return <p>Starting {lpa(value.earlyEarningsLpa)} · mid-career {lpa(value.midCareerLpa)} · cost to qualify {value.costOfEntryLakh ? `₹${value.costOfEntryLakh}L` : "—"}</p>
@@ -205,10 +242,12 @@ function MentorReviewSheet() {
                     <p className="report-small">How much each one matters in this profession, as we have it today.</p>
                     {sheet.qualities.filter((quality) => quality.main).map(renderQuality)}
                     {/* Round 13 (owner): every quality, not only the top eight — the rest folded away */}
-                    <details className="review-more">
-                        <summary className="tap">The other {sheet.qualities.filter((quality) => !quality.main).length} qualities</summary>
-                        {sheet.qualities.filter((quality) => !quality.main).map(renderQuality)}
-                    </details>
+                    {sheet.qualities.some((quality) => !quality.main) && (
+                        <details className="review-more">
+                            <summary className="tap">The other {sheet.qualities.filter((quality) => !quality.main).length} qualities</summary>
+                            {sheet.qualities.filter((quality) => !quality.main).map(renderQuality)}
+                        </details>
+                    )}
                 </fieldset>
 
                 <fieldset disabled={locked} className="review-section">

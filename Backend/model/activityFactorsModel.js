@@ -39,6 +39,18 @@ const activityFactorsSchema = new mongoose.Schema(
             type: [String],
             default: [], // the phrasings that folded into this entry, kept for review and for tuning the dedup threshold
         },
+        // Round 14: every near-hit with the similarity that let it in — the last 100 — so the 0.90
+        // threshold can be checked against real answers (admin → Activity matches)
+        folds: {
+            type: [{ _id: false, text: String, score: Number, at: Date }],
+            default: [],
+        },
+        // phrasings an admin said are NOT this activity ("Not the same"): never folded in again, so the
+        // next student who writes one gets it rated on its own
+        refusedFolds: {
+            type: [String],
+            default: [],
+        },
         factors: {
             type: Object,
             required: true, // the 27 matching slugs, 0-10 or null. Mixed: write with $set, never .push() + .save()
