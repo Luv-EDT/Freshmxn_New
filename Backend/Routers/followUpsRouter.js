@@ -165,7 +165,8 @@ router.post("/runHousekeepingForAdmin", authMiddleware, adminAuthMiddleware, asy
             return res.status(400).json({ success: false, message: "Unknown job" })
         }
 
-        await withTimeout(runNow(job), "queueing the job")
+        // the study bot's Run now ignores its seasons (Round 13) — the admin asked for a check now
+        await withTimeout(runNow(job, job === "study_refresh" ? { force: true } : {}), "queueing the job")
 
         return res.status(202).json({ success: true, message: "Started — results appear here in a few minutes", data: { job } })
 

@@ -90,17 +90,20 @@ const getStudyOverrides = async () => {
     const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
     const StudyFactOverride = require("../model/studyFactOverridesModel")
     const CutoffOverride = require("../model/cutoffOverridesModel")
-    const [exams, places, facts, cutoffRows] = await Promise.all([
+    const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")
+    const [exams, places, facts, cutoffRows, licenceRows] = await Promise.all([
         ExamOverride.find({ approvedAt: { $ne: null } }).lean(),
         StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
         StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
         CutoffOverride.find({ approvedAt: { $ne: null } }).lean(),
+        AbroadLicenceOverride.find({ approvedAt: { $ne: null } }).lean(),
     ])
     cache = {
         exams: new Map(exams.map((row) => [row.examId, row])),
         places: new Map(places.map((row) => [row.disciplineId, row])),
         facts: new Map(facts.map((row) => [row.professionId, row])),
         cutoffs: new Map(cutoffRows.map((row) => [row.rowId, row])),
+        licences: new Map(licenceRows.map((row) => [row.key, row])),
     }
     cachedAt = Date.now()
     return cache

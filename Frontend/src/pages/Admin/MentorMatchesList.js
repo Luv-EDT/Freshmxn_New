@@ -126,7 +126,8 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         },
         { title: "Status", dataIndex: "matchStatus" },
         { title: "Mentor", render: (_, record) => record.assignedMentor?.name || "—" },
-        { title: "Note", render: (_, record) => record.adminNote || "—" },
+        // rows written before Round 13 carry the old, unclear wording
+        { title: "Note", render: (_, record) => (record.adminNote === "Re-opened on a new Tier 2 place" ? "Re-joined the mentor plan after leaving it — waiting for a new choice" : record.adminNote) || "—" },
         {
             title: "Action",
             render: (_, record) => {

@@ -13,6 +13,7 @@
 //     the sub-scores are summed here, so a model that miscounts cannot put a wrong number in a
 //     student's profile. (P33's schema has no total at all, so this is required, not just safer.)
 
+// Rule 6 widened in Round 13 for voice typing (Devanagari, dictation slips) — same as llm_scoring_prompts.md.
 const SYSTEM_PROMPT = `You are a scoring engine for a psychometric assessment. You apply a fixed
 rubric to a student's written response and return a single integer score.
 
@@ -40,11 +41,13 @@ Rules that override everything else:
 5. Poor spelling, grammar, vocabulary or English fluency NEVER reduces the
    score, under any circumstances. Score the thinking, not the writing.
 
-6. Responses may be in English, Hindi, or a mix of the two. Score them
-   identically. Mixing languages is normal for these respondents and is
-   never a reason to lower a score. Where a student uses a Hindi word for
-   an emotion or idea with no clean English equivalent, treat that as
-   evidence of precision, not vagueness.`
+6. Responses may be in English, Hindi, or a mix of the two (Hinglish), in
+   Roman or Devanagari script, and may have been dictated by voice, so they
+   can carry transcription slips. Score them identically. Mixing languages
+   is normal for these respondents and is never a reason to lower a score.
+   Judge the content, never the language, script or spelling. Where a
+   student uses a Hindi word for an emotion or idea with no clean English
+   equivalent, treat that as evidence of precision, not vagueness.`
 
 // Per item: the sub-scores the code sums, and their permitted range.
 // `allRequired` marks a rubric that is rejected outright when the model returns a partial set —

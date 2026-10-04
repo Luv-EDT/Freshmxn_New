@@ -110,8 +110,9 @@ function Challenges({ persistentData, currentData, extractedProblems, updatePers
 
     const handleContinuePrevious = (e) => {
         e.preventDefault()
+        const complete = validateForm()
         saveBoth()
-        handlePrevious()
+        handlePrevious({ sectionOk: complete })
     }
 
     // save without moving, so a student can stop here and come back later
@@ -135,12 +136,11 @@ function Challenges({ persistentData, currentData, extractedProblems, updatePers
                 steps={steps}
                 currentStepIndex={currentStepIndex}
                 goToStep={goToStep}
-                onStepClick={(targetIndex) => {
-                    // Only validate for forward navigation
-                    // the rows that need finishing are marked inline, with a message by Next
-                    if (targetIndex > currentStepIndex && !validateForm()) return false
+                onStepClick={() => {
+                    // the rows that need finishing are marked inline; false tells the form something is missing
+                    const complete = validateForm()
                     saveBoth()
-                    return true
+                    return complete
                 }}
             />
 

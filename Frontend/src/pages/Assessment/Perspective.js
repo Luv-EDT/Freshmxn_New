@@ -1,4 +1,5 @@
 import { useState } from "react"
+import VoiceInput, { appendSpoken } from "../VoiceInput"
 import ModuleProgressBar from "./ModuleProgressBar"
 import {
     PERSPECTIVE_MCQ,
@@ -184,6 +185,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
                                     {item.parts.map((part) => <li key={part}>{part}</li>)}
                                 </ul>
                             )}
+                            <VoiceInput onText={(spoken) => onOpenText(item.id, appendSpoken(openText[item.id], spoken))} />
                             <textarea
                                 rows={8}
                                 value={openText[item.id] || ""}

@@ -7,9 +7,10 @@ import { whyFits, entryRoute } from "./reportPlan"
 import { aiExposureText } from "./ProfessionCard"
 
 // Compare careers side by side (owner, 2026-09-29): its own page, reached from the top of the
-// report. The student picks 2-3 careers from THEIR OWN list — the ranking plus the worth-the-switch
-// careers — and sees them in one table. The selection lives in the URL (?ids=a,b,c) so Back and a
-// refresh keep it. No new backend: the same two calls the report already makes.
+// report. The student picks 2-3 careers from the ones recommended to them — the ranked list on their
+// report, nothing else (Round 13, owner: the worth-the-switch extras made it look like more had been
+// recommended), and nothing preselected — and sees them in one table. The selection lives in the URL
+// (?ids=a,b,c) so Back and a refresh keep it. No new backend: the same two calls the report makes.
 const MAX = 3
 
 const SUBJECTS = { physics: "Physics", chemistry: "Chemistry", maths: "Maths", biology: "Biology" }
@@ -33,10 +34,9 @@ const ROWS = [
     ["Deadline", (entry, detail) => (detail.entryWindow && detail.entryWindow.constrainedRoute) || "None"],
     ["Cost to qualify", (entry, detail) => (detail.economics && typeof detail.economics.costOfEntryLakh === "number" ? `About ₹${detail.economics.costOfEntryLakh}L` : "—")],
     ["Starting pay", (entry, detail) => (detail.economics ? `₹${detail.economics.earlyEarningsLpa}L a year` : "—")],
-    ["Mid-career pay", (entry, detail) => (detail.economics && detail.economics.midCareerLpa ? `₹${detail.economics.midCareerLpa}L a year${detail.economics.checked ? "" : " (estimate)"}` : "—")],
+    ["Mid-career pay", (entry, detail) => (detail.economics && detail.economics.midCareerLpa ? `₹${detail.economics.midCareerLpa}L a year` : "—")],
     ["Demand", (entry, detail) => (detail.demand ? DEMAND[detail.demand.india] || detail.demand.india : "—")],
     ["AI exposure", (entry, detail) => aiExposureText(detail) || (detail.aiExposure ? AI[detail.aiExposure.band] || detail.aiExposure.band : "—")],
-    ["How much was measured", (entry) => (typeof entry.measuredPct === "number" ? `Partial · ${entry.measuredPct}%` : "Complete")],
     ["Working for yourself", (entry, detail) => (detail.selfEmployment ? SELF[detail.selfEmployment.likelihood] || "—" : "—")],
     ["Years of what you've done left behind", (entry) => (entry.wastedYears > 0 ? `About ${entry.wastedYears}` : "None")],
     ["Licence", (entry, detail) => detail.licensingBody || "None"],
@@ -44,7 +44,7 @@ const ROWS = [
 
 function ComparePage() {
     const [params, setParams] = useSearchParams()
-    const [careers, setCareers] = useState(null)       // the student's own list: ranking + worth-the-switch
+    const [careers, setCareers] = useState(null)       // the careers recommended to the student
     const [details, setDetails] = useState({})
     const [error, setError] = useState("")
 
@@ -53,10 +53,7 @@ function ComparePage() {
             try {
                 const response = await getMyReport()
                 const data = response.data.data || {}
-                const ranked = data.ranked || []
-                const seen = new Set(ranked.map((entry) => String(entry.professionId)))
-                const extras = (data.worthTheSwitch || []).filter((entry) => !seen.has(String(entry.professionId)))
-                const list = [...ranked, ...extras]
+                const list = data.ranked || []
                 setCareers(list)
 
                 if (list.length > 0) {
@@ -72,11 +69,10 @@ function ComparePage() {
         load()
     }, [])
 
-    // Default selection: the top three, until the student picks their own.
+    // Nothing is chosen for the student; only ids that are on their own list count.
     const selected = useMemo(() => {
-        const fromUrl = (params.get("ids") || "").split(",").filter(Boolean)
-        if (fromUrl.length > 0) return fromUrl.slice(0, MAX)
-        return (careers || []).slice(0, MAX).map((entry) => String(entry.professionId))
+        const mine = new Set((careers || []).map((entry) => String(entry.professionId)))
+        return (params.get("ids") || "").split(",").filter((id) => mine.has(id)).slice(0, MAX)
     }, [params, careers])
 
     const toggle = (id) => {
@@ -96,7 +92,7 @@ function ComparePage() {
             <main className="compare-page">
                 <p><Link to="/report">← Back to your report</Link></p>
                 <h1>Compare careers</h1>
-                <p className="report-small">Pick up to {MAX} careers from your list to see them side by side.</p>
+                <p className="report-small">Pick two or three of the careers recommended to you to see them side by side.</p>
 
                 {error && <p>{error}</p>}
                 {!careers && !error && <p>Loading…</p>}

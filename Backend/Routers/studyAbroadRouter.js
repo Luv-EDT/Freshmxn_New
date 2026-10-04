@@ -1,6 +1,7 @@
 const express = require("express")
 const StudyAbroadLead = require("../model/studyAbroadLeadsModel")
 const Recommendation = require("../model/recommendationsModel")
+const Submission = require("../model/submissionsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const requireDiscovery = require("../middlewares/requireDiscovery")
@@ -34,7 +35,11 @@ router.post("/expressInterest", authMiddleware, requireDiscovery, async (req, re
         const recommendation = await Recommendation.findOne({ user: req.user._id }).select("ranked_professions").lean()
         const top = recommendation ? (recommendation.ranked_professions || []).slice(0, TOP_N) : []
         const asked = Array.isArray(req.body.careerIds) ? req.body.careerIds.map(String) : []
-        const chosen = top.filter((entry) => qualifies(String(entry.professionId)) && (asked.length === 0 || asked.includes(String(entry.professionId))))
+        // Round 13: a student who told us in the interest form that they hope to go abroad may ask
+        // about any of their top matches, not only the ones where studying abroad usually helps
+        const submission = await Submission.findOne({ user: req.user._id }).select("interest.backgroundInfo.abroadHope").lean()
+        const hopes = Boolean(submission && submission.interest && submission.interest.backgroundInfo && submission.interest.backgroundInfo.abroadHope === "yes")
+        const chosen = top.filter((entry) => (hopes || qualifies(String(entry.professionId))) && (asked.length === 0 || asked.includes(String(entry.professionId))))
 
         if (chosen.length === 0) {
             return res.status(400).json({ success: false, message: "None of your top matches usually needs study abroad" })

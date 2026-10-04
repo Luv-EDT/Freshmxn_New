@@ -9,7 +9,7 @@ const matchProfile = require("../matchProfile")
 const { weightedMatch } = require("../similarity")
 const { wasteFor, journeyMultiplier, hardFilterReason } = require("../journey")
 const { tierFor, applySort } = require("../tiers")
-const { canonicalise, cosine, topProfessionsByVector, createActivityResolver } = require("../activityResolver")
+const { canonicalise, cosine, topProfessionsByVector, createActivityResolver, needsTranslation } = require("../activityResolver")
 const Profile = require("../../model/profilesModel")
 const ActivityFactors = require("../../model/activityFactorsModel")
 const {
@@ -885,6 +885,56 @@ const fixtures = [
                 if (career.sideA === career.sideB) problems.push(`${career.id}: both sides are the same group`)
             })
             if (new Set(data.careers.map((career) => career.id)).size !== data.careers.length) problems.push("duplicate ids")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "HINGLISH — Hindi or Hinglish activities are put into English before embedding; English is never sent",
+        // Round 13 (voice typing): the embeddings and the rubric are English. Only text that needs it
+        // pays for a translation, and the student's own words are kept on the cached row.
+        run: async () => {
+            const problems = []
+            ;["playing cricket", "coding websites with friends", "the chess club", "i’m into coding — mostly games 🎮"].forEach((text) => {
+                if (needsTranslation(text)) problems.push(`"${text}" was treated as Hindi`)
+            })
+            ;["cricket khelna", "गाना गाना", "dosto ke saath coding karta tha"].forEach((text) => {
+                if (!needsTranslation(text)) problems.push(`"${text}" was not recognised as Hindi or Hinglish`)
+            })
+
+            const cache = fakeCache([{ canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], embedding: [1, 0, 0] }])
+            const real = globalThis.fetch
+            const sent = { claude: [], voyage: [] }
+            globalThis.fetch = async (url, options) => {
+                const body = JSON.parse(options.body)
+                if (String(url).includes("voyageai")) {
+                    sent.voyage.push(...body.input)
+                    return { ok: true, json: async () => ({ data: body.input.map((_, index) => ({ index, embedding: [1, 0, 0] })) }) }
+                }
+                sent.claude.push(body.messages[0].content)
+                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify({ items: ["Playing cricket"] }) }] }) }
+            }
+            try {
+                const resolver = createActivityResolver({
+                    ActivityFactors: cache.model,
+                    professionEmbeddings: { model: "voyage-4-large", dimensions: 3, embeddings: [] },
+                    anchors: { schema_version: "2.0", bands: [], factors: [] },
+                    factorSlugs: scoreProfile.MATCHING_FACTORS,
+                    voyageApiKey: "test", anthropicApiKey: "test",
+                })
+                const resolved = await resolver.resolveActivities([{ activity: "Cricket khelna", key: "cricket khelna" }])
+                if (sent.claude.length !== 1 || !sent.claude[0].includes("cricket khelna")) problems.push("the Hinglish activity was not sent for translation once")
+                if (sent.voyage.join() !== "playing cricket") problems.push(`the embedding was not of the English: ${sent.voyage.join()}`)
+                if (!resolved[0] || resolved[0].factors.bodily_intelligence !== 9) problems.push("the translated activity did not reach the cached factors")
+                const kept = cache.updates.some((update) => JSON.stringify(update).includes("cricket khelna"))
+                if (!kept) problems.push("the student's own words were not kept on the cached row")
+
+                sent.claude.length = 0
+                await resolver.resolveActivities([{ activity: "Swimming laps", key: "swimming laps" }])
+                if (sent.claude.length !== 0) problems.push("plain English was sent for translation")
+            } finally {
+                globalThis.fetch = real
+            }
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

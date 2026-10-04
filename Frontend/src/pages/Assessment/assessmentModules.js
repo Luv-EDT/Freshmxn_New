@@ -22,14 +22,13 @@ import { PERSPECTIVE_MCQ, VALUES_FULFILMENT, VALUES_IMPORTANCE } from "./perspec
 export const ASSESSMENT_MODULES = [
     { key: "storyRecall", title: "A short story", minutes: 10, built: true, note: "Starts a one-hour clock. You are asked about it tomorrow, and the questions stay open for two days." },
     { key: "ipip50", title: "How you see yourself", minutes: 8, built: true },
-    { key: "mi", title: "What you are drawn to", minutes: 6, built: true },
-    { key: "interests60", title: "Activities you would enjoy", minutes: 4, built: true },
+    { key: "mi", title: "What you are drawn to", minutes: 5, built: true },
     { key: "rosenberg", title: "How you rate yourself", minutes: 3, built: true },
-    { key: "confidence", title: "Confidence in six situations", minutes: 4, built: true },
-    { key: "perspective", title: "How you think", minutes: 20, built: true },
+    { key: "confidence", title: "Confidence in three situations", minutes: 2, built: true },
+    { key: "perspective", title: "How you think", minutes: 17, built: true },
     { key: "digitSpan", title: "Remembering numbers", minutes: 5, built: true },
     { key: "wordRecall", title: "Remembering words", minutes: 5, built: true, note: "Two lists of fifteen words, each shown once. One attempt." },
-    { key: "reasoning", title: "Reasoning puzzles", minutes: 15, built: true, note: "Sixteen puzzles of four kinds. One attempt — take it somewhere quiet." },
+    { key: "reasoning", title: "Reasoning puzzles", minutes: 20, built: true, note: "Sixteen puzzles of four kinds, each with its own clock. One attempt — take it somewhere quiet." },
     // RETIRED (Round 10): the in-house puzzles replaced this upload. It stays registered so a student
     // who already took it still sees it and keeps their result; nobody new is asked to take it.
     { key: "extReasoning", title: "Reasoning test (other website)", minutes: 15, built: true, retired: true, external: true, note: "Taken on another website before our own puzzles existed. Your result still counts." },
@@ -87,9 +86,8 @@ const isModuleComplete = (key, block) => {
     // only check that ever catches it — so it is the thing that counts as done.
     if (key === "extReasoning" || key === "extVerbal") return Boolean(block.studentConfirmedAt)
 
-    // The in-house reasoning puzzles are done when the server stamps the sixteenth answer; the
-    // activity checklist when the student presses Done (an unticked box only means "no" then).
-    if (key === "reasoning" || key === "interests60" || key === "wordRecall") return Boolean(block.completedAt)
+    // The in-house reasoning puzzles and the word test are done when the server stamps the last answer.
+    if (key === "reasoning" || key === "wordRecall") return Boolean(block.completedAt)
 
     // SART saves the PsyToolkit rows as a plain string, and saves NOTHING when the device failed
     // its timing check. So a non-empty string here means a session that is actually scoreable, and
@@ -126,6 +124,31 @@ export const startedModules = (psychometric) => {
         const answered = Object.keys(block.answers || {}).length + (block.trials || []).length + (block.answered || 0)
         return answered > 0
     }).map((module) => module.key)
+}
+
+// How far into a started module the student is, as a whole-number percentage — for the "In progress ·
+// N% left" chip (Round 13). Counted from the same item lists as REQUIRED_ANSWERS. null when there is
+// no fixed length to count against (digit span stops when it stops; the story runs on its clock).
+const FIXED_LENGTH = { reasoning: 16, wordRecall: 2 }
+
+export const progressPct = (key, block) => {
+    if (!block || typeof block !== "object") return null
+    let done = null
+    let total = null
+    if (REQUIRED_ANSWERS[key] !== undefined) {
+        done = Object.keys(block.answers || {}).length
+        total = REQUIRED_ANSWERS[key]
+        if (key === "perspective") {
+            done += Math.min(Object.keys(block.narrative || {}).length, 2)
+            total += 2
+        }
+    } else if (FIXED_LENGTH[key]) {
+        // the page gets counts, not the marked rows (getMySubmission strips trials and responses)
+        done = key === "wordRecall" ? (block.written || 0) : (block.answered || 0)
+        total = FIXED_LENGTH[key]
+    }
+    if (!total) return null
+    return Math.max(0, Math.min(99, Math.floor((done / total) * 100)))
 }
 
 // FOUR MODULES DO NOT GATE SUBMISSION. This is a SAFETY VALVE, NOT A FEATURE — nothing in the UI

@@ -9,7 +9,6 @@ const scoreVerbalMemory = require("./verbalMemory")
 const scoreWordRecall = require("./wordRecall")
 const scoreReasoning = require("./reasoning")
 const scoreReasoningInHouse = require("./reasoningInHouse")
-const scoreInterests60 = require("./interests60")
 const scoreStoryRecall = require("./storyRecall")
 const { combine, worstQuality, round2 } = require("./scoringHelpers")
 
@@ -41,7 +40,7 @@ const { combine, worstQuality, round2 } = require("./scoringHelpers")
      confidence:  { answers: { CF1: "B", … } },                       // 6,  A–E
      perspective: {
          answers:   { P1: "A) …", P8: "C) …", U7: "C) …", PS1: "B) …", P23: 4, … },
-         open:      { P7: {…}, P13: {…}, P22: {…}, P33: {…} },  // full LLM JSON or null
+         open:      { P7: {…}, P22: {…}, P33: {…} },  // full LLM JSON or null (P13 retired)
          narrative: { P31: "…", P32: "…" },
      },
      digitSpan:   { trials: [{ length, presented, response, correct, ms }] },
@@ -54,7 +53,7 @@ const { combine, worstQuality, round2 } = require("./scoringHelpers")
    }
    ========================================================================== */
 
-// 1.0.1: P13 grades stored flat now count (asP13Criteria)
+// 1.0.1: P13 grades stored flat now count (adapter removed in 1.4.0, when P13 was retired)
 // 1.2.0 (Round 10): the in-house reasoning test (provisional, raw share) replaces the external one
 // when present; six intelligences take the O*NET activities as a second interest input, and spatial,
 // logical and verbal take their reasoning-test part as a performance half; U8 joins U7 as the
@@ -64,7 +63,10 @@ const { combine, worstQuality, round2 } = require("./scoringHelpers")
 // partial; PS1-PS4 are now asked, so grit has its persistence input; factor_coverage is reported.
 // 1.3.0 (Round 11): the in-house word-memory test (provisional, raw share) replaces the outside upload
 // as the verbal half of short-term memory when present.
-const SCORING_VERSION = "profile@1.3.0"
+// 1.4.0 (Round 13): a shorter assessment — the O*NET activity checklist is no longer asked or read
+// (each intelligence is its self-report, plus the matching reasoning part for verbal, spatial and
+// logical); three repeat MI items and three repeat confidence situations are retired.
+const SCORING_VERSION = "profile@1.4.0"
 
 const COMPONENT_VERSIONS = {
     perspective: "perspective@5.0.0",
@@ -72,13 +74,11 @@ const COMPONENT_VERSIONS = {
     instrument: "instrument@1.0.0",
     story: "story@1.0.0",
     reasoning: "reasoning-inhouse@0.1.0",   // provisional — no norms yet
-    interests: "onet-ip-short@1",
 }
 
-// Owner, Round 10: each intelligence is built from up to three parts — the MI self-report (primary),
-// the O*NET activities that point at it, and, for the three a browser can test fairly, the matching
-// part of the reasoning test. Existential has no O*NET activity and no test, so it stays self-report.
-const MI_AFFINITY_WEIGHTS = { selfReport: 0.7, activities: 0.3 }
+// Owner, Round 10, trimmed in Round 13: each intelligence is the MI self-report (primary) and, for
+// the three a browser can test fairly, half the matching part of the reasoning test. The O*NET
+// activities half-repeated the self-report and are no longer asked.
 const MI_PERFORMANCE_WEIGHT = 0.5
 const MI_PERFORMANCE_PART = {
     spatial_intelligence: "spatial",
@@ -168,29 +168,9 @@ const RELEASE_FULL = 1
 const RELEASE_WITH_NOTE = 0.75
 
 // the ported perspective scorer takes 53 positional arguments in this exact order
-// P13 IS STORED IN A DIFFERENT SHAPE FROM THE ONE THE PERSPECTIVE SCORER READS, and that silently
-// dropped the day-plan grade for every real student (backend review, 2026-09-24).
-//
-// llmScorer flattens P13's five criteria into numeric sub-scores — `{ deep_work_first: 1, … }` —
-// and gradeOpenItems stores exactly that. perspectiveScoring.js reads `criteria.<name>` as
-// true/false and nothing else, so it saw no criteria, left the day plan unscored and reported
-// "only 0 of 5 criteria returned". The fixtures never caught it because they fed the scorer the
-// shape it wanted rather than the shape the pipeline stores.
-//
-// Adapted HERE, at the boundary, rather than by changing what is stored: every submission already
-// graded keeps working without a migration, and the ported scorer stays untouched. Anything that
-// already has `criteria` (or is null) passes through unchanged.
-const P13_CRITERIA = ["deep_work_first", "urgency_order", "messages_batched", "fixed_respected", "recovery"]
-
-const asP13Criteria = (graded) => {
-    if (graded === null || graded === undefined || typeof graded !== "object" || graded.criteria) return graded
-
-    const flat = P13_CRITERIA.every((name) => graded[name] === 0 || graded[name] === 1)
-    if (!flat) return graded
-
-    return { criteria: Object.fromEntries(P13_CRITERIA.map((name) => [name, graded[name] === 1])) }
-}
-
+// P13, the written day plan, is no longer asked (owner, Round 13): the planning multiple-choice items
+// P8–P12 measure the same thing. The ported scorer still takes its slot, so it is always passed null
+// and the planning bank renormalises over the multiple choice — an old stored grade does nothing.
 const callPerspective = (perspective, sart, traits) => {
     const answers = (perspective && perspective.answers) || {}
     const open = (perspective && perspective.open) || {}
@@ -201,7 +181,7 @@ const callPerspective = (perspective, sart, traits) => {
         item("P1"), item("P2"), item("P3"), item("P4"), item("P5"), item("P6"),
         open.P7 === undefined ? null : open.P7,
         item("P8"), item("P9"), item("P10"), item("P11"), item("P12"),
-        open.P13 === undefined ? null : asP13Criteria(open.P13),
+        null,     // P13 — retired, see above
         item("P14"), item("P15"), item("P16"), item("P17"), item("P18"), item("P19"), item("P20"), item("P21"),
         open.P22 === undefined ? null : open.P22,
         item("P23"), item("P24"), item("P25"), item("P26"), item("P27"), item("P28"), item("P29"), item("P30"),
@@ -268,7 +248,6 @@ const scoreProfile = (submitted = {}) => {
     const inHouseReasoning = scoreReasoningInHouse(psychometric.reasoning)
     const externalReasoning = scoreReasoning(psychometric.extReasoning)
     const reasoning = inHouseReasoning.score !== null ? inHouseReasoning : externalReasoning
-    const interests = scoreInterests60(psychometric.interests60)
     const storyRecall = scoreStoryRecall(psychometric.storyRecall, psychometric.storyRecall && psychometric.storyRecall.free)
 
     const sartResult = psychometric.sartRaw ? scoreSart(psychometric.sartRaw) : null
@@ -284,12 +263,11 @@ const scoreProfile = (submitted = {}) => {
     if (!psychometric.digitSpan) modules_missing.push("digitSpan")
     if (!psychometric.extVerbal && !psychometric.wordRecall) modules_missing.push("wordRecall")
     if (!psychometric.extReasoning && !psychometric.reasoning) modules_missing.push("reasoning")
-    if (!psychometric.interests60) modules_missing.push("interests60")
     if (!psychometric.storyRecall) modules_missing.push("storyRecall")
     if (!psychometric.sartRaw) modules_missing.push("sart")
     if (!psychometric.perspective) modules_missing.push("perspective")
 
-    ;[ipip, mi, rosenberg, ownConfidence, digitSpan, wordRecall, externalVerbal, inHouseReasoning, externalReasoning, interests, storyRecall].forEach((result) => {
+    ;[ipip, mi, rosenberg, ownConfidence, digitSpan, wordRecall, externalVerbal, inHouseReasoning, externalReasoning, storyRecall].forEach((result) => {
         mergeFlags(result.flags)
     })
 
@@ -317,25 +295,14 @@ const scoreProfile = (submitted = {}) => {
     // ── the intelligences as composites (Round 10) ──
     const miCoverage = {}
     MI_FACTORS.forEach((factor) => {
-        const selfReport = mi.scores[factor]
-        const activities = interests.mi[factor]
-        const hasActivityItems = factor !== "existential_intelligence"
-
-        const affinityParts = [{ value: selfReport, weight: MI_AFFINITY_WEIGHTS.selfReport, quality: mi.quality[factor], primary: true }]
-        if (hasActivityItems) affinityParts.push({ value: activities, weight: MI_AFFINITY_WEIGHTS.activities, quality: "full" })
-        const affinity = combine(affinityParts, { minUsedWeight: MI_AFFINITY_WEIGHTS.selfReport })
-
-        let result = affinity
-        const selfCoverage = typeof mi.coverage[factor] === "number" ? mi.coverage[factor] : 0
-        let coverage = hasActivityItems
-            ? MI_AFFINITY_WEIGHTS.selfReport * selfCoverage + MI_AFFINITY_WEIGHTS.activities * (typeof activities === "number" ? 1 : 0)
-            : selfCoverage
+        let result = { value: mi.scores[factor], quality: mi.quality[factor] }
+        let coverage = typeof mi.coverage[factor] === "number" ? mi.coverage[factor] : 0
 
         const part = MI_PERFORMANCE_PART[factor]
         if (part) {
             const performance = inHouseReasoning.parts ? inHouseReasoning.parts[part] : undefined
             result = combine([
-                { value: affinity.value, weight: 1 - MI_PERFORMANCE_WEIGHT, quality: affinity.quality, primary: true },
+                { value: result.value, weight: 1 - MI_PERFORMANCE_WEIGHT, quality: result.quality, primary: true },
                 { value: performance, weight: MI_PERFORMANCE_WEIGHT, quality: inHouseReasoning.quality },
             ], { minUsedWeight: 1 - MI_PERFORMANCE_WEIGHT })
             coverage = (1 - MI_PERFORMANCE_WEIGHT) * coverage + MI_PERFORMANCE_WEIGHT * (typeof performance === "number" ? 1 : 0)
@@ -574,8 +541,6 @@ const scoreProfile = (submitted = {}) => {
             verbal_recall: storyRecall.verbal_recall === undefined ? null : storyRecall.verbal_recall,
             uncertainty_tolerance_matching,
             mi_self_report: mi.scores,
-            interests_mi: interests.mi,
-            riasec: interests.riasec,            // stored for V2 career matching; never shown to a student
             reasoning_source: inHouseReasoning.score !== null ? "in_house" : (externalReasoning.score !== null ? "external" : null),
             reasoning_parts: inHouseReasoning.parts || {},
             sart: sartResult ? sartResult.descriptives : null,

@@ -62,11 +62,13 @@ Rules that override everything else:
 5. Poor spelling, grammar, vocabulary or English fluency NEVER reduces the
    score, under any circumstances. Score the thinking, not the writing.
 
-6. Responses may be in English, Hindi, or a mix of the two. Score them
-   identically. Mixing languages is normal for these respondents and is
-   never a reason to lower a score. Where a student uses a Hindi word for
-   an emotion or idea with no clean English equivalent, treat that as
-   evidence of precision, not vagueness.
+6. Responses may be in English, Hindi, or a mix of the two (Hinglish), in
+   Roman or Devanagari script, and may have been dictated by voice, so they
+   can carry transcription slips. Score them identically. Mixing languages
+   is normal for these respondents and is never a reason to lower a score.
+   Judge the content, never the language, script or spelling. Where a
+   student uses a Hindi word for an emotion or idea with no clean English
+   equivalent, treat that as evidence of precision, not vagueness.
 ```
 
 ---

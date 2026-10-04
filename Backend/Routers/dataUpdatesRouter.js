@@ -12,9 +12,10 @@ const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const { clearOverrides, isValidValue } = require("../utils/professionOverrides")
 const { clearStudyOverrides } = require("../utils/studyPlaces")
 const { costOf } = require("../utils/aiUsage")
-const { validateExamChange, validateNewExam, validateFactChange, validateCutoffChange, cutoffDomains, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
+const { validateExamChange, validateNewExam, validateFactChange, validateCutoffChange, cutoffDomains, validateLicenceChange, hostOf, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
 const { cutoffs: cutoffData } = require("../utils/cutoffs")
-const { topQualities } = require("./mentorReviewsRouter")
+const abroadWork = require("../data/abroad_work.json")
+const { qualitiesFor } = require("./mentorReviewsRouter")
 
 const router = express.Router()
 
@@ -52,6 +53,23 @@ const approveStudyProposal = async (proposal) => {
         await StudyFactOverride.updateOne(
             { professionId: proposal.professionId },
             { $set: { [`values.${proposal.field}`]: value, approvedAt: new Date() }, $push: { sources } },
+            { upsert: true }
+        )
+        return null
+    }
+
+    if (proposal.kind === "abroad_licence") {
+        const value = parseJson(proposal.proposedValue)
+        const [careerId, country] = String(proposal.professionId).split(":")
+        const current = ((abroadWork.licences[careerId] || {})[country]) || null
+        if (!current || !value) return "That licence row is not in data/abroad_work.json"
+        const host = hostOf(current.url)
+        const valid = validateLicenceChange({ field: "licence", proposed: value }, {}, [{ url: "checked" }], host ? [host] : [])
+        if (!valid) return "The proposed route is not well formed, or its page is not the licensing body's own"
+        const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")
+        await AbroadLicenceOverride.updateOne(
+            { key: proposal.professionId },
+            { $set: { values: parseJson(valid.proposedValue), approvedAt: new Date() }, $push: { sources } },
             { upsert: true }
         )
         return null
@@ -196,7 +214,8 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
 router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const CutoffOverride = require("../model/cutoffOverridesModel")
-        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews, cutoffRows] = await Promise.all([
+        const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")
+        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews, cutoffRows, licenceRows] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
             CareerDraft.find({ status: "accepted" }).lean(),
@@ -205,6 +224,7 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
             StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
             MentorReview.find({ "items.decision": "accepted" }).lean(),
             CutoffOverride.find({ approvedAt: { $ne: null } }).lean(),
+            AbroadLicenceOverride.find({ approvedAt: { $ne: null } }).lean(),
         ])
         const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
@@ -247,6 +267,12 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                 values: row.values,
                 checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
             })),
+            // licence routes abroad re-read on the licensing body's own site and approved (Round 13)
+            abroadLicences: licenceRows.filter((row) => row.values).map((row) => ({
+                id: row.key,
+                values: row.values,
+                checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
+            })),
             // mentors' accepted remarks on their own profession (Round 12). Words, not values: a person
             // turns each into a data change, so tools/applyDataPatch.js only lists them.
             mentorNotes: mentorReviews.flatMap((review) => review.items
@@ -259,12 +285,14 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                     sourceUrl: item.sourceUrl || null,
                     reviewedOn: new Date(review.updatedAt).toISOString().slice(0, 10),
                 }))),
-            // careers whose top qualities a mentor called "about right" and the admin accepted, every
-            // one of them — baseline_rating.json can mark these mentor_reviewed
+            // careers where a mentor answered at least the main qualities, called every quality they
+            // answered "about right", and the admin accepted each — baseline_rating.json can mark
+            // these mentor_reviewed
             mentorReviewedRatings: [...new Set(mentorReviews
                 .filter((review) => {
                     const qualities = review.items.filter((item) => item.section === "qualities")
-                    return qualities.length >= topQualities(review.professionId).length
+                    const answered = new Set(qualities.map((item) => item.factor))
+                    return qualitiesFor(review.professionId).filter((quality) => quality.main).every((quality) => answered.has(quality.factor))
                         && qualities.every((item) => item.direction === "right" && item.decision === "accepted")
                 })
                 .map((review) => review.professionId))],

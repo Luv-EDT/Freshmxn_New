@@ -40,28 +40,20 @@ export const ROSENBERG_ITEMS = [
 // Required by the scale's licence. Rendered in the module, not buried in a footer.
 export const ROSENBERG_ATTRIBUTION = "Rosenberg Self-Esteem Scale (Rosenberg, 1965)"
 
-// ── Confidence — six situations, each with its own answers ──────────────────────────────────────
+// ── Confidence — three situations (six until Round 13), each with its own answers ──────────────────────────────────────
 // Deliberately situational rather than "rate your confidence 1-5". A trait rating asks someone to
 // summarise themselves; a situation gives them something concrete to reason about, and the answer
 // they pick reveals more than the number they would have chosen.
 //
-// Two items have TIED options (CF3 B/C both score 3, CF4 A/B both score 4) — one is emotional
+// Round 13 (owner): CF1, CF4 and CF5 are retired — each repeated a question in "How you think"
+// (U6/P19, U3, P18). Three situations remain.
+//
+// Two items had TIED options (CF3 B/C both score 3, and the retired CF4 A/B both 4) — one is emotional
 // resilience and the other motivational redirection, and neither is better. The scorer holds those
 // keys; nothing here should hint that one answer is the "right" one.
 const CF_OPTIONS = (options) => options.map((label, index) => ({ value: "ABCDE"[index], label }))
 
 export const CONFIDENCE_ITEMS = [
-    {
-        id: "CF1",
-        text: "Six months ago you tried something that mattered to you and it did not work out. Someone brings it up in conversation today. What actually happens in your head?",
-        options: CF_OPTIONS([
-            "I can talk about it normally — I took what was useful from it and moved on",
-            "It still stings a little, but I can discuss what went wrong",
-            "I change the subject; thinking about it isn't useful",
-            "I replay it for a while afterwards, wondering what I should have done",
-            "I still think about it often, and it affects what I attempt now",
-        ]),
-    },
     {
         id: "CF2",
         text: "You planned to finish five things this week. By Friday you have finished two. Looking back, this has happened more than once. What do you conclude?",
@@ -82,28 +74,6 @@ export const CONFIDENCE_ITEMS = [
             "It makes me want to move faster on my own things",
             "I feel behind, and it stays with me for a while",
             "I feel behind most of the time, comparing myself to people my age",
-        ]),
-    },
-    {
-        id: "CF4",
-        text: "You are offered a role or opportunity you have never done before. You meet perhaps 70% of what it seems to need. What do you do?",
-        options: CF_OPTIONS([
-            "Take it. The remaining 30% is what I'd learn by doing it",
-            "Take it, after finding out what the missing 30% actually involves",
-            "Ask whether I can start with a smaller version of it",
-            "Wait until I'm more prepared and hope it comes again",
-            "Let it go — someone better suited should have it",
-        ]),
-    },
-    {
-        id: "CF5",
-        text: "You have to present or perform in front of people whose opinion you care about. How does it usually go?",
-        options: CF_OPTIONS([
-            "About as well as when nobody is watching",
-            "Slightly worse at the start, then I settle",
-            "Noticeably worse — I know the material better than I show",
-            "I get through it but avoid these situations when I can",
-            "I avoid them entirely if there's any way to",
         ]),
     },
     {
@@ -161,7 +131,6 @@ export const MI_ITEMS = [
 
     { id: "MI_N1", text: "I notice small changes in the weather, the sky, or the seasons" },
     { id: "MI_N2", text: "I can tell different plants, birds, or animals apart" },
-    { id: "MI_N3", text: "I remember trees, paths, or landmarks in places I have visited" },
     { id: "MI_N4", text: "I group living things by their features without being taught to" },
     { id: "MI_N5", text: "I notice when an animal's or bird's behaviour signals a change coming" },
 
@@ -169,11 +138,9 @@ export const MI_ITEMS = [
     { id: "MI_E2", text: "I enjoy conversations about meaning, purpose, or right and wrong" },
     { id: "MI_E3", text: "I find myself wondering about questions that may have no answer" },
     { id: "MI_E4", text: "I think about how my choices affect people I will never meet" },
-    { id: "MI_E5", text: "I keep asking why even after I have been given an answer" },
 
     { id: "MI_L1", text: "I enjoy puzzles that have to be worked out step by step" },
     { id: "MI_L2", text: "I notice when an argument does not follow from what came before" },
     { id: "MI_L3", text: "I look for the rule or pattern behind a set of numbers or events" },
     { id: "MI_L4", text: "I am comfortable working with numbers and quantities in everyday situations" },
-    { id: "MI_L5", text: "I work through a problem in order rather than jumping to the answer" },
 ]

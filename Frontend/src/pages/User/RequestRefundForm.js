@@ -48,6 +48,9 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
         }
     }
 
+    // ₹2,700, not ₹2700 — the amounts are the server's, the commas are ours
+    const inr = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`
+
     const chosenAmountInr = options
         ? (refundType === "rollover" ? options.rolloverAmountInr : options.fullAmountInr)
         : 0
@@ -62,13 +65,13 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
                 <Popconfirm
                     key="submit"
                     title={refundType === "rollover"
-                        ? `Ask to move back to Career Discovery and get ₹${chosenAmountInr} back?`
-                        : `Ask for a full refund of ₹${chosenAmountInr}? This ends your access.`}
+                        ? `Ask to move back to Career Discovery and get ${inr(chosenAmountInr)} back?`
+                        : `Ask for a full refund of ${inr(chosenAmountInr)}? This ends your access.`}
                     okText="Send request"
                     cancelText="Not yet"
                     onConfirm={handleSubmit}
                 >
-                    <button type="button">Send request</button>
+                    <button type="button" className="btn btn-primary">Send request</button>
                 </Popconfirm>,
             ]}
         >
@@ -77,20 +80,22 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
             <Form form={form} layout="vertical" initialValues={{ refundType: "full" }}>
                 {options && options.canRollover && (
                     <Form.Item name="refundType" label="What would you like to do?">
-                        <Radio.Group onChange={(e) => setRefundType(e.target.value)}>
-                            <Radio value="rollover" style={{ display: "block" }}>
-                                Move back to Career Discovery — get <strong>₹{options.rolloverAmountInr}</strong> back
-                                and keep your Career Discovery access
+                        {/* Round 13: each choice is one aligned card — radio and words on one line */}
+                        <Radio.Group className="refund-options" onChange={(e) => setRefundType(e.target.value)}>
+                            <Radio value="rollover" className="refund-option">
+                                <strong>Move back to Career Discovery</strong>
+                                <span>Get {inr(options.rolloverAmountInr)} back and keep your Career Discovery access.</span>
                             </Radio>
-                            <Radio value="full" style={{ display: "block" }}>
-                                Full refund — get <strong>₹{options.fullAmountInr}</strong> back, and your access ends
+                            <Radio value="full" className="refund-option">
+                                <strong>Full refund</strong>
+                                <span>Get {inr(options.fullAmountInr)} back. Your access ends.</span>
                             </Radio>
                         </Radio.Group>
                     </Form.Item>
                 )}
 
                 {options && !options.canRollover && (
-                    <p>Amount you'd get back: <strong>₹{options.fullAmountInr}</strong>. Your access would end.</p>
+                    <p>Amount you'd get back: <strong>{inr(options.fullAmountInr)}</strong>. Your access would end.</p>
                 )}
 
                 <Form.Item

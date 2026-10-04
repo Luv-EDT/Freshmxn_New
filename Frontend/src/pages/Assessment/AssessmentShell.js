@@ -15,7 +15,6 @@ import ExternalTest from "./ExternalTest"
 import Sart from "./Sart"
 import ReasoningTest from "./ReasoningTest"
 import WordRecallTest from "./WordRecallTest"
-import InterestsModule from "./InterestsModule"
 import LikertModule from "./LikertModule"
 import DirectionModal from "../DirectionModal"
 import {
@@ -23,7 +22,7 @@ import {
     CONFIDENCE_ITEMS,
     MI_ITEMS, MI_SCALE,
 } from "./moduleItems"
-import { moduleByKey, completedModules, startedModules, canSubmit, visibleModules } from "./assessmentModules"
+import { moduleByKey, completedModules, startedModules, canSubmit, visibleModules, progressPct } from "./assessmentModules"
 
 // Stage 2 — the psychometric assessment. Same shape as InterestForm.js, deliberately: one shell
 // holding state, saving to the server whenever the student leaves a module, so the assessment
@@ -51,7 +50,7 @@ const DRAFT_DEBOUNCE_MS = 400
 // student would see "Could not save" on a section that had in fact saved everything already, which
 // is the worst possible thing to tell someone about their own data. Each of these has its own way
 // out, and "← All sections" is always there.
-const SELF_SAVING = ["digitSpan", "wordRecall", "storyRecall", "extReasoning", "extVerbal", "sartRaw", "reasoning", "interests60"]
+const SELF_SAVING = ["digitSpan", "wordRecall", "storyRecall", "extReasoning", "extVerbal", "sartRaw", "reasoning"]
 
 function AssessmentShell() {
     const navigate = useNavigate()
@@ -186,7 +185,7 @@ function AssessmentShell() {
             if (storageKey) localStorage.removeItem(storageKey)
 
             if (user.progress.psychometric === "not_started") {
-                dispatch(setUser({ ...user, progress: { ...user.progress, psychometric: "in_progress" } }))
+                dispatch(setUser({ user: { ...user, progress: { ...user.progress, psychometric: "in_progress" } } }))
             }
 
             return true
@@ -258,7 +257,7 @@ function AssessmentShell() {
             setDirectionOpen(false)
             setDirtySinceSubmit(false)
             setStamps((previous) => ({ ...previous, psychometricSubmittedAt: new Date().toISOString() }))
-            dispatch(setUser({ ...user, progress: { ...user.progress, psychometric: "done" } }))
+            dispatch(setUser({ user: { ...user, progress: { ...user.progress, psychometric: "done" } } }))
             message.success("Submitted — your report is being prepared")
             navigate("/report")
         } catch (error) {
@@ -297,6 +296,7 @@ function AssessmentShell() {
                     modules={visibleModules(psychometric)}
                     completed={done}
                     started={startedModules(psychometric)}
+                    progress={Object.fromEntries(startedModules(psychometric).map((key) => [key, progressPct(key, psychometric[key])]))}
                     storyState={storyState}
                     onOpen={(key) => navigate(`/assessment/${key}`)}
                     onSubmit={requestSubmit}
@@ -420,10 +420,6 @@ function AssessmentShell() {
                 />
             )}
 
-            {moduleKey === "interests60" && (
-                <InterestsModule saved={psychometric.interests60} onDone={handleServerSavedDone} />
-            )}
-
             {moduleKey === "sartRaw" && (
                 <Sart
                     // A SCORED session is the one that cannot be repeated. A session refused for bad
@@ -438,8 +434,8 @@ function AssessmentShell() {
 
             {moduleKey === "confidence" && (
                 <LikertModule
-                    title="Confidence in six situations"
-                    intro="Six situations rather than six ratings. Pick what would honestly happen, not what sounds best — several of these have more than one good answer."
+                    title="Confidence in three situations"
+                    intro="Three situations rather than three ratings. Pick what would honestly happen, not what sounds best — several of these have more than one good answer."
                     items={CONFIDENCE_ITEMS}
                     answers={(psychometric.confidence && psychometric.confidence.answers) || {}}
                     onChange={updateAnswer}

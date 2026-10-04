@@ -111,8 +111,9 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
     // Save changes and proceed to previous section
     const handleContinuePrevious = (e) => {
         e.preventDefault()
+        const complete = validateCurrentSection()
         saveCleaned()
-        handlePrevious()
+        handlePrevious({ sectionOk: complete })
     }
 
     // save without moving, so a student can stop here and come back later
@@ -211,13 +212,11 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 steps={steps}
                 currentStepIndex={currentStepIndex}
                 goToStep={goToStep}
-                onStepClick={(targetIndex) => {
-                    // Only validate for forward navigation
-                    if (targetIndex > currentStepIndex && !validateCurrentSection()) {
-                        return false // Prevent navigation
-                    }
+                onStepClick={() => {
+                    // false = something required is missing; the form decides whether that stops the move
+                    const complete = validateCurrentSection()
                     saveCleaned()
-                    return true
+                    return complete
                 }}
             />
 

@@ -101,7 +101,7 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
             row = await MentorWaitlist.findOneAndUpdate(
                 { _id: row._id },
                 {
-                    $set: { matchStatus: "awaiting_choice", resolution: null, adminNote: "Re-opened on a new Tier 2 place" },
+                    $set: { matchStatus: "awaiting_choice", resolution: null, adminNote: "Re-joined the mentor plan after leaving it — waiting for a new choice" },
                     $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
                 },
                 { returnDocument: "after" }

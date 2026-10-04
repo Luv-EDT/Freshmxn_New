@@ -12,6 +12,7 @@ const entranceGates = require("../data/entrance_gates.json")
 const filterRules = require("../data/filter_rules.json")
 const blueCollar = require("../data/blue_collar.json")
 const abroad = require("../data/abroad.json")
+const abroadWork = require("../data/abroad_work.json")
 const studySources = require("../data/study_sources.json")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 const { examsFor } = require("../utils/examCalendar")
@@ -178,6 +179,25 @@ const NUANCE_SECTION = {
 // is student-facing, and an endpoint that serves the whole object leaks all of it the first time
 // somebody adds a field. Where the report needs something from them it gets a DERIVED value only:
 // `checked` (verified or estimate), `payCaution` (from `filter`), never the record itself.
+// the countries in abroad_work.json order, with only the licence rows a student may see
+const goingAbroadFor = (professionId, licenceOverrides = new Map()) => {
+    const career = abroadWork.careers[professionId]
+    if (!career) return null
+    const rows = abroadWork.licences[professionId] || {}
+    return {
+        portability: career.portability,
+        note: career.note,
+        countries: abroadWork.countries.map((country) => {
+            const override = licenceOverrides.get(`${professionId}:${country.code}`)
+            const row = override && override.approvedAt && override.values ? { ...rows[country.code], ...override.values, status: "supported" } : rows[country.code]
+            const licence = row && row.status === "supported" && typeof row.url === "string" && row.url.startsWith("https://")
+                ? { body: row.body, exam: row.exam, steps: row.steps, url: row.url }
+                : null
+            return { code: country.code, name: country.name, licence, recognition: country.recognition }
+        }),
+    }
+}
+
 const studentFacing = (profession, studyOverrides) => {
     // { exams, places } Maps or nothing — `.map(studentFacing)` passes the array index here
     const layers = studyOverrides && studyOverrides.exams instanceof Map ? studyOverrides : { exams: new Map(), places: new Map(), facts: new Map() }
@@ -235,6 +255,11 @@ const studentFacing = (profession, studyOverrides) => {
         abroad: abroadRow && abroadRow.need !== "not_needed"
             ? { need: abroadRow.need, stage: abroadRow.stage, why: abroadRow.why }
             : null,
+
+        // Going abroad to WORK (Round 13): how the career travels, and — for a licensed one — what
+        // each of the five countries asks first. Only rows backed by the licensing body's own site
+        // are served; the report shows this only to a student who said they hope to go abroad.
+        goingAbroad: goingAbroadFor(profession.id, layers.licences),
 
         // What backs those two lines (Round 12, data/study_sources.json): "checked" = an official
         // rule, "supported" = published evidence, "judgement" = our estimate. An admin-approved
@@ -483,5 +508,6 @@ router.post("/getProfessions", authMiddleware, requireDiscovery, async (req, res
 
 module.exports = router
 module.exports.studentFacing = studentFacing
+module.exports.goingAbroadFor = goingAbroadFor
 module.exports.STUDENT_SAFE_NUANCE_FIELDS = STUDENT_SAFE_NUANCE_FIELDS
 module.exports.cleanSector = cleanSector

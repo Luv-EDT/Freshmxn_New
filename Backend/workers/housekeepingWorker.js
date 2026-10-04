@@ -3,7 +3,8 @@
 //     followup_scan    the 1st of each month, 09:00 IST   housekeeping/followUpScan.js
 //     data_refresh     the 1st of each month       housekeeping/dataRefresh.js
 //     career_scout     every Monday                housekeeping/careerScout.js
-//     study_refresh    the 1st of each month       housekeeping/studyRefresh.js (colleges and exams)
+//     study_refresh    the 1st of each month       housekeeping/studyRefresh.js — seasonal: exams before
+//                      their window, colleges Sep–Oct, facts quarterly, cut-offs Aug–Oct (Round 13)
 //     draft_career     on demand — the admin approved a scout row (housekeeping/draftCareer.js)
 //     batch_collect    every hour, at :17 — files the answers of a finished half-price batch
 //                      (housekeeping/researchBatch.js); with no batch waiting it makes no AI call
@@ -42,7 +43,7 @@ const JOBS = {
     followup_scan: () => require("../housekeeping/followUpScan").runFollowUpScan(),
     data_refresh: () => require("../housekeeping/dataRefresh").runDataRefresh(),
     career_scout: () => require("../housekeeping/careerScout").runCareerScout(),
-    study_refresh: () => require("../housekeeping/studyRefresh").runStudyRefresh(),
+    study_refresh: (data) => require("../housekeeping/studyRefresh").runStudyRefresh({ force: Boolean(data && data.force) }),
     draft_career: (data) => require("../housekeeping/draftCareer").runDraftCareer({ candidateId: data && data.candidateId }),
     batch_collect: () => require("../housekeeping/researchBatch").collectBatches(),
     model_compare: () => require("../housekeeping/modelCompare").runModelCompare(),

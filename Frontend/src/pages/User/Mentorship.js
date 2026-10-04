@@ -38,11 +38,14 @@ function Mentorship() {
         }
 
         const load = async () => {
-            const waitlistResponse = await getMyWaitlist()
-            const place = waitlistResponse?.data?.data || null
-            setWaitlist(place)
-            setOptions((place && place.options) || [])
-            setLoading(false)
+            try {
+                const waitlistResponse = await getMyWaitlist()
+                const place = waitlistResponse?.data?.data || null
+                setWaitlist(place)
+                setOptions((place && place.options) || [])
+            } finally {
+                setLoading(false)
+            }
         }
         load()
     }, [isTier2])
@@ -92,16 +95,39 @@ function Mentorship() {
         )
     }
 
+    // Round 13 (owner): help is one tap away on every state of this page
+    const help = (
+        <p className="help-line">
+            Need help? <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">WhatsApp us</a>
+        </p>
+    )
+
+    // NOTHING UNTIL THE WAITLIST IS IN. Rendering the static half first and the student's own state a
+    // moment later read as the page loading twice (owner, Round 13).
+    if (loading) {
+        return (
+            <div>
+                <Navbar />
+                <main className="page" aria-busy="true">
+                    <h2>🤝 Mentorship</h2>
+                    <div className="skeleton skeleton-line" />
+                    <div className="skeleton skeleton-block" />
+                    <div className="skeleton skeleton-line short" />
+                </main>
+            </div>
+        )
+    }
+
+    const matched = Boolean(waitlist && waitlist.matchStatus === "matched")
+
     return (
         <div>
             <Navbar />
             <main className="page">
                 <h2>🤝 Mentorship</h2>
-                <p><strong>You're on the waitlist.</strong></p>
+                {!matched && <p><strong>You're on the waitlist.</strong></p>}
 
-                {loading && <p>Loading...</p>}
-
-                {!loading && waitlist && waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
+                {waitlist && waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
                     <section>
                         <h3>Choose the job role you'd like a mentor in</h3>
                         <p>
@@ -119,7 +145,7 @@ function Mentorship() {
                     </section>
                 )}
 
-                {!loading && waitlist && !waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
+                {waitlist && !waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
                     <section>
                         <h3>Choose the job role you'd like a mentor in</h3>
                         <p>
@@ -171,7 +197,7 @@ function Mentorship() {
                     </section>
                 )}
 
-                {!loading && waitlist && waitlist.matchStatus === "matching" && (
+                {waitlist && waitlist.matchStatus === "matching" && (
                     <section>
                         <h3>We're finding your mentor</h3>
                         <p>
@@ -187,7 +213,7 @@ function Mentorship() {
                     </section>
                 )}
 
-                {!loading && waitlist && waitlist.matchStatus === "matched" && (
+                {waitlist && waitlist.matchStatus === "matched" && (
                     <section>
                         <h3>Your mentor is confirmed</h3>
                         {waitlist.mentor && (
@@ -200,7 +226,7 @@ function Mentorship() {
                     </section>
                 )}
 
-                {!loading && waitlist && waitlist.matchStatus === "unmatchable" && (
+                {waitlist && waitlist.matchStatus === "unmatchable" && (
                     <section>
                         <h3>We couldn't match you in time</h3>
                         <p>
@@ -213,6 +239,11 @@ function Mentorship() {
                     </section>
                 )}
 
+                {help}
+
+                {/* once matched, the policy and the explainer have done their job (owner, Round 13) */}
+                {!matched && (
+                <>
                 <MentorRolloverPolicy mentorOnly={Boolean(waitlist && waitlist.mentorOnly)} />
 
                 <h3>Who your mentor will be</h3>
@@ -235,6 +266,8 @@ function Mentorship() {
                     can book further sessions whenever you want more clarity. In the best case, they simply
                     become your mentor for the long run.
                 </p>
+                </>
+                )}
 
                 <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Back to home</button>
             </main>

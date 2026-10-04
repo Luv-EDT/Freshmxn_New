@@ -29,6 +29,14 @@ const degreeLabelFor = (detail) => {
     return subject && subject.id !== "other" ? `${family.label} (${subject.label})` : family.label
 }
 
+const ABROAD_HOPES = ["no", "maybe", "yes"]
+const ABROAD_COUNTRIES = ["CA", "US", "UK", "AU", "DE", "other"]
+const abroadPlansFor = (submission) => {
+    const background = (submission && submission.interest && submission.interest.backgroundInfo) || {}
+    if (!ABROAD_HOPES.includes(background.abroadHope)) return null
+    return { hope: background.abroadHope, countries: (background.abroadCountries || []).filter((code) => ABROAD_COUNTRIES.includes(code)) }
+}
+
 const router = express.Router()
 
 // Round 11: what "Update my report" can improve — a report built by scoring or matching older than
@@ -58,16 +66,6 @@ const updateIsAvailable = (report, recommendation) => Boolean(report) && (
 // not return.
 const FORBIDDEN_FIELDS = ["match_confidence", "activity_match_confidence"]
 
-// THE ONE OWNER-APPROVED EXCEPTION (Round 10, item 3). The share of a career's weighted picture we
-// could actually see goes out as a whole-number percentage — and only when it is below 100, so the
-// page can say "Partial · 80% measured" and say nothing at all when the picture is complete. Never
-// the raw 0-1 number, never under its engine name.
-const measuredPctOf = (entry) => {
-    if (typeof entry.match_confidence !== "number") return null
-    const pct = Math.round(entry.match_confidence * 100)
-    return pct < 100 ? pct : null
-}
-
 // THE SLUGS ARE TRANSLATED HERE FOR THE SAME REASON match_confidence IS REMOVED HERE: the page
 // cannot leak what it never receives.
 //
@@ -90,8 +88,9 @@ const labelFactor = (entry) => ({
 const withLabels = (list) => (Array.isArray(list) ? list.map(labelFactor) : [])
 
 const stripInternal = (entry) => {
+    // Round 13 (owner): the "Partial · N% measured" coverage line moved off the careers to the
+    // assessment page and profile only, so nothing about coverage goes out with a career any more.
     const clean = { ...entry }
-    clean.measuredPct = measuredPctOf(entry)
     FORBIDDEN_FIELDS.forEach((field) => { delete clean[field] })
 
     clean.supportingFactors = withLabels(clean.supportingFactors)
@@ -122,7 +121,7 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
         const [report, recommendation, submission] = await Promise.all([
             Report.findOne({ user: req.user._id }).lean(),
             Recommendation.findOne({ user: req.user._id }).lean(),
-            Submission.findOne({ user: req.user._id }).select("psychometricSubmittedAt psychometric.accommodations").lean(),
+            Submission.findOne({ user: req.user._id }).select("psychometricSubmittedAt psychometric.accommodations interest.backgroundInfo.abroadHope interest.backgroundInfo.abroadCountries").lean(),
         ])
 
         // A REPORT OLDER THAN THE LAST SUBMIT IS BEING REPLACED, not the answer.
@@ -190,6 +189,9 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 journey: report.journey,
                 degree: degreeLabelFor(req.user.journeyDetail),
                 support: supportFor(submission),
+                // Round 13: does the student hope to study or work abroad, and where — the report shows
+                // its "Going abroad" parts only for "maybe" or "yes"
+                abroadPlans: abroadPlansFor(submission),
                 generatedAt: report.lastGeneratedAt || report.generatedAt,
                 sections: report.sections,
                 ranked: recommendation ? recommendation.ranked_professions.map(stripInternal) : [],
@@ -391,6 +393,9 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
             message: "Scores fetched successfully",
             data: {
                 computedAt: profile.computed_at,
+                // Round 13: a profile scored before Round 10 stored no coverage, so it can show no
+                // "Partial · N%" until it is scored again ("Update my report")
+                coverageKnown: Object.keys(coverage).length > 0,
                 groups: SCORE_GROUPS.map((group) => ({
                     title: group.title,
                     factors: group.factors.map((slug) => ({
@@ -418,4 +423,3 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
 
 module.exports = router
 module.exports.levelFor = levelFor
-module.exports.measuredPctOf = measuredPctOf

@@ -4,7 +4,7 @@
 // editable until Submit, so their button invites an edit. The tests are one attempt, so theirs only
 // looks: "Review answers" for a test the student answered here, "Review scores" for the two whose
 // result was read from a screenshot of another website.
-export const EDITABLE_MODULES = ["ipip50", "mi", "rosenberg", "confidence", "perspective", "interests60"]
+export const EDITABLE_MODULES = ["ipip50", "mi", "rosenberg", "confidence", "perspective"]
 
 export const reviewLabel = (module) => {
     if (!module) return "Review answers"

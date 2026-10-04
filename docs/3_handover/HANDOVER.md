@@ -23,11 +23,11 @@ job role, get a mentor; no assessment).
 | | State |
 |---|---|
 | **Live** | **www.freshmxn.com** — one free Render web service (`render.yaml`), DNS on Cloudflare |
-| **Code** | `main` (Rounds 9–11 merged 3 Oct 2026; Round 12 merged after it). The cloud work happens on `claude/peaceful-bohr-rkxau6` |
+| **Code** | `main` (Rounds 9–11 merged 3 Oct 2026; Round 12 and Round 13 merged after it). The cloud work happens on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment with SART, digit span, story recall, the in-house reasoning test and the O\*NET activities checklist · disability accommodations ("not measured", never low) · our own word-memory test · scoring (`profile@1.3.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, coverage line, compare page) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 22 (scoring) / 58 (matching) / 164 (workers) — all offline, all green |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
+| **Tests** | fixtures 22 (scoring) / 59 (matching) / 168 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -59,8 +59,8 @@ cd Backend && npm run seed:admin                  # once — the admin account
 **Test**
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
-node Backend/matching/fixtures/runFixtures.js    # 58/58
-node Backend/workers/fixtures/runFixtures.js     # 164/164 — offline, no DB, no API key
+node Backend/matching/fixtures/runFixtures.js    # 59/59
+node Backend/workers/fixtures/runFixtures.js     # 168/168 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -68,7 +68,7 @@ The fixtures read some frontend sources and two docs **as text** (the rubrics in
 `Backend/workers/gradeOpenItems.js`). Renaming those docs, or the strings the fixtures look for,
 breaks the pipeline — the fixtures say which.
 
-The browser suites (`uiFlow`, `round3`, `round5`, the Round 9, 10 and 11 suites) and the API suite (46)
+The browser suites (`uiFlow`, `round3`, `round5`, the Round 9–13 suites) and the API suite (46)
 ran in the cloud sessions against FerretDB + Playwright; they were scratch scripts and are **not in the
 repo** (a committed suite is in V2).
 To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.js` for screenshots.
@@ -82,11 +82,30 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 | `generate_report` | after scoring | matches 223 careers, writes the three report lines | Nothing; a failure shows the student "Try again" and an issues row |
 | `followup_scan` | 1st of the month, 09:00 | emails the 6- and 12-month follow-up | Read the **Follow-ups** tab now and then |
 | `data_refresh` | 1st of the month, 04:00 | demand and pay for 60 careers (Adzuna + official sources), as one half-price batch | Approve or reject in **Data updates** |
-| `study_refresh` | 1st of the month, 06:00 | 6 disciplines' colleges, 15 exams, 10 master's/abroad facts; Aug–Oct also 10 closing ranks — one batch | Approve or reject in **Data updates** (Kind column) |
+| `study_refresh` | 1st of the month, 06:00 — **seasonal** (Round 13) | only what can have changed: exams whose application window opens in the next two months; colleges in Sep–Oct (12 disciplines, after NIRF); master's/abroad facts in Jan, Apr, Jul, Oct; closing ranks Aug–Oct; licences abroad in January. A month with nothing due makes no AI call. **Run now** ignores the season | Approve or reject in **Data updates** (Kind column) |
 | `batch_collect` | every hour at :17 | files the answers of a finished batch through the same checks; re-asks anything incomplete directly | Nothing — proposals simply appear in Data updates within about an hour of the 1st. "Collect batch answers now" is there if you are waiting |
 | `career_scout` | Mondays, 05:00 | new job titles from the job board, students' unmatched wishes and the official reports | Decide in **Emerging careers**; approving drafts the full career |
 | `draft_career` | when you approve a scout title | drafts the career the way the 223 were built | Read the draft; **Accept** or **Send back** with a note |
 | `model_compare` | only when you press it | asks the same 20 careers of Opus 5.5 and Sonnet 5.5, files nothing | Press **Run the comparison** once (Data updates → "Model for the monthly jobs"), read it, choose |
+
+**Design system** (Round 13 — the owner asked for it here rather than in a separate doc). Tokens in
+`Frontend/src/styles/tokens.css`; components in `components.css`; the app in `app.css`.
+- **Colours and their jobs.** Navy `#1e2a38` is the ink. Teal `#007582` is the one star: buttons, links,
+  "done". Pink `#ffb3c7` / pink-tint is a highlighter and "waiting on you", once per section at most.
+  Amber `#d98a00` / amber-tint (new) is status only: "in progress" and the reasoning clock's last ten
+  seconds. Page `#fbfaf6`, surfaces white, lines `#e7e3da`.
+- **Type.** Orelega One for H1–H3, Lato for everything else; the fluid `--text-*` scale and the
+  `--space-*` scale (4 → 72 px). Radius 12 / 20 / pill. Lines under about 65 characters.
+- **Status chips** (`.status-chip`): ✓ Done (teal fill) · In progress · N% left (amber) · Set aside (grey
+  stripes) · Answer now / You're here (pink). One look everywhere — home, assessment, profile, admin.
+- **Patterns.** Buttons 44 px tall. Collapsibles are `<details>`; a summary that should look tappable is a
+  chip (`.if-chip-summary`, with a "?" where it explains). Agree-scales are one row of five tiles (numbers
+  on a phone with the two ends named, words on a laptop). The assessment is a card deck plus a strip of
+  every section. Career cards: name only when closed (top three coloured); opened: what it is → why it
+  fits → your next 12 months, then The road / Money / The future / More about the work / Going abroad.
+- **Lean rules.** One star colour. At most three report-level collapsibles. No provenance labels on what
+  students read. No page scrolls sideways at 360 px. The journey bar is a slim row above pages on a
+  phone; Home has the full stepper.
 
 After approving anything that should last: **Data updates → Export patch** → `node Backend/tools/applyDataPatch.js patch.json --write`
 → run the fixtures → commit. Approved values show on the site at once from the database; the patch puts them in the files
@@ -116,10 +135,12 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Studying abroad** (`Backend/data/abroad.json`, Round 11) | 25 careers flagged "helps" or "often part of the route", drafted by Claude — read them once. **Name the study-abroad partner** and share leads from the admin "Study abroad" tab (consent and policy version are on each row) |
 | **Master's and studying-abroad sources** (`Backend/data/study_sources.json`, Round 12) | Master's: 24 of the 32 "required / is the way in" careers checked against an official rule, 7 supported by published information, 1 our estimate (public policy). Some sources are secondary sites (Careers360, Testbook, Indian Kanoon) — the study bot is meant to replace them with official pages. **Finding:** UPSC's Indian Statistical Service accepts a bachelor's, so Statistician's "master's required" may be wrong — decide. Abroad: 2 supported, 23 our estimate; none is "often needed" any more. Rules and tables: `docs/5_finalized/STUDY_INFO_RULES.md` |
 | **Closing ranks** (`Backend/data/cutoffs.json`, Round 12) | Seven B.Tech CSE rows (six IITs, NIT Tiruchirappalli) are **drafts and hidden**: the official sites were blocked from the build container and search summaries disagreed. The study bot checks them on JoSAA from August; approve each in Data updates. A shown rank also needs the institution list reviewed. Add more rows (other branches, MBBS, CLAT) by hand or in V2 |
-| **Mentor reviews** (Round 12) | Approved mentors can review our data for their profession. Decide each item in **Mentor reviews**; accepted ones go out in Export patch as notes for a person to apply. A profession whose eight qualities a mentor called "about right" (and you accepted) can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
+| **Mentor reviews** (Round 12; every quality since Round 13) | Approved mentors can review our data for their profession. Decide each item in **Mentor reviews**; accepted ones go out in Export patch as notes for a person to apply. The sheet now lists every rated quality — the eight that matter most open, the rest folded. A profession whose qualities a mentor answered (at least the main eight) all "about right", and you accepted, can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
 | **Model for the monthly research** (Round 12) | Run the comparison once (a few dollars), then choose. Until then Opus 5.5. `REFRESH_MODEL` on Render, if set, overrides the choice |
 | **First live batch** (Round 12) | The monthly jobs now send one half-price batch. If Anthropic refuses the batch, the job asks directly as before (logged). After the 1st, look for `batch_collect: … — {…}` in the Render logs. `RESEARCH_BATCH=false` turns batching off |
 | **Mentor Only "Other" requests** (Round 12) | A Mentor Only student may describe a career we do not list; the admin's **Mentor Matches** shows it as "Other — find separately". Full refund on request if no mentor is found |
+| **Going abroad** (`Backend/data/abroad_work.json`, Round 13) | Top five countries from MEA's count of Indian students abroad (Canada, USA, UK, Australia, Germany). Every career: travels well (183) / re-qualify first (28) / India-based (12). Licence routes per country for 12 of the 28 re-qualify careers so far, each with the licensing body's own page — **5 rows are drafts and hidden** (clinical psychologist Canada and Germany, CA Germany, school teacher USA and Germany); the other 16 re-qualify careers show the portability line only. Read the file once; the study bot re-checks licences each January |
+| **Voice typing and Hinglish** (Round 13) | Browser dictation only (Chrome/Edge/Android; no mic on Firefox). Never tried with real Hindi speakers — if accuracy is poor, V2 has a Hinglish speech service. Hindi/Hinglish activities are put into English before matching — proven with stubs, first live use on Render |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
 **Owner to know (Round 10):**
@@ -137,6 +158,15 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
   after the first month. The grading rubric and the research instructions are now cached.
 - **Adzuna**: India salary data is thin, so a median is shown only with 20+ salaried postings behind
   it. Calls are spaced to stay inside the free tier.
+
+**Owner to know (Round 13):**
+- **Scoring is `profile@1.4.0`** (the repeated questions were removed), so every existing student sees
+  "Update my report". Pressing it also fills in the Profile's "Partial · N%" — profiles scored before
+  Round 10 never stored coverage, which is why it did not show.
+- **A form saved before Round 13** keeps every stage up to Aspirations open (it has no record of how far
+  it got); new forms open stage by stage.
+- **Tests that are set aside** now come only from the interest form's disability answer; the old
+  "Before you start" box and the skip button are gone. A block declared on the old box is kept.
 
 **Product decisions still open:**
 - **Data debt:** 56 careers carry `admin_review.required` (almost all pay). The monthly refresh now proposes pay and demand updates for the admin to approve.
@@ -1761,3 +1791,65 @@ kept out of the assessment).
 portals were blocked from the build container, so no closing rank is live yet — the seven seeded rows
 are hidden drafts for the study bot. Batch mode and the comparison are proven with stubs; their first
 live runs are on Render.
+
+### Round 13 — a timed reasoning test, disability from the interest form, going abroad, a shorter and leaner assessment and report, voice typing (2026-10-04)
+Asked after Round 12:
+- a second reasoning set for retakes, with a clock on every question;
+- disability taken from the interest form rather than asked again on the assessment page;
+- no provenance labels in the report;
+- every quality on the mentor sheet;
+- whether `study_refresh` is needed;
+- what to say about careers outside India (discussed, then built: steps 1–3);
+- the repeated questions removed;
+- a long list of interface fixes;
+- voice answers in Hinglish;
+- a leaner design (three rounds each for the assessment and the report);
+- two review passes by a subagent.
+
+| Item | What shipped |
+|---|---|
+| **A** reasoning (`64175b8`) | Every puzzle has its own clock — 60 s for verbal and series, 90 s for matrices and rotation; at zero it counts as not answered and the next appears. A retake gets a second set of 12 written verbal puzzles (form B) and a new seed for the generated ones. Three timeouts in a row raise an assessment issue and flag the result for review. The score is unchanged (share correct) |
+| **B** disability (`d27ca86`) | Disability "Yes" in the interest form asks what it makes harder (the same five needs) and whether the mentor may know. Saving the form sets the affected tests aside on the assessment page — blurred, "not measured", with an "I'd like to try this test anyway" link. The old "Before you start" box and skip button are gone; a finished test is never set aside |
+| **C + D + E** (`b04efba`) | The card and compare page show information, not where it came from ("Checked against the official rules", "Our estimate", "Pay figures checked…", "(estimate)" removed; the cut-off caveat and pay caution stay). Mentor reviews cover every rated quality — main eight open, the rest folded. The study bot is **seasonal** (Part 2 workers table) |
+| **I** shorter assessment (`b76588c`) | Removed what repeated: the 60-activity O\*NET checklist, three MI items (MI_N3, MI_L5, MI_E5), the written day plan (P13) and three confidence situations (CF1, CF4, CF5). About 234 → 167 answered items and 86 → 81 minutes (the commit message said 165; 167 is the count). MI = self-report, plus half from the puzzles for verbal, spatial and logical. `profile@1.4.0` |
+| **G** going abroad (`77f428f`) | Interest form asks "Do you hope to study or work outside India?" (No / Maybe / Yes) and where. For Maybe/Yes, each career gets a folded "Going abroad": travels well / re-qualify first / India-based, and for re-qualify careers the licence route per chosen country with the body's own page. Never ranks; no foreign pay or demand. Licences re-checked each January (admin-approved). Privacy `v1.3` |
+| **J** interest form (`af322f9`) | Stages open in order: a tab ahead, leaving a section with a required item empty, or Finish all open a dialog naming the stage to finish (with "Go to"). The furthest stage reached is saved with the answers, so a saved form opens on "Continue where you left off — you're on {stage}"; "already submitted" only after Finish. "All stages" and "How to answer ?" are highlighted chips; stage pills share one height (a stray list margin pushed all but "1. Start" down); "Stuck?" sticks to the bottom of the screen; a matched aspiration shows a teal "Matched" chip |
+| **K** interface (`2e6d54a`, `b1e1032`) | Assessment as a card deck with an overview strip and status chips (Done / In progress · N% left / Set aside / Answer now); waiting story questions first, in bold; the story explained in three short lines. Report: blue-collar toggle beside Sort; "Your next 12 months" inside each career; "Your options at a glance"; "One thing to build next"; the coverage line only on the assessment page and profile (CLAUDE.md updated). Compare: only the recommended careers, none preselected. "1,000+ careers and job roles" copy. Home: progress ring, a stepper with done/You're here, a bold next-step card. Refund choices aligned, amounts as ₹3,000. Mentorship: a skeleton until loaded, WhatsApp help, refund/explainer text hidden once matched. Mentor profile says what stops Save and pre-fills an old free-text role. Admin note reworded |
+| **L** voice (`854464b`) | Mic (browser dictation, English/हिंदी) on every written answer; words land in the box to edit. Grading rules name Hinglish, Devanagari and dictation slips. Hindi/Hinglish activities are put into English before matching (only those; cached). Privacy "Voice typing" |
+| **H** design (`d14057d`) | Three critique rounds each (screenshots at 360 and 1280, sent to the owner). 1: one-row agree-scales (a 10-question page about a third as tall), assessment text under 65 characters. 2: the journey bar a slim row above pages on a phone; the report banner, toggle and rules in the report's column; "One thing to build next" a plain line. 3: "1 year" not "1 years", whole hours on the story, the coverage line quieter. Design system in Part 2 |
+| **M** review passes (`0bbe58b`, then pass 2) | Pass 1: the word test's progress read a field the page never gets; a pre-forms reasoning retake could switch form half-way; chips overflowed 360 px tiles; four shorter blocks. Follow-ups fixed here: forms saved before this round keep their stages open; voice hands over all phrases of one speech event at once. **Pass 2:** a real, older bug — the assessment page sent the user to the store in the wrong shape after a first save and after Submit, which blanked the page and the header until a reload (`AssessmentShell.js`, fixed); a mentor's own pick could be overwritten by the slow pre-fill (fixed); only Devanagari or Hinglish words now trigger a translation (a curly apostrophe or emoji no longer pays for one); the stage dialog keeps its title while it fades; dead exports and duplicated CSS removed |
+
+**Fixtures:** scoring 22, matching 58 → 59, workers 164 → 168. Changed because the owner changed the product:
+- STUDY SOURCES — now pins that the card shows **no** provenance label (C);
+- STUDY BOT — passes `force: true` and explicit `cutoffLimit: 0, licenceLimit: 0` (the bot is seasonal; E, G);
+- AGREEMENT contracts — read the scorer's own retired-item and confidence-key lists instead of hard-coded ids (I);
+- scoring fixtures 01 and 07 — pin `profile@1.4.0` and ten modules (I);
+- the O\*NET/MI composite, INTERESTS and P13 fixtures — replaced by "SHORTER ASSESSMENT" and a new MI fixture (I);
+- NEXT STEPS — next steps live inside each career; the report keeps "Your options at a glance" (K);
+- the list fixture — the report opens on the **top five of the chosen order** with "Show the other N"; a new sort or filter starts again at five (owner, late in the round);
+- the coverage line is no longer sent with careers (`measuredPct` removed from `getMyReport`) (K).
+
+New: REASONING CLOCK, SET ASIDE, STUDY BOT SEASONS, GOING ABROAD, HINGLISH (matching), VOICE.
+Browser checks in the cloud scratchpad: interest form 20/20 (+ legacy form 1/1), deck/report/compare
+16/16, home/profile/refund/mentorship 15/15, voice 6/6, going abroad 6/6, uiFlow 65/65.
+
+**Top five first** (owner, late in the round): the report shows the first five careers of whatever order is
+chosen — Best match, ignoring switching cost, any "then order by", engineering first, or with blue-collar
+left out — and a **Show the other N careers** button for the rest. Changing the order starts again at five.
+The engine's top three keep their colours wherever they land. Browser check 6/6.
+
+**Answers given to the owner this round:**
+- **`study_refresh`** keeps four things on the report fresh — where to study, exam windows, the master's
+  and abroad lines, cut-offs (and now licences abroad). NIRF ranks change yearly and exam windows move;
+  without it they go stale. Seasonal means it works only when something can have changed.
+- **Outside India:** built as above. Foreign pay and demand stay out (V2 has the occupation-page idea).
+- **A mentor request:** the student's choice starts the 20-business-day clock and shows in **Mentor
+  Matches** as "matching"; the admin picks an approved mentor by profession, role and industries;
+  **Match** confirms it to the student; the team arranges sessions on WhatsApp. If nobody fits:
+  **Roll over** or **Refunded**; **Reset choice** lets the student choose again.
+- **"Re-opened on a new Tier 2 place"** meant the student left the mentor plan and bought it again — now
+  "Re-joined the mentor plan after leaving it — waiting for a new choice".
+- **"Where you are right now"** was the model's one readiness sentence — now "One thing to build next".
+- **What a student is pursuing now** drives matching: their stage, stream, degree and experience set the
+  hard filters and the switching cost; their activities, long-term pursuits, passion and achievements
+  decide which careers appear and their tier. Going-abroad hopes, disability and trauma answers never rank.

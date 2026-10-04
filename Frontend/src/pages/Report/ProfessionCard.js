@@ -137,23 +137,26 @@ const ABROAD_STAGE = {
     training: "for the training",
 }
 
-const monthYear = (iso) => {
-    const date = iso ? new Date(iso) : null
-    return date && !Number.isNaN(date.getTime())
-        ? date.toLocaleDateString("en-IN", { month: "short", year: "numeric" })
-        : null
+// Round 13 (owner): the card says what a student can USE — never where a fact came from or when we
+// checked it. Those labels live in the data and on the admin and mentor screens.
+
+// Going abroad to work (Round 13): how a career travels, in a student's words
+const PORTABILITY_WORDS = {
+    travels_well: "Travels well",
+    requalify: "A licence first",
+    india_based: "India-based",
 }
 
-// What backs the master's and study-abroad lines (Round 12): an official rule, published
-// evidence, or our own estimate — said plainly, as the pay lines say "estimate" or "checked".
-const factLabel = (fact) => {
-    if (!fact) return null
-    if (fact.status === "checked") return `Checked against the official rules${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
-    if (fact.status === "supported") return `Based on published information${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
-    return "Our estimate"
+// the student's own countries first, then the rest in the file's order
+const countriesFor = (goingAbroad, plans) => {
+    const chosen = (plans && plans.countries) || []
+    return [...goingAbroad.countries].sort((left, right) => Number(chosen.includes(right.code)) - Number(chosen.includes(left.code)))
 }
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel }) {
+function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel, abroadPlans }) {
+    // a student who said maybe or yes to going abroad gets the "Going abroad" section, with the
+    // studying-abroad line moved into it; everyone else sees that line where it always was
+    const abroadMinded = Boolean(abroadPlans && abroadPlans.hope !== "no")
     const [open, setOpen] = useState(false)
 
     const toggle = () => {
@@ -210,11 +213,6 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                     {topRank > 0 && <span className="pc-top">Top match</span>}
                     {entry.profession}
                     {blueCollar && <span className="pc-tag">Blue-collar</span>}
-                    {/* Round 10 (owner): when a career's picture is incomplete, say how much of what
-                        it needs was measured — and say nothing when it is complete */}
-                    {typeof entry.measuredPct === "number" && (
-                        <span className="pc-partial">Partial · {entry.measuredPct}% measured</span>
-                    )}
                     {/* the AI sub-sort shows the number it is sorting by */}
                     {showAi && aiValue && <span className="pc-ai">AI exposure {aiValue}</span>}
                 </span>
@@ -261,9 +259,9 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                         </Section>
                     )}
 
-                    {/* 3. YOUR NEXT STEPS — for this student's stage */}
+                    {/* 3. YOUR NEXT 12 MONTHS — for this student's stage, inside each career (Round 13, owner) */}
                     {(nextSteps.length > 0 || switchCost > 0 || (entry.degreeCounts && degreeLabel)) && (
-                        <Section title="Your next steps">
+                        <Section title="Your next 12 months">
                             {/* Round 10: the student's own degree already leads here */}
                             {entry.degreeCounts && degreeLabel && (
                                 <p className="pc-line">Your <strong>{degreeLabel}</strong> already counts towards this — no need to start again.</p>
@@ -330,10 +328,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                     {laterStage && MASTERS_WORDS[detail.afterUndergrad] && (
                                         <>
                                             <dt>A master's?</dt>
-                                            <dd>
-                                                {MASTERS_WORDS[detail.afterUndergrad]}
-                                                {factLabel(detail.studyFacts && detail.studyFacts.masters) && <span className="pc-small"><br />{factLabel(detail.studyFacts.masters)}</span>}
-                                            </dd>
+                                            <dd>{MASTERS_WORDS[detail.afterUndergrad]}</dd>
                                         </>
                                     )}
                                     {detail.licensingBody && (
@@ -357,7 +352,6 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                         {exam.window && <span className="pc-small"><br />Applications usually: {exam.window}.</span>}
                                                         {exam.examMonth && <span className="pc-small"> Exam usually: {exam.examMonth}.</span>}
                                                         {exam.eligibility && <span className="pc-small"><br />Who can sit it: {exam.eligibility}.</span>}
-                                                        {exam.checkedOn && <span className="pc-small"> Checked {monthYear(exam.checkedOn)}.</span>}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -374,7 +368,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                         {detail.entryGate && typeof detail.entryGate.applicantsPerSeat === "number" && (
                                             <p className="pc-small">
                                                 {detail.entryGate.name}: about <strong>{Math.round(detail.entryGate.applicantsPerSeat)} people per seat</strong>
-                                                {detail.entryGate.preparationYears && <span>, usually {detail.entryGate.preparationYears} years of preparation</span>}.
+                                                {detail.entryGate.preparationYears && <span>, usually {detail.entryGate.preparationYears} {detail.entryGate.preparationYears === 1 ? "year" : "years"} of preparation</span>}.
                                             </p>
                                         )}
                                         {detail.entryGate && typeof detail.entryGate.typicalTotalCostLakh === "number" && (
@@ -397,18 +391,17 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                 )}
 
                                 {/* Studying abroad (Round 11): whether it is needed — never which university */}
-                                {detail.abroad && (
+                                {detail.abroad && !abroadMinded && (
                                     <Section title="Studying abroad">
                                         <p className="pc-line">
                                             {detail.abroad.need === "often_needed" ? "Often part of the route" : "Helps, but not needed"}
                                             {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}
                                         </p>
                                         <p className="pc-small">{detail.abroad.why}.</p>
-                                        {factLabel(detail.studyFacts && detail.studyFacts.abroad) && <p className="pc-small"><em>{factLabel(detail.studyFacts.abroad)}</em></p>}
                                     </Section>
                                 )}
 
-                                {/* Where to study (Round 11): NIRF first; a judgement is always labelled as one */}
+                                {/* Where to study (Round 11): NIRF first; a ranked place shows its rank */}
                                 {detail.studyPlaces && (
                                     <Section title="Where to study">
                                         {detail.studyPlaces.institutions.length > 0 && (
@@ -417,7 +410,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                     <li key={`${place.name}-${place.city}`}>
                                                         <strong>{place.name}</strong>{place.city && <span>, {place.city}</span>}
                                                         {place.private && <span className="pc-small"> · private</span>}
-                                                        <span className="pc-small"> · {place.suggested ? "our suggestion — check it yourself" : place.basis}</span>
+                                                        {!place.suggested && <span className="pc-small"> · {place.basis}</span>}
                                                         {place.note && <span className="pc-small"><br />{place.note}</span>}
                                                     </li>
                                                 ))}
@@ -470,12 +463,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                             Typical cost of qualifying: about ₹{detail.economics.costOfEntryLakh}L
                                         </p>
                                     )}
-                                    <p className="pc-small pc-source">
-                                        {detail.economics.checked
-                                            ? `Pay figures checked${monthYear(detail.economics.checkedOn) ? ` ${monthYear(detail.economics.checkedOn)}` : ""}.`
-                                            : "Pay figures are estimates."}
-                                        {" "}Mid-career means about 5–8 years in, as an employee.
-                                    </p>
+                                    <p className="pc-small pc-source">Mid-career means about 5–8 years in, as an employee.</p>
                                     {/* The record's own warning, carried with the number rather than
                                         left behind. For these nine the midpoint describes almost
                                         nobody, and a figure without that caveat is misleading. */}
@@ -531,6 +519,37 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                             {detail.selfEmployment.route && <p className="pc-small">{detail.selfEmployment.route}</p>}
                                         </Section>
                                     )}
+                                </More>
+                            )}
+
+                            {/* 6b. GOING ABROAD (Round 13) — only for a student who hopes to go abroad */}
+                            {abroadMinded && detail.goingAbroad && (
+                                <More title="Going abroad">
+                                    <p className="pc-line">
+                                        <strong>{PORTABILITY_WORDS[detail.goingAbroad.portability]}.</strong> {detail.goingAbroad.note}
+                                    </p>
+                                    {detail.abroad && (
+                                        <p className="pc-small">
+                                            Studying abroad: {detail.abroad.need === "often_needed" ? "often part of the route" : "helps, but not needed"}
+                                            {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}. {detail.abroad.why}.
+                                        </p>
+                                    )}
+                                    {detail.goingAbroad.portability !== "india_based" && countriesFor(detail.goingAbroad, abroadPlans).map((country) => (
+                                        <details key={country.code} className="pc-country">
+                                            <summary>{country.name}{country.licence ? ` — ${country.licence.exam}` : ""}</summary>
+                                            {country.licence ? (
+                                                <p className="pc-small">
+                                                    {country.licence.steps}. <strong>{country.licence.body}</strong> ·{" "}
+                                                    <a href={country.licence.url} target="_blank" rel="noopener noreferrer">official page ↗</a>
+                                                </p>
+                                            ) : (
+                                                <p className="pc-small">
+                                                    {detail.goingAbroad.portability === "requalify" ? "This work is licensed there too. " : ""}
+                                                    Start with <a href={country.recognition.url} target="_blank" rel="noopener noreferrer">{country.recognition.name} ↗</a>
+                                                </p>
+                                            )}
+                                        </details>
+                                    ))}
                                 </More>
                             )}
 

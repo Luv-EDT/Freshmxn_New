@@ -16,10 +16,13 @@ import { hasMentor, isMentorOnly } from "./plans"
 // interest form is done, because Program 2 matches professions against the activities that form
 // collects — an assessment taken first would score a profile with nothing to match it against.
 
-const STAGE_STATE = {
-    done: { mark: "✓", tone: "#1a7f37" },
-    active: { mark: "●", tone: "#0b62d6" },
-    locked: { mark: "·", tone: "#767676" },
+const STAGE_MARK = { done: "✓", active: "●", locked: "·" }
+
+// A finished stage gets a line that says so (Round 13, owner: "a rewarding look") — on Home only.
+const CELEBRATE = {
+    interest: "Your story is in — a great start.",
+    assessment: "Assessment done — the hard part is behind you.",
+    report: "Your report is ready to read.",
 }
 
 // Works out where the student actually is, from the progress the server keeps. Deliberately a pure
@@ -86,16 +89,20 @@ export const journeyStages = (user) => {
     ]
 }
 
-function JourneyProgress({ user, current }) {
+// `variant="home"` is the dashboard's larger stepper: done stages teal with their celebration line,
+// the stage to do now highlighted as "You're here", the rest muted.
+function JourneyProgress({ user, current, variant }) {
     const navigate = useNavigate()
 
     if (!user || !user.paid) return null
 
     const stages = journeyStages(user)
     const done = stages.filter((stage) => stage.state === "done").length
+    const here = (stages.find((stage) => stage.open && stage.state !== "done") || {}).key
+    const isHome = variant === "home"
 
     return (
-        <div className="journey">
+        <div className={`journey${isHome ? " journey-home" : ""}`}>
             <p className="journey-label">
                 <strong>Your journey</strong> · {done} of {stages.length} finished
             </p>
@@ -104,8 +111,8 @@ function JourneyProgress({ user, current }) {
                 shrinks each step below a usable tap target. Wrapping keeps every one reachable. */}
             <div className="journey-steps">
                 {stages.map((stage, index) => {
-                    const style = STAGE_STATE[stage.state] || STAGE_STATE.locked
                     const isCurrent = stage.key === current
+                    const isHere = stage.key === here
 
                     return (
                         <button
@@ -114,12 +121,16 @@ function JourneyProgress({ user, current }) {
                             onClick={() => stage.open && !isCurrent && navigate(stage.path)}
                             disabled={!stage.open || isCurrent}
                             title={stage.note}
-                            className={`journey-step is-${stage.state}${isCurrent ? " is-current" : ""}${stage.open ? "" : " is-closed"}`}
+                            className={`journey-step is-${stage.state}${isCurrent ? " is-current" : ""}${isHere ? " is-here" : ""}${stage.open ? "" : " is-closed"}`}
                         >
-                            <span className="journey-mark" aria-hidden="true">{style.mark}</span>
+                            <span className="journey-mark" aria-hidden="true">{STAGE_MARK[stage.state] || STAGE_MARK.locked}</span>
                             <span className="journey-text">
+                                {isHome && isHere && <span className="status-chip is-pending journey-here">You're here</span>}
                                 <strong>{index + 1}. {stage.title}</strong>
                                 <span className="journey-note">{stage.note}</span>
+                                {isHome && stage.state === "done" && CELEBRATE[stage.key] && (
+                                    <span className="journey-cheer">{CELEBRATE[stage.key]}</span>
+                                )}
                             </span>
                         </button>
                     )

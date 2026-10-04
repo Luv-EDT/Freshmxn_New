@@ -99,12 +99,34 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
   (`POST /submissions/saveInterest`), so closing the tab loses nothing. College students also tell us
   their degree and subject, working people their degree and field — so the report can say "your
   B.Com already counts".
-- **The assessment** has these parts: a short story you're asked about the next day, personality
-  questions, what you're drawn to, a checklist of 60 everyday activities you'd enjoy (from the US
-  government's free O\*NET list), how you rate yourself, confidence, how you think (with short written
-  answers), a number-memory game, **our own word-memory game** (two lists of 15 words, shown one at a time,
+- **The stages open in order** (Round 13). You can always go back, but you can't jump ahead, or press
+  Finish, while a stage has a required answer missing — a box tells you which stage to finish and takes
+  you there. The form remembers how far you got, so next time it says **"Continue where you left off"**.
+  It says "already submitted" only after you have pressed Finish.
+- **You can speak instead of typing** (Round 13). A 🎤 button above the written answers uses your
+  browser's own speech service, in English or हिंदी. The words land in the box for you to fix before
+  they are saved; we never get any audio. Hinglish is fine everywhere: the markers judge what you mean,
+  not your language or spelling, and an activity written in Hindi is put into English before we look
+  for careers that fit it.
+- **If you tell us about a disability** in the interest form, it asks which tasks it makes harder (vision,
+  hearing, movement, reading, attention). Those timed tests are then **set aside** on the assessment
+  page — shown faded, marked "not measured", never a low score — with a small link if you'd like to try
+  one anyway. It is never used to rank careers.
+- **If you hope to study or work abroad** (No / Maybe / Yes, and which of the five countries Indian
+  students go to most), your report shows a folded "Going abroad" part for each career. Nothing else
+  uses that answer.
+- **The assessment** (about 81 minutes) is a deck of cards: one big card for the part you're on, arrows to
+  move, and a strip showing every part's state — **Done**, **In progress · N% left**, **Set aside** or
+  **Answer now**. Story questions that are waiting for you come first, in bold. The parts: a short story
+  you're asked about the next day, personality questions, what you're drawn to, how you rate yourself,
+  confidence in three situations, how you think (with three short written answers), a number-memory game, **our own word-memory game** (two lists of 15 words, shown one at a time,
   then you type the ones you remember), a focus game (SART), and **our own 16 reasoning puzzles** — picture
-  patterns, letter-number series, word problems and 3D shapes (`Assessment/assessmentModules.js`).
+  patterns, letter-number series, word problems and 3D shapes (`Assessment/assessmentModules.js`). Round 13
+  removed the questions that asked the same thing twice (a 60-activity checklist, a written day plan, three
+  "what you're drawn to" items and three confidence situations).
+- **Each puzzle has its own clock** — 60 seconds for word and series puzzles, 90 for pictures and shapes.
+  When it runs out the puzzle counts as not answered and the next one appears. A retake (only if the admin
+  allows one) gets a different set of word puzzles and newly made picture puzzles.
 - **The puzzles' answers never reach your phone.** The server makes each puzzle from a secret seed,
   sends it without the answer, and marks your pick itself (`/submissions/reasoningNext`,
   `/submissions/reasoningAnswer`). The number-memory and word-memory games work the same way — the
@@ -114,9 +136,6 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
 - Some parts time you in milliseconds, so they're built very carefully (for example the focus
   game checks your screen is fast enough before it starts, and refuses rather than guesses if it
   isn't).
-- **If a timed task would be unfair to you** (you said vision, hearing, movement, reading or attention
-  makes it harder), you can skip it. It is then marked **"not measured"** — never a low score — and the
-  maths simply works with what it has. It is never used to rank careers.
 - **The page tells you how much is measured so far** ("N of 31 factors") and, behind "Why we do this",
   what each part measures and the research behind it.
 - **Tests are taken once**, because a second try scores higher from practice alone. If something
@@ -172,23 +191,30 @@ you wait at the desk**. Instead:
 5. **Meanwhile your report page checks every 5 seconds** (`GET /reports/getMyReport`) and shows
    "preparing" until the report is there — then shows it.
 
-On the report you see **one list of careers** — just the names, with your top 3 coloured, a
-**Blue-collar** label on hands-on trade careers, and **"Partial · N% measured"** when part of what that
-career needs wasn't measured yet. Tap one to open it: first *what it is*, *why it fits
-you* (your strongest traits it uses, and the activity that led you there) and *your next steps* for
-your stage; then four folded sections you can open — **the road** (subjects, degree, exams, how hard
-they are, deadlines and the other ways in), **money** (pay ranges, marked "estimate" or "checked"),
-**the future** (demand, how AI affects it, working for yourself) and **more about the work**. None of
+On the report you see **one list of careers** — the first five of the order you've chosen, with a
+**"Show the other N careers"** button for the rest (choosing a new order starts again at five) — just the names, with your top 3 coloured, a
+**Blue-collar** label on hands-on trade careers. Tap one to open it: first *what it is*, *why it fits
+you* (your strongest traits it uses, and the activity that led you there) and **your next 12 months**
+for your stage; then folded sections you can open — **the road** (subjects, degree, exams, how hard
+they are, deadlines and the other ways in), **money** (pay ranges), **the future** (demand, how AI
+affects it, working for yourself), **more about the work**, and — if you said you might go abroad —
+**going abroad**. The report shows information, not where each fact came from (Round 13): those
+labels told a student nothing they could use. None of
 those steps are written by AI: they are worked out from the career data (`Report/reportPlan.js`).
 
 Inside **the road** you also find, where they apply: each **exam** with who runs it, its official site and
 when it **usually** opens (`data/exam_calendar.json` — never this year's exact date; you always check the
 official site); **where to study** (`data/study_places.json` — the official ranking and regulator lists,
 and, once the owner has reviewed them, up to ten colleges, public and private, each saying why it is
-there: an NIRF rank, or "our suggestion — check it yourself"); and whether **studying abroad** helps for
-that career (`data/abroad.json`) — never which university.
+there: an NIRF rank where there is one); and whether **studying abroad** helps for that career
+(`data/abroad.json`) — never which university.
 
-**"What to do next — your next 12 months"** starts with one picture for your stage: which Class 11
+**Going abroad** (`data/abroad_work.json`, Round 13) says how the career travels: *travels well* (skills
+are recognised; the hurdles are the visa and the job), *re-qualify first* (a licensed career — the
+country's own exam or registration comes first, with the licensing body's page for each country you
+picked), or *India-based* (an Indian government role). It never ranks careers and never shows foreign pay.
+
+**"Your options at a glance"** starts with one picture for your stage: which Class 11
 stream keeps most of your careers open (Class 9–10), which exams matter (Class 11–12), or what you
 can move into from where you are (college and working). College and working students also get
 **"Your master's options"**: their top careers grouped by whether a master's is the way in, needed, or
@@ -202,11 +228,12 @@ press "Connect me".
 shows a banner, **"Update my report"** — it never rebuilds by itself. Updating (or resubmitting your
 assessment) asks one question: are you still heading the same way, or looking for something new?
 
-**"Sort your list"** switches between **Best match** (our ranking) and **Best fit, ignoring switching
-cost**, can then order by pay, demand, speed or AI exposure (with its value shown), can move **core engineering** careers to the
-top, and has one filter — **leave out blue-collar careers** — which is off unless you turn it on and
-always tells you how many it hid. **"Compare careers →"** opens a page where you pick 2–3 careers and see
-them side by side. The AI writes only three short lines about you at the end.
+**"Leave out blue-collar careers"** sits beside **"Sort your list"**, which switches between **Best match** (our ranking) and **Best fit, ignoring switching
+cost**, can then order by pay, demand, speed or AI exposure (with its value shown), and can move **core
+engineering** careers to the top. The blue-collar filter is off unless you turn it on and always tells
+you how many it hid. **"Compare careers →"** opens a page where you pick 2–3 of the careers recommended to
+you (nothing is picked for you) and see them side by side. The AI writes only three short lines about
+you at the end, the last being **"One thing to build next"**.
 
 ---
 
@@ -234,7 +261,7 @@ finds changes the website until the admin approves it.
 | The 1st of each month, 9:00 India time | **Follow-up** (`housekeeping/followUpScan.js`) | 6 and 12 months after your latest assessment, emails you a link (`/follow-up/…`) to five quick questions: what you're doing now, which career, did a match help. One reminder, then never again. You can opt out. This is how we'll learn, one day, whether our matches really work. The clock restarts only if you told us you're looking for something new |
 | The 1st of each month | **Data refresh** (`housekeeping/dataRefresh.js`) | For up to 60 careers, checks job-board numbers (Adzuna) and asks Claude to search a few official sources (government labour survey, National Career Service, India Skills Report, Naukri, LinkedIn's published reports). Suggested changes to **demand and pay** go to the admin's **Data updates** tab. Approved ones show on the career page at once; the ranking itself is never changed by them |
 | Every Monday | **Careers scout** (`housekeeping/careerScout.js`) | Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit |
-| The 1st of each month | **Study bot** (`housekeeping/studyRefresh.js`) | Re-checks 6 study disciplines (NIRF rankings first, then other published rankings and the regulators), 15 exams (each on its own official site only) and 10 careers' master's and study-abroad answers (on government and university sites only). From August to October it also reads last year's **closing ranks** off the official counselling results (JoSAA and others). Suggested changes go to **Data updates**; nothing changes until the admin approves |
+| The 1st of each month — but only what's in season | **Study bot** (`housekeeping/studyRefresh.js`) | Checks things only when they can have changed (Round 13): an **exam** in the two months before its applications usually open (each on its own official site); **colleges** in September and October, after NIRF publishes (NIRF first, then other published rankings and the regulators); **master's and study-abroad answers** in January, April, July and October (government and university sites only); **closing ranks** August to October (official counselling results); **licences abroad** in January (the licensing body's own site). A month with nothing due makes no AI call. Suggested changes go to **Data updates**; nothing changes until the admin approves. The admin's **Run now** checks everything regardless of season |
 | Every hour, at :17 | **Batch collector** (`housekeeping/researchBatch.js`) | The data refresh and the study bot don't wait for Claude's answers one by one. They hand Anthropic all their questions in **one bundle at half price**. Anthropic answers the bundle in the background — usually within the hour, at most a day. This small check asks every hour "is a bundle finished?"; if so it reads the answers, runs exactly the same checks the job would have, and files the suggestions in Data updates. Any answer that came back incomplete or unreadable is asked again the normal way. With no bundle waiting it does nothing and costs nothing |
 | Only when the admin presses it | **Model comparison** (`housekeeping/modelCompare.js`) | Asks the same 20 careers of two Claude models (Opus 5.5 and Sonnet 5.5) and shows side by side what each would change, how many pages it cited and what it cost. Nothing is filed. The admin then chooses which model runs the monthly jobs |
 
@@ -251,7 +278,8 @@ finds changes the website until the admin approves it.
   approves them, and can search every mentor in the admin's Mentors tab.
 - **Mentors check our data.** An approved mentor sees "Check our data for {their profession}": the
   career exactly as students read it — path, exams, where to study, abroad, master's, pay, demand, AI,
-  things worth knowing — and the eight qualities it needs most, in words. They mark each part "looks
+  things worth knowing — and every quality we rated for it, in words (the eight that matter most open,
+  the rest folded). They mark each part "looks
   right" or "needs a change" (with a note and a link), and each quality "about right / higher /
   lower". The admin decides every item; accepted ones go into the data through a reviewed commit.
   **Nothing changes on the site from a mentor's answer alone.**
@@ -300,6 +328,6 @@ finds changes the website until the admin approves it.
 - **Switching cost** — how much of what you've already done you'd leave behind by changing to a
   career.
 - **Tier** — a group in the ranking; there are 16, shown as 5 bands in "How this list is ordered".
-- **Coverage** — how much of what a trait or a career needs was actually measured for you. Under 100%
-  shows as "Partial".
+- **Coverage** — how much of what a trait needs was actually measured for you. Under 100% it shows as
+  "Partial · N%" on the assessment page and your profile (not on the careers).
 - **Override** — an admin-approved new value for a career's demand or pay, shown on top of the data file.

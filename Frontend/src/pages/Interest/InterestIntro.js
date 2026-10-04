@@ -17,7 +17,7 @@ function InterestIntro({ handleNext, hasSubmitted }) {
             </p>
 
             <details className="if-examples if-how">
-                <summary>How to answer</summary>
+                <summary className="if-chip-summary"><span className="if-q" aria-hidden="true">?</span> How to answer</summary>
                 <ul>
                     <li><strong>For each stage of your life you'll fill in two things:</strong> the activities you did, and the problems or challenges you faced.</li>
                     <li><strong>Short and specific beats long.</strong> "Played district-level cricket" says more than "sports".</li>

@@ -32,9 +32,16 @@ const scoreReasoningInHouse = (block) => {
 
     flags.reasoning_provisional_norms = true
 
-    // a student who sat with every item for minutes on end was not taking the test the way it is meant
-    const slow = responses.filter((response) => response.slow).length
-    if (slow >= 3) {
+    // three puzzles in a row that ran out of time (Round 13: every puzzle has a clock) usually mean
+    // the device or the connection, not the student — the admin looks before the score is trusted.
+    // Older runs, before the clock, were flagged for three puzzles over five minutes.
+    let run = 0
+    let inARow = 0
+    responses.forEach((response) => {
+        run = response.timedOut ? run + 1 : 0
+        inARow = Math.max(inARow, run)
+    })
+    if (inARow >= 3 || responses.filter((response) => response.slow).length >= 3) {
         flags.reasoning_review = true
         flags.admin_review = true
     }

@@ -1,0 +1,1509 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-10-04",
+  "rule": "How each career travels for a student who hopes to work abroad (owner, Round 13). travels_well: skills recognised widely, the hurdles are the visa and the job. requalify: a licensed profession — the destination's licence or registration comes first. india_based: runs through Indian state institutions. Licence rows are shown only when supported by the licensing body's own site (url) and published guidance; draft rows stay hidden. Never pay or demand figures abroad; never used in ranking.",
+  "countries": [
+    {
+      "code": "CA",
+      "name": "Canada",
+      "recognition": {
+        "name": "Government of Canada — getting your credentials recognised",
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/new-immigrants/prepare-life-canada/prepare-work.html"
+      }
+    },
+    {
+      "code": "US",
+      "name": "USA",
+      "recognition": {
+        "name": "CareerOneStop (US Department of Labor) — licences by state",
+        "url": "https://www.careeronestop.org/Toolkit/Training/find-licenses.aspx"
+      }
+    },
+    {
+      "code": "UK",
+      "name": "UK",
+      "recognition": {
+        "name": "UK ENIC — recognition of overseas qualifications",
+        "url": "https://www.enic.org.uk"
+      }
+    },
+    {
+      "code": "AU",
+      "name": "Australia",
+      "recognition": {
+        "name": "Department of Home Affairs — skills assessment",
+        "url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skills-assessment"
+      }
+    },
+    {
+      "code": "DE",
+      "name": "Germany",
+      "recognition": {
+        "name": "Recognition in Germany (federal portal)",
+        "url": "https://www.anerkennung-in-deutschland.de/en"
+      }
+    }
+  ],
+  "countries_source": {
+    "note": "The top five destinations for Indian students, from the Ministry of External Affairs' data on Indian students abroad tabled in Parliament (2025)",
+    "url": "https://www.mea.gov.in/Images/CPV/557-en-01-04-12-2025.pdf"
+  },
+  "official_domains": [
+    "ecfmg.org",
+    "mcc.ca",
+    "gmc-uk.org",
+    "amc.org.au",
+    "anerkennung-in-deutschland.de",
+    "jcnde.ada.org",
+    "ndeb-bned.ca",
+    "gdc-uk.org",
+    "adc.org.au",
+    "ncsbn.org",
+    "nnas.ca",
+    "nmc.org.uk",
+    "nursingmidwiferyboard.gov.au",
+    "nabp.pharmacy",
+    "pebc.ca",
+    "pharmacyregulation.org",
+    "pharmacycouncil.org.au",
+    "fccpt.org",
+    "alliancept.org",
+    "hcpc-uk.org",
+    "physiocouncil.com.au",
+    "avma.org",
+    "canadianveterinarians.net",
+    "rcvs.org.uk",
+    "avbc.asn.au",
+    "asppb.net",
+    "psychologyboard.gov.au",
+    "nybarexam.org",
+    "nca.legal",
+    "sra.org.uk",
+    "lpab.nsw.gov.au",
+    "nasba.org",
+    "cpacanada.ca",
+    "icaew.com",
+    "charteredaccountantsanz.com",
+    "ncarb.org",
+    "cacb.ca",
+    "arb.org.uk",
+    "aaca.org.au",
+    "faa.gov",
+    "tc.canada.ca",
+    "caa.co.uk",
+    "casa.gov.au",
+    "lba.de",
+    "oct.ca",
+    "gov.uk",
+    "aitsl.edu.au",
+    "canada.ca",
+    "careeronestop.org",
+    "enic.org.uk",
+    "immi.homeaffairs.gov.au",
+    "mea.gov.in"
+  ],
+  "review": {
+    "reviewed_by_owner": false,
+    "note": "Licence rows were checked against published guidance and point at each licensing body's own site; the official pages themselves could not be opened from the build container. The study bot re-checks them every January on those domains."
+  },
+  "careers": {
+    "swc-software-developer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-website-store-builder": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-game-developer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-ai-ml-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-data-analyst": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-data-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-cybersecurity-specialist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-cloud-devops-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-software-tester": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-it-support-network-technician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-embedded-iot-developer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-enterprise-software-consultant": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-it-business-systems-analyst": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "swc-vfx-graphics-developer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-civil-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-mechanical-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-electrical-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-electronics-communication-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-chip-design-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-chemical-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-aerospace-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-mining-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-metallurgical-materials-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-marine-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-petroleum-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-robotics-automation-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-architect": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "eng-commercial-pilot": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "eng-aircraft-maintenance-engineer": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "eng-electrician": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "eng-welder": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-fitter-machinist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-plumber": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "eng-carpenter-furniture-maker": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-mason-construction-technician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-hvac-refrigeration-technician": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "eng-automobile-mechanic": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "eng-heavy-equipment-operator": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-land-surveyor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-cad-draughtsman": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-textile-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-biomedical-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-fire-safety-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-drone-pilot": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-precision-manufacturing-technician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-nuclear-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-urban-planner": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-air-traffic-controller": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-railway-operations": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "eng-merchant-navy-deck-officer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "eng-industrial-product-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-physicist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-chemist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-biologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-microbiologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-biotechnologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-bioinformatics-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-geologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-atmospheric-ocean-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-space-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-materials-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-statistician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-research-psychologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-forensic-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-clinical-research-associate": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-drug-discovery-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-laboratory-technician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-quality-control-analyst": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-computer-science-researcher": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "sci-mathematician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hlt-doctor": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-dentist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-ayurveda-doctor": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "hlt-homeopathy-doctor": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "hlt-veterinary-doctor": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-nurse": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-pharmacist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-physiotherapist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-optometrist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-audiologist-speech-therapist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-occupational-therapist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-dietitian": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-medical-lab-technologist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-radiology-technologist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-ot-anaesthesia-technologist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-dialysis-technologist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-emergency-medical-technician": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "hlt-public-health-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hlt-home-care-attendant": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hlt-general-duty-assistant": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-marketing-specialist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-sales-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-hr-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-operations-manager": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-supply-chain-manager": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-logistics-warehouse-operator": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-retail-store-operations": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-product-manager": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-project-manager": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-management-consultant": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-market-research-analyst": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-entrepreneur": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "mgt-commercial-driver": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "fin-chartered-accountant": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "fin-accounts-executive": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "fin-financial-analyst": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "fin-banking-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "fin-insurance-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "fin-investment-wealth-manager": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "fin-actuary": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "fin-economist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "law-lawyer": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "law-company-secretary": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "law-civil-services-officer": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "law-police-officer": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "law-armed-forces-officer": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "law-judicial-services-officer": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "law-public-policy-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "law-paralegal": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "law-firefighter": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "law-patent-agent": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "law-political-electoral": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "des-graphic-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-ux-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-animator-vfx": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-illustrator": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-game-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-interior-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-fashion-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-apparel-production": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-tailor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-handloom-weaver": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-handicraft-artisan": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-jeweller": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-advertising-creative": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-fine-artist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "des-footwear-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-journalist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-content-writer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-filmmaker": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-cinematographer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-film-editor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-sound-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-photographer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-production-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-content-creator": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-voice-artist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-pr-communications": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "med-production-crew": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-musician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-music-producer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-dancer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-actor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-dj": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-folk-performer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-live-sound": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-instrument-maker": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-theatre-practitioner": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "prf-model": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-athlete": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-coach": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-fitness-trainer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-official": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-adventure-instructor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-esports": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-sports-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "spt-facility-turf": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "edu-school-teacher": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "edu-special-educator": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "edu-college-teacher": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "edu-coaching-faculty": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "edu-early-childhood": {
+      "portability": "india_based",
+      "note": "This career runs through Indian institutions, so it does not carry over to another country."
+    },
+    "edu-vocational-trainer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "edu-corporate-trainer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "edu-instructional-designer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "edu-librarian": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "edu-career-counsellor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "soc-clinical-psychologist": {
+      "portability": "requalify",
+      "note": "Licensed abroad: you can go, but the country's licence or registration comes first."
+    },
+    "soc-counsellor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "soc-social-worker": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "soc-development-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "soc-me-analyst": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "soc-community-worker": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "soc-disability-inclusion": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "soc-child-protection": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-environmental-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-environmental-scientist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-gis-analyst": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-forest-officer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-sustainability-esg": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-renewable-energy": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-sanitation-worker": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "env-disaster-resilience": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-farmer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-agronomist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-agricultural-engineer": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-food-technologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-dairy-livestock": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-horticulture": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-fisheries": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "agr-extension-agribusiness": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hos-chef": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hos-fb-service": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hos-housekeeping": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hos-hotel-manager": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hos-travel-tourism": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hos-event-manager": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hos-cabin-crew": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-archaeologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-anthropologist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-historian": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-museum-archive": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-conservator": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-religious-professional": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-classical-language": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-heritage-management": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "hum-funeral-mortuary": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "pcw-yoga-instructor": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "pcw-beautician": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "pcw-hair-stylist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "pcw-makeup-artist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "pcw-spa-therapist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    },
+    "pcw-tattoo-artist": {
+      "portability": "travels_well",
+      "note": "Your skills are recognised widely; the usual hurdles are the visa and the first job. A master's abroad or a company transfer is the common route."
+    }
+  },
+  "licences": {
+    "hlt-doctor": {
+      "US": {
+        "body": "ECFMG / state medical board",
+        "exam": "USMLE Steps 1, 2 CK and 3",
+        "steps": "ECFMG certification, then a US residency (Match), then a state licence",
+        "url": "https://www.ecfmg.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Medical Council of Canada",
+        "exam": "MCCQE Part I (and NAC)",
+        "steps": "Credentials checked, MCCQE, then a residency or practice-ready assessment in a province",
+        "url": "https://mcc.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "General Medical Council",
+        "exam": "PLAB 1 and PLAB 2",
+        "steps": "English test (IELTS/OET), PLAB 1, PLAB 2 in the UK, then GMC registration",
+        "url": "https://www.gmc-uk.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Australian Medical Council / Medical Board of Australia",
+        "exam": "AMC MCQ and clinical exam",
+        "steps": "AMC exams (or a competent-authority route), then registration through AHPRA",
+        "url": "https://www.amc.org.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State authority (Approbation)",
+        "exam": "Fachsprachprüfung + Kenntnisprüfung",
+        "steps": "German to C1 for medicine, the medical language exam, usually the knowledge exam, then Approbation",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "hlt-dentist": {
+      "US": {
+        "body": "Joint Commission on National Dental Examinations / state board",
+        "exam": "INBDE",
+        "steps": "Usually a 2–3 year advanced-standing DDS/DMD at a US school, the INBDE, then a state licence",
+        "url": "https://jcnde.ada.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "National Dental Examining Board of Canada",
+        "exam": "AFK, ACJ and NDECC",
+        "steps": "The NDEB equivalency exams (or a qualifying degree), then a provincial licence",
+        "url": "https://ndeb-bned.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "General Dental Council",
+        "exam": "Overseas Registration Exam (ORE)",
+        "steps": "English test, ORE Part 1 and Part 2, then GDC registration",
+        "url": "https://www.gdc-uk.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Australian Dental Council",
+        "exam": "ADC written and practical exams",
+        "steps": "ADC assessment and exams, then registration with the Dental Board through AHPRA",
+        "url": "https://www.adc.org.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State authority (Approbation)",
+        "exam": "Fachsprachprüfung + Kenntnisprüfung",
+        "steps": "German for dentistry, the language exam, usually the knowledge exam, then Approbation",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "hlt-nurse": {
+      "US": {
+        "body": "NCSBN / state board of nursing",
+        "exam": "NCLEX-RN",
+        "steps": "English test, credentials evaluation, NCLEX-RN, then a state licence",
+        "url": "https://www.ncsbn.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "National Nursing Assessment Service / provincial college",
+        "exam": "NCLEX-RN (most provinces)",
+        "steps": "NNAS assessment, the provincial college's review, NCLEX-RN, then registration",
+        "url": "https://www.nnas.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "Nursing and Midwifery Council",
+        "exam": "CBT + OSCE",
+        "steps": "English test (IELTS/OET), the CBT (can be taken in India), the OSCE in the UK, then NMC registration",
+        "url": "https://www.nmc.org.uk",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Nursing and Midwifery Board of Australia (AHPRA)",
+        "exam": "Outcomes-based assessment (MCQ + OSCE)",
+        "steps": "English test, the NMBA assessment, then registration through AHPRA",
+        "url": "https://www.nursingmidwiferyboard.gov.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State authority (Anerkennung)",
+        "exam": "Kenntnisprüfung or an adaptation course",
+        "steps": "German to B2, recognition of the qualification, usually an exam or adaptation period, then the licence",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "hlt-pharmacist": {
+      "US": {
+        "body": "NABP (FPGEC) / state board of pharmacy",
+        "exam": "FPGEE, then NAPLEX and MPJE",
+        "steps": "FPGEC certification (FPGEE + English), internship hours, NAPLEX and the state law exam",
+        "url": "https://nabp.pharmacy",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Pharmacy Examining Board of Canada",
+        "exam": "PEBC Evaluating and Qualifying Exams",
+        "steps": "Document evaluation, the PEBC exams, then a provincial licence",
+        "url": "https://www.pebc.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "General Pharmaceutical Council",
+        "exam": "OSPAP, then the registration assessment",
+        "steps": "The one-year OSPAP course, a foundation year, the GPhC assessment, then registration",
+        "url": "https://www.pharmacyregulation.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Australian Pharmacy Council",
+        "exam": "KAPS exam",
+        "steps": "APC assessment and KAPS, supervised practice, then registration through AHPRA",
+        "url": "https://www.pharmacycouncil.org.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State authority (Approbation)",
+        "exam": "Kenntnisprüfung",
+        "steps": "German to B2–C1, recognition, usually the knowledge exam, then Approbation",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "hlt-physiotherapist": {
+      "US": {
+        "body": "FCCPT / state board",
+        "exam": "NPTE",
+        "steps": "FCCPT credentials review, the NPTE, then a state licence (US entry level is a doctorate, so extra study is common)",
+        "url": "https://www.fccpt.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Canadian Alliance of Physiotherapy Regulators",
+        "exam": "Physiotherapy Competency Exam",
+        "steps": "CAPR credentialling, the PCE, then a provincial licence",
+        "url": "https://www.alliancept.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "Health and Care Professions Council",
+        "exam": "HCPC international assessment",
+        "steps": "English test, the HCPC's review of your training, then registration",
+        "url": "https://www.hcpc-uk.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Australian Physiotherapy Council",
+        "exam": "APC written and clinical exams",
+        "steps": "APC assessment and exams, then registration through AHPRA",
+        "url": "https://physiocouncil.com.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State authority (Anerkennung)",
+        "exam": "Recognition, sometimes an exam",
+        "steps": "German to B2, recognition of the training, then the protected title Physiotherapeut",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "hlt-veterinary-doctor": {
+      "US": {
+        "body": "AVMA (ECFVG) or AAVSB (PAVE) / state board",
+        "exam": "ECFVG or PAVE, then NAVLE",
+        "steps": "Educational equivalence certification, the NAVLE, then a state licence",
+        "url": "https://www.avma.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "CVMA National Examining Board",
+        "exam": "NEB exams (incl. NAVLE)",
+        "steps": "The NEB certification, then a provincial licence",
+        "url": "https://www.canadianveterinarians.net",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "Royal College of Veterinary Surgeons",
+        "exam": "RCVS Statutory Membership Exam",
+        "steps": "English test, the statutory exam, then RCVS membership",
+        "url": "https://www.rcvs.org.uk",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Australasian Veterinary Boards Council",
+        "exam": "Australasian Veterinary Examination",
+        "steps": "AVBC assessment and the AVE, then registration with a state board",
+        "url": "https://avbc.asn.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State authority (Approbation)",
+        "exam": "Kenntnisprüfung",
+        "steps": "German, recognition, usually the knowledge exam, then Approbation",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "soc-clinical-psychologist": {
+      "US": {
+        "body": "ASPPB / state board",
+        "exam": "EPPP",
+        "steps": "A doctorate judged equivalent, supervised hours, the EPPP, then a state licence",
+        "url": "https://www.asppb.net",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Provincial college of psychologists",
+        "exam": "EPPP (most provinces)",
+        "steps": "Each province decides; most ask for a doctorate, supervised practice and the EPPP",
+        "url": null,
+        "status": "draft",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "Health and Care Professions Council",
+        "exam": "HCPC international assessment",
+        "steps": "The HCPC's review of your training, sometimes a test of competence, then registration",
+        "url": "https://www.hcpc-uk.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Psychology Board of Australia (AHPRA)",
+        "exam": "National Psychology Exam (if required)",
+        "steps": "Qualification assessment, often supervised practice, then registration",
+        "url": "https://www.psychologyboard.gov.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State authority (Approbation)",
+        "exam": "Psychotherapist recognition",
+        "steps": "A long German route; check the recognition finder",
+        "url": null,
+        "status": "draft",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "law-lawyer": {
+      "US": {
+        "body": "New York State Board of Law Examiners (and other states)",
+        "exam": "Uniform Bar Exam",
+        "steps": "An LLM at a US school, then the bar exam in a state such as New York",
+        "url": "https://www.nybarexam.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Federation of Law Societies — National Committee on Accreditation",
+        "exam": "NCA challenge exams, then the provincial bar",
+        "steps": "NCA assessment and exams, then articling and the provincial licensing exams",
+        "url": "https://nca.legal",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "Solicitors Regulation Authority",
+        "exam": "SQE1 and SQE2 (exemptions possible)",
+        "steps": "The SQE (Indian lawyers may get exemptions), then admission as a solicitor",
+        "url": "https://www.sra.org.uk",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "State admission board (e.g. LPAB New South Wales)",
+        "exam": "Subjects the board sets",
+        "steps": "The board assesses your degree and names subjects to complete, then admission",
+        "url": "https://lpab.nsw.gov.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "Bar association (Rechtsanwaltskammer)",
+        "exam": "Aptitude test",
+        "steps": "Recognition; if your training differs a lot, an aptitude test in German law",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "fin-chartered-accountant": {
+      "US": {
+        "body": "State board of accountancy (via NASBA)",
+        "exam": "CPA exam",
+        "steps": "No direct route from the Indian CA yet: credentials evaluation, then the CPA exam",
+        "url": "https://nasba.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "CPA Canada",
+        "exam": "CPA route for internationally trained accountants",
+        "steps": "ICAI has an MOU with CPA Canada; the provincial CPA body sets what remains",
+        "url": "https://www.cpacanada.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "ICAEW",
+        "exam": "ICAEW route for ICAI members",
+        "steps": "ICAI has an MOU with ICAEW; the remaining exams depend on the route",
+        "url": "https://www.icaew.com",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Chartered Accountants ANZ / CPA Australia",
+        "exam": "Mutual recognition (one paper for CPA Australia)",
+        "steps": "ICAI has mutual recognition with CA ANZ and CPA Australia",
+        "url": "https://www.charteredaccountantsanz.com",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "Steuerberater / Wirtschaftsprüfer chambers",
+        "exam": "German professional exams",
+        "steps": "German titles need their own exams in German",
+        "url": null,
+        "status": "draft",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "eng-architect": {
+      "US": {
+        "body": "NCARB / state board",
+        "exam": "EESA review, AXP and the ARE",
+        "steps": "Education evaluated (EESA), experience logged (AXP), the ARE exams, then a state licence",
+        "url": "https://www.ncarb.org",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Canadian Architectural Certification Board",
+        "exam": "CACB certification or BEFA",
+        "steps": "Education certified by CACB (or BEFA for experienced architects), then a provincial association",
+        "url": "https://cacb.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "Architects Registration Board",
+        "exam": "ARB Prescribed Examination",
+        "steps": "The ARB exam for overseas qualifications, then registration",
+        "url": "https://arb.org.uk",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Architects Accreditation Council of Australia",
+        "exam": "Overseas qualifications assessment or experienced-practitioner route",
+        "steps": "AACA assessment, then registration with a state board",
+        "url": "https://aaca.org.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State chamber of architects (Architektenkammer)",
+        "exam": "Recognition + entry in the list of architects",
+        "steps": "Recognition of the degree, usually two years' experience, then entry in the chamber's list",
+        "url": "https://www.anerkennung-in-deutschland.de/en",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "eng-commercial-pilot": {
+      "US": {
+        "body": "Federal Aviation Administration",
+        "exam": "FAA knowledge and practical tests",
+        "steps": "An FAA licence on the basis of your DGCA licence, then the full commercial licence and type rating",
+        "url": "https://www.faa.gov",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Transport Canada",
+        "exam": "Licence conversion exams",
+        "steps": "Transport Canada's conversion of a foreign ICAO licence",
+        "url": "https://tc.canada.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "UK Civil Aviation Authority",
+        "exam": "UK ATPL theory and skill test",
+        "steps": "UK CAA licence: the theory exams, then a skill test",
+        "url": "https://www.caa.co.uk",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "Civil Aviation Safety Authority",
+        "exam": "Overseas licence conversion",
+        "steps": "CASA converts ICAO licences after exams and a flight test",
+        "url": "https://www.casa.gov.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "Luftfahrt-Bundesamt (EASA licence)",
+        "exam": "The 14 EASA ATPL theory exams",
+        "steps": "An EASA licence: the ATPL theory, then a skill test",
+        "url": "https://www.lba.de",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      }
+    },
+    "edu-school-teacher": {
+      "US": {
+        "body": "State education department",
+        "exam": "State teaching certification",
+        "steps": "Each state certifies teachers; credentials evaluation and state tests",
+        "url": null,
+        "status": "draft",
+        "checkedOn": "2026-10-04"
+      },
+      "CA": {
+        "body": "Provincial teacher regulator (e.g. Ontario College of Teachers)",
+        "exam": "Provincial certification",
+        "steps": "Each province certifies teachers; Ontario's college is one example",
+        "url": "https://www.oct.ca",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "UK": {
+        "body": "Teaching Regulation Agency (Department for Education)",
+        "exam": "Qualified Teacher Status (QTS)",
+        "steps": "Apply for QTS if you trained as a teacher outside the UK",
+        "url": "https://www.gov.uk/guidance/apply-for-qualified-teacher-status-qts-if-you-teach-outside-the-uk",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "AU": {
+        "body": "AITSL and the state teacher registration board",
+        "exam": "AITSL assessment, then state registration",
+        "steps": "Qualification assessment, then registration in the state you teach in",
+        "url": "https://www.aitsl.edu.au",
+        "status": "supported",
+        "checkedOn": "2026-10-04"
+      },
+      "DE": {
+        "body": "State education ministry",
+        "exam": "Teacher recognition",
+        "steps": "German states recognise teachers separately, usually needing two subjects and German",
+        "url": null,
+        "status": "draft",
+        "checkedOn": "2026-10-04"
+      }
+    }
+  }
+}

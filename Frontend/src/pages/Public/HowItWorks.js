@@ -67,7 +67,7 @@ function HowItWorks() {
                                     <span className="step-num">03</span>
                                     <h3>Find out where you fit, and what lasts.</h3>
                                     <p>
-                                        223 Indian careers that are in demand, pay well, and won't get eaten by AI.
+                                        1,000+ Indian careers and job roles that are in demand, pay well, and won't get eaten by AI — kept up to date with AI-assisted checks.
                                         Ranked for <em>you</em>, not for "log kya kahenge."
                                     </p>
                                 </div>

@@ -192,7 +192,8 @@ const MODULE_CONTRACTS = [
             ;["V", "S", "M", "B", "N", "E", "L"].forEach((prefix) => {
                 for (let number = 1; number <= 5; number += 1) ids.push(`MI_${prefix}${number}`)
             })
-            return ids
+            // Round 13: the three retired repeats are no longer read
+            return ids.filter((id) => !require("../../scoring/mi").RETIRED_ITEMS.includes(id))
         },
     },
     {
@@ -203,7 +204,7 @@ const MODULE_CONTRACTS = [
     {
         module: "confidence",
         uiIds: () => idsFrom(MODULE_ITEMS_FILE, /id:\s*"(CF\d+)"/g),
-        scorerIds: () => Array.from({ length: 6 }, (item, index) => `CF${index + 1}`),
+        scorerIds: () => Object.keys(require("../../scoring/confidenceItems").KEYS),     // three since Round 13
     },
 ]
 
@@ -264,7 +265,7 @@ const fixtures = [
             // tests, story recall) are exempt: they have their own shapes and their own checks.
             // The reasoning puzzles and the activity checklist (Round 10) are covered by the
             // REASONING and INTERESTS fixtures below; the word-memory test (Round 11) by WORD MEMORY.
-            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "interests60", "wordRecall"]
+            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "wordRecall"]
             const uncovered = built.filter((key) => !covered.includes(key) && !SHAPED_DIFFERENTLY.includes(key))
 
             return uncovered.length > 0 ? `built but untested: ${uncovered.join(", ")}` : null
@@ -2009,8 +2010,13 @@ const fixtures = [
             if (ids(buildList(ranked, [], "best", null, details, {})) !== "a,b,c") problems.push("with no options set the list is not the full ranking")
             if (ids(buildList(ranked, [], "best", null, details, { excludeBlueCollar: true })) !== "b,c") problems.push("the blue-collar filter removed the wrong careers")
             if (ids(buildList(ranked, [], "best", null, details, { showFirst: "coreEngineering" })) !== "b,a,c") problems.push("show-first is not a stable partition that keeps everything")
+            // Round 13 (owner): the top five of the CHOSEN order show first and the rest are one tap away —
+            // a fold, not a filter: "Show the other N" opens the same ordered list in full
             const listBlock = page.split('<div className="match-list">')[1] || ""
-            if (!/^\s*\{ordered\.map\(/.test(listBlock)) problems.push("the rendered list is not the full ordered list")
+            if (!/^\s*\{\(showAllFor === sortKey \? ordered : ordered\.slice\(0, TOP_SHOWN\)\)\.map\(/.test(listBlock)) problems.push("the rendered list is not the chosen order (top five, then all)")
+            if (!/Show the other \{ordered\.length - TOP_SHOWN\}/.test(page)) problems.push("the rest of the list has no 'Show the other N' button")
+            if (!/const TOP_SHOWN = 5/.test(page)) problems.push("the list does not open on five")
+            if (!/const sortKey = \[primary, secondary, showFirst, excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at five")
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2294,25 +2300,27 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "NEXT STEPS — collapsible, and carries derived actions rather than prose alone",
+        name: "NEXT STEPS — the next 12 months live inside each career, built from its own data; the report keeps the overview",
+        // REPLACES "collapsible, and carries derived actions rather than prose alone" (owner, Round 13:
+        // "what to do next in 12 months should be inside each profession"). The report-level roll-up
+        // of the top three went; each card's own steps already named the same path step and exams.
         run: () => {
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            const plan = fs.readFileSync(path.join(REPORT_DIR, "reportPlan.js"), "utf8")
 
             const problems = []
+            if (/What to do next/.test(page)) problems.push("the report still has its own 'What to do next' section")
+            if (!/<strong>Your options at a glance<\/strong>/.test(page)) problems.push("the report-level overview is gone")
+            if (!/<Section title="Your next 12 months">/.test(card)) problems.push("the card has no 'Your next 12 months'")
 
-            if (!/const nextActions/.test(source)) problems.push("there are no derived next actions — the section is prose only")
-            if (!/<strong>What to do next<\/strong>/.test(source)) problems.push("what-to-do-next is no longer a collapsible section")
-
-            // The derived actions must be built from real data, not from a static list.
-            const block = (source.split("const nextActions = (() => {")[1] || "").split("\n    })()")[0]
-            if (!block) return "the nextActions derivation is gone"
-
-            ;["pathToEntry", "entranceExams", "aspirationSignals"].forEach((source_field) => {
-                if (!block.includes(source_field)) problems.push(`next steps ignores ${source_field}`)
-            })
-
-            // And it must reuse the card's path levelling rather than re-deriving it.
-            if (!/levelPath/.test(block)) problems.push("next steps re-derives path levels instead of reusing levelPath")
+            // the card's steps come from real data: its path step (levelPath) and its exams
+            if (!/levelPath\(detail\.pathToEntry/.test(card) || !/cardSteps\(entry, detail, journey, stepForPlan\)/.test(card)) {
+                problems.push("the card's next steps no longer start from its own levelled path")
+            }
+            const steps = (plan.split("export const cardSteps")[1] || "").split("\n}\n")[0]
+            if (!/examLine\(detail\)/.test(steps)) problems.push("the card's next steps ignore the exams")
+            if (!/entranceExams/.test(plan)) problems.push("the exam line no longer reads entranceExams")
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2723,34 +2731,40 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "INTERESTS — the O*NET items that feed the intelligences exist, and none feeds two",
+        name: "SHORTER ASSESSMENT — no activity checklist, 32 MI items, 3 confidence situations, no written day plan (owner, Round 13)",
         run: () => {
-            const interests = require("../../scoring/interests60")
-            const used = Object.values(interests.MI_ITEMS).flat()
-            const unknown = used.filter((id) => !interests.ALL_ITEMS.includes(id))
-            if (unknown.length > 0) return `unknown items: ${unknown.join(", ")}`
-            if (new Set(used).size !== used.length) return "an activity feeds two intelligences"
-            if (interests.ALL_ITEMS.length !== 60) return `expected 60 items, got ${interests.ALL_ITEMS.length}`
-            const frontend = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "interestItems.js"), "utf8")
-            const missing = interests.ALL_ITEMS.filter((id) => !frontend.includes(`id: "${id}"`))
-            return missing.length > 0 ? `not asked on the page: ${missing.join(", ")}` : null
+            const problems = []
+            const items = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/moduleItems.js"), "utf8")
+            const perspective = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/perspectiveItems.js"), "utf8")
+            const modules = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/assessmentModules.js"), "utf8")
+            ;["MI_N3", "MI_E5", "MI_L5", "CF1", "CF4", "CF5"].forEach((id) => { if (items.includes(`id: "${id}"`)) problems.push(`${id} is still asked`) })
+            if ((items.match(/id: "MI_/g) || []).length !== 32) problems.push("MI is not 32 items")
+            if (perspective.includes('id: "P13"')) problems.push("the written day plan is still asked")
+            if (modules.includes('key: "interests60"')) problems.push("the activity checklist is still a module")
+            if (require("../gradeOpenItems").OPEN_ITEMS && require("../gradeOpenItems").OPEN_ITEMS.includes("P13")) problems.push("P13 is still graded")
+            const source = fs.readFileSync(path.join(__dirname, "../../scoring/scoreProfile.js"), "utf8")
+            if (/interests60|scoreInterests/.test(source)) problems.push("the scorer still reads the activity checklist")
+
+            // an old stored day-plan grade and old checklist answers change nothing
+            const base = { perspective: { answers: { P8: "A", P9: "B", P10: "A", P11: "B", P12: "A" } } }
+            const plain = scoreProfile(base)
+            const withOld = scoreProfile({ ...base, interests60: { answers: { A4: true }, completedAt: new Date() }, perspective: { ...base.perspective, open: { P13: { criteria: { deep_work_first: true, urgency_order: true, messages_batched: true, fixed_respected: true, recovery: true } } } } })
+            if (JSON.stringify(plain.raw_scores) !== JSON.stringify(withOld.raw_scores)) problems.push("an old day-plan grade or checklist still moves a score")
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "MI — each intelligence is built from self-report, activities and (where tested) reasoning",
+        name: "MI — each intelligence is its self-report, plus half the matching reasoning part where one is tested; retired items are ignored",
         run: () => {
             const answers = {}
             ;["V", "S", "M", "B", "N", "E", "L"].forEach((letter) => { for (let item = 1; item <= 5; item += 1) answers[`MI_${letter}${item}`] = "C" })
+            answers.MI_N3 = "E"     // retired: must not count
             const onlySelf = scoreProfile({ mi: { answers } })
-            const ticks = {}
-            ;["A4", "A5", "A6", "A10"].forEach((id) => { ticks[id] = true })
-            const withActivities = scoreProfile({ mi: { answers }, interests60: { answers: ticks, completedAt: new Date() } })
-            if (onlySelf.raw_scores.existential_intelligence !== 5) return `existential is self-report only, expected 5, got ${onlySelf.raw_scores.existential_intelligence}`
-            if (onlySelf.data_quality.spatial_intelligence !== "partial") return "spatial without activities or the reasoning test should be partial"
-            // spatial: affinity 0.7*5 + 0.3*10 = 6.5, no reasoning part → 6.5
-            if (withActivities.raw_scores.spatial_intelligence !== 6.5) return `spatial with all four drawing activities ticked: expected 6.5, got ${withActivities.raw_scores.spatial_intelligence}`
-            if (withActivities.factor_coverage.spatial_intelligence !== 0.5) return `spatial coverage without the reasoning test should be 50%, got ${withActivities.factor_coverage.spatial_intelligence}`
+            if (onlySelf.raw_scores.existential_intelligence !== 5 || onlySelf.raw_scores.naturalistic_intelligence !== 5) return `self-report only, expected 5, got ${onlySelf.raw_scores.existential_intelligence} / ${onlySelf.raw_scores.naturalistic_intelligence}`
+            if (onlySelf.data_quality.spatial_intelligence !== "partial") return "spatial without the reasoning test should be partial"
+            if (onlySelf.factor_coverage.spatial_intelligence !== 0.5) return `spatial coverage without the reasoning test should be 50%, got ${onlySelf.factor_coverage.spatial_intelligence}`
+            if (onlySelf.factor_coverage.musical_intelligence !== 1) return "musical has no test half: full coverage from the self-report"
             return null
         },
         expect: null,
@@ -2873,32 +2887,6 @@ const fixtures = [
             if (/sartMeta/.test(scorer)) problems.push("scoreProfile reads sartMeta — diagnostics have become an input")
 
             return problems.length > 0 ? problems.join("; ") : null
-        },
-        expect: null,
-    },
-    {
-        name: "P13 — a day-plan grade stored the way the grader stores it actually counts",
-        // THE BUG (backend review, 2026-09-24): llmScorer flattens P13 to `{ deep_work_first: 1, … }`
-        // and that is what gets stored, but perspectiveScoring reads `criteria.<name>` as true/false.
-        // Every real student's day plan was silently unscored; the fixtures missed it because they
-        // fed the scorer its own shape. This drives the STORED shape through scoreProfile.
-        run: () => {
-            const base = buildSubmission()
-            const midRange = { ...base, perspective: fillPerspective("C") }
-            const flat = (value) => ({ deep_work_first: value, urgency_order: value, messages_batched: value, fixed_respected: value, recovery: value })
-            const withP13 = (p13) => scoreProfile({ ...midRange, perspective: { ...midRange.perspective, open: { ...midRange.perspective.open, P13: p13 } } })
-
-            const allMet = withP13(flat(1))
-            const noneMet = withP13(flat(0))
-            const picture = (profile) => JSON.stringify([profile.raw_scores, profile.banks, profile.components])
-
-            if (picture(allMet) === picture(noneMet)) return "an all-1 and an all-0 P13 grade score identically — the stored shape is still ignored"
-            if (JSON.stringify(allMet).includes("only 0 of 5 criteria")) return "the scorer still reports the stored P13 as having no criteria"
-
-            // the scorer's own shape must keep working exactly as before
-            const nested = withP13({ criteria: { deep_work_first: true, urgency_order: true, messages_batched: true, fixed_respected: true, recovery: true } })
-            if (picture(nested) !== picture(allMet)) return "the nested { criteria } shape and the stored flat shape disagree"
-            return null
         },
         expect: null,
     },
@@ -3711,7 +3699,7 @@ const fixtures = [
                 const { disciplineById } = require("../../utils/studyPlaces")
                 const { examById } = require("../../utils/examCalendar")
                 const statistician = require("../../data/ALL-professions.json").professions.filter((profession) => profession.id === "sci-statistician")
-                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, professions: statistician })
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], force: true, disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, licenceLimit: 0, professions: statistician })
                 if (result.disciplines !== 1 || result.exams !== 1 || result.facts !== 1 || result.proposals !== 3) problems.push(`unexpected result ${JSON.stringify(result)}`)
                 const factCall = calls.find((call) => /^Career:/.test(call.user))
                 if (!factCall || !factCall.onlyDomains.includes("gov.in") || factCall.onlyDomains.some((domain) => /\.com$/.test(domain))) problems.push("study facts are not searched on official and academic domains only")
@@ -3910,7 +3898,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "STUDY SOURCES — the card says checked, published or estimate; an approved study-bot fact wins",
+        name: "STUDY SOURCES — the server knows checked, published or estimate; the student's card never shows it (owner, Round 13); an approved study-bot fact wins",
         run: () => {
             const { studentFacing } = require("../../Routers/professionsRouter")
             const { validateFactChange } = require("../../housekeeping/studyRefresh")
@@ -3927,8 +3915,10 @@ const fixtures = [
             })
             if (!layered.abroad || layered.abroad.need !== "helps" || layered.studyFacts.abroad.status !== "checked") problems.push("an approved abroad change did not reach the page")
             if (validateFactChange({ field: "abroad", proposed: { need: "helps", stage: "masters", why: "A real reason here" } }, { abroad: null }, []) !== null) problems.push("a change with no source was kept")
-            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
-            if (!/Our estimate/.test(card) || !/Checked against the official rules/.test(card)) problems.push("the card does not say where the master's and abroad lines come from")
+            // Round 13, owner: a label that says where a fact came from tells a student nothing they can use
+            const pages = ["ProfessionCard.js", "ComparePage.js", "ReportPage.js"].map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
+            const shown = ["Our estimate", "Checked against the official rules", "Based on published information", "Pay figures", "(estimate)", "our suggestion — check it yourself", "Checked {"].filter((label) => pages.includes(label))
+            if (shown.length > 0) problems.push(`the report still shows provenance labels: ${shown.join(", ")}`)
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -3982,9 +3972,9 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "MENTOR REVIEW — the sheet shows a mentor words, never a number, an id or anything admin-only",
+        name: "MENTOR REVIEW — the sheet shows a mentor every quality in words, never a number, an id or anything admin-only",
         run: () => {
-            const { buildSheet, topQualities, SECTIONS } = require("../../Routers/mentorReviewsRouter")
+            const { buildSheet, qualitiesFor, SECTIONS } = require("../../Routers/mentorReviewsRouter")
             const { FACTOR_LABELS } = require("../reportComposer")
             const taxonomy = require("../../data/ALL-professions.json")
             const problems = []
@@ -3992,8 +3982,10 @@ const fixtures = [
             taxonomy.professions.forEach((profession) => {
                 const sheet = buildSheet(profession, new Map(), empty)
                 if (SECTIONS.some((id) => !(id in sheet.sections))) problems.push(`${profession.id}: a section is missing`)
-                const qualities = topQualities(profession.id)
-                if (qualities.length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities, not 8`)
+                // Round 13, owner: every rated quality, the eight that matter most marked main
+                const qualities = qualitiesFor(profession.id)
+                const rated = Object.keys(require("../../data/baseline_rating.json").ratings.find((rating) => rating.id === profession.id).factors).length
+                if (qualities.length !== rated || qualities.filter((quality) => quality.main).length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities of ${rated}, ${qualities.filter((quality) => quality.main).length} main`)
                 qualities.forEach((quality) => {
                     if (quality.label !== FACTOR_LABELS[quality.factor]) problems.push(`${profession.id}: "${quality.label}" is not the shared label`)
                     if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
@@ -4009,20 +4001,21 @@ const fixtures = [
     {
         name: "MENTOR REVIEW — a review changes nothing by itself; answers are checked; accepted items reach Export patch",
         run: () => {
-            const { cleanReview, topQualities } = require("../../Routers/mentorReviewsRouter")
+            const { cleanReview, qualitiesFor } = require("../../Routers/mentorReviewsRouter")
             const problems = []
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
             // it may READ the override layers (to show what students see) but writes only its own rows
             const models = [...router.matchAll(/require\("\.\.\/model\/(\w+)"\)/g)].map((match) => match[1]).sort()
             if (models.join(",") !== "mentorReviewsModel,mentorsModel") problems.push(`the review router loads ${models.join(", ")}`)
             if (/writeFile|clearOverrides|clearStudyOverrides/.test(router)) problems.push("the review router can change data")
-            const qualities = topQualities("swc-software-developer")
+            const qualities = qualitiesFor("swc-software-developer")
             const ok = cleanReview({ sections: [{ section: "exams", verdict: "change", note: "GATE matters for PSU jobs", sourceUrl: "https://gate.iitk.ac.in" }], qualities: [{ factor: qualities[0].factor, direction: "higher" }] }, qualities)
             if (ok.error || ok.items.length !== 2) problems.push(`a good review was refused: ${ok.error}`)
             if (!cleanReview({ sections: [{ section: "exams", verdict: "change", note: "" }] }, qualities).error) problems.push("a change with no note was kept")
             if (!cleanReview({ sections: [{ section: "exams", verdict: "right", sourceUrl: "javascript:alert(1)" }] }, qualities).error) problems.push("a non-https link was kept")
             if (!cleanReview({ sections: [{ section: "salary_secret", verdict: "right" }] }, qualities).error) problems.push("an unknown section was kept")
-            if (!cleanReview({ qualities: [{ factor: "musical_intelligence", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
+            if (cleanReview({ qualities: [{ factor: qualities[qualities.length - 1].factor, direction: "higher" }] }, qualities).error) problems.push("a quality outside the main eight was refused")
+            if (!cleanReview({ qualities: [{ factor: "telepathy", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
             if (!cleanReview({}, qualities).error) problems.push("an empty review was kept")
             const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
             if (!/mentorNotes:/.test(updates) || !/decision === "accepted"/.test(updates)) problems.push("accepted mentor notes do not reach Export patch")
@@ -4170,6 +4163,158 @@ const fixtures = [
 
             const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
             if (!/cutoffs\.caveat/.test(card) || !/official result/.test(card)) problems.push("the card shows a rank without the caveat or the official page")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "REASONING CLOCK — a retake gets the other verbal form; every puzzle has a clock; late or three-in-a-row timeouts are handled",
+        run: () => {
+            const bank = require("../../assessment/reasoningBank")
+            const score = require("../../scoring/reasoningInHouse")
+            const problems = []
+            // an item is its question AND its options — "Which is the odd one out?" is a stem both forms use
+            const key = (item) => `${item.prompt}|${[...item.options].sort().join("/")}`
+            const prompts = (form) => new Set(bank.VERBAL_FORMS[form].flat().map(key))
+            const a = prompts("A")
+            const b = prompts("B")
+            if (a.size !== 12 || b.size !== 12) problems.push("each verbal form must have twelve different items")
+            if ([...a].some((prompt) => b.has(prompt))) problems.push("forms A and B share an item")
+            ;["A", "B"].forEach((form) => bank.VERBAL_FORMS[form].flat().forEach((item) => {
+                if (!(item.answer >= 0 && item.answer < item.options.length) || new Set(item.options).size !== item.options.length) problems.push(`form ${form}: a broken item "${item.prompt}"`)
+            }))
+            for (let seed = 1; seed <= 50; seed += 1) {
+                for (let index = 0; index < bank.ITEM_COUNT; index += 1) {
+                    const item = bank.publicItem(bank.itemFor(seed * 7919, index, "B"))
+                    if (item.timeLimitS !== bank.TIME_LIMIT_S[item.type]) problems.push(`no clock on ${item.id}`)
+                    if ("answer" in item) problems.push("an answer reached the browser")
+                    if (item.type === "verbal" && !b.has(key(item))) problems.push("form B dealt a form A item")
+                }
+            }
+            if (bank.TIME_LIMIT_S.matrix !== 90 || bank.TIME_LIMIT_S.verbal !== 60) problems.push("time limits drifted from the owner's 60/90")
+
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/history\.reasoning/.test(router) || !/"B" : "A"/.test(router)) problems.push("a retake is not dealt form B")
+            if (!/reasoningTimedOut\(item, pending\)/.test(router) || !/correct: !timedOut/.test(router)) problems.push("a late answer can still count")
+
+            const types = ["matrix", "series", "verbal", "rotation"]
+            const run = (timedOutAt) => Array.from({ length: 16 }, (_, index) => ({ type: types[index % 4], correct: !timedOutAt.includes(index), timedOut: timedOutAt.includes(index) }))
+            if (!score({ responses: run([3, 4, 5]), completedAt: new Date() }).flags.reasoning_review) problems.push("three timeouts in a row were not flagged")
+            if (score({ responses: run([1, 5, 9]), completedAt: new Date() }).flags.reasoning_review) problems.push("three scattered timeouts were flagged")
+            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "SET ASIDE — a disability named in the interest form sets the tests it affects aside; finished tests and 'try anyway' are kept",
+        run: () => {
+            const server = require("../../assessment/accommodations")
+            const problems = []
+            // the page's copy must say the same thing as the server's
+            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/accommodations.js"), "utf8")
+            Object.entries(server.AFFECTS).forEach(([need, modules]) => {
+                const line = page.match(new RegExp(`${need}: \\[([^\\]]*)\\]`))
+                const listed = line ? [...line[1].matchAll(/"(\w+)"/g)].map((match) => match[1]) : null
+                if (!listed || listed.join() !== modules.join()) problems.push(`the page and the server disagree on ${need}`)
+            })
+            const yes = { disability: "Yes", disabilityNeeds: ["reading"], disabilityShareWithMentor: true }
+            const fresh = server.accommodationsFromInterest(yes, {})
+            if (!fresh || !fresh.skipped.reasoning || !fresh.skipped.wordRecall || !fresh.skipped.storyRecall || fresh.source !== "interest_form" || !fresh.shareWithMentor) problems.push(`reading did not set its tests aside: ${JSON.stringify(fresh)}`)
+            const finished = server.accommodationsFromInterest(yes, { reasoning: { completedAt: new Date() } })
+            if (finished.skipped.reasoning) problems.push("a finished test was set aside")
+            const tryAnyway = server.accommodationsFromInterest(yes, { accommodations: { ...fresh, skipped: { ...fresh.skipped, wordRecall: false } } })
+            if (tryAnyway.skipped.wordRecall !== false) problems.push("'try anyway' was lost on a re-save")
+            if (server.accommodationsFromInterest({ disability: "No" }, { accommodations: fresh }) !== null) problems.push("answering No did not clear the interest-form block")
+            const older = { needs: ["motor"], declaredAt: "2026-09-30", skipped: { sartRaw: true } }
+            if (server.accommodationsFromInterest(yes, { accommodations: older }) !== undefined) problems.push("a block declared on the assessment page was overwritten")
+            if (server.accommodationsFromInterest({ disability: "Yes", disabilityNeeds: ["telepathy"] }, {}) !== undefined) problems.push("an unknown difficulty was accepted")
+            const intro = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentIntro.js"), "utf8")
+            if (/AccommodationsBox|Skip this — mark it not measured/.test(intro)) problems.push("the old 'Before you start' box or the skip button is still on the page")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY BOT SEASONS — exams just before their window, colleges Sep–Oct, facts quarterly, cut-offs Aug–Oct; a quiet month makes no call",
+        run: async () => {
+            const { runStudyRefresh, examIsDue, windowMonth } = require("../../housekeeping/studyRefresh")
+            const problems = []
+            if (windowMonth("November to December") !== 10 || windowMonth("usually in Jan") !== 0 || windowMonth("") !== null) problems.push("window months misread")
+            const january = new Date("2027-01-01T06:00:00+05:30")
+            if (!examIsDue({ usual_application_window: "February to March" }, january)) problems.push("a February window was not due in January")
+            if (examIsDue({ usual_application_window: "November" }, january)) problems.push("a November window was due in January")
+            if (!examIsDue({ usual_application_window: null }, january) || examIsDue({ usual_application_window: null }, new Date("2027-03-01"))) problems.push("draft rows are not checked in January only")
+            const plan = []
+            const research = { askJson: async () => { plan.push("asked"); return { json: { changes: [] }, sources: [] } } }
+            const quiet = await runStudyRefresh({ research, exams: [{ id: "x", usual_application_window: "November" }], disciplines: [], professions: [], now: new Date("2027-05-01") })
+            if (!quiet.nothing || plan.length > 0) problems.push(`a quiet month made a call: ${JSON.stringify(quiet)}`)
+            const source = fs.readFileSync(path.join(__dirname, "../../housekeeping/studyRefresh.js"), "utf8")
+            if (!/COLLEGE_MONTHS = \[8, 9\]/.test(source) || !/FACT_MONTHS = \[0, 3, 6, 9\]/.test(source)) problems.push("the seasons drifted")
+            const runNow = fs.readFileSync(path.join(__dirname, "../../Routers/followUpsRouter.js"), "utf8")
+            if (!/study_refresh" \? \{ force: true \}/.test(runNow)) problems.push("Run now does not ignore the seasons")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "GOING ABROAD — every career says how it travels; a licence row is shown only with the licensing body's own page; never ranked, never pay",
+        run: () => {
+            const work = require("../../data/abroad_work.json")
+            const { goingAbroadFor } = require("../../Routers/professionsRouter")
+            const { validateLicenceChange } = require("../../housekeeping/studyRefresh")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            if (work.countries.map((country) => country.code).join() !== "CA,US,UK,AU,DE") problems.push("the five countries drifted from the MEA top five")
+            if (!work.countries_source || !/mea\.gov\.in/.test(work.countries_source.url)) problems.push("the top-five claim has no official source")
+            professions.forEach((profession) => {
+                const row = work.careers[profession.id]
+                if (!row || !["travels_well", "requalify", "india_based"].includes(row.portability) || !row.note) problems.push(`${profession.id}: no portability`)
+            })
+            const official = (url) => { const host = new URL(url).hostname.replace(/^www\./, ""); return work.official_domains.some((domain) => host === domain || host.endsWith(`.${domain}`)) }
+            Object.entries(work.licences).forEach(([careerId, byCountry]) => {
+                if (work.careers[careerId].portability !== "requalify") problems.push(`${careerId}: licence rows on a career that is not 'requalify'`)
+                Object.entries(byCountry).forEach(([code, row]) => {
+                    if (row.status === "supported" && !(row.url && row.url.startsWith("https://") && official(row.url))) problems.push(`${careerId}/${code}: a shown row without an official page`)
+                    if (/₹|\$|£|€|salary|lakh|per year/i.test(`${row.steps} ${row.exam}`)) problems.push(`${careerId}/${code}: pay talk in a licence row`)
+                })
+            })
+            work.countries.forEach((country) => { if (!official(country.recognition.url)) problems.push(`${country.code}: recognition portal not official`) })
+            const nurse = goingAbroadFor("hlt-nurse")
+            if (nurse.portability !== "requalify" || nurse.countries.filter((country) => country.licence).length !== 5) problems.push("the nurse rows are not served")
+            const psych = goingAbroadFor("soc-clinical-psychologist")
+            if (psych.countries.find((country) => country.code === "CA").licence !== null) problems.push("a draft row was served")
+            const good = { field: "licence", proposed: { body: "NMC", exam: "CBT + OSCE", steps: "English test, CBT, OSCE, registration", url: "https://www.nmc.org.uk/registration" } }
+            if (!validateLicenceChange(good, {}, [{ url: "x" }], ["nmc.org.uk"])) problems.push("a good licence change was dropped")
+            if (validateLicenceChange({ ...good, proposed: { ...good.proposed, url: "https://some-agency.com/nmc" } }, {}, [{ url: "x" }], ["nmc.org.uk"])) problems.push("an agency page was accepted")
+            fs.readdirSync(path.join(__dirname, "../../matching")).filter((file) => file.endsWith(".js")).forEach((file) => {
+                if (/abroad_work/.test(fs.readFileSync(path.join(__dirname, "../../matching", file), "utf8"))) problems.push(`matching/${file} reads abroad_work.json`)
+            })
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            if (!/abroadMinded && detail\.goingAbroad/.test(card)) problems.push("the card shows 'Going abroad' to every student")
+            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "VOICE — every rubric judges content, not language, script or dictation slips; the mic sits on every written answer",
+        run: () => {
+            const problems = []
+            const scorer = fs.readFileSync(path.join(__dirname, "../../scoring/llmScorer.js"), "utf8")
+            if (!/Devanagari/.test(scorer) || !/dictated by voice/.test(scorer)) problems.push("the grading system prompt does not mention Devanagari or voice")
+            const { loadStoryRubric } = require("../gradeOpenItems")
+            const story = require("../../data/stories.json").stories[0]
+            if (!/Devanagari/.test(JSON.stringify(loadStoryRubric({ storyId: story.id })))) problems.push("the story rubric does not mention Devanagari or voice")
+            const pages = {
+                "Assessment/Perspective.js": 1, "Assessment/StoryRecall.js": 1, "Interest/ChipListInput.js": 1,
+                "Interest/AspirationalProfessions.js": 1, "Interest/BackgroundInfo.js": 1,
+            }
+            Object.keys(pages).forEach((file) => {
+                const source = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages", file), "utf8")
+                if (!/<VoiceInput/.test(source)) problems.push(`${file} has no voice input`)
+                if (/optional/i.test(source.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "")) && file.startsWith("Assessment")) problems.push(`${file} says "optional"`)
+            })
+            const privacy = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Privacy.js"), "utf8")
+            if (!/voice typing/i.test(privacy)) problems.push("the privacy policy does not mention voice typing")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

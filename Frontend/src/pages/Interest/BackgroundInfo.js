@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
+import VoiceInput, { appendSpoken } from "../VoiceInput"
 import InterestProgressBar from "./InterestProgressBar"
+import { NEEDS } from "../Assessment/accommodations"
 
 const PARENT_EDUCATION_OPTIONS = [
     { value: "No formal education", label: "No formal education" },
@@ -16,6 +18,21 @@ const PARENT_EDUCATION_OPTIONS = [
 const FINANCIAL_OPTIONS = ["Financially struggling", "Lower middle class", "Middle class", "Upper middle class", "Affluent"]
 
 const YES_NO_OPTIONS = ["Yes", "No", "Prefer not to say"]
+
+// Round 13: the five countries Indian students go to most (MEA, 2025), and anywhere else
+const ABROAD_HOPES = [
+    { value: "yes", label: "Yes" },
+    { value: "maybe", label: "Maybe" },
+    { value: "no", label: "No" },
+]
+const ABROAD_COUNTRIES = [
+    { value: "CA", label: "Canada" },
+    { value: "US", label: "USA" },
+    { value: "UK", label: "UK" },
+    { value: "AU", label: "Australia" },
+    { value: "DE", label: "Germany" },
+    { value: "other", label: "Somewhere else" },
+]
 
 const COMPETITION_OPTIONS = [
     { value: "thrive", label: "I thrive in competitive environments and enjoy standing out through direct competition" },
@@ -59,8 +76,21 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
             ...prev,
             [name]: value,
             ...(SPECIFY_FOR[name] && value !== "Yes" ? { [SPECIFY_FOR[name]]: "" } : {}),
+            // and the difficulties it named (Round 13) — they set tests aside on the assessment page
+            ...(name === "disability" && value !== "Yes" ? { disabilityNeeds: [], disabilityShareWithMentor: false } : {}),
+            ...(name === "abroadHope" && value === "no" ? { abroadCountries: [] } : {}),
         }))
     }
+
+    const toggleCountry = (code) => setLocalFormData((prev) => {
+        const countries = prev.abroadCountries || []
+        return { ...prev, abroadCountries: countries.includes(code) ? countries.filter((value) => value !== code) : [...countries, code] }
+    })
+
+    const toggleNeed = (id) => setLocalFormData((prev) => {
+        const needs = prev.disabilityNeeds || []
+        return { ...prev, disabilityNeeds: needs.includes(id) ? needs.filter((need) => need !== id) : [...needs, id] }
+    })
 
     // repeatable lists (supportNetwork, culturalIdentity)
     const handleListChange = (group, index, value) => {
@@ -247,6 +277,29 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
 
                 <section className="if-card">
                     <h3 className="if-card-title">You</h3>
+
+                    {/* Round 13 (owner): many students hope to go abroad. The report's "Going abroad"
+                        parts — how each career travels, and what each country asks first — show only
+                        to those who say maybe or yes. Never used to rank careers. */}
+                    <div>
+                        <label><strong>Do you hope to study or work outside India one day?</strong></label>
+                        {renderRadioGroup("abroadHope", ABROAD_HOPES)}
+                        {(localFormData.abroadHope === "yes" || localFormData.abroadHope === "maybe") && (
+                            <>
+                                <p className="if-subq">Where? Tick any.</p>
+                                <ul className="needs-list">
+                                    {ABROAD_COUNTRIES.map((country) => (
+                                        <li key={country.value}>
+                                            <label className="interest-item">
+                                                <input type="checkbox" checked={(localFormData.abroadCountries || []).includes(country.value)} onChange={() => toggleCountry(country.value)} />
+                                                <span>{country.label}</span>
+                                            </label>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                    </div>
                     {/* Competition Preference */}
                     <div>
                         <label><strong>How You Approach Success</strong></label>
@@ -256,6 +309,7 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
                             <div>
                                 <label>Please describe what actions you take for this:</label>
                                 <br />
+                                <VoiceInput onText={(spoken) => setLocalFormData((prev) => ({ ...prev, competitionActions: appendSpoken(prev.competitionActions, spoken) }))} />
                                 <textarea
                                     name="competitionActions"
                                     value={localFormData.competitionActions}
@@ -299,6 +353,32 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
                                     onChange={handleInputChange}
                                     placeholder="Only if you're comfortable"
                                 />
+                                {/* Round 13: what it can make harder. The assessment sets the tests it
+                                    affects aside — marked not measured, never counted as low. */}
+                                <p className="if-subq">Which of these can it make harder? Tick any that apply.</p>
+                                <ul className="needs-list">
+                                    {NEEDS.map((need) => (
+                                        <li key={need.id}>
+                                            <label className="interest-item">
+                                                <input type="checkbox" checked={(localFormData.disabilityNeeds || []).includes(need.id)} onChange={() => toggleNeed(need.id)} />
+                                                <span>{need.label}</span>
+                                            </label>
+                                        </li>
+                                    ))}
+                                </ul>
+                                {(localFormData.disabilityNeeds || []).length > 0 && (
+                                    <>
+                                        <p className="report-small">The tests these affect will be set aside for you in the assessment — marked not measured, never counted as low. You can still choose to take one.</p>
+                                        <label className="interest-item">
+                                            <input
+                                                type="checkbox"
+                                                checked={Boolean(localFormData.disabilityShareWithMentor)}
+                                                onChange={() => setLocalFormData((prev) => ({ ...prev, disabilityShareWithMentor: !prev.disabilityShareWithMentor }))}
+                                            />
+                                            <span>My mentor can know about this, so they can help (only if I join the mentor plan)</span>
+                                        </label>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

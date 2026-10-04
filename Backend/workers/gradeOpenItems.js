@@ -30,7 +30,8 @@ const DOCS = path.join(__dirname, "..", "..", "docs", "5_finalized", "algorithms
 
 // Which items exist, and where their rubric lives. The four perspective items are in
 // llm_scoring_prompts.md; the story's free-recall rubric is in the story bank.
-const OPEN_ITEMS = ["P7", "P13", "P22", "P33"]
+// P13 (the written day plan) retired in Round 13 — it repeated the planning multiple choice
+const OPEN_ITEMS = ["P7", "P22", "P33"]
 
 let rubricCache = null
 

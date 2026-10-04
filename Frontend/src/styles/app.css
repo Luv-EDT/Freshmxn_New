@@ -381,6 +381,147 @@ button.filter-option.is-on {
     margin-top: var(--space-1);
 }
 
+/* the deck (Round 13): one big card for the section in hand, a strip of every section below */
+.app-header ~ .assess-page {
+    max-width: 800px;
+}
+
+.assess-page p {
+    max-width: 65ch;
+}
+
+.assess-page h1 {
+    margin-top: var(--space-5);
+}
+
+.assess-pending {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    width: 100%;
+    text-align: left;
+    margin: 0 0 var(--space-4);
+    padding: var(--space-4);
+    border: 2px solid var(--pink);
+    border-radius: var(--radius-lg);
+    background: var(--pink-tint);
+    color: var(--navy);
+    font-size: 1.05rem;
+    cursor: pointer;
+}
+
+.assess-meta {
+    margin-bottom: 0;
+}
+
+.deck-card {
+    position: relative;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    margin: var(--space-4) 0;
+}
+
+.deck-card.is-done {
+    background: var(--surface);
+    border-color: var(--teal-tint);
+}
+
+.deck-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+}
+
+.deck-count {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.deck-card .module-title {
+    margin: 0;
+    font-size: var(--text-h3);
+}
+
+.deck-minutes,
+.deck-note {
+    color: var(--navy-soft);
+}
+
+.story-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-4);
+    display: grid;
+    gap: var(--space-2);
+}
+
+.story-steps li {
+    display: flex;
+    gap: var(--space-2);
+    line-height: 1.5;
+}
+
+.deck-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-4);
+}
+
+.app-header ~ * button.deck-arrow {
+    width: 44px;
+    padding: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.deck-strip {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-5);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-2);
+}
+
+.deck-strip li {
+    margin: 0;
+    display: flex;
+}
+
+.app-header ~ * button.deck-tile {
+    flex: 1;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.92rem;
+    line-height: 1.3;
+}
+
+.app-header ~ * button.deck-tile.is-current {
+    border: 2px solid var(--teal);
+    color: var(--navy);
+}
+
+/* a 150px tile at 360px is narrower than "Questions open tomorrow" on one line */
+.deck-tile .status-chip {
+    white-space: normal;
+}
+
+.assess-submit {
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-4);
+}
+
 /* ── question screens (LikertModule and the other modules) ────────────────────────────────────── */
 
 .question-card {
@@ -390,6 +531,12 @@ button.filter-option.is-on {
     padding: var(--space-4);
     margin-bottom: var(--space-4);
     box-shadow: var(--shadow-sm);
+}
+
+/* a question reads best in a column, not across a laptop screen */
+.question-card,
+.module-nav {
+    max-width: 800px;
 }
 
 .question-card.is-answered {
@@ -433,6 +580,78 @@ label.choice.is-checked,
     border-color: var(--teal);
     background: var(--teal-tint);
     font-weight: 700;
+}
+
+/* the one-row agree scale (Round 13 lean pass): numbered tiles on a phone, words on a laptop */
+.choices.is-scale {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.choices.is-scale label.choice {
+    margin: 0;
+    position: relative;
+    justify-content: center;
+    text-align: center;
+    padding: 8px 4px;
+    min-height: 48px;
+}
+
+.choices.is-scale label.choice input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.choices.is-scale label.choice:has(input:focus-visible) {
+    outline: 3px solid var(--teal);
+    outline-offset: 2px;
+}
+
+.choices.is-scale label.choice.is-checked {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #ffffff;
+}
+
+.scale-num {
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.scale-label {
+    display: none;
+    font-size: 0.85rem;
+    line-height: 1.25;
+}
+
+.scale-ends {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.scale-ends strong {
+    color: var(--teal-dark);
+    font-size: 0.85rem;
+}
+
+.scale-ends span:last-child {
+    text-align: right;
+}
+
+@media (min-width: 720px) {
+    .scale-num,
+    .scale-ends {
+        display: none;
+    }
+
+    .scale-label {
+        display: block;
+    }
 }
 
 input[type="radio"],
@@ -682,6 +901,23 @@ button.sort-primary.is-on {
     margin: var(--space-4) 0;
 }
 
+/* Beside the header the report's column rule (top of this file) sets width and gutters, which would
+   override the banner's own padding, and a label or <hr> gets no column at all — so all three take
+   the column explicitly (Round 13 lean pass). */
+.report-page > .app-header ~ div.report-banner,
+.report-page > .app-header ~ .blue-collar-toggle,
+.report-page > .app-header ~ hr {
+    box-sizing: border-box;
+    width: calc(100% - 32px);
+    max-width: 808px;              /* the column is 840 wide with 16px gutters */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.report-page > .app-header ~ div.report-banner {
+    padding: var(--space-3) var(--space-4);
+}
+
 .report-banner p {
     margin: 0 0 var(--space-2);
 }
@@ -899,8 +1135,33 @@ button.link-button:hover:not(:disabled) {
     color: var(--teal);
 }
 
-.sort-filter {
-    margin-top: var(--space-4);
+/* the one filter, in plain sight beside "Sort your list" (Round 13) */
+.blue-collar-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    max-width: 720px;
+    margin: var(--space-2) 0 var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.blue-collar-toggle input {
+    margin-top: 4px;            /* size and colour come from the global checkbox rule */
+}
+
+.blue-collar-toggle.is-on {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.blue-collar-toggle .sort-note {
+    font-weight: 400;
 }
 
 /* compare page */
@@ -956,9 +1217,7 @@ button.link-button:hover:not(:disabled) {
     max-width: 160px;
 }
 
-/* Round 10: a career whose picture is incomplete says how much was measured; the AI sub-sort shows
-   its number. Both small and quiet — the name stays the thing you read. */
-.pc-partial,
+/* the AI sub-sort shows its number beside the name, small and quiet */
 .pc-ai {
     display: inline-block;
     margin-left: var(--space-2);
@@ -967,24 +1226,19 @@ button.link-button:hover:not(:disabled) {
     font-size: 0.72rem;
     font-weight: 700;
     vertical-align: middle;
-}
-
-.pc-partial {
-    background: var(--pink-tint);
-    color: var(--navy);
-}
-
-.pc-ai {
     background: var(--teal-tint);
     color: var(--teal-dark);
 }
 
-.is-top-1 .pc-partial,
 .is-top-1 .pc-ai,
-.is-top-2 .pc-partial,
 .is-top-2 .pc-ai {
     background: rgba(255, 255, 255, 0.9);
     color: var(--navy);
+}
+
+/* the profile's "Partial · N%" beside a factor's level */
+.score-partial {
+    margin-left: var(--space-2);
 }
 
 /* ── assessment page: research box, the "?" per section, coverage, problems (Round 10) ───────── */
@@ -1070,7 +1324,9 @@ button.link-button:hover:not(:disabled) {
 }
 
 .coverage-line {
-    margin: var(--space-4) 0 var(--space-2);
+    margin: var(--space-2) 0 var(--space-2);
+    font-size: 0.92rem;
+    color: var(--navy-soft);
 }
 
 .coverage-bar {
@@ -1142,6 +1398,44 @@ button.link-button:hover:not(:disabled) {
     display: block;
     height: 100%;
     background: var(--teal);
+}
+
+/* each puzzle's clock (Round 13): teal while there is time, amber in the last ten seconds */
+.reasoning-clock {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.reasoning-clock-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--teal-tint);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.reasoning-clock-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+    transition: width 1s linear;
+}
+
+.reasoning-clock-text {
+    font-weight: 700;
+    color: var(--teal-dark);
+    min-width: 4.5em;
+    text-align: right;
+}
+
+.reasoning-clock.is-low .reasoning-clock-bar span {
+    background: var(--amber);
+}
+
+.reasoning-clock.is-low .reasoning-clock-text {
+    color: #a36200;
 }
 
 .reasoning-prompt {
@@ -1415,7 +1709,6 @@ button.link-button:hover:not(:disabled) {
     margin-top: var(--space-2);
 }
 
-.if-steps summary,
 .if-examples summary {
     cursor: pointer;
     color: var(--teal-dark);
@@ -1434,10 +1727,20 @@ button.link-button:hover:not(:disabled) {
     gap: var(--space-2);
 }
 
+.if-steps ol li {
+    display: flex;
+    margin: 0;              /* the global "li + li" spacing pushed every pill but the first down */
+}
+
+/* every stage pill the same height and baseline, whatever its state (Round 13: "1. Start" sat high) */
 .app-header ~ * button.if-step-link {
     margin: 0;
-    padding: 8px 14px;
+    padding: 0 14px;
+    height: 40px;
     min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
     border-radius: var(--radius-pill);
     border: 1px solid var(--line);
     background: var(--surface);
@@ -1445,11 +1748,23 @@ button.link-button:hover:not(:disabled) {
     font-weight: 400;
 }
 
+.app-header ~ * button.if-step-link.is-done {
+    background: var(--teal-tint);
+    border-color: var(--teal-tint);
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+.app-header ~ * button.if-step-link.is-closed {
+    color: var(--muted);
+    border-style: dashed;
+}
+
 .app-header ~ * button.if-step-link.is-current {
     background: var(--teal);
     border-color: var(--teal);
     color: #ffffff;
-    opacity: 1;
+    font-weight: 700;
 }
 
 .if-intro,
@@ -1530,9 +1845,33 @@ button.link-button:hover:not(:disabled) {
     padding-bottom: var(--space-2);
 }
 
+/* "Stuck?" — sticks to the bottom of the screen while the section scrolls past */
+.if-reference {
+    position: sticky;
+    bottom: var(--space-2);
+    z-index: 5;
+    max-width: 720px;
+    margin: 0 0 var(--space-4);
+}
+
+.if-reference .if-chip-summary {
+    box-shadow: var(--shadow);
+}
+
+.if-reference[open] {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-3);
+}
+
 .if-reference ul {
     columns: 2 180px;
     padding-left: 1.1em;
+    max-height: 45vh;
+    overflow-y: auto;
+    color: var(--navy-soft);
 }
 
 .if-small-label {
@@ -1897,4 +2236,51 @@ button.link-button:hover:not(:disabled) {
     .mentor-band .card {
         grid-template-columns: 1fr auto;
     }
+}
+
+/* a follow-up question inside an interest-form answer (Round 13) */
+.if-subq {
+    font-weight: 700;
+    margin: var(--space-3) 0 var(--space-2);
+}
+
+/* tests set aside because of what the student told us in the interest form (Round 13) */
+.set-aside-box {
+    background: var(--teal-tint);
+    border-left: 4px solid var(--teal);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+}
+
+.module-row.is-set-aside .module-title-row {
+    filter: blur(1px);
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+}
+
+.set-aside-note {
+    color: var(--muted);
+}
+
+.link-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    min-height: 44px;
+    color: var(--teal-dark);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* "Show the other N careers" under the top five (Round 13) */
+.report-page > .app-header ~ button.show-rest,
+button.show-rest {
+    display: block;
+    width: calc(100% - 32px);
+    max-width: 808px;
+    margin: var(--space-3) auto var(--space-5);
 }

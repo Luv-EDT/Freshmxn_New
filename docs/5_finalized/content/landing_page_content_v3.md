@@ -74,7 +74,8 @@ Your interests, the problems you've faced, what you believe about yourself. Care
 An X-ray of how your brain works — minus the radiation. Personality, thinking style, strengths.
 
 **03 · Find out where you fit, and what lasts.**
-223 Indian careers that are in demand, pay well, and won't get eaten by AI. Ranked for *you*, not for
+1,000+ Indian careers and job roles that are in demand, pay well, and won't get eaten by AI — kept up to
+date with AI-assisted checks. Ranked for *you*, not for
 "log kya kahenge."
 
 **04 · Meet someone who's been there. (Mentor tier)**

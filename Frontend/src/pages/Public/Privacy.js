@@ -218,6 +218,19 @@ const SECTIONS = [
                     name, email, phone and those careers with that partner only after you tick the box agreeing to it
                     and press "Connect me". You can ask us to withdraw this at any time.
                 </p>
+                <p>
+                    <strong>Your plans to go abroad.</strong> If you tell us in the interest form that you hope to
+                    study or work outside India, and where, we use that only to show you how each of your careers
+                    travels and what those countries ask first, and to offer the study-abroad partner above. It is
+                    never used to rank your careers, and it is shared with no one unless you ask to be connected.
+                </p>
+                <p>
+                    <strong>Voice typing.</strong> If you press the microphone beside an answer, your browser's own
+                    speech service (for example Google's, in Chrome) turns what you say into text. We receive only
+                    that text, which you can read and edit before it is saved — never any audio. If you write or
+                    speak in Hindi or Hinglish, our AI processor (Anthropic) may put an activity into English so it
+                    can be matched to careers.
+                </p>
             </>
         ),
     },

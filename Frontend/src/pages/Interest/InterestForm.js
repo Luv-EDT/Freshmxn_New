@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
-import { message } from "antd"
+import { message, Modal } from "antd"
 import { saveInterest, getMySubmission } from "../../apiCall/submissionsApi"
 import { setUser } from "../../store/userSlice"
 import Navbar from "../Navbar"
@@ -43,11 +43,20 @@ function InterestForm() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [pendingAction, setPendingAction] = useState(null)   // a queued save or section change, see goToStep
     const sectionDraftTimer = useRef(null)                     // debounce for in-progress typing, see reportSectionDraft
+    const sectionRef = useRef(null)                            // the open section, for its form's required items
+    // Round 13: where the student is and how far they have got. `reachedStep` is the furthest stage
+    // they arrived at with everything before it complete; a tab beyond it, or Finish, is refused
+    // with a dialog. Saved with the answers, so "Continue where you left off" works on any device.
+    const [progress, setProgress] = useState({ lastStep: null, reachedStep: null })
+    const [blockedAt, setBlockedAt] = useState(null)           // the stage a refused jump points to
+    const lastBlocked = useRef(null)
 
     const steps = getVisibleSteps(user)
     const currentStepIndex = steps.findIndex((s) => s.key === step)
     const storageKey = user ? `freshmxnInterestForm_${user._id}` : null   // per student, so a shared computer never mixes answers
     const hasSubmitted = user?.progress?.interestForm === "done"
+    const savedReached = steps.findIndex((s) => s.key === progress.reachedStep)
+    const reachedIndex = hasSubmitted ? steps.length - 1 : Math.max(savedReached, 0)
 
     // "start" is where /interest lands. A student who already submitted is asked whether they
     // meant to edit, instead of being dropped back into section 1.
@@ -93,12 +102,18 @@ function InterestForm() {
         // the server wins unless this browser holds something newer (e.g. a crash mid-section)
         const preferDraft = draft && (!serverSavedAt || (draftSavedAt && new Date(draftSavedAt) > new Date(serverSavedAt)))
 
+        // A form saved before Round 13 has no record of how far it got. Rather than send that student
+        // back to the first stage, it keeps the freedom it had: every stage up to Aspirations is open.
+        const legacy = { lastStep: null, reachedStep: "aspirations" }
+
         if (preferDraft) {
+            setProgress(draft.progress || legacy)
             setFormState(normalizeFormState(draft.formState))
             return
         }
 
         if (submission?.interest && Object.keys(submission.interest).length > 0) {
+            setProgress(submission.interest.formProgress || legacy)
             setFormState(fromSubmissionInterest(submission.interest))
             return
         }
@@ -110,15 +125,15 @@ function InterestForm() {
     useEffect(() => {
         if (!formState || !storageKey) return
 
-        writeLocalDraft(formState)
+        writeLocalDraft(formState, progress)
 
         const derived = extractInterestData(formState, getVisibleLifeStages(user))
         setExtractedActivities(derived.extractedActivities)
         setExtractedProblems(derived.extractedProblems)
     }, [formState])
 
-    const writeLocalDraft = (state) => {
-        localStorage.setItem(storageKey, JSON.stringify({ savedAt: new Date().toISOString(), formState: state }))
+    const writeLocalDraft = (state, at = progress) => {
+        localStorage.setItem(storageKey, JSON.stringify({ savedAt: new Date().toISOString(), formState: state, progress: at }))
     }
 
     // Each section keeps its own local copy while it is being filled in and only hands it up when
@@ -142,16 +157,25 @@ function InterestForm() {
         }
     }, [formState, currentStepIndex, isLandingStep])
 
-    // a student who hasn't submitted doesn't need to be asked — send them straight in
+    // a student who hasn't started doesn't need to be asked — send them straight in
+    const resumeIndex = steps.findIndex((s) => s.key === progress.lastStep)
+    const canResume = !hasSubmitted && resumeIndex > 0
     useEffect(() => {
-        if (formState && isLandingStep && !hasSubmitted && steps.length > 0) {
+        if (formState && isLandingStep && !hasSubmitted && !canResume && steps.length > 0) {
             navigate(`/interest/${steps[0].key}`, { replace: true })
         }
-    }, [formState, isLandingStep, hasSubmitted])
+    }, [formState, isLandingStep, hasSubmitted, canResume])
+
+    // a typed or bookmarked URL can't skip stages either
+    useEffect(() => {
+        if (formState && currentStepIndex > reachedIndex) {
+            navigate(`/interest/${steps[reachedIndex].key}`, { replace: true })
+        }
+    }, [formState, currentStepIndex, reachedIndex])
 
     // ─── Saving ──────────────────────────────────────────────────────────────
-    const saveToServer = async (isFinishing) => {
-        const interest = buildSubmissionInterest(formState, extractedActivities, extractedProblems, user)
+    const saveToServer = async (isFinishing, at) => {
+        const interest = { ...buildSubmissionInterest(formState, extractedActivities, extractedProblems, user), formProgress: at }
 
         // going back to review an already-finished form must not un-finish it
         const response = await saveInterest({ interest, isComplete: isFinishing || hasSubmitted })
@@ -160,6 +184,7 @@ function InterestForm() {
         localStorage.setItem(storageKey, JSON.stringify({
             savedAt: response.data.data.lastSavedAt || new Date().toISOString(),
             formState,
+            progress: at,
         }))
 
         return response
@@ -171,12 +196,31 @@ function InterestForm() {
     // student just typed, so the request is queued and an effect performs it on the next render,
     // once formState actually holds them. A fresh object each time means asking twice for the same
     // thing still fires.
-    const goToStep = (index) => {
+    //
+    // Moving forward needs the open section's required items (its form, plus the section's own check
+    // passed in as sectionOk) and every stage before the target complete. Going back is always
+    // allowed — but leaving a section with a required item empty pulls `reachedStep` back to it.
+    const sectionForm = () => sectionRef.current?.querySelector("form")
+    const sectionComplete = () => !sectionForm() || sectionForm().checkValidity()
+
+    const goToStep = (index, { sectionOk = true } = {}) => {
         if (index < 0 || index >= steps.length) return
-        setPendingAction({ kind: "navigate", index })
+        const complete = sectionOk && sectionComplete()
+
+        if (index > currentStepIndex) {
+            const open = Math.max(reachedIndex, currentStepIndex + 1)
+            if (!complete) {
+                sectionForm()?.reportValidity()
+                return setBlockedAt(currentStepIndex)
+            }
+            if (index > open) return setBlockedAt(open)
+        }
+
+        const reached = index > currentStepIndex ? Math.max(reachedIndex, index) : complete ? reachedIndex : Math.min(reachedIndex, currentStepIndex)
+        setPendingAction({ kind: "navigate", index, at: { lastStep: steps[index].key, reachedStep: steps[reached].key } })
     }
 
-    const requestSave = () => setPendingAction({ kind: "save" })
+    const requestSave = () => setPendingAction({ kind: "save", at: { lastStep: step, reachedStep: steps[reachedIndex].key } })
 
     useEffect(() => {
         if (!pendingAction || !formState) return
@@ -196,7 +240,8 @@ function InterestForm() {
 
             if (isFinishing) setIsSubmitting(true)
 
-            await saveToServer(isFinishing)
+            await saveToServer(isFinishing, action.at)
+            setProgress(action.at)
 
             if (isFinishing) {
                 dispatch(setUser({
@@ -222,7 +267,7 @@ function InterestForm() {
     }
 
     const handleNextSection = () => goToStep(currentStepIndex + 1)
-    const handlePreviousSection = () => goToStep(currentStepIndex - 1)
+    const handlePreviousSection = (options) => goToStep(currentStepIndex - 1, options)
 
     // Handler for updating form state
     const updateFormState = (section, data) => {
@@ -236,16 +281,31 @@ function InterestForm() {
         return <div>Loading...</div>
     }
 
-    // ─── Already submitted, and they clicked "Interest Form" in the navbar ───
-    if (isLandingStep && hasSubmitted) {
+    // ─── Opened again: finished → offer to edit; saved part-way → pick up where they stopped ───
+    if (isLandingStep && (hasSubmitted || canResume)) {
         return (
             <div>
                 <Navbar />
-                <h2>You've already submitted your interest form</h2>
-                <p>Would you like to edit your answers? You can change anything until your report is generated.</p>
-                <button type="button" onClick={() => navigate(`/interest/${steps[0].key}`)}>Yes, edit my answers</button>
-                {" "}
-                <button type="button" onClick={() => navigate("/dashboard")}>No, back to home</button>
+                <div className="page if-landing">
+                    {hasSubmitted ? (
+                        <>
+                            <h2>You've already submitted your interest form</h2>
+                            <p>Would you like to edit your answers? You can change anything until your report is generated.</p>
+                        </>
+                    ) : (
+                        <>
+                            <h2>Continue where you left off</h2>
+                            <p>Your answers are saved. You're on <strong>{steps[resumeIndex].title}</strong>.</p>
+                        </>
+                    )}
+                    <div className="if-nav">
+                        <button type="button" className="btn btn-primary" onClick={() => navigate(`/interest/${steps[hasSubmitted ? 0 : resumeIndex].key}`)}>
+                            {hasSubmitted ? "Yes, edit my answers" : "Continue"}
+                        </button>
+                        {canResume && <button type="button" onClick={() => navigate(`/interest/${steps[0].key}`)}>Go to the first stage</button>}
+                        <button type="button" onClick={() => navigate("/dashboard")}>{hasSubmitted ? "No, back to home" : "Back to home"}</button>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -254,9 +314,10 @@ function InterestForm() {
         return <div>Loading...</div>
     }
 
-    // props every section gets for the progress bar and navigation
+    // props every section gets for the progress bar and navigation; each stage knows whether it is
+    // done or still closed, so the bar can show it
     const commonProps = {
-        steps,
+        steps: steps.map((s, index) => ({ ...s, done: index < reachedIndex, closed: index > Math.max(reachedIndex, currentStepIndex + 1) })),
         currentStepIndex,
         goToStep,
         handleNext: handleNextSection,
@@ -265,6 +326,10 @@ function InterestForm() {
         isSaving,
         requestSave,
     }
+    // the dialog fades out after blockedAt clears — it keeps the stage it named until it is gone
+    if (blockedAt !== null) lastBlocked.current = blockedAt
+    const shownBlock = blockedAt === null ? lastBlocked.current : blockedAt
+    const blockedTitle = shownBlock === null ? "" : steps[shownBlock].title
 
     const renderSection = () => {
         switch (steps[currentStepIndex].key) {
@@ -341,7 +406,26 @@ function InterestForm() {
             <Navbar />
             {isSaving && <p>Saving...</p>}
             {saveError && <p><strong>{saveError}</strong></p>}
-            {renderSection()}
+            <div ref={sectionRef}>{renderSection()}</div>
+            <Modal
+                open={blockedAt !== null}
+                title={blockedTitle && `Finish ${blockedTitle} first`}
+                okText={shownBlock === currentStepIndex ? "OK" : `Go to ${blockedTitle}`}
+                cancelText="Stay here"
+                cancelButtonProps={{ style: shownBlock === currentStepIndex ? { display: "none" } : {} }}
+                onOk={() => {
+                    const target = blockedAt
+                    setBlockedAt(null)
+                    if (target !== currentStepIndex) goToStep(target)
+                }}
+                onCancel={() => setBlockedAt(null)}
+            >
+                <p>
+                    Please complete the required items in <strong>{blockedTitle}</strong> before
+                    moving ahead. The stages open in order, so nothing gets missed.
+                </p>
+                <p>You can press Save and come back any time.</p>
+            </Modal>
         </div>
     )
 }

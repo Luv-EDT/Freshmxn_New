@@ -4,9 +4,8 @@ import { PRIMARY_SORTS, SECONDARY_SORTS, SHOW_FIRST } from "./reportFilters"
 // The report's only control (owner, Round 6): one "Sort your list" button, collapsed by default,
 // so the list — not the controls — is what a student sees first. Two primary orders are
 // highlighted; a secondary "then order by" is optional; "Show first" moves core engineering up.
-// The ONE filter is "Leave out blue-collar careers" (owner, 2026-09-30), off by default, and the
-// page says how many it hid.
-function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint, showFirst, onShowFirst, excludeBlueCollar, onExcludeBlueCollar }) {
+// The one filter, "Leave out blue-collar careers", sits beside this menu on the page (Round 13).
+function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint, showFirst, onShowFirst }) {
     const [open, setOpen] = useState(false)
 
     const primaries = PRIMARY_SORTS
@@ -24,7 +23,6 @@ function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint
                 <span className="sort-current">
                     {primaryLabel}{secondaryLabel ? ` · then ${secondaryLabel.toLowerCase()}` : ""}
                     {showFirst ? " · engineering first" : ""}
-                    {excludeBlueCollar ? " · no blue-collar" : ""}
                 </span>
             </button>
 
@@ -84,19 +82,6 @@ function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint
                             </button>
                         ))}
                     </div>
-
-                    <label className="sort-filter">
-                        <input
-                            type="checkbox"
-                            checked={excludeBlueCollar}
-                            onChange={(event) => onExcludeBlueCollar(event.target.checked)}
-                        />
-                        <span>
-                            Leave out blue-collar careers
-                            <br />
-                            <span className="sort-note">Some of the most AI-proof careers are blue-collar, so this hides good options.</span>
-                        </span>
-                    </label>
                 </div>
             )}
         </div>

@@ -246,6 +246,19 @@ let cutoffsChanged = 0
     changed += 1
 })
 
+// licence routes abroad (Round 13) — written into data/abroad_work.json
+const abroadWorkFile = JSON.parse(fs.readFileSync(path.join(DATA, "abroad_work.json"), "utf8"))
+let abroadWorkChanged = 0
+;(patch.abroadLicences || []).forEach((change) => {
+    const [careerId, country] = String(change.id).split(":")
+    const row = (abroadWorkFile.licences[careerId] || {})[country]
+    if (!row) return console.log(`skip  licence ${change.id} — not in abroad_work.json`)
+    console.log(`abroad ${change.id}\n  was ${row.exam} · ${row.url}\n  now ${change.values.exam} · ${change.values.url}`)
+    Object.assign(row, change.values, { status: "supported", checkedOn: change.checkedOn })
+    abroadWorkChanged += 1
+    changed += 1
+})
+
 // mentors' accepted remarks (Round 12) are words, not values — listed for a person to act on
 ;(patch.mentorNotes || []).forEach((note) => console.log(`mentor ${note.id} · ${note.factor ? `${note.factor} should be ${note.direction}` : `${note.section}: ${note.verdict === "right" ? "looks right" : "needs a change"}`}${note.note ? ` — ${note.note}` : ""}${note.sourceUrl ? ` (${note.sourceUrl})` : ""}`))
 ;(patch.mentorReviewedRatings || []).forEach((id) => console.log(`mentor ${id} · every top quality called about right — you may set its baseline_rating.json review_status to "mentor_reviewed"`))
@@ -263,6 +276,7 @@ if (write && changed > 0) {
         fs.writeFileSync(path.join(DATA, "study_sources.json"), `${JSON.stringify(sourcesFile, null, 2)}\n`)
     }
     if (cutoffsChanged > 0) fs.writeFileSync(path.join(DATA, "cutoffs.json"), `${JSON.stringify(cutoffsFile, null, 2)}\n`)
+    if (abroadWorkChanged > 0) fs.writeFileSync(path.join(DATA, "abroad_work.json"), `${JSON.stringify(abroadWorkFile, null, 2)}\n`)
     if (studyChanged > 0) {
         fs.writeFileSync(path.join(DATA, "exam_calendar.json"), `${JSON.stringify(examCalendar, null, 2)}\n`)
         fs.writeFileSync(path.join(DATA, "study_places.json"), `${JSON.stringify(studyPlaces, null, 2)}\n`)

@@ -11,7 +11,7 @@
 export const WHY_WE_DO_THIS = [
     "Most career advice looks at marks and at what is popular. Neither tells you how you think, what you are drawn to, or how you work — and those are what decide whether a career fits you for years, not months.",
     "So this assessment measures you on factors that research links to how people learn, decide and work. It is not an exam: there is nothing to revise for, and no factor is good or bad on its own — it describes the kind of work that suits you.",
-    "Your answers are matched against what 223 Indian careers actually ask of people, together with what you told us in the interest form.",
+    "Your answers are matched against what 1,000+ Indian careers and job roles actually ask of people, together with what you told us in the interest form.",
 ]
 
 export const FACTOR_COUNT = 31
@@ -73,14 +73,6 @@ export const MODULE_RESEARCH = {
             "Gardner, H. (1983). Frames of Mind: The Theory of Multiple Intelligences. Basic Books.",
         ],
     },
-    interests60: {
-        measures: "Sixty everyday work activities you would or would not like to do.",
-        why: "What you would like to DO is a second, independent view of what you are drawn to. Your answers strengthen six of the seven intelligences above.",
-        references: [
-            "National Center for O*NET Development. O*NET Interest Profiler Short Form. U.S. Department of Labor, Employment & Training Administration.",
-            "Holland, J. L. (1997). Making Vocational Choices (3rd ed.). Psychological Assessment Resources.",
-        ],
-    },
     rosenberg: {
         measures: "Self-esteem — how you see your own worth overall.",
         why: "How you rate yourself shapes which careers you even consider. It is one of the inputs to confidence, which is never shown to you as a score.",
@@ -89,7 +81,7 @@ export const MODULE_RESEARCH = {
         ],
     },
     confidence: {
-        measures: "Confidence in six real situations.",
+        measures: "Confidence in three real situations.",
         why: "Believing you can do a specific thing (self-efficacy) predicts whether people attempt it at all — more than general confidence does.",
         references: [
             "Bandura, A. (1977). Self-efficacy: Toward a unifying theory of behavioral change. Psychological Review, 84(2), 191–215.",
@@ -115,7 +107,7 @@ export const MODULE_RESEARCH = {
     },
     reasoning: {
         measures: "Reasoning — matrix puzzles, letter and number series, word problems and turning 3D shapes in your head.",
-        why: "Reasoning ability is the single strongest predictor of how quickly people learn new work. The four kinds of puzzle follow the open International Cognitive Ability Resource. Our scores are provisional until we have enough Indian students to compare with.",
+        why: "Reasoning ability is the single strongest predictor of how quickly people learn new work. The four kinds of puzzle follow the open International Cognitive Ability Resource, with a clock on each puzzle (ICAR itself is untimed). Our scores are provisional until we have enough Indian students to compare with.",
         references: [
             "Condon, D. M., & Revelle, W. (2014). The International Cognitive Ability Resource: Development and initial validation of a public-domain measure. Intelligence, 43, 52–64.",
             "Shepard, R. N., & Metzler, J. (1971). Mental rotation of three-dimensional objects. Science, 171(3972), 701–703.",

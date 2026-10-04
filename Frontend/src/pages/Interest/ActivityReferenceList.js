@@ -1,8 +1,9 @@
-// "Stuck?" — a list of everyday activities to jog the memory, folded away until asked for.
+// "Stuck?" — a list of everyday activities to jog the memory, folded away until asked for. It sticks
+// under the header while the section scrolls (Round 13), so it is there when the memory runs dry.
 function ActivityReferenceList({ activities }) {
     return (
-        <details className="if-examples if-reference">
-            <summary>Stuck? See a list of activities people often mention</summary>
+        <details className="if-reference">
+            <summary className="if-chip-summary"><span className="if-q" aria-hidden="true">?</span> Stuck? See a list of activities people often mention</summary>
             <ul>
                 {activities.map((activity, index) => (
                     <li key={index}>{activity}</li>
