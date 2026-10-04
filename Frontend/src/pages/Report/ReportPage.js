@@ -559,6 +559,7 @@ function ReportPage() {
                             switchCost={primary === "noCost" ? entry.wastedYears : 0}
                             showAi={secondary === "ai"}
                             degreeLabel={data.degree || null}
+                            abroadPlans={data.abroadPlans || null}
                         />
                     )
                 })}
@@ -646,7 +647,7 @@ function ReportPage() {
             </details>
 
             {/* Round 11: offered only when a top-ten match is one where studying abroad helps */}
-            <StudyAbroadCard ranked={ranked} details={details} />
+            <StudyAbroadCard ranked={ranked} details={details} abroadPlans={data.abroadPlans || null} />
 
             {/* THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —

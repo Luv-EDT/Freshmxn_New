@@ -29,6 +29,14 @@ const degreeLabelFor = (detail) => {
     return subject && subject.id !== "other" ? `${family.label} (${subject.label})` : family.label
 }
 
+const ABROAD_HOPES = ["no", "maybe", "yes"]
+const ABROAD_COUNTRIES = ["CA", "US", "UK", "AU", "DE", "other"]
+const abroadPlansFor = (submission) => {
+    const background = (submission && submission.interest && submission.interest.backgroundInfo) || {}
+    if (!ABROAD_HOPES.includes(background.abroadHope)) return null
+    return { hope: background.abroadHope, countries: (background.abroadCountries || []).filter((code) => ABROAD_COUNTRIES.includes(code)) }
+}
+
 const router = express.Router()
 
 // Round 11: what "Update my report" can improve — a report built by scoring or matching older than
@@ -122,7 +130,7 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
         const [report, recommendation, submission] = await Promise.all([
             Report.findOne({ user: req.user._id }).lean(),
             Recommendation.findOne({ user: req.user._id }).lean(),
-            Submission.findOne({ user: req.user._id }).select("psychometricSubmittedAt psychometric.accommodations").lean(),
+            Submission.findOne({ user: req.user._id }).select("psychometricSubmittedAt psychometric.accommodations interest.backgroundInfo.abroadHope interest.backgroundInfo.abroadCountries").lean(),
         ])
 
         // A REPORT OLDER THAN THE LAST SUBMIT IS BEING REPLACED, not the answer.
@@ -190,6 +198,9 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 journey: report.journey,
                 degree: degreeLabelFor(req.user.journeyDetail),
                 support: supportFor(submission),
+                // Round 13: does the student hope to study or work abroad, and where — the report shows
+                // its "Going abroad" parts only for "maybe" or "yes"
+                abroadPlans: abroadPlansFor(submission),
                 generatedAt: report.lastGeneratedAt || report.generatedAt,
                 sections: report.sections,
                 ranked: recommendation ? recommendation.ranked_professions.map(stripInternal) : [],

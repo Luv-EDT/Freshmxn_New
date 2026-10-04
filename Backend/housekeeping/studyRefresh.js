@@ -12,6 +12,8 @@
 //              for the usual application window, exam month and eligibility. Never exact dates.
 //   FACTS      (Round 12) up to STUDY_FACT_MAX (10) careers: is a master's required, and does
 //              studying abroad help — on official and academic Indian domains, with sources.
+//   LICENCES   (Round 13, January) up to STUDY_LICENCE_MAX (10) licence routes abroad
+//              (data/abroad_work.json), each on the licensing body's own site.
 //   CUT-OFFS   (Round 12, August–October) up to STUDY_CUTOFF_MAX (10) rows of data/cutoffs.json:
 //              last year's final-round closing rank, read off the counselling body's own result page.
 //
@@ -292,9 +294,52 @@ const cutoffPrompt = (row) => [
     row.status === "checked" ? `We show: ${row.closing_rank} (${row.year}, ${row.round})` : "We show nothing yet.",
 ].join("\n")
 
+// ── licences abroad (Round 13): what each of the five countries asks of a licensed career ──────────
+// January only, up to STUDY_LICENCE_MAX (10) rows of data/abroad_work.json, oldest-checked first,
+// each searched on the licensing body's OWN domain. A change must name a page on that domain.
+const abroadWork = require("../data/abroad_work.json")
+const LICENCE_MONTHS = [0]
+const maxLicences = () => Number(process.env.STUDY_LICENCE_MAX) || 10
+const licenceRows = () => Object.entries(abroadWork.licences).flatMap(([careerId, byCountry]) => Object.entries(byCountry)
+    .filter(([, row]) => row.url)
+    .map(([country, row]) => ({ id: `${careerId}:${country}`, careerId, country, ...row })))
+
+const validateLicenceChange = (change, current, sources, domains) => {
+    if (!change || change.field !== "licence" || !Array.isArray(sources) || sources.length === 0) return null
+    const raw = change.proposed || {}
+    const value = { body: raw.body, exam: raw.exam, steps: raw.steps, url: raw.url }
+    if (![value.body, value.exam, value.steps].every((text) => textOk(text, 300)) || typeof value.url !== "string" || !value.url.startsWith("https://")) return null
+    const host = hostOf(value.url)
+    if (!host || !domains.some((domain) => host === domain || host.endsWith(`.${domain}`))) return null
+    if (["body", "exam", "steps", "url"].every((key) => String(value[key]).trim() === String(current[key] || "").trim())) return null
+    return {
+        field: "licence",
+        currentValue: JSON.stringify({ body: current.body, exam: current.exam, steps: current.steps, url: current.url }),
+        proposedValue: JSON.stringify(value),
+        reason: String(change.reason || "").slice(0, 600),
+        confidence: CONFIDENCE.includes(change.confidence) ? change.confidence : "low",
+    }
+}
+
+const LICENCE_SYSTEM = `You check how a professional trained in India gets licensed in one other country, for a career-guidance service.
+
+You are told the career, the country, and what we currently say: the licensing body, its exam or route, the steps in one line,
+and the body's official page. Search ONLY the licensing body's own site. Propose a change ONLY where that site clearly says
+something different today (a renamed exam, a new route, a moved page). Never use a coaching, news or agency site. Most rows
+need no change — an empty list is a good answer.
+
+Reply with ONLY this JSON object:
+{"changes": [{"field": "licence", "proposed": {"body": "...", "exam": "...", "steps": "one line", "url": "https://<the official page>"}, "reason": "one sentence naming the page", "confidence": "low" | "medium" | "high"}]}`
+
+const licencePrompt = (row) => [
+    `Career: ${row.careerId}`,
+    `Country: ${(abroadWork.countries.find((country) => country.code === row.country) || {}).name || row.country}`,
+    `We say — body: ${row.body}; exam/route: ${row.exam}; steps: ${row.steps}; official page: ${row.url}`,
+].join("\n")
+
 // ── the job ────────────────────────────────────────────────────────────────────────────────────
 const check = (json) => Array.isArray(json.changes)
-const newResult = () => ({ disciplines: 0, exams: 0, facts: 0, cutoffs: 0, proposals: 0, refused: [], failed: [] })
+const newResult = () => ({ disciplines: 0, exams: 0, facts: 0, cutoffs: 0, licences: 0, proposals: 0, refused: [], failed: [] })
 
 // a newer suggestion replaces an undecided older one for the same thing
 const fileProposal = async (kind, id, name, change, sources, result) => {
@@ -345,6 +390,14 @@ const handleItem = async (item, reply, { now, result }) => {
         await CutoffOverride.updateOne({ rowId: item.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
         result.cutoffs = (result.cutoffs || 0) + 1
     }
+    if (item.kind === "licence") {
+        const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")
+        for (const change of changes.map((raw) => validateLicenceChange(raw, item.context.current, sources, item.context.domains)).filter(Boolean)) {
+            await fileProposal("abroad_licence", item.id, item.name, change, sources, result)
+        }
+        await AbroadLicenceOverride.updateOne({ key: item.id }, { $set: { lastCheckedAt: now } }, { upsert: true })
+        result.licences = (result.licences || 0) + 1
+    }
     if (item.kind === "fact") {
         const StudyFactOverride = require("../model/studyFactOverridesModel")
         for (const change of changes.map((raw) => validateFactChange(raw, item.context.current, sources)).filter(Boolean)) {
@@ -356,7 +409,7 @@ const handleItem = async (item, reply, { now, result }) => {
 }
 
 // every question this month, each with what its answer will be checked against
-const prepareItems = async ({ disciplines, exams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit = 0, cutoffRows = cutoffData.rows }) => {
+const prepareItems = async ({ disciplines, exams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit = 0, cutoffRows = cutoffData.rows, licenceLimit = 0 }) => {
     const ExamOverride = require("../model/examOverridesModel")
     const StudyPlaceOverride = require("../model/studyPlaceOverridesModel")
     const [examRows, placeRows] = await Promise.all([ExamOverride.find().lean(), StudyPlaceOverride.find().lean()])
@@ -402,6 +455,24 @@ const prepareItems = async ({ disciplines, exams, disciplineLimit, examLimit, fa
                 name: `${row.institution} — ${row.programme}`,
                 request: { system: CUTOFF_SYSTEM, user: cutoffPrompt(row), onlyDomains: domains },
                 context: { current: { status: row.status, closing_rank: row.closing_rank, year: row.year, round: row.round }, domains },
+            })
+        }
+    }
+
+    if (licenceLimit > 0) {
+        const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")
+        const licenceOverrides = new Map((await AbroadLicenceOverride.find().lean()).map((row) => [row.key, row]))
+        for (const raw of pickOldest(licenceRows(), (row) => row.id, licenceOverrides, licenceLimit, (row) => row.checkedOn)) {
+            const override = licenceOverrides.get(raw.id)
+            const row = override && override.approvedAt && override.values ? { ...raw, ...override.values } : raw
+            const domain = hostOf(row.url)
+            if (!domain) continue
+            items.push({
+                kind: "licence",
+                id: row.id,
+                name: `${row.careerId} — ${row.country}`,
+                request: { system: LICENCE_SYSTEM, user: licencePrompt(row), onlyDomains: [domain] },
+                context: { current: { body: row.body, exam: row.exam, steps: row.steps, url: row.url }, domains: [domain] },
             })
         }
     }
@@ -470,6 +541,7 @@ const runStudyRefresh = async ({
     examLimit,
     factLimit,
     cutoffLimit,
+    licenceLimit,
     professions = require("../data/ALL-professions.json").professions,
     now = new Date(),
 } = {}) => {
@@ -478,14 +550,15 @@ const runStudyRefresh = async ({
     if (examLimit === undefined) examLimit = maxExams()
     if (factLimit === undefined) factLimit = force || FACT_MONTHS.includes(month) ? maxFacts() : 0
     if (cutoffLimit === undefined) cutoffLimit = force || CUTOFF_MONTHS.includes(month) ? maxCutoffs() : 0
+    if (licenceLimit === undefined) licenceLimit = force || LICENCE_MONTHS.includes(month) ? maxLicences() : 0
     const dueExams = force ? exams : exams.filter((exam) => examIsDue(exam, now))
-    if (disciplineLimit === 0 && (dueExams.length === 0 || examLimit === 0) && factLimit === 0 && cutoffLimit === 0) return { nothing: "due this month" }
+    if (disciplineLimit === 0 && (dueExams.length === 0 || examLimit === 0) && factLimit === 0 && cutoffLimit === 0 && licenceLimit === 0) return { nothing: "due this month" }
 
     const injected = research !== undefined
     if (!injected) research = createResearchClient({ job: "study_refresh", model: await researchModel() })
     if (!research) return { skipped: "ANTHROPIC_API_KEY is not set" }
 
-    const items = await prepareItems({ disciplines, exams: dueExams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit })
+    const items = await prepareItems({ disciplines, exams: dueExams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit, licenceLimit })
     if (items.length === 0) return { nothing: "due this month" }
 
     if (batch === undefined ? !injected && batchEnabled() : batch) {
@@ -509,6 +582,6 @@ const runStudyRefresh = async ({
 
 module.exports = {
     runStudyRefresh, handleItem, newResult, check, prepareItems, pickOldest, validateCollegeChange, validateExamChange, validateNewExam, validateFactChange, cleanInstitution,
-    validateCutoffChange, cutoffDomains, CUTOFF_SYSTEM, CUTOFF_MONTHS, COLLEGE_MONTHS, FACT_MONTHS, windowMonth, examIsDue,
+    validateCutoffChange, cutoffDomains, CUTOFF_SYSTEM, CUTOFF_MONTHS, validateLicenceChange, licenceRows, LICENCE_MONTHS, COLLEGE_MONTHS, FACT_MONTHS, windowMonth, examIsDue,
     EXACT_DATE, RANKING_DOMAINS, FACT_DOMAINS, COLLEGE_SYSTEM, EXAM_SYSTEM, FACT_SYSTEM, MASTERS_VALUES, ABROAD_NEEDS, ABROAD_STAGES,
 }

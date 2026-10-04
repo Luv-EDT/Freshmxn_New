@@ -2,10 +2,12 @@ import { useEffect, useState } from "react"
 import { expressInterest, getMyInterest } from "../../apiCall/studyAbroadApi"
 import { abroadCareers } from "./reportPlan"
 
-// The study-abroad offer (owner, Round 11). Shown only when one of the top ten matches is a career
-// where studying abroad helps. Nothing is shared until the student ticks the consent box and sends.
-function StudyAbroadCard({ ranked, details }) {
-    const careers = abroadCareers(ranked, details)
+// The study-abroad offer (owner, Round 11). Shown when one of the top ten matches is a career where
+// studying abroad helps — or, since Round 13, when the student told us they hope to go abroad. Nothing is shared until the student ticks the consent box and sends.
+function StudyAbroadCard({ ranked, details, abroadPlans }) {
+    // Round 13: a student who said yes to going abroad sees the offer for their top three anyway
+    const helped = abroadCareers(ranked, details)
+    const careers = helped.length === 0 && abroadPlans && abroadPlans.hope === "yes" ? ranked.slice(0, 3) : helped
     const [consent, setConsent] = useState(false)
     const [sent, setSent] = useState(null)
     const [sending, setSending] = useState(false)

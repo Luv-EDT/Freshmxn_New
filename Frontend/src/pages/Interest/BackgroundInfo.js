@@ -18,6 +18,21 @@ const FINANCIAL_OPTIONS = ["Financially struggling", "Lower middle class", "Midd
 
 const YES_NO_OPTIONS = ["Yes", "No", "Prefer not to say"]
 
+// Round 13: the five countries Indian students go to most (MEA, 2025), and anywhere else
+const ABROAD_HOPES = [
+    { value: "yes", label: "Yes" },
+    { value: "maybe", label: "Maybe" },
+    { value: "no", label: "No" },
+]
+const ABROAD_COUNTRIES = [
+    { value: "CA", label: "Canada" },
+    { value: "US", label: "USA" },
+    { value: "UK", label: "UK" },
+    { value: "AU", label: "Australia" },
+    { value: "DE", label: "Germany" },
+    { value: "other", label: "Somewhere else" },
+]
+
 const COMPETITION_OPTIONS = [
     { value: "thrive", label: "I thrive in competitive environments and enjoy standing out through direct competition" },
     { value: "unique", label: "I prefer finding unique/out-of-the-box approaches to stand out rather than direct competition" },
@@ -62,8 +77,14 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
             ...(SPECIFY_FOR[name] && value !== "Yes" ? { [SPECIFY_FOR[name]]: "" } : {}),
             // and the difficulties it named (Round 13) — they set tests aside on the assessment page
             ...(name === "disability" && value !== "Yes" ? { disabilityNeeds: [], disabilityShareWithMentor: false } : {}),
+            ...(name === "abroadHope" && value === "no" ? { abroadCountries: [] } : {}),
         }))
     }
+
+    const toggleCountry = (code) => setLocalFormData((prev) => {
+        const countries = prev.abroadCountries || []
+        return { ...prev, abroadCountries: countries.includes(code) ? countries.filter((value) => value !== code) : [...countries, code] }
+    })
 
     const toggleNeed = (id) => setLocalFormData((prev) => {
         const needs = prev.disabilityNeeds || []
@@ -255,6 +276,29 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
 
                 <section className="if-card">
                     <h3 className="if-card-title">You</h3>
+
+                    {/* Round 13 (owner): many students hope to go abroad. The report's "Going abroad"
+                        parts — how each career travels, and what each country asks first — show only
+                        to those who say maybe or yes. Never used to rank careers. */}
+                    <div>
+                        <label><strong>Do you hope to study or work outside India one day?</strong></label>
+                        {renderRadioGroup("abroadHope", ABROAD_HOPES)}
+                        {(localFormData.abroadHope === "yes" || localFormData.abroadHope === "maybe") && (
+                            <>
+                                <p className="if-subq">Where? Tick any.</p>
+                                <ul className="needs-list">
+                                    {ABROAD_COUNTRIES.map((country) => (
+                                        <li key={country.value}>
+                                            <label className="interest-item">
+                                                <input type="checkbox" checked={(localFormData.abroadCountries || []).includes(country.value)} onChange={() => toggleCountry(country.value)} />
+                                                <span>{country.label}</span>
+                                            </label>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                    </div>
                     {/* Competition Preference */}
                     <div>
                         <label><strong>How You Approach Success</strong></label>

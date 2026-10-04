@@ -140,7 +140,23 @@ const ABROAD_STAGE = {
 // Round 13 (owner): the card says what a student can USE — never where a fact came from or when we
 // checked it. Those labels live in the data and on the admin and mentor screens.
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel }) {
+// Going abroad to work (Round 13): how a career travels, in a student's words
+const PORTABILITY_WORDS = {
+    travels_well: "Travels well",
+    requalify: "A licence first",
+    india_based: "India-based",
+}
+
+// the student's own countries first, then the rest in the file's order
+const countriesFor = (goingAbroad, plans) => {
+    const chosen = (plans && plans.countries) || []
+    return [...goingAbroad.countries].sort((left, right) => Number(chosen.includes(right.code)) - Number(chosen.includes(left.code)))
+}
+
+function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel, abroadPlans }) {
+    // a student who said maybe or yes to going abroad gets the "Going abroad" section, with the
+    // studying-abroad line moved into it; everyone else sees that line where it always was
+    const abroadMinded = Boolean(abroadPlans && abroadPlans.hope !== "no")
     const [open, setOpen] = useState(false)
 
     const toggle = () => {
@@ -380,7 +396,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                 )}
 
                                 {/* Studying abroad (Round 11): whether it is needed — never which university */}
-                                {detail.abroad && (
+                                {detail.abroad && !abroadMinded && (
                                     <Section title="Studying abroad">
                                         <p className="pc-line">
                                             {detail.abroad.need === "often_needed" ? "Often part of the route" : "Helps, but not needed"}
@@ -508,6 +524,37 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                             {detail.selfEmployment.route && <p className="pc-small">{detail.selfEmployment.route}</p>}
                                         </Section>
                                     )}
+                                </More>
+                            )}
+
+                            {/* 6b. GOING ABROAD (Round 13) — only for a student who hopes to go abroad */}
+                            {abroadMinded && detail.goingAbroad && (
+                                <More title="Going abroad">
+                                    <p className="pc-line">
+                                        <strong>{PORTABILITY_WORDS[detail.goingAbroad.portability]}.</strong> {detail.goingAbroad.note}
+                                    </p>
+                                    {detail.abroad && (
+                                        <p className="pc-small">
+                                            Studying abroad: {detail.abroad.need === "often_needed" ? "often part of the route" : "helps, but not needed"}
+                                            {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}. {detail.abroad.why}.
+                                        </p>
+                                    )}
+                                    {detail.goingAbroad.portability !== "india_based" && countriesFor(detail.goingAbroad, abroadPlans).map((country) => (
+                                        <details key={country.code} className="pc-country">
+                                            <summary>{country.name}{country.licence ? ` — ${country.licence.exam}` : ""}</summary>
+                                            {country.licence ? (
+                                                <p className="pc-small">
+                                                    {country.licence.steps}. <strong>{country.licence.body}</strong> ·{" "}
+                                                    <a href={country.licence.url} target="_blank" rel="noopener noreferrer">official page ↗</a>
+                                                </p>
+                                            ) : (
+                                                <p className="pc-small">
+                                                    {detail.goingAbroad.portability === "requalify" ? "This work is licensed there too. " : ""}
+                                                    Start with <a href={country.recognition.url} target="_blank" rel="noopener noreferrer">{country.recognition.name} ↗</a>
+                                                </p>
+                                            )}
+                                        </details>
+                                    ))}
                                 </More>
                             )}
 

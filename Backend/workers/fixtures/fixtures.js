@@ -3692,7 +3692,7 @@ const fixtures = [
                 const { disciplineById } = require("../../utils/studyPlaces")
                 const { examById } = require("../../utils/examCalendar")
                 const statistician = require("../../data/ALL-professions.json").professions.filter((profession) => profession.id === "sci-statistician")
-                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], force: true, disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, professions: statistician })
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], force: true, disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, licenceLimit: 0, professions: statistician })
                 if (result.disciplines !== 1 || result.exams !== 1 || result.facts !== 1 || result.proposals !== 3) problems.push(`unexpected result ${JSON.stringify(result)}`)
                 const factCall = calls.find((call) => /^Career:/.test(call.user))
                 if (!factCall || !factCall.onlyDomains.includes("gov.in") || factCall.onlyDomains.some((domain) => /\.com$/.test(domain))) problems.push("study facts are not searched on official and academic domains only")
@@ -4246,6 +4246,45 @@ const fixtures = [
             const runNow = fs.readFileSync(path.join(__dirname, "../../Routers/followUpsRouter.js"), "utf8")
             if (!/study_refresh" \? \{ force: true \}/.test(runNow)) problems.push("Run now does not ignore the seasons")
             return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "GOING ABROAD — every career says how it travels; a licence row is shown only with the licensing body's own page; never ranked, never pay",
+        run: () => {
+            const work = require("../../data/abroad_work.json")
+            const { goingAbroadFor } = require("../../Routers/professionsRouter")
+            const { validateLicenceChange } = require("../../housekeeping/studyRefresh")
+            const professions = require("../../data/ALL-professions.json").professions
+            const problems = []
+            if (work.countries.map((country) => country.code).join() !== "CA,US,UK,AU,DE") problems.push("the five countries drifted from the MEA top five")
+            if (!work.countries_source || !/mea\.gov\.in/.test(work.countries_source.url)) problems.push("the top-five claim has no official source")
+            professions.forEach((profession) => {
+                const row = work.careers[profession.id]
+                if (!row || !["travels_well", "requalify", "india_based"].includes(row.portability) || !row.note) problems.push(`${profession.id}: no portability`)
+            })
+            const official = (url) => { const host = new URL(url).hostname.replace(/^www\./, ""); return work.official_domains.some((domain) => host === domain || host.endsWith(`.${domain}`)) }
+            Object.entries(work.licences).forEach(([careerId, byCountry]) => {
+                if (work.careers[careerId].portability !== "requalify") problems.push(`${careerId}: licence rows on a career that is not 'requalify'`)
+                Object.entries(byCountry).forEach(([code, row]) => {
+                    if (row.status === "supported" && !(row.url && row.url.startsWith("https://") && official(row.url))) problems.push(`${careerId}/${code}: a shown row without an official page`)
+                    if (/₹|\$|£|€|salary|lakh|per year/i.test(`${row.steps} ${row.exam}`)) problems.push(`${careerId}/${code}: pay talk in a licence row`)
+                })
+            })
+            work.countries.forEach((country) => { if (!official(country.recognition.url)) problems.push(`${country.code}: recognition portal not official`) })
+            const nurse = goingAbroadFor("hlt-nurse")
+            if (nurse.portability !== "requalify" || nurse.countries.filter((country) => country.licence).length !== 5) problems.push("the nurse rows are not served")
+            const psych = goingAbroadFor("soc-clinical-psychologist")
+            if (psych.countries.find((country) => country.code === "CA").licence !== null) problems.push("a draft row was served")
+            const good = { field: "licence", proposed: { body: "NMC", exam: "CBT + OSCE", steps: "English test, CBT, OSCE, registration", url: "https://www.nmc.org.uk/registration" } }
+            if (!validateLicenceChange(good, {}, [{ url: "x" }], ["nmc.org.uk"])) problems.push("a good licence change was dropped")
+            if (validateLicenceChange({ ...good, proposed: { ...good.proposed, url: "https://some-agency.com/nmc" } }, {}, [{ url: "x" }], ["nmc.org.uk"])) problems.push("an agency page was accepted")
+            fs.readdirSync(path.join(__dirname, "../../matching")).filter((file) => file.endsWith(".js")).forEach((file) => {
+                if (/abroad_work/.test(fs.readFileSync(path.join(__dirname, "../../matching", file), "utf8"))) problems.push(`matching/${file} reads abroad_work.json`)
+            })
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            if (!/abroadMinded && detail\.goingAbroad/.test(card)) problems.push("the card shows 'Going abroad' to every student")
+            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
         },
         expect: null,
     },
