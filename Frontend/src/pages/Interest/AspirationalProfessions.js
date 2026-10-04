@@ -121,9 +121,7 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
                             onChange={(text, option) => handleTextChange(idx, text, option)}
                             placeholder={`Profession ${idx + 1} (e.g., Doctor, Game Designer)`}
                         />
-                        {" "}
-                        {row.professionId && <span>✓ matched</span>}
-                        {" "}
+                        {row.professionId && <span className="status-chip is-done">✓ Matched</span>}
                         <button type="button" onClick={() => handleRemove(idx)}>Remove</button>
                     </div>
                 ))}

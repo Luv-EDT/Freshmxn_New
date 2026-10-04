@@ -123,6 +123,85 @@
     color: var(--muted);
 }
 
+/* status chips (Round 13): one look for state everywhere — home, assessment, profile, admin.
+   done = teal fill · in progress = amber tint · set aside = grey stripes · waiting on you = pink */
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+.status-chip.is-done {
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.status-chip.is-progress {
+    background: var(--amber-tint);
+    color: var(--navy);
+    box-shadow: inset 0 0 0 1px var(--amber);
+}
+
+.status-chip.is-aside {
+    background: repeating-linear-gradient(135deg, #eeeeee 0 6px, #e2e2e2 6px 12px);
+    color: var(--navy-soft);
+}
+
+.status-chip.is-pending {
+    background: var(--pink-tint);
+    color: var(--navy);
+    box-shadow: inset 0 0 0 1px var(--pink);
+}
+
+/* a <summary> that should look like something to tap, not a line of text */
+.if-chip-summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 8px 16px;
+    min-height: 44px;
+    border-radius: var(--radius-pill);
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.if-chip-summary::-webkit-details-marker {
+    display: none;
+}
+
+details[open] > .if-chip-summary {
+    background: var(--teal);
+    color: #ffffff;
+}
+
+.if-q {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: #ffffff;
+    font-size: 0.8rem;
+    flex: none;
+}
+
+details[open] > .if-chip-summary .if-q {
+    background: #ffffff;
+    color: var(--teal);
+}
+
 /* ── the logged-in app header (Navbar.js) ─────────────────────────────────────────────────────── */
 
 .app-header {

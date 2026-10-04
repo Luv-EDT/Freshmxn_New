@@ -25,7 +25,7 @@ function InterestSubmit({ handlePrevious, isSubmitting, isSubmitted, onGoHome, s
             )}
 
             <div className="if-nav">
-                <button type="button" onClick={handlePrevious} disabled={isSubmitting}>Go back and review</button>
+                <button type="button" onClick={() => handlePrevious()} disabled={isSubmitting}>Go back and review</button>
                 {" "}
                 <button type="button" className="btn btn-primary" onClick={onGoHome} disabled={isSubmitting}>Go to my dashboard</button>
             </div>

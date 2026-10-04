@@ -1175,7 +1175,7 @@ button.link-button:hover:not(:disabled) {
 }
 
 .reasoning-clock.is-low .reasoning-clock-bar span {
-    background: #d98a00;
+    background: var(--amber);
 }
 
 .reasoning-clock.is-low .reasoning-clock-text {
@@ -1453,7 +1453,6 @@ button.link-button:hover:not(:disabled) {
     margin-top: var(--space-2);
 }
 
-.if-steps summary,
 .if-examples summary {
     cursor: pointer;
     color: var(--teal-dark);
@@ -1472,10 +1471,20 @@ button.link-button:hover:not(:disabled) {
     gap: var(--space-2);
 }
 
+.if-steps ol li {
+    display: flex;
+    margin: 0;              /* the global "li + li" spacing pushed every pill but the first down */
+}
+
+/* every stage pill the same height and baseline, whatever its state (Round 13: "1. Start" sat high) */
 .app-header ~ * button.if-step-link {
     margin: 0;
-    padding: 8px 14px;
+    padding: 0 14px;
+    height: 40px;
     min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
     border-radius: var(--radius-pill);
     border: 1px solid var(--line);
     background: var(--surface);
@@ -1483,11 +1492,23 @@ button.link-button:hover:not(:disabled) {
     font-weight: 400;
 }
 
+.app-header ~ * button.if-step-link.is-done {
+    background: var(--teal-tint);
+    border-color: var(--teal-tint);
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+.app-header ~ * button.if-step-link.is-closed {
+    color: var(--muted);
+    border-style: dashed;
+}
+
 .app-header ~ * button.if-step-link.is-current {
     background: var(--teal);
     border-color: var(--teal);
     color: #ffffff;
-    opacity: 1;
+    font-weight: 700;
 }
 
 .if-intro,
@@ -1568,9 +1589,33 @@ button.link-button:hover:not(:disabled) {
     padding-bottom: var(--space-2);
 }
 
+/* "Stuck?" — sticks to the bottom of the screen while the section scrolls past */
+.if-reference {
+    position: sticky;
+    bottom: var(--space-2);
+    z-index: 5;
+    max-width: 720px;
+    margin: 0 0 var(--space-4);
+}
+
+.if-reference .if-chip-summary {
+    box-shadow: var(--shadow);
+}
+
+.if-reference[open] {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-3);
+}
+
 .if-reference ul {
     columns: 2 180px;
     padding-left: 1.1em;
+    max-height: 45vh;
+    overflow-y: auto;
+    color: var(--navy-soft);
 }
 
 .if-small-label {

@@ -219,7 +219,6 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                     <>
                         <section className="if-card">
                             <h3 className="if-card-title">What you did</h3>
-                            <ActivityReferenceList activities={stage.referenceList} />
                             {ACTIVITY_GROUPS.map(renderActivityGroup)}
                         </section>
 
@@ -253,6 +252,9 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                                 <button type="button" className="if-add" onClick={handleAddMoreAdditional}>+ Add another</button>
                             </QuestionCard>
                         </section>
+
+                        {/* last in the section but sticky to the bottom of the screen, so it is in reach the whole way down */}
+                        <ActivityReferenceList activities={stage.referenceList} />
                     </>
                 )}
 

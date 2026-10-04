@@ -23,6 +23,8 @@
     --muted: #5d6874;
     --grey-light: #d1d1d1;
     --grey: #bebebe;
+    --amber: #d98a00;       /* status only: "in progress" and the reasoning clock's last seconds */
+    --amber-tint: #fff1d6;
 
     --font-display: "Orelega One", Georgia, serif;
     --font-body: "Lato", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
