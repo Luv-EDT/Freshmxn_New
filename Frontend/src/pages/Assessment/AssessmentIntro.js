@@ -98,6 +98,8 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
         && !(module.key === "storyRecall" && storyPhase === "waiting"))
     // until the student picks a card it follows the data, which arrives after the first render
     const [picked, setIndex] = useState(null)
+    // the strip of every test stays folded until asked for (owner, Round 15) — the card in hand is the page
+    const [showAll, setShowAll] = useState(false)
     const index = picked === null ? Math.max(firstOpen, 0) : picked
     const touchX = useRef(null)
     const move = (step) => setIndex(Math.min(built.length - 1, Math.max(0, index + step)))
@@ -233,7 +235,11 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
 
             {built[index] && renderCard(built[index])}
 
-            <ol className="deck-strip" aria-label="All sections">
+            <button type="button" className="btn btn-ghost show-tests" aria-expanded={showAll} onClick={() => setShowAll(!showAll)}>
+                {showAll ? "Hide the list of tests" : `Show me all the tests (${built.length - doneCount} left)`}
+            </button>
+
+            {showAll && <ol className="deck-strip" aria-label="All sections">
                 {built.map((module, position) => {
                     const { status } = stateOf(module)
                     return (
@@ -242,7 +248,7 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                                 type="button"
                                 className={`deck-tile${position === index ? " is-current" : ""}`}
                                 aria-current={position === index ? "true" : undefined}
-                                onClick={() => setIndex(position)}
+                                onClick={() => { setIndex(position); document.querySelector(".deck-card")?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
                             >
                                 <span className="deck-tile-title">{module.title}</span>
                                 <span className={`status-chip ${status.cls}`}>{status.text}</span>
@@ -250,7 +256,7 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                         </li>
                     )
                 })}
-            </ol>
+            </ol>}
 
             <ResearchBox />
 

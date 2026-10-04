@@ -21,12 +21,12 @@ export async function saveMyReview(payload) {
     }
 }
 
-export async function getReviewsForAdmin() {
-    const response = await axiosInstance.get("/mentorReviews/getReviewsForAdmin")
+export async function getSuggestionsForAdmin() {
+    const response = await axiosInstance.get("/mentorReviews/getSuggestionsForAdmin")
     return response
 }
 
-export async function decideReviewItemForAdmin(id, key, decision) {
-    const response = await axiosInstance.put(`/mentorReviews/decideReviewItemForAdmin/${id}`, { key, decision })
+export async function decideSuggestionsForAdmin(professionId, action, index) {
+    const response = await axiosInstance.put(`/mentorReviews/decideSuggestionsForAdmin/${professionId}`, { action, index })
     return response
 }

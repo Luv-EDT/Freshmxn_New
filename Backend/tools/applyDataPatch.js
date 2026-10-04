@@ -259,7 +259,20 @@ let abroadWorkChanged = 0
     changed += 1
 })
 
-// mentors' accepted remarks (Round 12) are words, not values — listed for a person to act on
+// mentors' waiting suggestions (Round 15) — each profession's `mentor_suggestions` list in
+// ALL-professions.json, kept as the admin's Mentor reviews tab has it; an approved profession comes
+// as an empty list, so its entry empties
+;(patch.mentorSuggestions || []).forEach(({ id, mentor_suggestions: list }) => {
+    const position = index.get(id)
+    if (position === undefined) return console.log(`skip  suggestions ${id} — not in ALL-professions.json`)
+    const record = taxonomy.professions[position]
+    if (JSON.stringify(record.mentor_suggestions || []) === JSON.stringify(list)) return
+    console.log(`suggest ${id} · ${list.length} waiting (was ${(record.mentor_suggestions || []).length})`)
+    record.mentor_suggestions = list
+    changed += 1
+})
+
+// mentors' approved changes are words, not values — listed for a person to act on
 ;(patch.mentorNotes || []).forEach((note) => console.log(`mentor ${note.id} · ${note.factor ? `${note.factor} should be ${note.direction}` : `${note.section}: ${note.verdict === "right" ? "looks right" : "needs a change"}`}${note.note ? ` — ${note.note}` : ""}${note.sourceUrl ? ` (${note.sourceUrl})` : ""}`))
 ;(patch.mentorReviewedRatings || []).forEach((id) => console.log(`mentor ${id} · every top quality called about right — you may set its baseline_rating.json review_status to "mentor_reviewed"`))
 

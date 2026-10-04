@@ -27,7 +27,7 @@ job role, get a mentor; no assessment).
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
 | **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 22 (scoring) / 60 (matching) / 169 (workers) — all offline, all green |
+| **Tests** | fixtures 22 (scoring) / 60 (matching) / 170 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -60,7 +60,7 @@ cd Backend && npm run seed:admin                  # once — the admin account
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 169/169 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 170/170 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -135,7 +135,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Studying abroad** (`Backend/data/abroad.json`, Round 11) | 25 careers flagged "helps" or "often part of the route", drafted by Claude — read them once. **Name the study-abroad partner** and share leads from the admin "Study abroad" tab (consent and policy version are on each row) |
 | **Master's and studying-abroad sources** (`Backend/data/study_sources.json`, Round 12) | Master's: 24 of the 32 "required / is the way in" careers checked against an official rule, 7 supported by published information, 1 our estimate (public policy). Some sources are secondary sites (Careers360, Testbook, Indian Kanoon) — the study bot is meant to replace them with official pages. **Finding:** UPSC's Indian Statistical Service accepts a bachelor's, so Statistician's "master's required" may be wrong — decide. Abroad: 2 supported, 23 our estimate; none is "often needed" any more. Rules and tables: `docs/5_finalized/STUDY_INFO_RULES.md` |
 | **Closing ranks** (`Backend/data/cutoffs.json`, Round 12) | Seven B.Tech CSE rows (six IITs, NIT Tiruchirappalli) are **drafts and hidden**: the official sites were blocked from the build container and search summaries disagreed. The study bot checks them on JoSAA from August; approve each in Data updates. A shown rank also needs the institution list reviewed. Add more rows (other branches, MBBS, CLAT) by hand or in V2 |
-| **Mentor reviews** (Round 12; every quality since Round 13) | Approved mentors can review our data for their profession. Decide each item in **Mentor reviews**; accepted ones go out in Export patch as notes for a person to apply. The sheet now lists every rated quality — the eight that matter most open, the rest folded. A profession whose qualities a mentor answered (at least the main eight) all "about right", and you accepted, can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
+| **Mentor reviews** (Round 12; every quality since Round 13; one card per profession since Round 15) | Approved mentors can review our data for their profession. Only what they say should **change** reaches **Mentor reviews** — one card per profession that every mentor of that field adds to. **Approve all** sends the card to Export patch and empties it; **Drop** removes one suggestion. Export patch also writes each profession's waiting list into its `mentor_suggestions` in ALL-professions.json (empty once approved). The sheet now lists every rated quality — the eight that matter most open, the rest folded. A profession whose qualities a mentor answered (at least the main eight) all "about right", and you accepted, can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
 | **Model for the monthly research** (Round 12) | Run the comparison once (a few dollars), then choose. Until then Opus 5.5. `REFRESH_MODEL` on Render, if set, overrides the choice |
 | **First live batch** (Round 12) | The monthly jobs now send one half-price batch. If Anthropic refuses the batch, the job asks directly as before (logged). After the 1st, look for `batch_collect: … — {…}` in the Render logs. `RESEARCH_BATCH=false` turns batching off |
 | **Mentor Only "Other" requests** (Round 12) | A Mentor Only student may describe a career we do not list; the admin's **Mentor Matches** shows it as "Other — find separately". Full refund on request if no mentor is found |
@@ -1879,3 +1879,21 @@ writes the arrays whole — same result on Atlas.
 **Owner answers this round:** Round 13 was complete apart from three small gaps — the help line on two
 mentorship states (fixed here), design screenshots sent once at the end rather than after each round,
 and the mentor-request flow, which is in Round 13's answers above.
+
+### Round 15 — mentor suggestions, one entry per profession; the test strip folds away; collapsible padding (2026-10-04)
+The owner confirmed Round 13 (J, K, L, H, M) and asked for three things.
+
+| Item | What shipped |
+|---|---|
+| **Mentor suggestions** | Only changes reach the admin: "needs a change", "should be higher / lower", and a missing skill. "Looks right" stays on the mentor's own sheet. **One row per profession** (`model/professionSuggestionsModel.js`, a `mentor_suggestions` list): a second mentor of the same field adds to the same list, and a mentor's re-save replaces only their own part. The admin's **Mentor reviews** tab shows one card per profession (where mentors agree first); **Approve all** moves the card's suggestions to `approved` (→ Export patch as mentor notes) and empties the list; **Drop** removes one. Export patch carries each profession's list and `tools/applyDataPatch.js --write` sets that profession's `mentor_suggestions` in ALL-professions.json, empty after approval. The live list is in the database because Render's disk is wiped on every deploy — the server can never write the data file itself. A profession's ratings can be marked `mentor_reviewed` when a mentor called every main quality "about right" (no admin step now, as nothing changes) |
+| **Assessment** | The strip of all tests is folded behind **"Show me all the tests (N left)"**; picking a test scrolls to its card |
+| **Padding** | Every open collapsible insets its content 16 px (research box, mentor review, consent help, the model card); paragraphs inside an inset block no longer double-indent. Mentor-review sections: headings sit inside a clean top line, and "Looks right / Needs a change" line up |
+
+**Fixtures:** workers 169 → 170 (MENTOR SUGGESTIONS — only changes, one row a second mentor adds to, re-save
+replaces own part, approve empties into `approved`, the data file mirrors it, no mentor id or email in the
+file). Changed because the owner changed the product: the MENTOR REVIEW flow fixture (the router now also
+writes the suggestions model; approved suggestions, not accepted review items, reach Export patch).
+
+**Cloud checks:** suggestions 12/12 (two mentors → one row; re-save; admin card and approve in the browser;
+Export patch notes + empty list; a decided review can't be resent; the folded test strip; the research box
+inset), deck 17/17, Round 14 14/14.

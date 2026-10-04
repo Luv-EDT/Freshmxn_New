@@ -290,7 +290,10 @@ finds changes the website until the admin approves it.
   master's, pay, demand, AI, things worth knowing — and every quality we rated for it, in words (the eight that matter most open,
   the rest folded). They mark each part "looks
   right" or "needs a change" (with a note and a link), and each quality "about right / higher /
-  lower". The admin decides every item; accepted ones go into the data through a reviewed commit.
+  lower". Only what they say should **change** goes to the admin — collected in **one list per
+  profession**, which every mentor of that field adds to. The admin approves the list (it empties) and the
+  changes go into the data through a reviewed commit, which also writes the list into that career's
+  `mentor_suggestions` in ALL-professions.json.
   **Nothing changes on the site from a mentor's answer alone.**
 - A student on the mentor plan opens their matched careers and picks **one job role** inside one of
   them (the roles that suit them best are listed first). That starts a

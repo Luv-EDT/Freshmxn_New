@@ -3999,14 +3999,15 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "MENTOR REVIEW — a review changes nothing by itself; answers are checked; accepted items reach Export patch",
+        name: "MENTOR REVIEW — a review changes nothing by itself; answers are checked; approved suggestions reach Export patch",
         run: () => {
             const { cleanReview, qualitiesFor } = require("../../Routers/mentorReviewsRouter")
             const problems = []
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
             // it may READ the override layers (to show what students see) but writes only its own rows
             const models = [...router.matchAll(/require\("\.\.\/model\/(\w+)"\)/g)].map((match) => match[1]).sort()
-            if (models.join(",") !== "mentorReviewsModel,mentorsModel") problems.push(`the review router loads ${models.join(", ")}`)
+            // Round 15 (owner): plus the one-row-per-profession list of suggested changes — still its own rows only
+            if (models.join(",") !== "mentorReviewsModel,mentorsModel,professionSuggestionsModel") problems.push(`the review router loads ${models.join(", ")}`)
             if (/writeFile|clearOverrides|clearStudyOverrides/.test(router)) problems.push("the review router can change data")
             const qualities = qualitiesFor("swc-software-developer")
             const ok = cleanReview({ sections: [{ section: "exams", verdict: "change", note: "GATE matters for PSU jobs", sourceUrl: "https://gate.iitk.ac.in" }], qualities: [{ factor: qualities[0].factor, direction: "higher" }] }, qualities)
@@ -4018,7 +4019,7 @@ const fixtures = [
             if (!cleanReview({ qualities: [{ factor: "telepathy", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
             if (!cleanReview({}, qualities).error) problems.push("an empty review was kept")
             const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
-            if (!/mentorNotes:/.test(updates) || !/decision === "accepted"/.test(updates)) problems.push("accepted mentor notes do not reach Export patch")
+            if (!/mentorNotes: suggestionRows\.flatMap\(\(row\) => \(row\.approved/.test(updates)) problems.push("approved mentor suggestions do not reach Export patch")
             const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
             if (!/app\.use\("\/mentorReviews", mentorReviewsRouter\)/.test(server)) problems.push("the router is not mounted")
             return problems.length > 0 ? problems.join("; ") : null
@@ -4348,6 +4349,42 @@ const fixtures = [
 
             const clean = cleanReview({ sections: [{ section: "working_abroad", verdict: "change", note: "Germany needs B2 German too" }, { section: "degrees", verdict: "right" }] }, qualitiesFor("soc-clinical-psychologist"))
             if (clean.error || clean.items.length !== 2) problems.push(`a review of the new sections was refused: ${clean.error}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MENTOR SUGGESTIONS — only changes reach the admin; one row per profession that mentors add to; approving empties it; the data file mirrors it",
+        // Round 15 (owner): "only the suggestions that suggest a change … a single entry for that
+        // profession … once approved this should be empty"
+        run: () => {
+            const { changesOf, mergeSuggestions } = require("../../Routers/mentorReviewsRouter")
+            const problems = []
+            const items = [
+                { section: "exams", verdict: "right" },
+                { section: "pay", verdict: "change", note: "Freshers earn 3-4L", sourceUrl: "https://example.org" },
+                { section: "qualities", factor: "focus", direction: "right" },
+                { section: "qualities", factor: "creativity", direction: "higher", note: "" },
+            ]
+            const changes = changesOf(items, "Copy-editing tools")
+            if (changes.length !== 3 || changes.some((change) => change.verdict === "right" || change.direction === "right")) problems.push(`"looks right" reached the admin: ${JSON.stringify(changes)}`)
+            if (!changes.some((change) => change.section === "skills_missing")) problems.push("a missing skill did not reach the admin")
+            if (changesOf([{ section: "exams", verdict: "right" }], "").length !== 0) problems.push("an all-right review still sent something")
+
+            const first = mergeSuggestions([], "m1", [{ mentor: "m1", section: "pay" }])
+            const second = mergeSuggestions(first, "m2", [{ mentor: "m2", section: "exams" }, { mentor: "m2", section: "ai" }])
+            if (second.length !== 3) problems.push("a second mentor of the same profession did not add to the same list")
+            const resaved = mergeSuggestions(second, "m1", [{ mentor: "m1", section: "nuances" }])
+            if (resaved.length !== 3 || resaved.some((entry) => entry.section === "pay")) problems.push("a mentor's re-save did not replace their own earlier suggestions")
+
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
+            const decide = router.slice(router.indexOf('router.put("/decideSuggestionsForAdmin'))
+            if (!/mentor_suggestions: pending\.filter/.test(decide) || !/approved: action === "approve"/.test(decide)) problems.push("approving does not empty the waiting list into `approved`")
+            const tool = fs.readFileSync(path.join(__dirname, "../../tools/applyDataPatch.js"), "utf8")
+            if (!/record\.mentor_suggestions = list/.test(tool)) problems.push("Export patch does not write mentor_suggestions into ALL-professions.json")
+            const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/mentorSuggestions: suggestionRows\.map/.test(updates)) problems.push("Export patch does not carry each profession's list")
+            if (/mentorId|mentor: mentor\b|email/.test(updates.slice(updates.indexOf("mentorSuggestions:"), updates.indexOf("mentorSuggestions:") + 600))) problems.push("a mentor id or email would be written into the data file")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

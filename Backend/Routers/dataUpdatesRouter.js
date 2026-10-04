@@ -215,16 +215,18 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
     try {
         const CutoffOverride = require("../model/cutoffOverridesModel")
         const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")
-        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews, cutoffRows, licenceRows] = await Promise.all([
+        const ProfessionSuggestions = require("../model/professionSuggestionsModel")
+        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews, cutoffRows, licenceRows, suggestionRows] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
             CareerDraft.find({ status: "accepted" }).lean(),
             ExamOverride.find({ approvedAt: { $ne: null } }).lean(),
             StudyPlaceOverride.find({ approvedAt: { $ne: null } }).lean(),
             StudyFactOverride.find({ approvedAt: { $ne: null } }).lean(),
-            MentorReview.find({ "items.decision": "accepted" }).lean(),
+            MentorReview.find({ submittedAt: { $ne: null } }).lean(),
             CutoffOverride.find({ approvedAt: { $ne: null } }).lean(),
             AbroadLicenceOverride.find({ approvedAt: { $ne: null } }).lean(),
+            ProfessionSuggestions.find({}).lean(),
         ])
         const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
@@ -273,27 +275,35 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                 values: row.values,
                 checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
             })),
-            // mentors' accepted remarks on their own profession (Round 12). Words, not values: a person
-            // turns each into a data change, so tools/applyDataPatch.js only lists them.
-            mentorNotes: mentorReviews.flatMap((review) => review.items
-                .filter((item) => item.decision === "accepted")
-                .map((item) => ({
-                    id: review.professionId,
-                    section: item.section,
-                    ...(item.factor ? { factor: item.factor, direction: item.direction } : { verdict: item.verdict }),
-                    note: item.note,
-                    sourceUrl: item.sourceUrl || null,
-                    reviewedOn: new Date(review.updatedAt).toISOString().slice(0, 10),
-                }))),
-            // careers where a mentor answered at least the main qualities, called every quality they
-            // answered "about right", and the admin accepted each — baseline_rating.json can mark
-            // these mentor_reviewed
+            // mentors' approved changes to their own profession (Round 15: one row per profession, only
+            // what should change). Words, not values: a person turns each into a data change, so
+            // tools/applyDataPatch.js only lists them.
+            mentorNotes: suggestionRows.flatMap((row) => (row.approved || []).map((suggestion) => ({
+                id: row.professionId,
+                section: suggestion.section,
+                ...(suggestion.factor ? { factor: suggestion.factor, direction: suggestion.direction } : { verdict: "change" }),
+                note: suggestion.note,
+                sourceUrl: suggestion.sourceUrl || null,
+                reviewedOn: new Date(suggestion.approvedAt || row.updatedAt).toISOString().slice(0, 10),
+            }))),
+            // each profession's waiting list, written into its `mentor_suggestions` in ALL-professions.json
+            // — an approved profession goes out as an empty list, so the file empties too
+            mentorSuggestions: suggestionRows.map((row) => ({
+                id: row.professionId,
+                mentor_suggestions: (row.mentor_suggestions || []).map(({ mentorName, section, factor, direction, note, sourceUrl, suggestedAt }) => ({
+                    mentor: mentorName, section, ...(factor ? { factor, direction } : {}), note, ...(sourceUrl ? { sourceUrl } : {}),
+                    suggestedOn: new Date(suggestedAt).toISOString().slice(0, 10),
+                })),
+            })),
+            // careers where a mentor answered at least the main qualities and called every quality they
+            // answered "about right" — baseline_rating.json can mark these mentor_reviewed. ("About
+            // right" no longer goes to the admin to accept, Round 15: there is nothing to change.)
             mentorReviewedRatings: [...new Set(mentorReviews
                 .filter((review) => {
                     const qualities = review.items.filter((item) => item.section === "qualities")
                     const answered = new Set(qualities.map((item) => item.factor))
                     return qualitiesFor(review.professionId).filter((quality) => quality.main).every((quality) => answered.has(quality.factor))
-                        && qualities.every((item) => item.direction === "right" && item.decision === "accepted")
+                        && qualities.every((item) => item.direction === "right")
                 })
                 .map((review) => review.professionId))],
             // approved but not yet accepted as a finished draft — listed so nothing is forgotten

@@ -886,10 +886,27 @@
     content: "−";
 }
 
-.faq-item p {
+.faq-item > p {
     margin: 0;
     padding: 0 16px 16px;
     color: var(--navy-soft);
+}
+
+/* paragraphs inside an inset block (research notes, a story) sit on that block's own inset */
+.faq-item > :not(summary) p {
+    color: var(--navy-soft);
+}
+
+/* Everything else inside an open collapsible gets the same 16px inset as its paragraphs — headings,
+   chip lists, tables and forms used to sit against the edge (owner, Round 15). The success-story
+   body pads itself. */
+.faq-item > :not(summary):not(p):not(.story-body) {
+    margin-left: 16px;
+    margin-right: 16px;
+}
+
+.faq-item[open] > :last-child:not(summary):not(p):not(.story-body) {
+    margin-bottom: 16px;
 }
 
 /* who it's for — three audience cards */

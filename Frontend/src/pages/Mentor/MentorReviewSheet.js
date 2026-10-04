@@ -209,7 +209,8 @@ function MentorReviewSheet() {
             <summary>Check our data for {sheet.profession}</summary>
             <p>
                 This is what students read about your profession. Most of it was put together with AI and checked only in parts —
-                you know the work. Answer the sections you can; skip any you're unsure of.
+                you know the work. Answer the sections you can; skip any you're unsure of. Only what you say needs
+                changing goes to our team.
             </p>
             {submittedAt && <p className="report-small">Sent {new Date(submittedAt).toLocaleDateString("en-IN")}{locked ? " · our team is going through it" : " · you can still change it"}</p>}
 

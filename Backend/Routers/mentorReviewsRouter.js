@@ -1,6 +1,7 @@
 const express = require("express")
 const MentorReview = require("../model/mentorReviewsModel")
 const Mentor = require("../model/mentorsModel")
+const ProfessionSuggestions = require("../model/professionSuggestionsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const mentorAuthMiddleware = require("../middlewares/mentorAuthMiddleware")
@@ -16,9 +17,11 @@ const router = express.Router()
 // "needs a change" — plus, for every quality the career is rated on, "about right / should be
 // higher / should be lower".
 //
-// NOTHING HERE CHANGES THE PRODUCT. This router writes only MentorReview rows. The admin decides
-// each item; accepted ones go out in Export patch (dataUpdatesRouter) for a reviewed data commit.
-// A fixture checks this file never touches an override or a data file.
+// NOTHING HERE CHANGES THE PRODUCT. This router writes only its own rows: the mentor's answers
+// (MentorReview) and, since Round 15, ONE ROW PER PROFESSION holding just the changes mentors suggest
+// (ProfessionSuggestions — "looks right" never reaches the admin). The admin approves a profession's
+// row; its suggestions go out in Export patch (dataUpdatesRouter) for a reviewed data commit and the
+// row is empty again. A fixture checks this file never touches an override or a data file.
 
 const taxonomy = require("../data/ALL-professions.json")
 const baseline = require("../data/baseline_rating.json")
@@ -33,7 +36,6 @@ const ratingById = new Map(baseline.ratings.map((rating) => [rating.id, rating])
 const SECTIONS = ["what_it_is", "path", "exams", "where_to_study", "abroad", "working_abroad", "degrees", "masters", "pay", "demand", "ai", "nuances"]
 const VERDICTS = ["right", "change"]
 const DIRECTIONS = ["right", "higher", "lower"]
-const DECISIONS = ["accepted", "noted", "rejected"]
 const QUALITY_COUNT = 8
 const NOTE_MAX = 600
 
@@ -164,6 +166,22 @@ const cleanReview = (body, qualities) => {
 
 const itemKey = (item) => (item.section === "qualities" ? `qualities:${item.factor}` : item.section)
 
+// ONLY WHAT SHOULD CHANGE (owner, Round 15): "needs a change", "should be higher / lower", and a skill
+// we're missing. Everything a mentor called right stays on their own sheet.
+const changesOf = (items, skillsMissing) => [
+    ...items
+        .filter((item) => item.verdict === "change" || ["higher", "lower"].includes(item.direction))
+        .map(({ section, factor, direction, note, sourceUrl }) => ({ section, ...(factor ? { factor, direction } : {}), note: note || "", sourceUrl: sourceUrl || "" })),
+    ...(skillsMissing ? [{ section: "skills_missing", note: skillsMissing, sourceUrl: "" }] : []),
+]
+
+// One list per profession: this mentor's earlier suggestions are replaced by their latest, everyone
+// else's stay — so a second mentor of the same field adds to the same row
+const mergeSuggestions = (current, mentorId, changes) => [
+    ...(current || []).filter((suggestion) => String(suggestion.mentor) !== String(mentorId)),
+    ...changes,
+]
+
 // the approved mentor and their profession, or the reason there is no sheet
 const loadMentor = async (userId) => {
     const mentor = await Mentor.findOne({ user: userId }).lean()
@@ -236,6 +254,15 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
             return res.status(400).json({ success: false, message: cleaned.error })
         }
 
+        // the profession's one row of suggested changes, with this mentor's part brought up to date
+        const row = await ProfessionSuggestions.findOne({ professionId: profession.id }).lean()
+        const changes = changesOf(cleaned.items, cleaned.skillsMissing).map((change) => ({ ...change, mentor: req.user._id, mentorName: mentor.name, suggestedAt: new Date() }))
+        await ProfessionSuggestions.findOneAndUpdate(
+            { professionId: profession.id },
+            { $set: { professionName: profession.profession, mentor_suggestions: mergeSuggestions(row && row.mentor_suggestions, req.user._id, changes) } },
+            { upsert: true }
+        )
+
         const review = await MentorReview.findOneAndUpdate(
             { mentor: req.user._id, professionId: profession.id },
             {
@@ -263,85 +290,94 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
 
 
 // ========================
-// Get Reviews For Admin
+// Get Suggestions For Admin
 // ========================
 
-router.get("/getReviewsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+// One row per profession that has suggestions waiting, each in words the admin can weigh: which
+// section or quality, what we say today, and where two or more mentors say the same thing.
+router.get("/getSuggestionsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const reviews = await MentorReview.find({ submittedAt: { $ne: null } })
-            .populate("mentor", "name email")
-            .sort({ status: 1, submittedAt: -1 })
-            .lean()
-
-        // where mentors of the same profession agree — "2 mentors say sustained focus should be higher"
-        const agreement = {}
-        reviews.forEach((review) => {
-            review.items.forEach((item) => {
-                const key = item.section === "qualities"
-                    ? `${FACTOR_LABELS[item.factor] || item.factor} should be ${item.direction === "right" ? "as it is" : item.direction}`
-                    : `${item.section.replace(/_/g, " ")} ${item.verdict === "right" ? "looks right" : "needs a change"}`
-                const bucket = agreement[review.professionId] || (agreement[review.professionId] = {})
-                bucket[key] = (bucket[key] || 0) + 1
-            })
-        })
+        const rows = await ProfessionSuggestions.find({ "mentor_suggestions.0": { $exists: true } }).sort({ updatedAt: -1 }).lean()
 
         return res.status(200).json({
             success: true,
-            message: "Mentor reviews fetched",
-            data: {
-                reviews: reviews.map((review) => ({
-                    ...review,
-                    items: review.items.map((item) => ({
-                        ...item,
-                        key: itemKey(item),
-                        factorLabel: item.factor ? FACTOR_LABELS[item.factor] || item.factor : null,
-                        // what we say today, so the admin can weigh "should be higher" against it
-                        currentLevel: item.factor ? (qualitiesFor(review.professionId).find((quality) => quality.factor === item.factor) || {}).level || null : null,
-                    })),
-                })),
-                agreement: Object.fromEntries(Object.entries(agreement).map(([id, counts]) => [
-                    id,
-                    Object.entries(counts).filter(([, count]) => count >= 2).map(([what, count]) => ({ what, count })),
-                ])),
-            },
+            message: "Mentor suggestions fetched",
+            data: rows.map((row) => {
+                const levels = new Map(qualitiesFor(row.professionId).map((quality) => [quality.factor, quality.level]))
+                const counts = {}
+                const suggestions = row.mentor_suggestions.map((suggestion) => {
+                    const what = suggestion.section === "qualities"
+                        ? `${FACTOR_LABELS[suggestion.factor] || suggestion.factor} should be ${suggestion.direction}`
+                        : suggestion.section.replace(/_/g, " ")
+                    counts[what] = (counts[what] || 0) + 1
+                    return { ...suggestion, what, currentLevel: suggestion.factor ? levels.get(suggestion.factor) || null : null }
+                })
+                return {
+                    professionId: row.professionId,
+                    professionName: row.professionName,
+                    mentors: new Set(suggestions.map((suggestion) => String(suggestion.mentor))).size,
+                    suggestions,
+                    agreement: Object.entries(counts).filter(([, count]) => count >= 2).map(([what, count]) => ({ what, count })),
+                }
+            }),
         })
 
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to fetch mentor reviews", error: error.message })
+        return res.status(500).json({ success: false, message: "Failed to fetch mentor suggestions", error: error.message })
     }
 })
 
 
 // ========================
-// Decide Review Item For Admin
+// Decide Suggestions For Admin
 // ========================
 
-// One item at a time: accepted (goes into Export patch), noted (kept, nothing to change) or
-// rejected. When every item is decided the review is "reviewed".
-router.put("/decideReviewItemForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+// approve → every waiting suggestion for the profession moves to `approved` (Export patch carries
+// them to a reviewed data commit) and the row's list is empty again. drop → one suggestion (by its
+// place in the list) is removed as not right. Either way the mentors' own sheets lock for those
+// answers, so a re-save cannot send them back.
+router.put("/decideSuggestionsForAdmin/:professionId", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const { key, decision } = req.body || {}
-        if (!DECISIONS.includes(decision)) {
-            return res.status(400).json({ success: false, message: "Decision must be accepted, noted or rejected" })
+        const { action, index } = req.body || {}
+        if (!["approve", "drop"].includes(action)) {
+            return res.status(400).json({ success: false, message: "Action must be approve or drop" })
         }
 
-        const review = await MentorReview.findById(req.params.id)
-        if (!review) {
-            return res.status(404).json({ success: false, message: "Review not found" })
+        const row = await ProfessionSuggestions.findOne({ professionId: req.params.professionId }).lean()
+        const pending = (row && row.mentor_suggestions) || []
+        const chosen = action === "approve" ? pending : pending.filter((_, position) => position === Number(index))
+        if (chosen.length === 0) {
+            return res.status(400).json({ success: false, message: "There is nothing waiting to decide here" })
         }
 
-        const item = review.items.find((entry) => itemKey(entry) === key)
-        if (!item) {
-            return res.status(400).json({ success: false, message: "That item is not in this review" })
-        }
+        const now = new Date()
+        await ProfessionSuggestions.updateOne(
+            { _id: row._id },
+            {
+                $set: {
+                    mentor_suggestions: pending.filter((suggestion) => !chosen.includes(suggestion)),
+                    approved: action === "approve" ? [...(row.approved || []), ...chosen.map((suggestion) => ({ ...suggestion, approvedAt: now }))] : row.approved || [],
+                },
+            }
+        )
 
-        item.decision = decision
-        if (typeof req.body.adminNote === "string") review.adminNote = req.body.adminNote.trim().slice(0, NOTE_MAX)
-        review.status = review.items.every((entry) => entry.decision) ? "reviewed" : "open"
-        review.markModified("items")
-        await review.save()
+        // lock what was decided on each mentor's own sheet (MentorReview), so it cannot come back
+        const decision = action === "approve" ? "accepted" : "rejected"
+        await Promise.all([...new Set(chosen.map((suggestion) => String(suggestion.mentor)))].map(async (mentorId) => {
+            const review = await MentorReview.findOne({ mentor: mentorId, professionId: row.professionId })
+            if (!review) return
+            const keys = new Set(chosen.filter((suggestion) => String(suggestion.mentor) === mentorId).map(itemKey))
+            review.items.forEach((item) => { if (keys.has(itemKey(item))) item.decision = decision })
+            review.status = review.items.every((item) => item.decision || item.verdict === "right" || item.direction === "right") ? "reviewed" : "open"
+            review.markModified("items")
+            await review.save()
+        }))
 
-        return res.status(200).json({ success: true, message: "Decision saved", data: review })
+        return res.status(200).json({
+            success: true,
+            message: action === "approve" ? `Approved — ${chosen.length} ${chosen.length === 1 ? "change goes" : "changes go"} into Export patch` : "Dropped",
+            data: { professionId: row.professionId, waiting: pending.length - chosen.length },
+        })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to save the decision", error: error.message })
@@ -353,5 +389,7 @@ module.exports.qualitiesFor = qualitiesFor
 module.exports.cleanReview = cleanReview
 module.exports.buildSheet = buildSheet
 module.exports.SECTIONS = SECTIONS
+module.exports.changesOf = changesOf
+module.exports.mergeSuggestions = mergeSuggestions
 module.exports.workingAbroadFor = workingAbroadFor
 module.exports.degreesFor = degreesFor
