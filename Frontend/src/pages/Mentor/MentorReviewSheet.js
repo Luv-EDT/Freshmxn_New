@@ -137,8 +137,8 @@ function MentorReviewSheet() {
     const [answers, setAnswers] = useState({})         // section → { verdict, note, sourceUrl }
     const [qualities, setQualities] = useState({})     // factor → { direction, note }
     const [skillsMissing, setSkillsMissing] = useState("")
-    const [locked, setLocked] = useState(false)
     const [submittedAt, setSubmittedAt] = useState(null)
+    const [progress, setProgress] = useState({ waiting: 0, checked: 0 })
     const [saving, setSaving] = useState(false)
 
     const fill = (review) => {
@@ -152,8 +152,8 @@ function MentorReviewSheet() {
         setAnswers(sections)
         setQualities(quality)
         setSkillsMissing(review.skillsMissing || "")
-        setLocked(Boolean(review.locked))
         setSubmittedAt(review.submittedAt)
+        setProgress({ waiting: review.waiting || 0, checked: review.checked || 0 })
     }
 
     useEffect(() => {
@@ -208,15 +208,22 @@ function MentorReviewSheet() {
         <details className="faq-item mentor-review">
             <summary>Check our data for {sheet.profession}</summary>
             <p>
-                This is what students read about your profession. Most of it was put together with AI and checked only in parts —
-                you know the work. Answer the sections you can; skip any you're unsure of. Only what you say needs
-                changing goes to our team.
+                This is what students read about your profession. These details come from our research and AI, and are
+                improved with suggestions from mentors like you. Answer the sections you can; skip any you're unsure of.
+                Only what you say needs changing goes to our team.
             </p>
-            {submittedAt && <p className="report-small">Sent {new Date(submittedAt).toLocaleDateString("en-IN")}{locked ? " · our team is going through it" : " · you can still change it"}</p>}
+            {/* Round 16 (owner): always open to a re-send — the latest answers replace what was still waiting */}
+            {submittedAt && (
+                <p className="report-small">
+                    You sent this on {new Date(submittedAt).toLocaleDateString("en-IN")}. Change anything and send again — it replaces what you sent.
+                    {progress.waiting > 0 && ` ${progress.waiting} ${progress.waiting === 1 ? "suggestion is" : "suggestions are"} waiting for our monthly check against sources.`}
+                    {progress.checked > 0 && ` ${progress.checked} already checked — thank you.`}
+                </p>
+            )}
 
             <form onSubmit={handleSubmit} className="mentor-form">
                 {Object.keys(SECTION_TITLES).map((id) => (
-                    <fieldset key={id} disabled={locked} className="review-section">
+                    <fieldset key={id} className="review-section">
                         <legend>{SECTION_TITLES[id]}</legend>
                         <SectionBody id={id} value={sheet.sections[id]} />
                         <div className="review-choices">
@@ -238,7 +245,7 @@ function MentorReviewSheet() {
                     </fieldset>
                 ))}
 
-                <fieldset disabled={locked} className="review-section">
+                <fieldset className="review-section">
                     <legend>Qualities this work needs most</legend>
                     <p className="report-small">How much each one matters in this profession, as we have it today.</p>
                     {sheet.qualities.filter((quality) => quality.main).map(renderQuality)}
@@ -251,14 +258,12 @@ function MentorReviewSheet() {
                     )}
                 </fieldset>
 
-                <fieldset disabled={locked} className="review-section">
+                <fieldset className="review-section">
                     <legend>Skills we're missing</legend>
                     <textarea maxLength={600} placeholder="Skills people in this work need that we haven't mentioned" value={skillsMissing} onChange={(e) => setSkillsMissing(e.target.value)} />
                 </fieldset>
 
-                {!locked && (
-                    <p><button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "Sending…" : submittedAt ? "Update my review" : "Send my review"}</button></p>
-                )}
+                <p><button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "Sending…" : submittedAt ? "Send again" : "Send my review"}</button></p>
             </form>
         </details>
     )

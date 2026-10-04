@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { Table, Button, Segmented, Popconfirm, message } from "antd"
+import { Table, Button, Segmented, Popconfirm, Tag, message } from "antd"
 import dayjs from "dayjs"
 import { getProposalsForAdmin, decideProposalForAdmin, exportPatchForAdmin } from "../../apiCall/dataUpdatesApi"
 import { runHousekeepingForAdmin } from "../../apiCall/followUpsApi"
@@ -12,13 +12,27 @@ import ModelChoiceCard from "./ModelChoiceCard"
 //
 // Round 11: the monthly study bot files here too — exam rows (checked on the exam's own site) and
 // college lists (NIRF first). The Kind column tells them apart.
+//
+// Round 16 (owner: one queue): mentors' suggestions arrive here too, after Claude's monthly check
+// against sources (Backend/housekeeping/mentorPass.js), tagged "Mentor + sources" with the mentors'
+// own words beside Claude's sources. A "Mentor's wording" row changes no page when approved — it goes
+// into Export patch (mentorNotes) for a reviewed data commit.
 const FIELD_NAMES = {
     india_demand: "Demand in India", early_earnings_lpa: "Starting pay (LPA)", mid_career_lpa: "Mid-career pay (LPA)",
     usual_application_window: "Applications usually", usual_exam_month: "Exam usually", eligibility: "Who can sit it",
     new_exam: "A new exam", add_institution: "Add an institution", remove_institution: "Remove an institution", update_institution: "Change a rank",
     after_undergrad: "Master's needed?", abroad: "Studying abroad", closing_rank: "Last closing rank", licence: "Licence abroad",
 }
-const KIND_NAMES = { career: "Career", exam: "Exam", college: "College", study_fact: "Study fact", cutoff: "Cut-off", abroad_licence: "Licence abroad" }
+const MENTOR_SECTIONS = {
+    what_it_is: "What it is", path: "The path", exams: "Exams", where_to_study: "Where to study", working_abroad: "Working abroad",
+    degrees: "Degrees that count", ai: "AI exposure", nuances: "Worth knowing", skills_missing: "Skills we're missing",
+}
+const KIND_NAMES = { career: "Career", exam: "Exam", college: "College", study_fact: "Study fact", cutoff: "Cut-off", abroad_licence: "Licence abroad", mentor_text: "Mentor's wording" }
+
+// what a mentor's-wording row is about: a section of the sheet, or a quality going up or down
+const mentorWhat = (record) => (record.section === "qualities"
+    ? `Quality: ${String(record.factor || "").replace(/_/g, " ")} ${record.direction === "higher" ? "↑" : "↓"}`
+    : MENTOR_SECTIONS[record.section] || record.section)
 
 // a college or new-exam proposal carries its institution or exam as JSON text
 const readable = (value) => {
@@ -90,13 +104,36 @@ function DataUpdatesList() {
 
     const columns = [
         { title: "Found", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Kind", dataIndex: "kind", render: (value) => KIND_NAMES[value || "career"] },
+        {
+            title: "Kind",
+            dataIndex: "kind",
+            render: (value, record) => (
+                <span>
+                    {KIND_NAMES[value || "career"]}
+                    {record.origin === "mentor" && <div><Tag color="gold">Mentor + sources</Tag></div>}
+                </span>
+            ),
+        },
         { title: "Career / exam / discipline", dataIndex: "profession" },
-        { title: "What", dataIndex: "field", render: (value) => FIELD_NAMES[value] || value },
+        { title: "What", dataIndex: "field", render: (value, record) => (value === "mentor_text" ? mentorWhat(record) : FIELD_NAMES[value] || value) },
         { title: "Now", dataIndex: "currentValue", render: (value) => (value ? readable(value) : "—") },
         { title: "Proposed", dataIndex: "proposedValue", render: (value) => <strong>{readable(value)}</strong> },
         { title: "Confidence", dataIndex: "confidence" },
-        { title: "Why", dataIndex: "reason" },
+        {
+            title: "Why",
+            dataIndex: "reason",
+            render: (value, record) => (
+                <span>
+                    {value}
+                    {(record.fromMentors || []).map((mentor, index) => (
+                        <div key={`${mentor.mentorName}-${index}`} className="report-small">
+                            {mentor.mentorName || "A mentor"}: “{mentor.note}”
+                            {mentor.sourceUrl && <> · <a href={mentor.sourceUrl} target="_blank" rel="noreferrer">their link</a></>}
+                        </div>
+                    ))}
+                </span>
+            ),
+        },
         {
             title: "Job board",
             render: (_, record) => (record.adzuna && record.adzuna.count !== null && record.adzuna.count !== undefined
@@ -114,7 +151,7 @@ function DataUpdatesList() {
             render: (_, record) => (record.status === "open"
                 ? (
                     <span>
-                        <Popconfirm title="Show this on the career pages?" onConfirm={() => decide(record._id, "approved")}>
+                        <Popconfirm title={record.kind === "mentor_text" ? "Approve? It goes into Export patch for a data commit." : "Show this on the career pages?"} onConfirm={() => decide(record._id, "approved")}>
                             <Button type="primary" size="small">Approve</Button>
                         </Popconfirm>{" "}
                         <Button size="small" onClick={() => decide(record._id, "rejected")}>Reject</Button>
@@ -129,7 +166,7 @@ function DataUpdatesList() {
             <ModelChoiceCard />
             <p>
                 {data.summary.open} waiting · {data.summary.careersChecked} careers checked so far{" "}
-                <Button onClick={() => runRefresh("data_refresh")}>Run the career refresh now</Button>{" "}
+                <Button onClick={() => runRefresh("data_refresh")}>Run the career refresh now (with mentors' suggestions)</Button>{" "}
                 <Button onClick={() => runRefresh("study_refresh")}>Run the study bot now</Button>{" "}
                 <Button onClick={() => runRefresh("batch_collect")}>Collect batch answers now</Button>{" "}
                 <Button onClick={exportPatch}>Export patch</Button>{" "}

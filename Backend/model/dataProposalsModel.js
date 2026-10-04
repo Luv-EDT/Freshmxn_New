@@ -22,12 +22,16 @@ const STUDY_FACT_FIELDS = ["after_undergrad", "abroad"]
 const CUTOFF_FIELDS = ["closing_rank"]
 // Round 13: a licence route abroad — kind "abroad_licence"; professionId holds "<careerId>:<country>"
 const LICENCE_FIELDS = ["licence"]
+// Round 16: a mentor's suggestion Claude found a source for, on anything that is not a value we can
+// override (what it is, the path, a quality…) — kind "mentor_text". proposedValue holds the wording;
+// approving it sends it to Export patch only, for a person to turn into a data change.
+const MENTOR_TEXT_FIELDS = ["mentor_text"]
 
 const dataProposalSchema = new mongoose.Schema(
     {
         kind: {
             type: String,
-            enum: ["career", "exam", "college", "study_fact", "cutoff", "abroad_licence"],
+            enum: ["career", "exam", "college", "study_fact", "cutoff", "abroad_licence", "mentor_text"],
             default: "career",
         },
         professionId: {
@@ -40,7 +44,7 @@ const dataProposalSchema = new mongoose.Schema(
         },
         field: {
             type: String,
-            enum: [...CAREER_FIELDS, ...EXAM_FIELDS, ...COLLEGE_FIELDS, ...STUDY_FACT_FIELDS, ...CUTOFF_FIELDS, ...LICENCE_FIELDS],
+            enum: [...CAREER_FIELDS, ...EXAM_FIELDS, ...COLLEGE_FIELDS, ...STUDY_FACT_FIELDS, ...CUTOFF_FIELDS, ...LICENCE_FIELDS, ...MENTOR_TEXT_FIELDS],
             required: true,
         },
         currentValue: {
@@ -69,6 +73,21 @@ const dataProposalSchema = new mongoose.Schema(
             meanLpa: { type: Number, default: null },
             medianLpa: { type: Number, default: null }, // only with enough salaried postings
         },
+        // Round 16: who asked for it — the monthly jobs, or mentors (housekeeping/mentorPass.js), whose
+        // own words travel with it so the admin sees both the mentors and the sources
+        origin: {
+            type: String,
+            enum: ["research", "mentor"],
+            default: "research",
+        },
+        fromMentors: {
+            type: [{ _id: false, mentorName: String, note: String, sourceUrl: String }],
+            default: [],
+        },
+        // mentor_text only: which section of the sheet, and for a quality which one and which way
+        section: { type: String, default: null },
+        factor: { type: String, default: null },
+        direction: { type: String, default: null },
         status: {
             type: String,
             enum: ["open", "approved", "rejected", "superseded"],
@@ -98,3 +117,4 @@ module.exports.CAREER_FIELDS = CAREER_FIELDS
 module.exports.EXAM_FIELDS = EXAM_FIELDS
 module.exports.COLLEGE_FIELDS = COLLEGE_FIELDS
 module.exports.STUDY_FACT_FIELDS = STUDY_FACT_FIELDS
+module.exports.MENTOR_TEXT_FIELDS = MENTOR_TEXT_FIELDS

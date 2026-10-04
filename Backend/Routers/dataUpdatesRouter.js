@@ -174,7 +174,13 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
             return res.status(400).json({ success: false, message: "This proposal has already been decided" })
         }
 
-        if (decision === "approved" && proposal.kind && proposal.kind !== "career") {
+        // a mentor's wording (Round 16) changes no page: approved, it waits in Export patch for a
+        // person to turn into a reviewed data change
+        if (decision === "approved" && proposal.kind === "mentor_text") {
+            if (!proposal.proposedValue || !proposal.section) {
+                return res.status(400).json({ success: false, message: "The suggestion is not well formed" })
+            }
+        } else if (decision === "approved" && proposal.kind && proposal.kind !== "career") {
             const problem = await approveStudyProposal(proposal)
             if (problem) {
                 return res.status(400).json({ success: false, message: problem })
@@ -201,7 +207,8 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
         proposal.adminNote = typeof adminNote === "string" ? adminNote.trim().slice(0, 500) : ""
         await proposal.save()
 
-        return res.status(200).json({ success: true, message: decision === "approved" ? "Approved — the career page shows it now" : "Rejected", data: { proposal } })
+        const approvedMessage = proposal.kind === "mentor_text" ? "Approved — it goes into Export patch for a data commit" : "Approved — the career page shows it now"
+        return res.status(200).json({ success: true, message: decision === "approved" ? approvedMessage : "Rejected", data: { proposal } })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to save the decision", error: error.message })
@@ -216,7 +223,7 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
         const CutoffOverride = require("../model/cutoffOverridesModel")
         const AbroadLicenceOverride = require("../model/abroadLicenceOverridesModel")
         const ProfessionSuggestions = require("../model/professionSuggestionsModel")
-        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews, cutoffRows, licenceRows, suggestionRows] = await Promise.all([
+        const [overrides, approvedScout, accepted, examRows, placeRows, factRows, mentorReviews, cutoffRows, licenceRows, suggestionRows, mentorTexts] = await Promise.all([
             ProfessionOverride.find({ approvedAt: { $ne: null } }).lean(),
             ScoutCandidate.find({ status: { $in: ["approved_combined", "approved_new"] } }).lean(),
             CareerDraft.find({ status: "accepted" }).lean(),
@@ -227,6 +234,7 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
             CutoffOverride.find({ approvedAt: { $ne: null } }).lean(),
             AbroadLicenceOverride.find({ approvedAt: { $ne: null } }).lean(),
             ProfessionSuggestions.find({}).lean(),
+            DataProposal.find({ kind: "mentor_text", status: "approved" }).sort({ decidedAt: 1 }).lean(),
         ])
         const acceptedFor = new Set(accepted.map((draft) => String(draft.candidate)))
 
@@ -275,19 +283,31 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                 values: row.values,
                 checkedOn: new Date(row.approvedAt).toISOString().slice(0, 10),
             })),
-            // mentors' approved changes to their own profession (Round 15: one row per profession, only
-            // what should change). Words, not values: a person turns each into a data change, so
-            // tools/applyDataPatch.js only lists them.
-            mentorNotes: suggestionRows.flatMap((row) => (row.approved || []).map((suggestion) => ({
-                id: row.professionId,
-                section: suggestion.section,
-                ...(suggestion.factor ? { factor: suggestion.factor, direction: suggestion.direction } : { verdict: "change" }),
-                note: suggestion.note,
-                sourceUrl: suggestion.sourceUrl || null,
-                reviewedOn: new Date(suggestion.approvedAt || row.updatedAt).toISOString().slice(0, 10),
-            }))),
+            // mentors' approved changes to their own profession. Words, not values: a person turns each
+            // into a data change, so tools/applyDataPatch.js only lists them. Since Round 16 these are
+            // the mentor suggestions Claude found a source for and the admin approved in Data updates;
+            // the Round 15 approvals made before that ride along.
+            mentorNotes: [
+                ...suggestionRows.flatMap((row) => (row.approved || []).map((suggestion) => ({
+                    id: row.professionId,
+                    section: suggestion.section,
+                    ...(suggestion.factor ? { factor: suggestion.factor, direction: suggestion.direction } : { verdict: "change" }),
+                    note: suggestion.note,
+                    sourceUrl: suggestion.sourceUrl || null,
+                    reviewedOn: new Date(suggestion.approvedAt || row.updatedAt).toISOString().slice(0, 10),
+                }))),
+                ...mentorTexts.map((proposal) => ({
+                    id: proposal.professionId,
+                    section: proposal.section,
+                    ...(proposal.factor ? { factor: proposal.factor, direction: proposal.direction } : { verdict: "change" }),
+                    note: proposal.proposedValue,
+                    sourceUrl: (proposal.sources[0] && proposal.sources[0].url) || null,
+                    sources: proposal.sources.map((source) => source.url),
+                    reviewedOn: new Date(proposal.decidedAt || proposal.updatedAt).toISOString().slice(0, 10),
+                })),
+            ],
             // each profession's waiting list, written into its `mentor_suggestions` in ALL-professions.json
-            // — an approved profession goes out as an empty list, so the file empties too
+            // — once the monthly check has been through it the list goes out empty, so the file empties too
             mentorSuggestions: suggestionRows.map((row) => ({
                 id: row.professionId,
                 mentor_suggestions: (row.mentor_suggestions || []).map(({ mentorName, section, factor, direction, note, sourceUrl, suggestedAt }) => ({

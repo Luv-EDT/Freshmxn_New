@@ -290,11 +290,21 @@ finds changes the website until the admin approves it.
   master's, pay, demand, AI, things worth knowing — and every quality we rated for it, in words (the eight that matter most open,
   the rest folded). They mark each part "looks
   right" or "needs a change" (with a note and a link), and each quality "about right / higher /
-  lower". Only what they say should **change** goes to the admin — collected in **one list per
-  profession**, which every mentor of that field adds to. The admin approves the list (it empties) and the
-  changes go into the data through a reviewed commit, which also writes the list into that career's
-  `mentor_suggestions` in ALL-professions.json.
-  **Nothing changes on the site from a mentor's answer alone.**
+  lower". The sheet says plainly that these details come from our research and AI, improved by mentors.
+  Only what they say should **change** is kept — in **one list per profession**, which every mentor of
+  that field adds to. A mentor can send again whenever they like; their new answers replace what was
+  still waiting.
+- **Claude checks the list once a month.** On the 1st, after the career refresh, Claude reads each
+  profession's waiting suggestions next to what we show, and searches trusted sources (and any page the
+  mentor linked). A suggestion a source backs up becomes a normal suggested change in the admin's
+  **Data updates**, marked "Mentor + sources"; the rest are set aside with a reason. Either way the list
+  empties. So there is **one queue**: the admin approves mentors' changes and the monthly refresh's changes
+  in the same place, and a newer suggestion for the same thing replaces an older one, so they never clash.
+  A change of pay or demand shows on the site once approved; a change of wording (what the work is, the
+  path, a quality…) goes into **Export patch** — the download of approved changes that a person writes into
+  the data files and commits — because the server can't change its own files (Render wipes its disk on
+  every deploy). Export patch also copies each profession's list into its `mentor_suggestions` in
+  ALL-professions.json. **Nothing changes on the site from a mentor's answer alone.**
 - A student on the mentor plan opens their matched careers and picks **one job role** inside one of
   them (the roles that suit them best are listed first). That starts a
   **20-business-day** clock. The admin matches a mentor by hand in V1 and the student is told on

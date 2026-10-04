@@ -27,7 +27,7 @@ job role, get a mentor; no assessment).
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
 | **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 22 (scoring) / 60 (matching) / 170 (workers) — all offline, all green |
+| **Tests** | fixtures 22 (scoring) / 60 (matching) / 171 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -60,7 +60,7 @@ cd Backend && npm run seed:admin                  # once — the admin account
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 22/22
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 170/170 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 171/171 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -81,7 +81,7 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 | `score_profile` | on Submit | grades written answers with Claude, scores the profile, queues the report | Nothing, unless **Assessment issues** shows a row (a failed grading, a device problem, a student's "something went wrong") — then allow a retake or dismiss |
 | `generate_report` | after scoring | matches 223 careers, writes the three report lines | Nothing; a failure shows the student "Try again" and an issues row |
 | `followup_scan` | 1st of the month, 09:00 | emails the 6- and 12-month follow-up | Read the **Follow-ups** tab now and then |
-| `data_refresh` | 1st of the month, 04:00 | demand and pay for 60 careers (Adzuna + official sources), as one half-price batch | Approve or reject in **Data updates** |
+| `data_refresh` | 1st of the month, 04:00 | demand and pay for 60 careers (Adzuna + official sources), as one half-price batch; then Claude's check of up to 20 professions' waiting **mentor suggestions** (Round 16, asked directly) | Approve or reject in **Data updates** (mentor-backed rows are tagged "Mentor + sources") |
 | `study_refresh` | 1st of the month, 06:00 — **seasonal** (Round 13) | only what can have changed: exams whose application window opens in the next two months; colleges in Sep–Oct (12 disciplines, after NIRF); master's/abroad facts in Jan, Apr, Jul, Oct; closing ranks Aug–Oct; licences abroad in January. A month with nothing due makes no AI call. **Run now** ignores the season | Approve or reject in **Data updates** (Kind column) |
 | `batch_collect` | every hour at :17 | files the answers of a finished batch through the same checks; re-asks anything incomplete directly | Nothing — proposals simply appear in Data updates within about an hour of the 1st. "Collect batch answers now" is there if you are waiting |
 | `career_scout` | Mondays, 05:00 | new job titles from the job board, students' unmatched wishes and the official reports | Decide in **Emerging careers**; approving drafts the full career |
@@ -135,7 +135,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Studying abroad** (`Backend/data/abroad.json`, Round 11) | 25 careers flagged "helps" or "often part of the route", drafted by Claude — read them once. **Name the study-abroad partner** and share leads from the admin "Study abroad" tab (consent and policy version are on each row) |
 | **Master's and studying-abroad sources** (`Backend/data/study_sources.json`, Round 12) | Master's: 24 of the 32 "required / is the way in" careers checked against an official rule, 7 supported by published information, 1 our estimate (public policy). Some sources are secondary sites (Careers360, Testbook, Indian Kanoon) — the study bot is meant to replace them with official pages. **Finding:** UPSC's Indian Statistical Service accepts a bachelor's, so Statistician's "master's required" may be wrong — decide. Abroad: 2 supported, 23 our estimate; none is "often needed" any more. Rules and tables: `docs/5_finalized/STUDY_INFO_RULES.md` |
 | **Closing ranks** (`Backend/data/cutoffs.json`, Round 12) | Seven B.Tech CSE rows (six IITs, NIT Tiruchirappalli) are **drafts and hidden**: the official sites were blocked from the build container and search summaries disagreed. The study bot checks them on JoSAA from August; approve each in Data updates. A shown rank also needs the institution list reviewed. Add more rows (other branches, MBBS, CLAT) by hand or in V2 |
-| **Mentor reviews** (Round 12; every quality since Round 13; one card per profession since Round 15) | Approved mentors can review our data for their profession. Only what they say should **change** reaches **Mentor reviews** — one card per profession that every mentor of that field adds to. **Approve all** sends the card to Export patch and empties it; **Drop** removes one suggestion. Export patch also writes each profession's waiting list into its `mentor_suggestions` in ALL-professions.json (empty once approved). The sheet now lists every rated quality — the eight that matter most open, the rest folded. A profession whose qualities a mentor answered (at least the main eight) all "about right", and you accepted, can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
+| **Mentor reviews** (Round 12; every quality since Round 13; one card per profession since Round 15; one queue since Round 16) | Approved mentors review our data for their profession and can re-send whenever they like. Only what they say should **change** is kept — one waiting list per profession. **You don't decide in Mentor reviews any more** (it is read only): on the 1st, after the career refresh, Claude checks each waiting suggestion against sources; what a source supports becomes an ordinary proposal in **Data updates**, tagged "Mentor + sources" with the mentors' own words, and the rest is discarded with a reason you can read in Mentor reviews. Pay and demand approvals show on the site at once; master's and abroad go to the study-fact layer; everything else ("Mentor's wording") only goes to **Export patch → mentorNotes**, for you or the local Claude Code to turn into a reviewed data commit. Export patch also writes each profession's waiting list into its `mentor_suggestions` in ALL-professions.json (empty once checked). A profession whose qualities a mentor answered (at least the main eight) all "about right" can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
 | **Model for the monthly research** (Round 12) | Run the comparison once (a few dollars), then choose. Until then Opus 5.5. `REFRESH_MODEL` on Render, if set, overrides the choice |
 | **First live batch** (Round 12) | The monthly jobs now send one half-price batch. If Anthropic refuses the batch, the job asks directly as before (logged). After the 1st, look for `batch_collect: … — {…}` in the Render logs. `RESEARCH_BATCH=false` turns batching off |
 | **Mentor Only "Other" requests** (Round 12) | A Mentor Only student may describe a career we do not list; the admin's **Mentor Matches** shows it as "Other — find separately". Full refund on request if no mentor is found |
@@ -1897,3 +1897,40 @@ writes the suggestions model; approved suggestions, not accepted review items, r
 **Cloud checks:** suggestions 12/12 (two mentors → one row; re-save; admin card and approve in the browser;
 Export patch notes + empty list; a decided review can't be resent; the folded test strip; the research box
 inset), deck 17/17, Round 14 14/14.
+
+### Round 16 — mentor suggestions go through Claude's monthly check: one queue (2026-10-04)
+The owner asked: say on the sheet that the details come from our research and AI; let a mentor re-send
+after sending; explain "Export patch" and "the list"; and whether mentor suggestions should go through
+the monthly data update instead of a separate admin approval, so the two can't clash. Owner's choices:
+**add a line** to the sheet; **monthly Claude pass, one queue**.
+
+| Item | What shipped |
+|---|---|
+| **Sheet line** | "These details come from our research and AI, and are improved with suggestions from mentors like you." |
+| **Re-send any time** | The sheet never locks. A re-send replaces the mentor's part that is still waiting; something of theirs Claude already checked (same section, quality, direction and words) is not queued again. The sheet says how many are waiting and how many were checked |
+| **The monthly check** (`Backend/housekeeping/mentorPass.js`) | Runs at the end of `data_refresh` (so "Run now" includes it), for up to `MENTOR_PASS_MAX` (20) professions, longest-waiting first, asked directly (not batched). One Claude call per profession with web search on the refresh's public sources, the official/academic Indian domains, and any site a mentor linked. Per suggestion: **use** (a source supports it) or **discard** (with a reason). Pay/demand → a `career` proposal (`validateProposal`); master's/abroad → a `study_fact` proposal (`validateFactChange`); anything else → a new kind **`mentor_text`** (wording only; approving sends it to Export patch, never to a page). A "use" with no cited page, a malformed value or no real difference becomes a discard. Every proposal carries `origin: "mentor"` and the mentors' words. Handled suggestions move to `processed`, so the list empties; undecided ones wait for next month |
+| **No clash** | The refresh and the mentors file the same kinds of proposal into one queue, and a newer open proposal for the same career and field replaces an older one (the existing rule) — the admin never sees two competing answers |
+| **Admin** | **Mentor reviews** is read only: what's waiting, and what the check did (used / discarded + reason). **Data updates** tags mentor rows "Mentor + sources", shows the mentors' words under Claude's reason, and names "Mentor's wording" rows. `PUT /mentorReviews/decideSuggestionsForAdmin` is gone |
+| **Export patch** | `mentorNotes` = approved `mentor_text` proposals (with their sources) plus the Round 15 approvals; `mentorSuggestions` still mirrors each profession's waiting list into ALL-professions.json |
+
+**Plain words (owner's questions):**
+- **Export patch** — a download in Data updates of every change you approved. `node Backend/tools/applyDataPatch.js patch.json --write`
+  copies them into the data files, and a git commit makes them permanent. It exists because the live site
+  keeps approvals in the database: Render wipes its disk on every deploy.
+- **"The list"** — each profession's list of changes mentors suggested (`mentor_suggestions`). It lives in
+  the database for the same reason; Export patch copies it into that career's record in ALL-professions.json.
+  Claude's monthly check empties it.
+- **The weekly scout** is unrelated — it only looks for new careers.
+
+**Fixtures:** workers 170 → 171 (MENTOR PASS — order and limit, routing to career / study_fact / mentor_text,
+shared decisions, unsourced or no-change uses discarded, undecided suggestions keep waiting, a re-send skips
+what was checked, no lock and no decide route, the refresh runs the pass, approving wording changes no page,
+matching never reads any of it). Changed because the owner changed the product: MENTOR SUGGESTIONS (the
+monthly check, not an admin button, empties the list into `processed`) and the MENTOR REVIEW flow fixture
+(Export patch's `mentorNotes` now also carries approved mentor wording).
+
+**Cloud checks:** Round 16 22/22 (send, re-send, the pass with Claude stubbed → a career proposal and a
+wording proposal, a discard with its reason, the list emptied, an undecided quality kept, a re-send of a
+checked suggestion skipped, the old route gone, Export patch, the read-only tab, the "Mentor + sources" tag,
+the sheet line and re-send at 360 px with no sideways scroll); Round 15 10/10 (updated for the read-only
+card and re-sending), Round 14 14/14, deck 17/17, uiFlow 65/65. Build: the 8 known warning files.

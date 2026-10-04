@@ -12,6 +12,10 @@
 //
 // NOTHING AUTO-CHANGES. The admin approves in "Data updates"; only then does a value reach a career
 // page (utils/professionOverrides.js). Matching inputs are never proposed, never changed.
+//
+// MENTORS' SUGGESTIONS (Round 16): after the careers, Claude reads what mentors said should change
+// (housekeeping/mentorPass.js) and files the suggestions a source supports into the same Data updates
+// queue. Always asked directly — at most MENTOR_PASS_MAX questions a month.
 
 const taxonomy = require("../data/ALL-professions.json")
 const { createResearchClient } = require("./claudeResearch")
@@ -152,6 +156,17 @@ const handleItem = async (item, reply, { now, result }) => {
     }
 }
 
+// the mentors' part of the month; its failure never undoes the careers' part
+const mentorPassFor = async (research, enabled, now) => {
+    if (!enabled) return "not run"
+    try {
+        return await require("./mentorPass").runMentorPass({ research, now })
+    } catch (error) {
+        console.error(`data_refresh: the mentor pass failed — ${error.message}`)
+        return { failed: error.message }
+    }
+}
+
 const runDataRefresh = async ({
     research,             // injected in the fixtures; otherwise built on the chosen research model
     batch,                // true / false to force; by default batched unless RESEARCH_BATCH=false
@@ -159,6 +174,7 @@ const runDataRefresh = async ({
     professions = taxonomy.professions,
     limit = maxCareers(),
     now = new Date(),
+    mentorPass = true,    // the fixtures that drive the careers alone turn it off
 } = {}) => {
     const injected = research !== undefined
     if (!injected) research = createResearchClient({ job: "data_refresh", model: await researchModel() })
@@ -183,7 +199,7 @@ const runDataRefresh = async ({
 
     if (batch === undefined ? !injected && batchEnabled() : batch) {
         const submitted = await submitBatch({ job: "data_refresh", items, model: research.model })
-        if (submitted) return { batched: submitted.batchId, questions: submitted.items, adzuna: adzunaState, note: "answers are filed by batch_collect, usually within the hour" }
+        if (submitted) return { batched: submitted.batchId, questions: submitted.items, adzuna: adzunaState, note: "answers are filed by batch_collect, usually within the hour", mentorPass: await mentorPassFor(research, mentorPass, now) }
     }
 
     const result = { ...newResult(), adzuna: adzunaState }
@@ -197,7 +213,7 @@ const runDataRefresh = async ({
         }
     }
 
-    return result
+    return { ...result, mentorPass: await mentorPassFor(research, mentorPass, now) }
 }
 
 module.exports = { runDataRefresh, handleItem, newResult, check, prepareItem, pickCareersToCheck, validateProposal, currentValues, FIELDS, SYSTEM, promptFor }

@@ -26,6 +26,11 @@ Every Claude call is logged, the monthly research runs as a half-price batch, an
 its model after the one-time comparison (all Round 12). Still to try: **Haiku for simple grading
 items**, only after an eval against the current grades.
 
+## Mentor suggestions — batch the monthly check
+The monthly mentor check (`housekeeping/mentorPass.js`, Round 16) asks Claude directly, at most 20
+professions a month. If mentor numbers grow, send it in the data refresh's half-price batch
+(`researchBatch.js`) and let `batch_collect` file the answers, as the career questions already are.
+
 ## Parent consent by SMS
 Parent consent is verified by an emailed code today (`/parent-consent`). Add the same flow by SMS for
 parents without email: an Indian DLT-registered sender and template, a 6-digit code, the same

@@ -25,8 +25,3 @@ export async function getSuggestionsForAdmin() {
     const response = await axiosInstance.get("/mentorReviews/getSuggestionsForAdmin")
     return response
 }
-
-export async function decideSuggestionsForAdmin(professionId, action, index) {
-    const response = await axiosInstance.put(`/mentorReviews/decideSuggestionsForAdmin/${professionId}`, { action, index })
-    return response
-}
