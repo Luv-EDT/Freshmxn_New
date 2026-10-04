@@ -1246,9 +1246,13 @@ button.link-button:hover:not(:disabled) {
     margin: var(--space-4) 0;
 }
 
+.research-body {
+    padding-bottom: var(--space-2);
+}
+
 .research-body h3 {
     font-size: 1.05rem;
-    margin: var(--space-4) 0 var(--space-2);
+    margin: var(--space-5) 0 var(--space-2);
 }
 
 .factor-chips {
@@ -2152,12 +2156,31 @@ button.link-button:hover:not(:disabled) {
 }
 
 .mentor-review .review-section {
+    border: 0;
     border-top: 1px solid var(--line);
-    padding-top: var(--space-3);
+    border-radius: 0;
+    padding: var(--space-4) 0 var(--space-2);
+    max-width: 720px;
 }
 
+.mentor-review .review-section > :not(legend) {
+    margin-left: var(--space-3);
+}
+
+/* floated, so the heading sits inside the section rather than cutting a notch in its top line */
 .mentor-review .review-section legend {
+    float: left;
+    width: 100%;
     font-weight: 700;
+    padding: 0 0 var(--space-2);
+}
+
+.mentor-review .review-section legend + * {
+    clear: left;
+}
+
+.mentor-review .review-choices label.choice {      /* side by side, so not the stacked-list gap */
+    margin: 0;
 }
 
 .mentor-review .review-choices {
@@ -2283,4 +2306,10 @@ button.show-rest {
     width: calc(100% - 32px);
     max-width: 808px;
     margin: var(--space-3) auto var(--space-5);
+}
+
+/* "Show me all the tests" under the card in hand (Round 15) */
+.show-tests {
+    display: block;
+    margin: 0 0 var(--space-4);
 }
