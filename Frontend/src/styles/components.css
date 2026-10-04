@@ -519,6 +519,121 @@ button.journey-step.is-current {
     color: var(--muted);
 }
 
+/* done stages read as achieved, the stage to do now stands out, upcoming ones stay quiet (Round 13) */
+button.journey-step.is-done {
+    background: var(--teal-tint);
+    border-color: var(--teal-tint);
+}
+
+button.journey-step.is-here {
+    background: var(--pink-tint);
+    border: 2px solid var(--pink);
+}
+
+.journey-home .journey-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+}
+
+@media (min-width: 720px) {
+    .journey-home .journey-steps {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.journey-home button.journey-step {
+    padding: var(--space-4);
+    font-size: 1rem;
+}
+
+.journey-home button.journey-step.is-done {
+    box-shadow: 0 0 0 4px rgba(0, 117, 130, 0.12), var(--shadow-sm);
+}
+
+.journey-home button.journey-step.is-here {
+    box-shadow: var(--shadow);
+}
+
+.journey-home .journey-mark {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+}
+
+.journey-here {
+    align-self: flex-start;
+    margin-bottom: var(--space-1);
+}
+
+.journey-cheer {
+    margin-top: var(--space-1);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+.home-ring {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin: 0 0 var(--space-4);
+}
+
+.home-ring svg {
+    width: 72px;
+    height: 72px;
+    transform: rotate(-90deg);
+    flex: none;
+}
+
+.home-ring-track,
+.home-ring-fill {
+    fill: none;
+    stroke-width: 3.6;
+}
+
+.home-ring-track {
+    stroke: var(--teal-tint);
+}
+
+.home-ring-fill {
+    stroke: var(--teal);
+    stroke-linecap: round;        /* r = 15.9155 makes the circumference 100, so the dash is a percentage */
+}
+
+.home-ring p {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-ring strong {
+    font-family: var(--font-display);
+    font-size: var(--text-h3);
+}
+
+.home-ring span {
+    color: var(--navy-soft);
+}
+
+.next-card {
+    margin: var(--space-5) 0;
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--navy);
+    color: #ffffff;
+}
+
+.next-card-label {
+    margin: 0 0 var(--space-3);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: var(--pink);
+}
+
 /* ── upgrade prompt (UpgradeToMentorship.js) ──────────────────────────────────────────────────── */
 
 .upgrade-card {
@@ -584,4 +699,89 @@ button.journey-step.is-current {
 
 .ant-input-affix-wrapper {
     min-height: 44px;
+}
+
+/* ── refund request (User/RequestRefundForm.js): one aligned card per choice (Round 13) ───────── */
+
+.refund-options.ant-radio-group {
+    display: grid;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.refund-options .refund-option.ant-radio-wrapper {
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.refund-options .refund-option.ant-radio-wrapper-checked {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+}
+
+.refund-options .refund-option .ant-radio {
+    align-self: flex-start;
+    margin-top: 3px;
+}
+
+.refund-options .refund-option > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-weight: 400;
+}
+
+/* ── loading placeholders: the page's shape, quietly, until its data is in (Round 13) ─────────── */
+
+.skeleton {
+    border-radius: var(--radius);
+    background: linear-gradient(90deg, #efede6 0%, #f7f5ef 50%, #efede6 100%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.2s ease-in-out infinite;
+    margin: var(--space-3) 0;
+}
+
+.skeleton-line {
+    height: 18px;
+    max-width: 420px;
+}
+
+.skeleton-line.short {
+    max-width: 220px;
+}
+
+.skeleton-block {
+    height: 140px;
+    max-width: 720px;
+}
+
+@keyframes skeleton-shimmer {
+    from { background-position: 100% 0; }
+    to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}
+
+.help-line {
+    margin: var(--space-4) 0;
+    font-weight: 700;
+}
+
+/* what still stops a form being saved, said beside the button (Round 13) */
+.form-missing {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius);
+    background: var(--pink-tint);
+    color: var(--navy);
+    font-weight: 700;
+    max-width: 560px;
 }

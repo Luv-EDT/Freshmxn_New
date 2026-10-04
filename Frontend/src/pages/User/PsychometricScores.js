@@ -28,6 +28,11 @@ function PsychometricScores() {
     return (
         <div>
             <p><em>Based on your own answers — not a comparison with other students. Provisional.</em></p>
+            {!scores.coverageKnown && (
+                <p className="report-small">
+                    To see how much of each one we could measure, open your report and press <strong>Update my report</strong>.
+                </p>
+            )}
 
             {scores.groups.map((group) => (
                 <div key={group.title}>
@@ -39,7 +44,7 @@ function PsychometricScores() {
                                 {/* Round 10 (owner): how much of this factor was measured, only when it
                                     is less than all of it — a complete factor shows nothing extra */}
                                 {factor.level && typeof factor.partialPct === "number" && (
-                                    <span className="pc-partial">Partial · {factor.partialPct}%</span>
+                                    <span className="status-chip is-progress score-partial">Partial · {factor.partialPct}%</span>
                                 )}
                             </li>
                         ))}

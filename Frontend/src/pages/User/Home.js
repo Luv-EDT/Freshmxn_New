@@ -56,13 +56,33 @@ function Home() {
 
             {user.paid && (
                 <div>
-                    <JourneyProgress user={user} />
+                    {/* Round 13 (owner): a rewarding look — how far they are, at a glance */}
+                    {(() => {
+                        const stages = journeyStages(user)
+                        const doneCount = stages.filter((stage) => stage.state === "done").length
+                        const share = stages.length ? doneCount / stages.length : 0
+                        return (
+                            <div className="home-ring">
+                                <svg viewBox="0 0 36 36" aria-hidden="true">
+                                    <circle cx="18" cy="18" r="15.9155" className="home-ring-track" />
+                                    <circle cx="18" cy="18" r="15.9155" className="home-ring-fill" strokeDasharray={`${share * 100} 100`} />
+                                </svg>
+                                <p>
+                                    <strong>{doneCount} of {stages.length} done</strong>
+                                    <span>{doneCount === stages.length ? "Every stage finished — well done." : doneCount === 0 ? "Let's get you started." : "You're on your way."}</span>
+                                </p>
+                            </div>
+                        )
+                    })()}
+
+                    <JourneyProgress user={user} variant="home" />
 
                     {/* ONE OBVIOUS NEXT ACTION, above the list. The bar shows the whole journey; this
                         says which part of it to do now. A student who lands here after a week away
                         should not have to work that out by reading four statuses. */}
                     {nextStage && (
-                        <p>
+                        <div className="next-card">
+                            <p className="next-card-label">Your next step</p>
                             <button
                                 type="button"
                                 className="btn btn-primary btn-next"
@@ -73,7 +93,7 @@ function Home() {
                                 {nextStage.key === "report" && (user.progress?.report === "ready" ? "Read your report" : "See how your report is coming")}
                                 {nextStage.key === "mentor" && "See your mentor status"}
                             </button>
-                        </p>
+                        </div>
                     )}
 
                     {/* Mentor Only (Round 12): no assessment to open — say what else exists, once */}

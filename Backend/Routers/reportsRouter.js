@@ -393,6 +393,9 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
             message: "Scores fetched successfully",
             data: {
                 computedAt: profile.computed_at,
+                // Round 13: a profile scored before Round 10 stored no coverage, so it can show no
+                // "Partial · N%" until it is scored again ("Update my report")
+                coverageKnown: Object.keys(coverage).length > 0,
                 groups: SCORE_GROUPS.map((group) => ({
                     title: group.title,
                     factors: group.factors.map((slug) => ({

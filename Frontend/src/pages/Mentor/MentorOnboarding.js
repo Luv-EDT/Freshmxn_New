@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ACADEMIC_OPTIONS } from "../Interest/BackgroundInfo"
+import { getProfessionOptions } from "../../apiCall/professionsApi"
 import CareerRolePicker, { pickerComplete } from "../CareerRolePicker"
 
 // The 12-field mentor onboarding form (PRD §B.9 / Master Plan §6.4). Used for the first
@@ -39,11 +40,46 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
 
     const update = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))
     const careerReady = pickerComplete(form.career) && (form.career.industryCodes || []).length > 0
+    const [showMissing, setShowMissing] = useState(false)
+
+    // what still stops Save, in words — a greyed-out button with no reason was the owner's report
+    const missing = [
+        !form.career.professionId && "your profession",
+        form.career.professionId && !pickerComplete(form.career) && "your job role",
+        (form.career.industryCodes || []).length === 0 && "at least one industry",
+    ].filter(Boolean)
+
+    // A profile saved before Round 12 holds a free-text role. Where it names one of our professions or
+    // job roles exactly, the picker starts on it rather than empty (Round 13).
+    useEffect(() => {
+        if (!initial || initial.professionId || !(initial.currentRole || initial.discipline)) return
+        const said = [initial.currentRole, initial.discipline].filter(Boolean).map((text) => text.trim().toLowerCase())
+        getProfessionOptions().then((response) => {
+            const { professions = [], industries = [] } = response.data.data || {}
+            const role = professions.map((row) => ({ row, name: row.jobRoles.find((name) => said.includes(name.toLowerCase())) })).find((hit) => hit.name)
+            const byName = professions.find((row) => said.includes(row.profession.toLowerCase()))
+            const hit = role ? role.row : byName
+            const sectors = (initial.sectors || []).map((text) => String(text).trim().toLowerCase())
+            const industryCodes = industries.filter((industry) => sectors.includes(industry.name.toLowerCase()) || sectors.includes(String(industry.code).toLowerCase())).map((industry) => industry.code)
+            if (!hit && industryCodes.length === 0) return
+            setForm((prev) => ({
+                ...prev,
+                career: {
+                    ...prev.career,
+                    ...(hit ? { professionId: hit.id, profession: hit.profession, jobRole: role ? role.name : undefined } : {}),
+                    industryCodes: prev.career.industryCodes && prev.career.industryCodes.length > 0 ? prev.career.industryCodes : industryCodes,
+                },
+            }))
+        }).catch(() => null)
+    }, [initial])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (!careerReady) {
+            setShowMissing(true)
+            return
+        }
         setSaving(true)
-        if (!careerReady) return
         const { career, ...rest } = form
         try {
             await onSubmit({
@@ -86,7 +122,7 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
                     multiIndustry
                     industryLabel="Industries you've worked in — choose all that apply"
                 />
-                {!careerReady && <p className="report-small">Choose your profession, a job role and at least one industry.</p>}
+                {!careerReady && <p className="report-small">Choose {missing.join(", ")}.</p>}
             </div>
             <div>
                 <label>7. Years of experience</label>
@@ -132,8 +168,11 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
                 <input value={form.residenceCitizenship} onChange={update("residenceCitizenship")} required />
             </div>
 
+            {showMissing && !careerReady && (
+                <p className="form-missing" role="alert">To save, choose {missing.join(", ")} in questions 4–6 above.</p>
+            )}
             <p>
-                <button type="submit" className="btn btn-primary" disabled={saving || !careerReady}>{saving ? "Saving…" : submitLabel}</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "Saving…" : submitLabel}</button>
                 {onCancel && (
                     <>
                         {" "}

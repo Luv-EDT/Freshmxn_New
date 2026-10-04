@@ -1116,9 +1116,7 @@ button.link-button:hover:not(:disabled) {
     max-width: 160px;
 }
 
-/* Round 10: a career whose picture is incomplete says how much was measured; the AI sub-sort shows
-   its number. Both small and quiet — the name stays the thing you read. */
-.pc-partial,
+/* the AI sub-sort shows its number beside the name, small and quiet */
 .pc-ai {
     display: inline-block;
     margin-left: var(--space-2);
@@ -1127,24 +1125,19 @@ button.link-button:hover:not(:disabled) {
     font-size: 0.72rem;
     font-weight: 700;
     vertical-align: middle;
-}
-
-.pc-partial {
-    background: var(--pink-tint);
-    color: var(--navy);
-}
-
-.pc-ai {
     background: var(--teal-tint);
     color: var(--teal-dark);
 }
 
-.is-top-1 .pc-partial,
 .is-top-1 .pc-ai,
-.is-top-2 .pc-partial,
 .is-top-2 .pc-ai {
     background: rgba(255, 255, 255, 0.9);
     color: var(--navy);
+}
+
+/* the profile's "Partial · N%" beside a factor's level */
+.score-partial {
+    margin-left: var(--space-2);
 }
 
 /* ── assessment page: research box, the "?" per section, coverage, problems (Round 10) ───────── */
