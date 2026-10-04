@@ -4,7 +4,7 @@ import { getMyReviewSheet, saveMyReview } from "../../apiCall/mentorReviewsApi"
 
 // "Check our data for {profession}" (owner, Round 12). An approved mentor reads what students are
 // told about their own profession and says, section by section, whether it looks right — and, for
-// the qualities the work needs most, whether we have them about right. Nothing changes from here:
+// every quality the work is rated on (the eight that matter most open), whether we have them right. Nothing changes from here:
 // our team goes through every answer first.
 
 const SECTION_TITLES = {
@@ -136,6 +136,20 @@ function MentorReviewSheet() {
     const setSection = (id, field) => (e) => setAnswers((prev) => ({ ...prev, [id]: { ...prev[id], [field]: e.target.value } }))
     const setQuality = (factor, field) => (e) => setQualities((prev) => ({ ...prev, [factor]: { ...prev[factor], [field]: e.target.value } }))
 
+    const renderQuality = (quality) => (
+        <div key={quality.factor} className="review-quality">
+            <p><strong>{quality.label}</strong> — {quality.level}</p>
+            <div className="review-choices">
+                {Object.entries(DIRECTION_WORDS).map(([value, label]) => (
+                    <label key={value} className="choice">
+                        <input type="radio" name={`quality-${quality.factor}`} value={value} checked={qualities[quality.factor]?.direction === value} onChange={setQuality(quality.factor, "direction")} />
+                        <span>{label}</span>
+                    </label>
+                ))}
+            </div>
+        </div>
+    )
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setSaving(true)
@@ -189,19 +203,12 @@ function MentorReviewSheet() {
                 <fieldset disabled={locked} className="review-section">
                     <legend>Qualities this work needs most</legend>
                     <p className="report-small">How much each one matters in this profession, as we have it today.</p>
-                    {sheet.qualities.map((quality) => (
-                        <div key={quality.factor} className="review-quality">
-                            <p><strong>{quality.label}</strong> — {quality.level}</p>
-                            <div className="review-choices">
-                                {Object.entries(DIRECTION_WORDS).map(([value, label]) => (
-                                    <label key={value} className="choice">
-                                        <input type="radio" name={`quality-${quality.factor}`} value={value} checked={qualities[quality.factor]?.direction === value} onChange={setQuality(quality.factor, "direction")} />
-                                        <span>{label}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
+                    {sheet.qualities.filter((quality) => quality.main).map(renderQuality)}
+                    {/* Round 13 (owner): every quality, not only the top eight — the rest folded away */}
+                    <details className="review-more">
+                        <summary className="tap">The other {sheet.qualities.filter((quality) => !quality.main).length} qualities</summary>
+                        {sheet.qualities.filter((quality) => !quality.main).map(renderQuality)}
+                    </details>
                 </fieldset>
 
                 <fieldset disabled={locked} className="review-section">

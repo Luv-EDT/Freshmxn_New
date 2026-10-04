@@ -1,6 +1,7 @@
 // THE MONTHLY STUDY BOT (owner, Round 11) — run by the housekeeping worker on the 1st.
 //
-// Two passes, each over the rows checked longest ago:
+// Four passes, each over the rows checked longest ago — and each only in its season (Round 13,
+// see "the seasons" below):
 //
 //   COLLEGES   up to STUDY_MAX_DISCIPLINES (6) disciplines. Claude searches NIRF first (the owner's
 //              main source), then the published rankings (India Today, Outlook-ICARE) and the
@@ -435,24 +436,57 @@ const prepareItems = async ({ disciplines, exams, disciplineLimit, examLimit, fa
     return items
 }
 
+// ── the seasons (owner, Round 13) ──────────────────────────────────────────────────────────────
+// The bot runs on the 1st of every month, but each part only works when something can have
+// changed: an exam about two months before its applications usually open (draft rows with no
+// window in January), colleges in September and October after NIRF publishes, the master's and
+// abroad facts once a quarter, cut-offs from August to October. A month with nothing due makes no
+// AI call. The admin's "Run now" (force) checks a slice of everything, as before.
+const COLLEGE_MONTHS = [8, 9]           // Sep, Oct
+const FACT_MONTHS = [0, 3, 6, 9]        // Jan, Apr, Jul, Oct
+const SEASON_DISCIPLINES = 12           // all 23 disciplines across the two college months
+const MONTH_NAMES = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+
+// the first month a usual window names ("November to December" → 10), or null
+const windowMonth = (text) => {
+    const found = String(text || "").toLowerCase().match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b/)
+    return found ? MONTH_NAMES.indexOf(found[1]) : null
+}
+
+const examIsDue = (exam, now) => {
+    const month = windowMonth(exam.usual_application_window)
+    if (month === null) return now.getMonth() === 0
+    const ahead = (month - now.getMonth() + 12) % 12
+    return ahead === 1 || ahead === 2
+}
+
 const runStudyRefresh = async ({
     research,             // injected in the fixtures; otherwise built on the chosen research model
     batch,                // true / false to force; by default batched unless RESEARCH_BATCH=false
+    force = false,        // the admin's Run now: a slice of everything, ignoring the seasons
     disciplines = studyPlaces.disciplines,
     exams = calendar.exams,
-    disciplineLimit = maxDisciplines(),
-    examLimit = maxExams(),
-    factLimit = maxFacts(),
-    cutoffLimit,          // by default STUDY_CUTOFF_MAX in August to October, otherwise none
+    disciplineLimit,
+    examLimit,
+    factLimit,
+    cutoffLimit,
     professions = require("../data/ALL-professions.json").professions,
     now = new Date(),
 } = {}) => {
-    if (cutoffLimit === undefined) cutoffLimit = CUTOFF_MONTHS.includes(now.getMonth()) ? maxCutoffs() : 0
+    const month = now.getMonth()
+    if (disciplineLimit === undefined) disciplineLimit = force ? maxDisciplines() : COLLEGE_MONTHS.includes(month) ? SEASON_DISCIPLINES : 0
+    if (examLimit === undefined) examLimit = maxExams()
+    if (factLimit === undefined) factLimit = force || FACT_MONTHS.includes(month) ? maxFacts() : 0
+    if (cutoffLimit === undefined) cutoffLimit = force || CUTOFF_MONTHS.includes(month) ? maxCutoffs() : 0
+    const dueExams = force ? exams : exams.filter((exam) => examIsDue(exam, now))
+    if (disciplineLimit === 0 && (dueExams.length === 0 || examLimit === 0) && factLimit === 0 && cutoffLimit === 0) return { nothing: "due this month" }
+
     const injected = research !== undefined
     if (!injected) research = createResearchClient({ job: "study_refresh", model: await researchModel() })
     if (!research) return { skipped: "ANTHROPIC_API_KEY is not set" }
 
-    const items = await prepareItems({ disciplines, exams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit })
+    const items = await prepareItems({ disciplines, exams: dueExams, disciplineLimit, examLimit, factLimit, professions, cutoffLimit })
+    if (items.length === 0) return { nothing: "due this month" }
 
     if (batch === undefined ? !injected && batchEnabled() : batch) {
         const submitted = await submitBatch({ job: "study_refresh", items, model: research.model })
@@ -475,6 +509,6 @@ const runStudyRefresh = async ({
 
 module.exports = {
     runStudyRefresh, handleItem, newResult, check, prepareItems, pickOldest, validateCollegeChange, validateExamChange, validateNewExam, validateFactChange, cleanInstitution,
-    validateCutoffChange, cutoffDomains, CUTOFF_SYSTEM, CUTOFF_MONTHS,
+    validateCutoffChange, cutoffDomains, CUTOFF_SYSTEM, CUTOFF_MONTHS, COLLEGE_MONTHS, FACT_MONTHS, windowMonth, examIsDue,
     EXACT_DATE, RANKING_DOMAINS, FACT_DOMAINS, COLLEGE_SYSTEM, EXAM_SYSTEM, FACT_SYSTEM, MASTERS_VALUES, ABROAD_NEEDS, ABROAD_STAGES,
 }

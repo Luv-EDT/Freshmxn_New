@@ -13,7 +13,7 @@ const router = express.Router()
 
 // MENTORS CHECK OUR DATA FOR THEIR OWN PROFESSION (owner, Round 12). An approved mentor sees the
 // career they work in the way a student would, section by section, and says "looks right" or
-// "needs a change" — plus, for the qualities the career needs most, "about right / should be
+// "needs a change" — plus, for every quality the career is rated on, "about right / should be
 // higher / should be lower".
 //
 // NOTHING HERE CHANGES THE PRODUCT. This router writes only MentorReview rows. The admin decides
@@ -40,15 +40,16 @@ const levelOf = (value) => (value >= 6.67 ? "High" : value >= 3.33 ? "Medium" : 
 const UNCERTAINTY_POSITION = { High: "comfortable not knowing", Medium: "somewhere in between", Low: "prefers a clear plan" }
 const describeLevel = (slug, value) => (slug === "uncertainty_tolerance" ? UNCERTAINTY_POSITION[levelOf(value)] : levelOf(value))
 
-// the qualities that matter most for this career — the top factors by weight in the baseline rating
-const topQualities = (professionId) => {
+// Every quality the career is rated on (Round 13, owner: all of them, not only the top eight), in
+// order of how much it matters for this work. The first QUALITY_COUNT are `main` — shown open on the
+// sheet; the rest sit in a collapsed list.
+const qualitiesFor = (professionId) => {
     const rating = ratingById.get(professionId)
     if (!rating) return []
     return Object.entries(rating.weights || {})
         .filter(([slug]) => typeof (rating.factors || {})[slug] === "number" && FACTOR_LABELS[slug])
         .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-        .slice(0, QUALITY_COUNT)
-        .map(([slug]) => ({ factor: slug, label: FACTOR_LABELS[slug], level: describeLevel(slug, rating.factors[slug]) }))
+        .map(([slug], position) => ({ factor: slug, label: FACTOR_LABELS[slug], level: describeLevel(slug, rating.factors[slug]), main: position < QUALITY_COUNT }))
 }
 
 // What the mentor is shown: the student-facing record, plus the institution list even before the
@@ -88,7 +89,7 @@ const buildSheet = (profession, overrides, studyOverrides) => {
             ai: facing.aiExposure ? { band: facing.aiExposure.band, reason: facing.aiExposure.reason } : null,
             nuances: facing.nuances.map((nuance) => nuance.statement),
         },
-        qualities: topQualities(profession.id),
+        qualities: qualitiesFor(profession.id),
     }
 }
 
@@ -195,7 +196,7 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
             return res.status(400).json({ success: false, message: "Our team has started going through your review, so it can't be changed now. Thank you!" })
         }
 
-        const cleaned = cleanReview(req.body || {}, topQualities(profession.id))
+        const cleaned = cleanReview(req.body || {}, qualitiesFor(profession.id))
         if (cleaned.error) {
             return res.status(400).json({ success: false, message: cleaned.error })
         }
@@ -260,7 +261,7 @@ router.get("/getReviewsForAdmin", authMiddleware, adminAuthMiddleware, async (re
                         key: itemKey(item),
                         factorLabel: item.factor ? FACTOR_LABELS[item.factor] || item.factor : null,
                         // what we say today, so the admin can weigh "should be higher" against it
-                        currentLevel: item.factor ? (topQualities(review.professionId).find((quality) => quality.factor === item.factor) || {}).level || null : null,
+                        currentLevel: item.factor ? (qualitiesFor(review.professionId).find((quality) => quality.factor === item.factor) || {}).level || null : null,
                     })),
                 })),
                 agreement: Object.fromEntries(Object.entries(agreement).map(([id, counts]) => [
@@ -313,7 +314,7 @@ router.put("/decideReviewItemForAdmin/:id", authMiddleware, adminAuthMiddleware,
 })
 
 module.exports = router
-module.exports.topQualities = topQualities
+module.exports.qualitiesFor = qualitiesFor
 module.exports.cleanReview = cleanReview
 module.exports.buildSheet = buildSheet
 module.exports.SECTIONS = SECTIONS

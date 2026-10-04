@@ -588,7 +588,7 @@ function ReportPage() {
                             </li>
                         ))}
                     </ul>
-                    <p className="report-small">Checked {data.support.checkedOn}. Rules change — confirm with the exam body when you apply.</p>
+                    <p className="report-small">Rules change — confirm with the exam body when you apply.</p>
                 </details>
             )}
 

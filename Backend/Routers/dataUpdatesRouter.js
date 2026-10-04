@@ -14,7 +14,7 @@ const { clearStudyOverrides } = require("../utils/studyPlaces")
 const { costOf } = require("../utils/aiUsage")
 const { validateExamChange, validateNewExam, validateFactChange, validateCutoffChange, cutoffDomains, cleanInstitution, EXACT_DATE } = require("../housekeeping/studyRefresh")
 const { cutoffs: cutoffData } = require("../utils/cutoffs")
-const { topQualities } = require("./mentorReviewsRouter")
+const { qualitiesFor } = require("./mentorReviewsRouter")
 
 const router = express.Router()
 
@@ -259,12 +259,14 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                     sourceUrl: item.sourceUrl || null,
                     reviewedOn: new Date(review.updatedAt).toISOString().slice(0, 10),
                 }))),
-            // careers whose top qualities a mentor called "about right" and the admin accepted, every
-            // one of them — baseline_rating.json can mark these mentor_reviewed
+            // careers where a mentor answered at least the main qualities, called every quality they
+            // answered "about right", and the admin accepted each — baseline_rating.json can mark
+            // these mentor_reviewed
             mentorReviewedRatings: [...new Set(mentorReviews
                 .filter((review) => {
                     const qualities = review.items.filter((item) => item.section === "qualities")
-                    return qualities.length >= topQualities(review.professionId).length
+                    const answered = new Set(qualities.map((item) => item.factor))
+                    return qualitiesFor(review.professionId).filter((quality) => quality.main).every((quality) => answered.has(quality.factor))
                         && qualities.every((item) => item.direction === "right" && item.decision === "accepted")
                 })
                 .map((review) => review.professionId))],

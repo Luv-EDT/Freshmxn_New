@@ -3711,7 +3711,7 @@ const fixtures = [
                 const { disciplineById } = require("../../utils/studyPlaces")
                 const { examById } = require("../../utils/examCalendar")
                 const statistician = require("../../data/ALL-professions.json").professions.filter((profession) => profession.id === "sci-statistician")
-                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, professions: statistician })
+                const result = await runStudyRefresh({ research, disciplines: [disciplineById.get("engineering")], exams: [examById.get("jee-main")], force: true, disciplineLimit: 1, examLimit: 1, factLimit: 1, cutoffLimit: 0, professions: statistician })
                 if (result.disciplines !== 1 || result.exams !== 1 || result.facts !== 1 || result.proposals !== 3) problems.push(`unexpected result ${JSON.stringify(result)}`)
                 const factCall = calls.find((call) => /^Career:/.test(call.user))
                 if (!factCall || !factCall.onlyDomains.includes("gov.in") || factCall.onlyDomains.some((domain) => /\.com$/.test(domain))) problems.push("study facts are not searched on official and academic domains only")
@@ -3910,7 +3910,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "STUDY SOURCES — the card says checked, published or estimate; an approved study-bot fact wins",
+        name: "STUDY SOURCES — the server knows checked, published or estimate; the student's card never shows it (owner, Round 13); an approved study-bot fact wins",
         run: () => {
             const { studentFacing } = require("../../Routers/professionsRouter")
             const { validateFactChange } = require("../../housekeeping/studyRefresh")
@@ -3927,8 +3927,10 @@ const fixtures = [
             })
             if (!layered.abroad || layered.abroad.need !== "helps" || layered.studyFacts.abroad.status !== "checked") problems.push("an approved abroad change did not reach the page")
             if (validateFactChange({ field: "abroad", proposed: { need: "helps", stage: "masters", why: "A real reason here" } }, { abroad: null }, []) !== null) problems.push("a change with no source was kept")
-            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
-            if (!/Our estimate/.test(card) || !/Checked against the official rules/.test(card)) problems.push("the card does not say where the master's and abroad lines come from")
+            // Round 13, owner: a label that says where a fact came from tells a student nothing they can use
+            const pages = ["ProfessionCard.js", "ComparePage.js", "ReportPage.js"].map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
+            const shown = ["Our estimate", "Checked against the official rules", "Based on published information", "Pay figures", "(estimate)", "our suggestion — check it yourself", "Checked {"].filter((label) => pages.includes(label))
+            if (shown.length > 0) problems.push(`the report still shows provenance labels: ${shown.join(", ")}`)
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -3982,9 +3984,9 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "MENTOR REVIEW — the sheet shows a mentor words, never a number, an id or anything admin-only",
+        name: "MENTOR REVIEW — the sheet shows a mentor every quality in words, never a number, an id or anything admin-only",
         run: () => {
-            const { buildSheet, topQualities, SECTIONS } = require("../../Routers/mentorReviewsRouter")
+            const { buildSheet, qualitiesFor, SECTIONS } = require("../../Routers/mentorReviewsRouter")
             const { FACTOR_LABELS } = require("../reportComposer")
             const taxonomy = require("../../data/ALL-professions.json")
             const problems = []
@@ -3992,8 +3994,10 @@ const fixtures = [
             taxonomy.professions.forEach((profession) => {
                 const sheet = buildSheet(profession, new Map(), empty)
                 if (SECTIONS.some((id) => !(id in sheet.sections))) problems.push(`${profession.id}: a section is missing`)
-                const qualities = topQualities(profession.id)
-                if (qualities.length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities, not 8`)
+                // Round 13, owner: every rated quality, the eight that matter most marked main
+                const qualities = qualitiesFor(profession.id)
+                const rated = Object.keys(require("../../data/baseline_rating.json").ratings.find((rating) => rating.id === profession.id).factors).length
+                if (qualities.length !== rated || qualities.filter((quality) => quality.main).length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities of ${rated}, ${qualities.filter((quality) => quality.main).length} main`)
                 qualities.forEach((quality) => {
                     if (quality.label !== FACTOR_LABELS[quality.factor]) problems.push(`${profession.id}: "${quality.label}" is not the shared label`)
                     if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
@@ -4009,20 +4013,21 @@ const fixtures = [
     {
         name: "MENTOR REVIEW — a review changes nothing by itself; answers are checked; accepted items reach Export patch",
         run: () => {
-            const { cleanReview, topQualities } = require("../../Routers/mentorReviewsRouter")
+            const { cleanReview, qualitiesFor } = require("../../Routers/mentorReviewsRouter")
             const problems = []
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
             // it may READ the override layers (to show what students see) but writes only its own rows
             const models = [...router.matchAll(/require\("\.\.\/model\/(\w+)"\)/g)].map((match) => match[1]).sort()
             if (models.join(",") !== "mentorReviewsModel,mentorsModel") problems.push(`the review router loads ${models.join(", ")}`)
             if (/writeFile|clearOverrides|clearStudyOverrides/.test(router)) problems.push("the review router can change data")
-            const qualities = topQualities("swc-software-developer")
+            const qualities = qualitiesFor("swc-software-developer")
             const ok = cleanReview({ sections: [{ section: "exams", verdict: "change", note: "GATE matters for PSU jobs", sourceUrl: "https://gate.iitk.ac.in" }], qualities: [{ factor: qualities[0].factor, direction: "higher" }] }, qualities)
             if (ok.error || ok.items.length !== 2) problems.push(`a good review was refused: ${ok.error}`)
             if (!cleanReview({ sections: [{ section: "exams", verdict: "change", note: "" }] }, qualities).error) problems.push("a change with no note was kept")
             if (!cleanReview({ sections: [{ section: "exams", verdict: "right", sourceUrl: "javascript:alert(1)" }] }, qualities).error) problems.push("a non-https link was kept")
             if (!cleanReview({ sections: [{ section: "salary_secret", verdict: "right" }] }, qualities).error) problems.push("an unknown section was kept")
-            if (!cleanReview({ qualities: [{ factor: "musical_intelligence", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
+            if (cleanReview({ qualities: [{ factor: qualities[qualities.length - 1].factor, direction: "higher" }] }, qualities).error) problems.push("a quality outside the main eight was refused")
+            if (!cleanReview({ qualities: [{ factor: "telepathy", direction: "higher" }] }, qualities).error) problems.push("a quality not on the sheet was kept")
             if (!cleanReview({}, qualities).error) problems.push("an empty review was kept")
             const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
             if (!/mentorNotes:/.test(updates) || !/decision === "accepted"/.test(updates)) problems.push("accepted mentor notes do not reach Export patch")
@@ -4237,6 +4242,28 @@ const fixtures = [
             if (server.accommodationsFromInterest({ disability: "Yes", disabilityNeeds: ["telepathy"] }, {}) !== undefined) problems.push("an unknown difficulty was accepted")
             const intro = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentIntro.js"), "utf8")
             if (/AccommodationsBox|Skip this — mark it not measured/.test(intro)) problems.push("the old 'Before you start' box or the skip button is still on the page")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STUDY BOT SEASONS — exams just before their window, colleges Sep–Oct, facts quarterly, cut-offs Aug–Oct; a quiet month makes no call",
+        run: async () => {
+            const { runStudyRefresh, examIsDue, windowMonth } = require("../../housekeeping/studyRefresh")
+            const problems = []
+            if (windowMonth("November to December") !== 10 || windowMonth("usually in Jan") !== 0 || windowMonth("") !== null) problems.push("window months misread")
+            const january = new Date("2027-01-01T06:00:00+05:30")
+            if (!examIsDue({ usual_application_window: "February to March" }, january)) problems.push("a February window was not due in January")
+            if (examIsDue({ usual_application_window: "November" }, january)) problems.push("a November window was due in January")
+            if (!examIsDue({ usual_application_window: null }, january) || examIsDue({ usual_application_window: null }, new Date("2027-03-01"))) problems.push("draft rows are not checked in January only")
+            const plan = []
+            const research = { askJson: async () => { plan.push("asked"); return { json: { changes: [] }, sources: [] } } }
+            const quiet = await runStudyRefresh({ research, exams: [{ id: "x", usual_application_window: "November" }], disciplines: [], professions: [], now: new Date("2027-05-01") })
+            if (!quiet.nothing || plan.length > 0) problems.push(`a quiet month made a call: ${JSON.stringify(quiet)}`)
+            const source = fs.readFileSync(path.join(__dirname, "../../housekeeping/studyRefresh.js"), "utf8")
+            if (!/COLLEGE_MONTHS = \[8, 9\]/.test(source) || !/FACT_MONTHS = \[0, 3, 6, 9\]/.test(source)) problems.push("the seasons drifted")
+            const runNow = fs.readFileSync(path.join(__dirname, "../../Routers/followUpsRouter.js"), "utf8")
+            if (!/study_refresh" \? \{ force: true \}/.test(runNow)) problems.push("Run now does not ignore the seasons")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

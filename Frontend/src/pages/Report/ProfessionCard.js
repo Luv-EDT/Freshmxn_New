@@ -137,21 +137,8 @@ const ABROAD_STAGE = {
     training: "for the training",
 }
 
-const monthYear = (iso) => {
-    const date = iso ? new Date(iso) : null
-    return date && !Number.isNaN(date.getTime())
-        ? date.toLocaleDateString("en-IN", { month: "short", year: "numeric" })
-        : null
-}
-
-// What backs the master's and study-abroad lines (Round 12): an official rule, published
-// evidence, or our own estimate — said plainly, as the pay lines say "estimate" or "checked".
-const factLabel = (fact) => {
-    if (!fact) return null
-    if (fact.status === "checked") return `Checked against the official rules${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
-    if (fact.status === "supported") return `Based on published information${monthYear(fact.checkedOn) ? `, ${monthYear(fact.checkedOn)}` : ""}`
-    return "Our estimate"
-}
+// Round 13 (owner): the card says what a student can USE — never where a fact came from or when we
+// checked it. Those labels live in the data and on the admin and mentor screens.
 
 function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel }) {
     const [open, setOpen] = useState(false)
@@ -330,10 +317,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                     {laterStage && MASTERS_WORDS[detail.afterUndergrad] && (
                                         <>
                                             <dt>A master's?</dt>
-                                            <dd>
-                                                {MASTERS_WORDS[detail.afterUndergrad]}
-                                                {factLabel(detail.studyFacts && detail.studyFacts.masters) && <span className="pc-small"><br />{factLabel(detail.studyFacts.masters)}</span>}
-                                            </dd>
+                                            <dd>{MASTERS_WORDS[detail.afterUndergrad]}</dd>
                                         </>
                                     )}
                                     {detail.licensingBody && (
@@ -357,7 +341,6 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                         {exam.window && <span className="pc-small"><br />Applications usually: {exam.window}.</span>}
                                                         {exam.examMonth && <span className="pc-small"> Exam usually: {exam.examMonth}.</span>}
                                                         {exam.eligibility && <span className="pc-small"><br />Who can sit it: {exam.eligibility}.</span>}
-                                                        {exam.checkedOn && <span className="pc-small"> Checked {monthYear(exam.checkedOn)}.</span>}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -404,11 +387,10 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                             {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}
                                         </p>
                                         <p className="pc-small">{detail.abroad.why}.</p>
-                                        {factLabel(detail.studyFacts && detail.studyFacts.abroad) && <p className="pc-small"><em>{factLabel(detail.studyFacts.abroad)}</em></p>}
                                     </Section>
                                 )}
 
-                                {/* Where to study (Round 11): NIRF first; a judgement is always labelled as one */}
+                                {/* Where to study (Round 11): NIRF first; a ranked place shows its rank */}
                                 {detail.studyPlaces && (
                                     <Section title="Where to study">
                                         {detail.studyPlaces.institutions.length > 0 && (
@@ -417,7 +399,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                     <li key={`${place.name}-${place.city}`}>
                                                         <strong>{place.name}</strong>{place.city && <span>, {place.city}</span>}
                                                         {place.private && <span className="pc-small"> · private</span>}
-                                                        <span className="pc-small"> · {place.suggested ? "our suggestion — check it yourself" : place.basis}</span>
+                                                        {!place.suggested && <span className="pc-small"> · {place.basis}</span>}
                                                         {place.note && <span className="pc-small"><br />{place.note}</span>}
                                                     </li>
                                                 ))}
@@ -470,12 +452,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                             Typical cost of qualifying: about ₹{detail.economics.costOfEntryLakh}L
                                         </p>
                                     )}
-                                    <p className="pc-small pc-source">
-                                        {detail.economics.checked
-                                            ? `Pay figures checked${monthYear(detail.economics.checkedOn) ? ` ${monthYear(detail.economics.checkedOn)}` : ""}.`
-                                            : "Pay figures are estimates."}
-                                        {" "}Mid-career means about 5–8 years in, as an employee.
-                                    </p>
+                                    <p className="pc-small pc-source">Mid-career means about 5–8 years in, as an employee.</p>
                                     {/* The record's own warning, carried with the number rather than
                                         left behind. For these nine the midpoint describes almost
                                         nobody, and a figure without that caveat is misleading. */}

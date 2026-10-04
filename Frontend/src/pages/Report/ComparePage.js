@@ -33,7 +33,7 @@ const ROWS = [
     ["Deadline", (entry, detail) => (detail.entryWindow && detail.entryWindow.constrainedRoute) || "None"],
     ["Cost to qualify", (entry, detail) => (detail.economics && typeof detail.economics.costOfEntryLakh === "number" ? `About ₹${detail.economics.costOfEntryLakh}L` : "—")],
     ["Starting pay", (entry, detail) => (detail.economics ? `₹${detail.economics.earlyEarningsLpa}L a year` : "—")],
-    ["Mid-career pay", (entry, detail) => (detail.economics && detail.economics.midCareerLpa ? `₹${detail.economics.midCareerLpa}L a year${detail.economics.checked ? "" : " (estimate)"}` : "—")],
+    ["Mid-career pay", (entry, detail) => (detail.economics && detail.economics.midCareerLpa ? `₹${detail.economics.midCareerLpa}L a year` : "—")],
     ["Demand", (entry, detail) => (detail.demand ? DEMAND[detail.demand.india] || detail.demand.india : "—")],
     ["AI exposure", (entry, detail) => aiExposureText(detail) || (detail.aiExposure ? AI[detail.aiExposure.band] || detail.aiExposure.band : "—")],
     ["How much was measured", (entry) => (typeof entry.measuredPct === "number" ? `Partial · ${entry.measuredPct}%` : "Complete")],
