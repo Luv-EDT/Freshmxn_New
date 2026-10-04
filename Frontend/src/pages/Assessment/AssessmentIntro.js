@@ -35,7 +35,8 @@ const storyNote = (module, storyState) => {
     }
 
     if (storyState.phase === "recall") {
-        return `The questions are open — about ${storyState.hoursLeft} hours left to answer them.`
+        const hours = Math.max(1, Math.round(storyState.hoursLeft))
+        return `The questions are open — about ${hours} ${hours === 1 ? "hour" : "hours"} left to answer them.`
     }
 
     if (storyState.phase === "expired") return "The two-day window closed, so this section will not be scored."

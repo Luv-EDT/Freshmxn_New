@@ -100,7 +100,7 @@ const examLine = (detail) => {
     if (!exam) return null
 
     const odds = gate && typeof gate.applicantsPerSeat === "number"
-        ? ` — about ${Math.round(gate.applicantsPerSeat)} applicants per seat${gate.preparationYears ? `, usually ${gate.preparationYears} years of preparation` : ""}`
+        ? ` — about ${Math.round(gate.applicantsPerSeat)} applicants per seat${gate.preparationYears ? `, usually ${gate.preparationYears} ${gate.preparationYears === 1 ? "year" : "years"} of preparation` : ""}`
         : ""
 
     return `The exam to aim for: ${exam}${odds}.`

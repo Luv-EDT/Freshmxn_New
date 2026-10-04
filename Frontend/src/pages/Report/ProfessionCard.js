@@ -368,7 +368,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                         {detail.entryGate && typeof detail.entryGate.applicantsPerSeat === "number" && (
                                             <p className="pc-small">
                                                 {detail.entryGate.name}: about <strong>{Math.round(detail.entryGate.applicantsPerSeat)} people per seat</strong>
-                                                {detail.entryGate.preparationYears && <span>, usually {detail.entryGate.preparationYears} years of preparation</span>}.
+                                                {detail.entryGate.preparationYears && <span>, usually {detail.entryGate.preparationYears} {detail.entryGate.preparationYears === 1 ? "year" : "years"} of preparation</span>}.
                                             </p>
                                         )}
                                         {detail.entryGate && typeof detail.entryGate.typicalTotalCostLakh === "number" && (

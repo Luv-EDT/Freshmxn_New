@@ -382,8 +382,16 @@ button.filter-option.is-on {
 }
 
 /* the deck (Round 13): one big card for the section in hand, a strip of every section below */
-.assess-page {
-    max-width: 760px;
+.app-header ~ .assess-page {
+    max-width: 800px;
+}
+
+.assess-page p {
+    max-width: 65ch;
+}
+
+.assess-page h1 {
+    margin-top: var(--space-5);
 }
 
 .assess-pending {
@@ -523,6 +531,12 @@ button.filter-option.is-on {
     box-shadow: var(--shadow-sm);
 }
 
+/* a question reads best in a column, not across a laptop screen */
+.question-card,
+.module-nav {
+    max-width: 800px;
+}
+
 .question-card.is-answered {
     border-color: var(--teal-tint);
 }
@@ -564,6 +578,78 @@ label.choice.is-checked,
     border-color: var(--teal);
     background: var(--teal-tint);
     font-weight: 700;
+}
+
+/* the one-row agree scale (Round 13 lean pass): numbered tiles on a phone, words on a laptop */
+.choices.is-scale {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.choices.is-scale label.choice {
+    margin: 0;
+    position: relative;
+    justify-content: center;
+    text-align: center;
+    padding: 8px 4px;
+    min-height: 48px;
+}
+
+.choices.is-scale label.choice input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.choices.is-scale label.choice:has(input:focus-visible) {
+    outline: 3px solid var(--teal);
+    outline-offset: 2px;
+}
+
+.choices.is-scale label.choice.is-checked {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #ffffff;
+}
+
+.scale-num {
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.scale-label {
+    display: none;
+    font-size: 0.85rem;
+    line-height: 1.25;
+}
+
+.scale-ends {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-2);
+    margin: var(--space-2) 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
+.scale-ends strong {
+    color: var(--teal-dark);
+    font-size: 0.85rem;
+}
+
+.scale-ends span:last-child {
+    text-align: right;
+}
+
+@media (min-width: 720px) {
+    .scale-num,
+    .scale-ends {
+        display: none;
+    }
+
+    .scale-label {
+        display: block;
+    }
 }
 
 input[type="radio"],
@@ -811,6 +897,23 @@ button.sort-primary.is-on {
     border-radius: 0 var(--radius) var(--radius) 0;
     padding: var(--space-3) var(--space-4);
     margin: var(--space-4) 0;
+}
+
+/* Beside the header the report's column rule (top of this file) sets width and gutters, which would
+   override the banner's own padding, and a label or <hr> gets no column at all — so all three take
+   the column explicitly (Round 13 lean pass). */
+.report-page > .app-header ~ div.report-banner,
+.report-page > .app-header ~ .blue-collar-toggle,
+.report-page > .app-header ~ hr {
+    box-sizing: border-box;
+    width: calc(100% - 32px);
+    max-width: 808px;              /* the column is 840 wide with 16px gutters */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.report-page > .app-header ~ div.report-banner {
+    padding: var(--space-3) var(--space-4);
 }
 
 .report-banner p {
@@ -1223,7 +1326,9 @@ button.link-button:hover:not(:disabled) {
 }
 
 .coverage-line {
-    margin: var(--space-4) 0 var(--space-2);
+    margin: var(--space-2) 0 var(--space-2);
+    font-size: 0.92rem;
+    color: var(--navy-soft);
 }
 
 .coverage-bar {

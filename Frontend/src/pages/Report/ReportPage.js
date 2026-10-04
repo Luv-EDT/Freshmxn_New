@@ -750,13 +750,9 @@ function ReportPage() {
                 </>
             )}
 
+            {/* one sentence needs no collapsible — it closes the wrap-up (Round 13 lean pass) */}
             {sections.readiness && (
-                <details className="report-details">
-                    <summary className="report-summary">
-                        <strong>One thing to build next</strong>
-                    </summary>
-                    <p>{sections.readiness}</p>
-                </details>
+                <p className="report-readiness"><strong>One thing to build next:</strong> {sections.readiness}</p>
             )}
 
             {/* Named from the student's own top matches, so the offer is about the thing they have

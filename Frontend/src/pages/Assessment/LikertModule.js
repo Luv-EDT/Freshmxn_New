@@ -54,15 +54,21 @@ function LikertModule({ title, intro, stem, items, scale, answers, onChange, onD
 
             {pageItems.map((item) => {
                 const options = item.options || scale
+                // Round 13 (lean pass): a plain agree-scale is one row of tiles — the two ends named under
+                // it, the chosen answer echoed between them — instead of five stacked rows per question.
+                // Questions with their own wording (item.options) keep full-width rows.
+                const compact = !item.options && options.length <= 5
+                const picked = options.find((option) => option.value === answers[item.id])
 
                 return (
                     <div key={item.id} className={`question-card${answers[item.id] ? " is-answered" : ""}`}>
                         <p className="question-text"><strong>{item.text}</strong></p>
-                        <div className="choices">
-                            {options.map((option) => (
+                        <div className={`choices${compact ? " is-scale" : ""}`} role="radiogroup" aria-label={item.text}>
+                            {options.map((option, index) => (
                                 <label
                                     key={option.value}
                                     className={`choice${answers[item.id] === option.value ? " is-checked" : ""}`}
+                                    title={option.label}
                                 >
                                     <input
                                         type="radio"
@@ -71,10 +77,22 @@ function LikertModule({ title, intro, stem, items, scale, answers, onChange, onD
                                         checked={answers[item.id] === option.value}
                                         onChange={() => onChange(item.id, option.value)}
                                     />
-                                    {" "}{option.label}
+                                    {compact ? (
+                                        <>
+                                            <span className="scale-num" aria-hidden="true">{index + 1}</span>
+                                            <span className="scale-label">{option.label}</span>
+                                        </>
+                                    ) : <>{" "}{option.label}</>}
                                 </label>
                             ))}
                         </div>
+                        {compact && (
+                            <p className="scale-ends" aria-hidden="true">
+                                <span>{options[0].label}</span>
+                                <strong>{picked ? picked.label : ""}</strong>
+                                <span>{options[options.length - 1].label}</span>
+                            </p>
+                        )}
                     </div>
                 )
             })}

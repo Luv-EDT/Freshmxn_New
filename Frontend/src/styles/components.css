@@ -519,6 +519,31 @@ button.journey-step.is-current {
     color: var(--muted);
 }
 
+/* Above a page (not Home) the bar is a slim row on a phone — four stacked cards pushed the page
+   itself below the fold (Round 13 lean pass). The words stay in the title attribute. */
+@media (max-width: 640px) {
+    .journey:not(.journey-home) .journey-steps {
+        flex-wrap: nowrap;
+        gap: 4px;
+    }
+
+    .journey:not(.journey-home) button.journey-step {
+        flex: 1 1 0;
+        min-width: 0;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 2px;
+        padding: 6px 4px;
+        font-size: 0.72rem;
+        line-height: 1.2;
+    }
+
+    .journey:not(.journey-home) .journey-note {
+        display: none;
+    }
+}
+
 /* done stages read as achieved, the stage to do now stands out, upcoming ones stay quiet (Round 13) */
 button.journey-step.is-done {
     background: var(--teal-tint);
