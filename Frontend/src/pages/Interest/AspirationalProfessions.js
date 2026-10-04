@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { AutoComplete } from "antd"
 import InterestProgressBar from "./InterestProgressBar"
+import VoiceInput, { appendSpoken } from "../VoiceInput"
 import { searchProfessions } from "../../apiCall/professionsApi"
 
 // Change 3 — asked LAST on purpose, so naming a dream career can't colour the activity answers above.
@@ -122,6 +123,7 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
                             placeholder={`Profession ${idx + 1} (e.g., Doctor, Game Designer)`}
                         />
                         {row.professionId && <span className="status-chip is-done">✓ Matched</span>}
+                        <VoiceInput compact onText={(spoken) => { handleTextChange(idx, appendSpoken(row.professionText, spoken), null); handleSearch(idx, appendSpoken(row.professionText, spoken)) }} />
                         <button type="button" onClick={() => handleRemove(idx)}>Remove</button>
                     </div>
                 ))}

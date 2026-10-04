@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import VoiceInput, { appendSpoken } from "../VoiceInput"
 import { message } from "antd"
 import { openStory, getStoryState, submitStoryRecall } from "../../apiCall/submissionsApi"
 
@@ -192,6 +193,7 @@ function StoryRecall({ onDone }) {
                 {FREE_QUESTIONS.map((question) => (
                     <div key={question.id}>
                         <p><strong>{question.text}</strong></p>
+                        <VoiceInput onText={(spoken) => setFree((prev) => ({ ...prev, [question.id]: appendSpoken(prev[question.id], spoken) }))} />
                         <textarea
                             rows={5}
                             value={free[question.id] || ""}

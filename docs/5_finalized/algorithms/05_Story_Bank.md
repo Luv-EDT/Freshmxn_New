@@ -341,7 +341,8 @@ Score each 0-2:
 
 SCORE FACTS, NOT LANGUAGE. This is the most important rule here.
 Ignore spelling, grammar, sentence construction and vocabulary
-completely. Answers may be in English, Hindi, or a mix of both --
+completely. Answers may be in English, Hindi, or a mix of both, in
+Roman or Devanagari script, and may have been dictated by voice --
 score them identically. A student who writes "bird light block kar
 rahe the" has recalled the cause correctly and scores full marks.
 

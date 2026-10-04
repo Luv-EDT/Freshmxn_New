@@ -4290,6 +4290,30 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "VOICE — every rubric judges content, not language, script or dictation slips; the mic sits on every written answer",
+        run: () => {
+            const problems = []
+            const scorer = fs.readFileSync(path.join(__dirname, "../../scoring/llmScorer.js"), "utf8")
+            if (!/Devanagari/.test(scorer) || !/dictated by voice/.test(scorer)) problems.push("the grading system prompt does not mention Devanagari or voice")
+            const { loadStoryRubric } = require("../gradeOpenItems")
+            const story = require("../../data/stories.json").stories[0]
+            if (!/Devanagari/.test(JSON.stringify(loadStoryRubric({ storyId: story.id })))) problems.push("the story rubric does not mention Devanagari or voice")
+            const pages = {
+                "Assessment/Perspective.js": 1, "Assessment/StoryRecall.js": 1, "Interest/ChipListInput.js": 1,
+                "Interest/AspirationalProfessions.js": 1, "Interest/BackgroundInfo.js": 1,
+            }
+            Object.keys(pages).forEach((file) => {
+                const source = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages", file), "utf8")
+                if (!/<VoiceInput/.test(source)) problems.push(`${file} has no voice input`)
+                if (/optional/i.test(source.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "")) && file.startsWith("Assessment")) problems.push(`${file} says "optional"`)
+            })
+            const privacy = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Privacy.js"), "utf8")
+            if (!/voice typing/i.test(privacy)) problems.push("the privacy policy does not mention voice typing")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import VoiceInput, { appendSpoken } from "../VoiceInput"
 import InterestProgressBar from "./InterestProgressBar"
 import { NEEDS } from "../Assessment/accommodations"
 
@@ -308,6 +309,7 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
                             <div>
                                 <label>Please describe what actions you take for this:</label>
                                 <br />
+                                <VoiceInput onText={(spoken) => setLocalFormData((prev) => ({ ...prev, competitionActions: appendSpoken(prev.competitionActions, spoken) }))} />
                                 <textarea
                                     name="competitionActions"
                                     value={localFormData.competitionActions}
