@@ -88,6 +88,9 @@ const TIER_GROUPS = [
 
 // "a, b and c" — because "spatial thinking, reasoning" reads like a truncated list rather than a
 // finished sentence, and these strings sit inside prose.
+// how many careers show before "Show the other N" (owner, Round 13)
+const TOP_SHOWN = 5
+
 const listOf = (items) => {
     if (items.length === 0) return ""
     if (items.length === 1) return items[0]
@@ -146,6 +149,9 @@ function ReportPage() {
     const [showFirst, setShowFirst] = useState(null)
     // Off by default. The only control that may hide careers (owner, 2026-09-30).
     const [excludeBlueCollar, setExcludeBlueCollar] = useState(false)
+    // TOP FIVE FIRST (owner, Round 13): the first five of whatever order is chosen, the rest one tap
+    // away. Opening the rest belongs to that order — a new sort or filter starts again at five.
+    const [showAllFor, setShowAllFor] = useState(null)
     // Bumped after a retry so the polling effect below starts again.
     const [reloadKey, setReloadKey] = useState(0)
     const [retrying, setRetrying] = useState(false)
@@ -272,6 +278,8 @@ function ReportPage() {
         () => buildList(ranked, switchList, primary, secondary, details, { showFirst, excludeBlueCollar }),
         [ranked, switchList, primary, secondary, details, showFirst, excludeBlueCollar]
     )
+
+    const sortKey = [primary, secondary, showFirst, excludeBlueCollar].join("|")
 
     // How many the blue-collar filter hid, so the page can say so — a filter that hides silently is
     // the thing this report was rebuilt to avoid.
@@ -497,7 +505,7 @@ function ReportPage() {
             </details>
 
             <div className="match-list">
-                {ordered.map((entry) => {
+                {(showAllFor === sortKey ? ordered : ordered.slice(0, TOP_SHOWN)).map((entry) => {
                     const topRank = topIds.indexOf(String(entry.professionId)) + 1
 
                     return (
@@ -516,6 +524,12 @@ function ReportPage() {
                     )
                 })}
             </div>
+
+            {ordered.length > TOP_SHOWN && showAllFor !== sortKey && (
+                <button type="button" className="btn btn-ghost show-rest" onClick={() => setShowAllFor(sortKey)}>
+                    Show the other {ordered.length - TOP_SHOWN} {ordered.length - TOP_SHOWN === 1 ? "career" : "careers"}
+                </button>
+            )}
 
             {hiddenBlueCollar > 0 && (
                 <p className="report-hidden-note">

@@ -2010,8 +2010,13 @@ const fixtures = [
             if (ids(buildList(ranked, [], "best", null, details, {})) !== "a,b,c") problems.push("with no options set the list is not the full ranking")
             if (ids(buildList(ranked, [], "best", null, details, { excludeBlueCollar: true })) !== "b,c") problems.push("the blue-collar filter removed the wrong careers")
             if (ids(buildList(ranked, [], "best", null, details, { showFirst: "coreEngineering" })) !== "b,a,c") problems.push("show-first is not a stable partition that keeps everything")
+            // Round 13 (owner): the top five of the CHOSEN order show first and the rest are one tap away —
+            // a fold, not a filter: "Show the other N" opens the same ordered list in full
             const listBlock = page.split('<div className="match-list">')[1] || ""
-            if (!/^\s*\{ordered\.map\(/.test(listBlock)) problems.push("the rendered list is not the full ordered list")
+            if (!/^\s*\{\(showAllFor === sortKey \? ordered : ordered\.slice\(0, TOP_SHOWN\)\)\.map\(/.test(listBlock)) problems.push("the rendered list is not the chosen order (top five, then all)")
+            if (!/Show the other \{ordered\.length - TOP_SHOWN\}/.test(page)) problems.push("the rest of the list has no 'Show the other N' button")
+            if (!/const TOP_SHOWN = 5/.test(page)) problems.push("the list does not open on five")
+            if (!/const sortKey = \[primary, secondary, showFirst, excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at five")
 
             return problems.length > 0 ? problems.join("; ") : null
         },

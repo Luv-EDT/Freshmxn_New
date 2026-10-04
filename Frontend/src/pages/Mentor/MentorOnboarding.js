@@ -66,7 +66,7 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
                 ...prev,
                 career: {
                     ...prev.career,
-                    ...(hit ? { professionId: hit.id, profession: hit.profession, jobRole: role ? role.name : undefined } : {}),
+                    ...(hit && !prev.career.professionId ? { professionId: hit.id, profession: hit.profession, jobRole: role ? role.name : undefined } : {}),
                     industryCodes: prev.career.industryCodes && prev.career.industryCodes.length > 0 ? prev.career.industryCodes : industryCodes,
                 },
             }))

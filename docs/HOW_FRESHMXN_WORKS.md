@@ -191,7 +191,8 @@ you wait at the desk**. Instead:
 5. **Meanwhile your report page checks every 5 seconds** (`GET /reports/getMyReport`) and shows
    "preparing" until the report is there — then shows it.
 
-On the report you see **one list of careers** — just the names, with your top 3 coloured, a
+On the report you see **one list of careers** — the first five of the order you've chosen, with a
+**"Show the other N careers"** button for the rest (choosing a new order starts again at five) — just the names, with your top 3 coloured, a
 **Blue-collar** label on hands-on trade careers. Tap one to open it: first *what it is*, *why it fits
 you* (your strongest traits it uses, and the activity that led you there) and **your next 12 months**
 for your stage; then folded sections you can open — **the road** (subjects, degree, exams, how hard

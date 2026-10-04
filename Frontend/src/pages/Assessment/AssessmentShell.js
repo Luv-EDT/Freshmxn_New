@@ -185,7 +185,7 @@ function AssessmentShell() {
             if (storageKey) localStorage.removeItem(storageKey)
 
             if (user.progress.psychometric === "not_started") {
-                dispatch(setUser({ ...user, progress: { ...user.progress, psychometric: "in_progress" } }))
+                dispatch(setUser({ user: { ...user, progress: { ...user.progress, psychometric: "in_progress" } } }))
             }
 
             return true
@@ -257,7 +257,7 @@ function AssessmentShell() {
             setDirectionOpen(false)
             setDirtySinceSubmit(false)
             setStamps((previous) => ({ ...previous, psychometricSubmittedAt: new Date().toISOString() }))
-            dispatch(setUser({ ...user, progress: { ...user.progress, psychometric: "done" } }))
+            dispatch(setUser({ user: { ...user, progress: { ...user.progress, psychometric: "done" } } }))
             message.success("Submitted — your report is being prepared")
             navigate("/report")
         } catch (error) {

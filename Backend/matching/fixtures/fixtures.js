@@ -895,7 +895,7 @@ const fixtures = [
         // pays for a translation, and the student's own words are kept on the cached row.
         run: async () => {
             const problems = []
-            ;["playing cricket", "coding websites with friends", "the chess club"].forEach((text) => {
+            ;["playing cricket", "coding websites with friends", "the chess club", "i’m into coding — mostly games 🎮"].forEach((text) => {
                 if (needsTranslation(text)) problems.push(`"${text}" was treated as Hindi`)
             })
             ;["cricket khelna", "गाना गाना", "dosto ke saath coding karta tha"].forEach((text) => {

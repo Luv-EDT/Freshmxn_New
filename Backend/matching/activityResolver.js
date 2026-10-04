@@ -47,7 +47,8 @@ const canonicalise = (text) => String(text || "").trim().replace(/\s+/g, " ").to
 // English never pays for the call — and the original wording is kept on the cached row
 // (exampleRaw), so the same words are never translated twice.
 const HINGLISH_MARKERS = /\b(mein|maine|mujhe|karna|karta|karti|karte|kiya|kiye|khelna|khelta|khelti|khela|padhna|padhai|padhta|padhti|likhna|likhta|gaana|gaata|gaati|bajana|seekhna|seekha|sikhna|hai|hain|tha|thi|wala|wali|dosto|naach|nachna|chalana|bahut|accha|acha)\b/i
-const needsTranslation = (text) => /[^\x00-\x7F]/.test(text) || HINGLISH_MARKERS.test(text)
+// Devanagari, not just any non-ASCII: a phone's curly apostrophe or an emoji is still English
+const needsTranslation = (text) => /[\u0900-\u097F]/.test(text) || HINGLISH_MARKERS.test(text)
 
 const TRANSLATE_PROMPT = `You turn short descriptions of activities, written by Indian students in Hindi,
 Hinglish or a mix (Roman or Devanagari script, sometimes dictated by voice), into short natural English.

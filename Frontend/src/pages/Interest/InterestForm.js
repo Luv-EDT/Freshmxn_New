@@ -49,6 +49,7 @@ function InterestForm() {
     // with a dialog. Saved with the answers, so "Continue where you left off" works on any device.
     const [progress, setProgress] = useState({ lastStep: null, reachedStep: null })
     const [blockedAt, setBlockedAt] = useState(null)           // the stage a refused jump points to
+    const lastBlocked = useRef(null)
 
     const steps = getVisibleSteps(user)
     const currentStepIndex = steps.findIndex((s) => s.key === step)
@@ -199,10 +200,8 @@ function InterestForm() {
     // Moving forward needs the open section's required items (its form, plus the section's own check
     // passed in as sectionOk) and every stage before the target complete. Going back is always
     // allowed — but leaving a section with a required item empty pulls `reachedStep` back to it.
-    const sectionComplete = () => {
-        const form = sectionRef.current && sectionRef.current.querySelector("form")
-        return !form || form.checkValidity()
-    }
+    const sectionForm = () => sectionRef.current?.querySelector("form")
+    const sectionComplete = () => !sectionForm() || sectionForm().checkValidity()
 
     const goToStep = (index, { sectionOk = true } = {}) => {
         if (index < 0 || index >= steps.length) return
@@ -211,8 +210,7 @@ function InterestForm() {
         if (index > currentStepIndex) {
             const open = Math.max(reachedIndex, currentStepIndex + 1)
             if (!complete) {
-                const form = sectionRef.current && sectionRef.current.querySelector("form")
-                if (form) form.reportValidity()
+                sectionForm()?.reportValidity()
                 return setBlockedAt(currentStepIndex)
             }
             if (index > open) return setBlockedAt(open)
@@ -328,6 +326,10 @@ function InterestForm() {
         isSaving,
         requestSave,
     }
+    // the dialog fades out after blockedAt clears — it keeps the stage it named until it is gone
+    if (blockedAt !== null) lastBlocked.current = blockedAt
+    const shownBlock = blockedAt === null ? lastBlocked.current : blockedAt
+    const blockedTitle = shownBlock === null ? "" : steps[shownBlock].title
 
     const renderSection = () => {
         switch (steps[currentStepIndex].key) {
@@ -407,10 +409,10 @@ function InterestForm() {
             <div ref={sectionRef}>{renderSection()}</div>
             <Modal
                 open={blockedAt !== null}
-                title={blockedAt === null ? "" : `Finish ${steps[blockedAt].title} first`}
-                okText={blockedAt === currentStepIndex ? "OK" : `Go to ${blockedAt === null ? "" : steps[blockedAt].title}`}
+                title={blockedTitle && `Finish ${blockedTitle} first`}
+                okText={shownBlock === currentStepIndex ? "OK" : `Go to ${blockedTitle}`}
                 cancelText="Stay here"
-                cancelButtonProps={{ style: blockedAt === currentStepIndex ? { display: "none" } : {} }}
+                cancelButtonProps={{ style: shownBlock === currentStepIndex ? { display: "none" } : {} }}
                 onOk={() => {
                     const target = blockedAt
                     setBlockedAt(null)
@@ -419,7 +421,7 @@ function InterestForm() {
                 onCancel={() => setBlockedAt(null)}
             >
                 <p>
-                    Please complete the required items in <strong>{blockedAt === null ? "" : steps[blockedAt].title}</strong> before
+                    Please complete the required items in <strong>{blockedTitle}</strong> before
                     moving ahead. The stages open in order, so nothing gets missed.
                 </p>
                 <p>You can press Save and come back any time.</p>

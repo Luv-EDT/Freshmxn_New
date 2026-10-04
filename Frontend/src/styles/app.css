@@ -445,10 +445,7 @@ button.filter-option.is-on {
     font-size: var(--text-h3);
 }
 
-.deck-minutes {
-    color: var(--navy-soft);
-}
-
+.deck-minutes,
 .deck-note {
     color: var(--navy-soft);
 }
@@ -1155,11 +1152,7 @@ button.link-button:hover:not(:disabled) {
 }
 
 .blue-collar-toggle input {
-    margin-top: 4px;
-    width: 18px;
-    height: 18px;
-    accent-color: var(--teal);
-    flex: none;
+    margin-top: 4px;            /* size and colour come from the global checkbox rule */
 }
 
 .blue-collar-toggle.is-on {
@@ -2281,4 +2274,13 @@ button.link-button:hover:not(:disabled) {
     font-weight: 700;
     text-decoration: underline;
     cursor: pointer;
+}
+
+/* "Show the other N careers" under the top five (Round 13) */
+.report-page > .app-header ~ button.show-rest,
+button.show-rest {
+    display: block;
+    width: calc(100% - 32px);
+    max-width: 808px;
+    margin: var(--space-3) auto var(--space-5);
 }

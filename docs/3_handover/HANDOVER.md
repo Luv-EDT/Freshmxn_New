@@ -1817,7 +1817,7 @@ Asked after Round 12:
 | **K** interface (`2e6d54a`, `b1e1032`) | Assessment as a card deck with an overview strip and status chips (Done / In progress · N% left / Set aside / Answer now); waiting story questions first, in bold; the story explained in three short lines. Report: blue-collar toggle beside Sort; "Your next 12 months" inside each career; "Your options at a glance"; "One thing to build next"; the coverage line only on the assessment page and profile (CLAUDE.md updated). Compare: only the recommended careers, none preselected. "1,000+ careers and job roles" copy. Home: progress ring, a stepper with done/You're here, a bold next-step card. Refund choices aligned, amounts as ₹3,000. Mentorship: a skeleton until loaded, WhatsApp help, refund/explainer text hidden once matched. Mentor profile says what stops Save and pre-fills an old free-text role. Admin note reworded |
 | **L** voice (`854464b`) | Mic (browser dictation, English/हिंदी) on every written answer; words land in the box to edit. Grading rules name Hinglish, Devanagari and dictation slips. Hindi/Hinglish activities are put into English before matching (only those; cached). Privacy "Voice typing" |
 | **H** design (`d14057d`) | Three critique rounds each (screenshots at 360 and 1280, sent to the owner). 1: one-row agree-scales (a 10-question page about a third as tall), assessment text under 65 characters. 2: the journey bar a slim row above pages on a phone; the report banner, toggle and rules in the report's column; "One thing to build next" a plain line. 3: "1 year" not "1 years", whole hours on the story, the coverage line quieter. Design system in Part 2 |
-| **M** review passes (`0bbe58b`, pass 2 below) | Pass 1: the word test's progress read a field the page never gets; a pre-forms reasoning retake could switch form half-way; chips overflowed 360 px tiles; four shorter blocks. Follow-ups fixed here: forms saved before this round keep their stages open; voice hands over all phrases of one speech event at once |
+| **M** review passes (`0bbe58b`, then pass 2) | Pass 1: the word test's progress read a field the page never gets; a pre-forms reasoning retake could switch form half-way; chips overflowed 360 px tiles; four shorter blocks. Follow-ups fixed here: forms saved before this round keep their stages open; voice hands over all phrases of one speech event at once. **Pass 2:** a real, older bug — the assessment page sent the user to the store in the wrong shape after a first save and after Submit, which blanked the page and the header until a reload (`AssessmentShell.js`, fixed); a mentor's own pick could be overwritten by the slow pre-fill (fixed); only Devanagari or Hinglish words now trigger a translation (a curly apostrophe or emoji no longer pays for one); the stage dialog keeps its title while it fades; dead exports and duplicated CSS removed |
 
 **Fixtures:** scoring 22, matching 58 → 59, workers 164 → 168. Changed because the owner changed the product:
 - STUDY SOURCES — now pins that the card shows **no** provenance label (C);
@@ -1826,11 +1826,17 @@ Asked after Round 12:
 - scoring fixtures 01 and 07 — pin `profile@1.4.0` and ten modules (I);
 - the O\*NET/MI composite, INTERESTS and P13 fixtures — replaced by "SHORTER ASSESSMENT" and a new MI fixture (I);
 - NEXT STEPS — next steps live inside each career; the report keeps "Your options at a glance" (K);
+- the list fixture — the report opens on the **top five of the chosen order** with "Show the other N"; a new sort or filter starts again at five (owner, late in the round);
 - the coverage line is no longer sent with careers (`measuredPct` removed from `getMyReport`) (K).
 
 New: REASONING CLOCK, SET ASIDE, STUDY BOT SEASONS, GOING ABROAD, HINGLISH (matching), VOICE.
 Browser checks in the cloud scratchpad: interest form 20/20 (+ legacy form 1/1), deck/report/compare
 16/16, home/profile/refund/mentorship 15/15, voice 6/6, going abroad 6/6, uiFlow 65/65.
+
+**Top five first** (owner, late in the round): the report shows the first five careers of whatever order is
+chosen — Best match, ignoring switching cost, any "then order by", engineering first, or with blue-collar
+left out — and a **Show the other N careers** button for the rest. Changing the order starts again at five.
+The engine's top three keep their colours wherever they land. Browser check 6/6.
 
 **Answers given to the owner this round:**
 - **`study_refresh`** keeps four things on the report fresh — where to study, exam windows, the master's
