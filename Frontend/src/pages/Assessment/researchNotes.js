@@ -115,7 +115,7 @@ export const MODULE_RESEARCH = {
     },
     reasoning: {
         measures: "Reasoning — matrix puzzles, letter and number series, word problems and turning 3D shapes in your head.",
-        why: "Reasoning ability is the single strongest predictor of how quickly people learn new work. The four kinds of puzzle follow the open International Cognitive Ability Resource. Our scores are provisional until we have enough Indian students to compare with.",
+        why: "Reasoning ability is the single strongest predictor of how quickly people learn new work. The four kinds of puzzle follow the open International Cognitive Ability Resource, with a clock on each puzzle (ICAR itself is untimed). Our scores are provisional until we have enough Indian students to compare with.",
         references: [
             "Condon, D. M., & Revelle, W. (2014). The International Cognitive Ability Resource: Development and initial validation of a public-domain measure. Intelligence, 43, 52–64.",
             "Shepard, R. N., & Metzler, J. (1971). Mental rotation of three-dimensional objects. Science, 171(3972), 701–703.",

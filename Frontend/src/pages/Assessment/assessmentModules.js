@@ -29,7 +29,7 @@ export const ASSESSMENT_MODULES = [
     { key: "perspective", title: "How you think", minutes: 20, built: true },
     { key: "digitSpan", title: "Remembering numbers", minutes: 5, built: true },
     { key: "wordRecall", title: "Remembering words", minutes: 5, built: true, note: "Two lists of fifteen words, each shown once. One attempt." },
-    { key: "reasoning", title: "Reasoning puzzles", minutes: 15, built: true, note: "Sixteen puzzles of four kinds. One attempt — take it somewhere quiet." },
+    { key: "reasoning", title: "Reasoning puzzles", minutes: 20, built: true, note: "Sixteen puzzles of four kinds, each with its own clock. One attempt — take it somewhere quiet." },
     // RETIRED (Round 10): the in-house puzzles replaced this upload. It stays registered so a student
     // who already took it still sees it and keeps their result; nobody new is asked to take it.
     { key: "extReasoning", title: "Reasoning test (other website)", minutes: 15, built: true, retired: true, external: true, note: "Taken on another website before our own puzzles existed. Your result still counts." },

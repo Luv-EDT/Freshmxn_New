@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { message } from "antd"
 import { reasoningNext, reasoningAnswer } from "../../apiCall/submissionsApi"
 import OneAttemptWarning from "./OneAttemptWarning"
@@ -9,8 +9,8 @@ import { MatrixCell, CubeFigure } from "./ReasoningFigures"
 //
 // THE PAGE NEVER KNOWS THE ANSWERS. Each puzzle arrives without one, the student's pick goes back,
 // and the server marks it. No right/wrong is shown: knowing you missed one changes how you attempt
-// the next. No clock on screen either — the test it follows is untimed — but time per puzzle is
-// recorded on the server.
+// the next. EACH PUZZLE HAS ITS OWN CLOCK (owner, Round 13) — 60 or 90 seconds, kept by the server;
+// the bar here only shows it. At zero the page sends "no answer" itself and the next puzzle comes.
 //
 // One attempt. A puzzle shown and not yet answered comes back on a refresh, so closing the tab costs
 // nothing — and it is not a way to see a different puzzle.
@@ -19,6 +19,8 @@ function ReasoningTest({ alreadyTaken, onDone }) {
     const [current, setCurrent] = useState(null)      // { number, of, item }
     const [choice, setChoice] = useState(null)
     const [busy, setBusy] = useState(false)
+    const [secondsLeft, setSecondsLeft] = useState(null)
+    const sent = useRef(false)      // one answer per puzzle, even if the clock and a tap land together
 
     const loadNext = async () => {
         setBusy(true)
@@ -30,6 +32,8 @@ function ReasoningTest({ alreadyTaken, onDone }) {
                 return
             }
             setCurrent(data)
+            setSecondsLeft(data.secondsLeft ?? data.item.timeLimitS)
+            sent.current = false
             setChoice(null)
             setPhase("item")
             window.scrollTo(0, 0)
@@ -41,6 +45,8 @@ function ReasoningTest({ alreadyTaken, onDone }) {
     }
 
     const answer = async (picked) => {
+        if (sent.current) return
+        sent.current = true
         setBusy(true)
         try {
             const response = await reasoningAnswer({ choice: picked })
@@ -50,11 +56,24 @@ function ReasoningTest({ alreadyTaken, onDone }) {
             }
             await loadNext()
         } catch (error) {
+            sent.current = false
             message.error("Could not save your answer — check your connection and try again")
         } finally {
             setBusy(false)
         }
     }
+
+    // the clock: one tick a second while a puzzle is on screen; at zero, "no answer"
+    useEffect(() => {
+        if (phase !== "item" || secondsLeft === null) return undefined
+        if (secondsLeft <= 0) {
+            answer(null)
+            return undefined
+        }
+        const tick = setTimeout(() => setSecondsLeft((left) => left - 1), 1000)
+        return () => clearTimeout(tick)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [phase, secondsLeft])
 
     if (phase === "alreadyTaken") {
         return (
@@ -78,9 +97,10 @@ function ReasoningTest({ alreadyTaken, onDone }) {
                 <ul>
                     <li>Pick the answer you think is right, then press <strong>Next</strong>.</li>
                     <li>If you really cannot tell, choose <strong>I don't know</strong> and move on.</li>
-                    <li>There is no timer. Take the time you need, but do it in one sitting if you can.</li>
+                    <li>Each puzzle has its own clock — 60 seconds for word and number puzzles, 90 for the picture ones. If time runs out it counts as not answered and the next one appears.</li>
+                    <li>Do it in one sitting, somewhere quiet.</li>
                 </ul>
-                <OneAttemptWarning minutes={15} reason="You will not be told which answers were right — that would change how you answer the rest." />
+                <OneAttemptWarning minutes={20} reason="You will not be told which answers were right — that would change how you answer the rest." />
                 <button type="button" className="btn btn-primary" onClick={loadNext} disabled={busy}>
                     {busy ? "Loading…" : "Start the puzzles"}
                 </button>
@@ -104,6 +124,10 @@ function ReasoningTest({ alreadyTaken, onDone }) {
         <section className="reasoning">
             <p className="reasoning-progress">Puzzle {number} of {of}</p>
             <div className="reasoning-bar" aria-hidden="true"><span style={{ width: `${((number - 1) / of) * 100}%` }} /></div>
+            <div className={`reasoning-clock${secondsLeft !== null && secondsLeft <= 10 ? " is-low" : ""}`} role="timer" aria-live="off">
+                <div className="reasoning-clock-bar"><span style={{ width: `${Math.max(secondsLeft || 0, 0) / item.timeLimitS * 100}%` }} /></div>
+                <span className="reasoning-clock-text">{Math.max(secondsLeft || 0, 0)} s left</span>
+            </div>
 
             <h2 className="reasoning-prompt">{item.prompt}</h2>
 

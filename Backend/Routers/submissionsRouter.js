@@ -452,24 +452,72 @@ router.post("/digitSpanAnswer", authMiddleware, requireDiscovery, async (req, re
 // (reasoningBank.publicItem). THE MARKING: here, against the item rebuilt from the seed — the browser
 // only ever says which option was picked.
 //
-// One attempt. Time is recorded per item (from when it was issued) but nothing is cut off: the test
-// it follows (ICAR) is untimed, and a clock on screen measures nerves as much as reasoning. An item
-// left for more than five minutes is noted, because three of those in a row usually means the
-// device or the connection, not the student — and the admin is told.
+// One attempt. EVERY PUZZLE HAS ITS OWN CLOCK (owner, Round 13): 60 seconds for word and series
+// puzzles, 90 for the picture ones (reasoningBank.TIME_LIMIT_S). The clock runs from when the puzzle
+// was issued, here on the server, so a refresh never buys time. An answer arriving after the limit
+// (plus a few seconds' grace for a slow phone) counts as not answered. Three timeouts in a row
+// usually mean the device or the connection, not the student — and the admin is told.
+//
+// A retake the admin granted (an earlier attempt in psychometric.history) is dealt verbal form B
+// and a new seed, so no puzzle repeats.
 const reasoningBank = require("../assessment/reasoningBank")
-const REASONING_SLOW_MS = 5 * 60 * 1000
+const REASONING_GRACE_MS = 5000
+
+const reasoningTimedOut = (item, pending, now = Date.now()) => now - new Date(pending.issuedAt).getTime() > item.timeLimitS * 1000 + REASONING_GRACE_MS
+
+// one answer, marked here; `picked` null means skipped or out of time — not correct either way
+const reasoningResponse = (item, picked, ms, timedOut) => ({
+    id: item.id,
+    type: item.type,
+    level: item.level,
+    choice: timedOut ? null : picked,
+    correct: !timedOut && picked !== null && picked === item.answer,
+    ms,
+    timedOut,
+})
+
+// the block after one more response, and whether three timeouts in a row should be reported
+const recordReasoning = async (userId, block, response) => {
+    const all = [...(block.responses || []), response]
+    const changes = {
+        "psychometric.reasoning.responses": all,
+        "psychometric.reasoning.pending": null,
+        lastSavedAt: new Date(),
+    }
+    if (all.length >= reasoningBank.ITEM_COUNT) changes["psychometric.reasoning.completedAt"] = new Date()
+    await Submission.findOneAndUpdate({ user: userId }, { $set: changes })
+
+    const lastThree = all.slice(-3)
+    if (response.timedOut && lastThree.length === 3 && lastThree.every((entry) => entry.timedOut)) {
+        await raiseIssue({ user: userId, module: "reasoning", kind: "reasoning_timeouts", detail: `three puzzles in a row ran out of time (up to ${response.id})` })
+    }
+    return all
+}
 
 router.post("/reasoningNext", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const submission = await Submission.findOne({ user: req.user._id }).lean()
-        const block = (submission && submission.psychometric && submission.psychometric.reasoning) || {}
-        const responses = block.responses || []
+        const psychometric = (submission && submission.psychometric) || {}
+        let block = psychometric.reasoning || {}
 
+        const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
+        const form = block.form || ((psychometric.history && (psychometric.history.reasoning || []).length > 0) ? "B" : "A")
+
+        // a puzzle left on screen past its clock (a closed tab, a refresh) is recorded as out of
+        // time before the next one is dealt
+        if (block.pending && typeof block.seed === "number" && block.pending.index === (block.responses || []).length) {
+            const shown = reasoningBank.itemFor(block.seed, block.pending.index, form)
+            if (reasoningTimedOut(shown, block.pending)) {
+                const all = await recordReasoning(req.user._id, block, reasoningResponse(shown, null, Date.now() - new Date(block.pending.issuedAt).getTime(), true))
+                block = { ...block, responses: all, pending: null, completedAt: all.length >= reasoningBank.ITEM_COUNT ? new Date() : null }
+            }
+        }
+
+        const responses = block.responses || []
         if (block.completedAt || responses.length >= reasoningBank.ITEM_COUNT) {
             return res.status(200).json({ success: true, message: "Reasoning complete", data: { done: true, answered: responses.length } })
         }
 
-        const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
         const index = responses.length
 
         // an item already shown and not yet answered is shown again — a refresh is not a reroll,
@@ -480,6 +528,7 @@ router.post("/reasoningNext", authMiddleware, requireDiscovery, async (req, res)
             { user: req.user._id },
             { $set: {
                 "psychometric.reasoning.seed": seed,
+                "psychometric.reasoning.form": form,
                 "psychometric.reasoning.startedAt": block.startedAt || new Date(),
                 "psychometric.reasoning.responses": responses,
                 "psychometric.reasoning.pending": pending,
@@ -492,10 +541,13 @@ router.post("/reasoningNext", authMiddleware, requireDiscovery, async (req, res)
             await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
         }
 
+        const item = reasoningBank.itemFor(seed, index, form)
+        const secondsLeft = Math.max(Math.ceil((item.timeLimitS * 1000 - (Date.now() - new Date(pending.issuedAt).getTime())) / 1000), 0)
+
         return res.status(200).json({
             success: true,
             message: "Next item",
-            data: { done: false, number: index + 1, of: reasoningBank.ITEM_COUNT, item: reasoningBank.publicItem(reasoningBank.itemFor(seed, index)) },
+            data: { done: false, number: index + 1, of: reasoningBank.ITEM_COUNT, item: reasoningBank.publicItem(item), secondsLeft },
         })
 
     } catch (error) {
@@ -516,39 +568,16 @@ router.post("/reasoningAnswer", authMiddleware, requireDiscovery, async (req, re
             return res.status(400).json({ success: false, message: "No puzzle is currently shown" })
         }
 
-        const item = reasoningBank.itemFor(block.seed, pending.index)
+        const item = reasoningBank.itemFor(block.seed, pending.index, block.form || "A")
         const picked = Number.isInteger(choice) && choice >= 0 && choice < item.options.length ? choice : null
         const ms = Math.max(Date.now() - new Date(pending.issuedAt).getTime(), 0)
 
-        // Marked HERE. A skipped item (no choice) counts as not correct: it was shown.
-        const response = {
-            id: item.id,
-            type: item.type,
-            level: item.level,
-            choice: picked,
-            correct: picked !== null && picked === item.answer,
-            ms,
-            slow: ms > REASONING_SLOW_MS,
-        }
-
-        const all = [...responses, response]
-        const finished = all.length >= reasoningBank.ITEM_COUNT
-        const changes = {
-            "psychometric.reasoning.responses": all,
-            "psychometric.reasoning.pending": null,
-            lastSavedAt: new Date(),
-        }
-        if (finished) changes["psychometric.reasoning.completedAt"] = new Date()
-
-        await Submission.findOneAndUpdate({ user: req.user._id }, { $set: changes })
-
-        const lastThree = all.slice(-3)
-        if (lastThree.length === 3 && lastThree.every((entry) => entry.slow)) {
-            await raiseIssue({ user: req.user._id, module: "reasoning", kind: "reasoning_timeouts", detail: `three puzzles in a row took over five minutes each (up to ${response.id})` })
-        }
+        // Marked HERE. A skipped item (no choice) or one answered after its clock counts as not
+        // correct: it was shown.
+        const all = await recordReasoning(req.user._id, block, reasoningResponse(item, picked, ms, reasoningTimedOut(item, pending)))
 
         // No right/wrong back to the page: knowing you got one wrong changes how you attempt the next.
-        return res.status(200).json({ success: true, message: "Answer recorded", data: { done: finished, answered: all.length } })
+        return res.status(200).json({ success: true, message: "Answer recorded", data: { done: all.length >= reasoningBank.ITEM_COUNT, answered: all.length } })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Could not record the answer", error: error.message })

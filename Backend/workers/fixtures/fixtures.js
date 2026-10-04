@@ -4174,6 +4174,44 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "REASONING CLOCK — a retake gets the other verbal form; every puzzle has a clock; late or three-in-a-row timeouts are handled",
+        run: () => {
+            const bank = require("../../assessment/reasoningBank")
+            const score = require("../../scoring/reasoningInHouse")
+            const problems = []
+            // an item is its question AND its options — "Which is the odd one out?" is a stem both forms use
+            const key = (item) => `${item.prompt}|${[...item.options].sort().join("/")}`
+            const prompts = (form) => new Set(bank.VERBAL_FORMS[form].flat().map(key))
+            const a = prompts("A")
+            const b = prompts("B")
+            if (a.size !== 12 || b.size !== 12) problems.push("each verbal form must have twelve different items")
+            if ([...a].some((prompt) => b.has(prompt))) problems.push("forms A and B share an item")
+            ;["A", "B"].forEach((form) => bank.VERBAL_FORMS[form].flat().forEach((item) => {
+                if (!(item.answer >= 0 && item.answer < item.options.length) || new Set(item.options).size !== item.options.length) problems.push(`form ${form}: a broken item "${item.prompt}"`)
+            }))
+            for (let seed = 1; seed <= 50; seed += 1) {
+                for (let index = 0; index < bank.ITEM_COUNT; index += 1) {
+                    const item = bank.publicItem(bank.itemFor(seed * 7919, index, "B"))
+                    if (item.timeLimitS !== bank.TIME_LIMIT_S[item.type]) problems.push(`no clock on ${item.id}`)
+                    if ("answer" in item) problems.push("an answer reached the browser")
+                    if (item.type === "verbal" && !b.has(key(item))) problems.push("form B dealt a form A item")
+                }
+            }
+            if (bank.TIME_LIMIT_S.matrix !== 90 || bank.TIME_LIMIT_S.verbal !== 60) problems.push("time limits drifted from the owner's 60/90")
+
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/history\.reasoning/.test(router) || !/"B" : "A"/.test(router)) problems.push("a retake is not dealt form B")
+            if (!/reasoningTimedOut\(item, pending\)/.test(router) || !/correct: !timedOut/.test(router)) problems.push("a late answer can still count")
+
+            const types = ["matrix", "series", "verbal", "rotation"]
+            const run = (timedOutAt) => Array.from({ length: 16 }, (_, index) => ({ type: types[index % 4], correct: !timedOutAt.includes(index), timedOut: timedOutAt.includes(index) }))
+            if (!score({ responses: run([3, 4, 5]), completedAt: new Date() }).flags.reasoning_review) problems.push("three timeouts in a row were not flagged")
+            if (score({ responses: run([1, 5, 9]), completedAt: new Date() }).flags.reasoning_review) problems.push("three scattered timeouts were flagged")
+            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

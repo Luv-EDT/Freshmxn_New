@@ -165,32 +165,64 @@ const seriesItem = (random, level) => {
 }
 
 // ── 3. VERBAL REASONING ──────────────────────────────────────────────────────────────────────────
-// Written for this test, three per level; one of each level is dealt to each student.
-const VERBAL = [
-    [
-        { prompt: "Bird is to nest as bee is to …", options: ["honey", "hive", "flower", "swarm", "wax"], answer: 1 },
-        { prompt: "Which word does not belong with the others?", options: ["kilometre", "litre", "gram", "thermometer", "metre"], answer: 3 },
-        { prompt: "Doctor is to hospital as teacher is to …", options: ["student", "book", "school", "lesson", "exam"], answer: 2 },
+// Written for this test: TWO FORMS of twelve, three per level, with no item in common (Round 13).
+// A first attempt is dealt form A; a retake the admin granted is dealt form B, so a student never
+// meets the same word problem twice. The generated kinds (matrix, series, rotation) need no second
+// form — a retake gets a new seed, and with it new puzzles.
+const VERBAL_FORMS = {
+    A: [
+        [
+            { prompt: "Bird is to nest as bee is to …", options: ["honey", "hive", "flower", "swarm", "wax"], answer: 1 },
+            { prompt: "Which word does not belong with the others?", options: ["kilometre", "litre", "gram", "thermometer", "metre"], answer: 3 },
+            { prompt: "Doctor is to hospital as teacher is to …", options: ["student", "book", "school", "lesson", "exam"], answer: 2 },
+        ],
+        [
+            { prompt: "Ravi is taller than Sunil. Sunil is taller than Arjun. Arjun is taller than Kabir. Who is the second shortest?", options: ["Ravi", "Sunil", "Arjun", "Kabir", "Cannot be told"], answer: 2 },
+            { prompt: "If the day after tomorrow is Sunday, what day was yesterday?", options: ["Wednesday", "Thursday", "Friday", "Saturday", "Tuesday"], answer: 1 },
+            { prompt: "Which is the odd one out?", options: ["ladder", "staircase", "lift", "escalator", "bridge"], answer: 4 },
+        ],
+        [
+            { prompt: "All the students in the debate club read the newspaper. Meera reads the newspaper. What must be true?", options: ["Meera is in the debate club", "Meera is not in the debate club", "Nothing certain follows about whether Meera is in the club", "Everyone who reads the newspaper is in the club", "Only debaters read the newspaper"], answer: 2 },
+            { prompt: "If CAT is written as DBU, how is DOG written?", options: ["EPH", "EOH", "DPH", "FQI", "CNF"], answer: 0 },
+            { prompt: "Asha walks 5 km north, then 3 km east, then 5 km south. How far is she from where she started?", options: ["3 km", "5 km", "8 km", "10 km", "13 km"], answer: 0 },
+        ],
+        [
+            { prompt: "Pointing to a man, Neha says: \"His mother is my mother's only daughter.\" How is the man related to Neha?", options: ["Brother", "Son", "Nephew", "Cousin", "Father"], answer: 1 },
+            { prompt: "No fruit sold at this stall is imported. Some mangoes are sold at this stall. Which must be true?", options: ["All mangoes are imported", "Some mangoes are not imported", "No mangoes are imported", "Some imported fruit is sold at this stall", "All fruit at this stall is a mango"], answer: 1 },
+            { prompt: "In a row of children, Kiran is 7th from the left and 12th from the right. How many children are in the row?", options: ["17", "18", "19", "20", "21"], answer: 1 },
+        ],
     ],
-    [
-        { prompt: "Ravi is taller than Sunil. Sunil is taller than Arjun. Arjun is taller than Kabir. Who is the second shortest?", options: ["Ravi", "Sunil", "Arjun", "Kabir", "Cannot be told"], answer: 2 },
-        { prompt: "If the day after tomorrow is Sunday, what day was yesterday?", options: ["Wednesday", "Thursday", "Friday", "Saturday", "Tuesday"], answer: 1 },
-        { prompt: "Which is the odd one out?", options: ["ladder", "staircase", "lift", "escalator", "bridge"], answer: 4 },
+    B: [
+        [
+            { prompt: "Pen is to writer as brush is to …", options: ["paint", "canvas", "painter", "colour", "gallery"], answer: 2 },
+            { prompt: "Which word does not belong with the others?", options: ["rupee", "dollar", "yen", "euro", "bank"], answer: 4 },
+            { prompt: "Fish is to water as camel is to …", options: ["hump", "desert", "sand storm", "oasis", "caravan"], answer: 1 },
+        ],
+        [
+            { prompt: "Priya is older than Anil. Anil is older than Zoya. Zoya is older than Dev. Who is the second oldest?", options: ["Priya", "Anil", "Zoya", "Dev", "Cannot be told"], answer: 1 },
+            { prompt: "If yesterday was Tuesday, what day will it be the day after tomorrow?", options: ["Wednesday", "Thursday", "Friday", "Saturday", "Monday"], answer: 2 },
+            { prompt: "Which is the odd one out?", options: ["violin", "sitar", "guitar", "tabla", "veena"], answer: 3 },
+        ],
+        [
+            { prompt: "Every player in the school team practises daily. Rohan practises daily. What must be true?", options: ["Rohan is in the school team", "Rohan is not in the school team", "Nothing certain follows about whether Rohan is in the team", "Everyone who practises daily is in the team", "Only team players practise daily"], answer: 2 },
+            { prompt: "If BOOK is written as CPPL, how is DESK written?", options: ["EFTL", "EFSL", "DFTL", "CDRJ", "EGTL"], answer: 0 },
+            { prompt: "Imran walks 4 km east, then 6 km north, then 4 km west. How far is he from where he started?", options: ["4 km", "6 km", "8 km", "10 km", "14 km"], answer: 1 },
+        ],
+        [
+            { prompt: "Pointing to a woman, Arjun says: \"Her father is my father's only son.\" How is the woman related to Arjun?", options: ["Sister", "Daughter", "Niece", "Cousin", "Mother"], answer: 1 },
+            { prompt: "No book in this library is new. Some novels are in this library. Which must be true?", options: ["All novels are new", "Some novels are not new", "No novels are new", "Some new books are in this library", "Every book here is a novel"], answer: 1 },
+            { prompt: "In a queue, Sana is 9th from the front and 14th from the back. How many people are in the queue?", options: ["21", "22", "23", "24", "25"], answer: 1 },
+        ],
     ],
-    [
-        { prompt: "All the students in the debate club read the newspaper. Meera reads the newspaper. What must be true?", options: ["Meera is in the debate club", "Meera is not in the debate club", "Nothing certain follows about whether Meera is in the club", "Everyone who reads the newspaper is in the club", "Only debaters read the newspaper"], answer: 2 },
-        { prompt: "If CAT is written as DBU, how is DOG written?", options: ["EPH", "EOH", "DPH", "FQI", "CNF"], answer: 0 },
-        { prompt: "Asha walks 5 km north, then 3 km east, then 5 km south. How far is she from where she started?", options: ["3 km", "5 km", "8 km", "10 km", "13 km"], answer: 0 },
-    ],
-    [
-        { prompt: "Pointing to a man, Neha says: \"His mother is my mother's only daughter.\" How is the man related to Neha?", options: ["Brother", "Son", "Nephew", "Cousin", "Father"], answer: 1 },
-        { prompt: "No fruit sold at this stall is imported. Some mangoes are sold at this stall. Which must be true?", options: ["All mangoes are imported", "Some mangoes are not imported", "No mangoes are imported", "Some imported fruit is sold at this stall", "All fruit at this stall is a mango"], answer: 1 },
-        { prompt: "In a row of children, Kiran is 7th from the left and 12th from the right. How many children are in the row?", options: ["17", "18", "19", "20", "21"], answer: 1 },
-    ],
-]
+}
+const VERBAL = VERBAL_FORMS.A
 
-const verbalItem = (random, level) => {
-    const source = pick(random, VERBAL[level - 1])
+// How long each puzzle is on screen (owner, Round 13). The picture puzzles take longer to read.
+// When the time runs out the puzzle counts as not answered and the next one comes.
+const TIME_LIMIT_S = { verbal: 60, series: 60, matrix: 90, rotation: 90 }
+
+const verbalItem = (random, level, form = "A") => {
+    const source = pick(random, (VERBAL_FORMS[form] || VERBAL_FORMS.A)[level - 1])
     const order = shuffle(random, source.options.map((option, index) => index))
     return {
         type: "verbal",
@@ -294,12 +326,12 @@ const rotationItem = (random, level) => {
 const BUILDERS = { matrix: matrixItem, series: seriesItem, verbal: verbalItem, rotation: rotationItem }
 
 // item i: kind TYPES[i % 4], level 1 + floor(i / 4) — four rounds, each a little harder
-const itemFor = (seed, index) => {
+const itemFor = (seed, index, form = "A") => {
     if (index < 0 || index >= ITEM_COUNT) return null
     const type = TYPES[index % TYPES.length]
     const level = 1 + Math.floor(index / TYPES.length)
-    const item = BUILDERS[type](rng((seed >>> 0) + index * 1013), level)
-    return { id: `R${index + 1}`, index, level, ...item }
+    const item = BUILDERS[type](rng((seed >>> 0) + index * 1013), level, form)
+    return { id: `R${index + 1}`, index, level, timeLimitS: TIME_LIMIT_S[type], ...item }
 }
 
 // what the browser may see — everything but the answer
@@ -309,4 +341,4 @@ const publicItem = (item) => {
     return visible
 }
 
-module.exports = { ITEM_COUNT, TYPES, itemFor, publicItem, isTurnOf, mirror, VERBAL, rng, shuffle }
+module.exports = { ITEM_COUNT, TYPES, TIME_LIMIT_S, itemFor, publicItem, isTurnOf, mirror, VERBAL, VERBAL_FORMS, rng, shuffle }

@@ -1144,6 +1144,44 @@ button.link-button:hover:not(:disabled) {
     background: var(--teal);
 }
 
+/* each puzzle's clock (Round 13): teal while there is time, amber in the last ten seconds */
+.reasoning-clock {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.reasoning-clock-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--teal-tint);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+
+.reasoning-clock-bar span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+    transition: width 1s linear;
+}
+
+.reasoning-clock-text {
+    font-weight: 700;
+    color: var(--teal-dark);
+    min-width: 4.5em;
+    text-align: right;
+}
+
+.reasoning-clock.is-low .reasoning-clock-bar span {
+    background: #d98a00;
+}
+
+.reasoning-clock.is-low .reasoning-clock-text {
+    color: #a36200;
+}
+
 .reasoning-prompt {
     font-size: 1.2rem;
     line-height: 1.45;
