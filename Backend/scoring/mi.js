@@ -1,7 +1,7 @@
 const { likertOf, coverageOf, qualityFromCoverage, round2 } = require("./scoringHelpers")
 
-// Multiple Intelligences — 35 in-house items, 5 per intelligence, SEVEN intelligences (04_Item_Bank
-// §4b). Scale A–E = 1–5, no reverse-keyed items, mean of the five → (mean − 1) / 4 × 10.
+// Multiple Intelligences — 32 in-house items (35 until Round 13), 4–5 per intelligence, SEVEN
+// intelligences (04_Item_Bank §4b). Scale A–E = 1–5, no reverse-keyed items, mean of the five → (mean − 1) / 4 × 10.
 //
 // Seven, not nine. Part 6 of the frozen research mentions a "5+ of 9 scores at exactly 50%" gate;
 // that describes the external instrument this block replaced, whose reference screenshot showed
@@ -22,7 +22,10 @@ const INTELLIGENCES = {
 }
 
 const ITEMS_PER_INTELLIGENCE = 5
-const STRAIGHTLINE_ITEM_COUNT = 30      // same option this many times out of 35
+// Round 13 (owner): three items that repeated another were retired — N3 (paths and landmarks, said
+// again by S2), E5 (keep asking why, as E1) and L5 (in order, as L1). Answers to them are ignored.
+const RETIRED_ITEMS = ["MI_N3", "MI_E5", "MI_L5"]
+const STRAIGHTLINE_ITEM_COUNT = 27      // same option this many times out of 32
 const FLAT_PROFILE_SPREAD = 0.5         // all seven means this close together
 
 const itemIdsFor = (prefix) => {
@@ -32,7 +35,7 @@ const itemIdsFor = (prefix) => {
         ids.push(`${prefix}${number}`)
     }
 
-    return ids
+    return ids.filter((id) => !RETIRED_ITEMS.includes(id))
 }
 
 const scoreMi = (block) => {
@@ -88,3 +91,4 @@ const scoreMi = (block) => {
 }
 
 module.exports = scoreMi
+module.exports.RETIRED_ITEMS = RETIRED_ITEMS

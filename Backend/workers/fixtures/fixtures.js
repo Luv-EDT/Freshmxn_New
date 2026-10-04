@@ -192,7 +192,8 @@ const MODULE_CONTRACTS = [
             ;["V", "S", "M", "B", "N", "E", "L"].forEach((prefix) => {
                 for (let number = 1; number <= 5; number += 1) ids.push(`MI_${prefix}${number}`)
             })
-            return ids
+            // Round 13: the three retired repeats are no longer read
+            return ids.filter((id) => !require("../../scoring/mi").RETIRED_ITEMS.includes(id))
         },
     },
     {
@@ -203,7 +204,7 @@ const MODULE_CONTRACTS = [
     {
         module: "confidence",
         uiIds: () => idsFrom(MODULE_ITEMS_FILE, /id:\s*"(CF\d+)"/g),
-        scorerIds: () => Array.from({ length: 6 }, (item, index) => `CF${index + 1}`),
+        scorerIds: () => Object.keys(require("../../scoring/confidenceItems").KEYS),     // three since Round 13
     },
 ]
 
@@ -264,7 +265,7 @@ const fixtures = [
             // tests, story recall) are exempt: they have their own shapes and their own checks.
             // The reasoning puzzles and the activity checklist (Round 10) are covered by the
             // REASONING and INTERESTS fixtures below; the word-memory test (Round 11) by WORD MEMORY.
-            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "interests60", "wordRecall"]
+            const SHAPED_DIFFERENTLY = ["digitSpan", "sartRaw", "extReasoning", "extVerbal", "storyRecall", "perspective", "reasoning", "wordRecall"]
             const uncovered = built.filter((key) => !covered.includes(key) && !SHAPED_DIFFERENTLY.includes(key))
 
             return uncovered.length > 0 ? `built but untested: ${uncovered.join(", ")}` : null
@@ -2723,34 +2724,40 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "INTERESTS — the O*NET items that feed the intelligences exist, and none feeds two",
+        name: "SHORTER ASSESSMENT — no activity checklist, 32 MI items, 3 confidence situations, no written day plan (owner, Round 13)",
         run: () => {
-            const interests = require("../../scoring/interests60")
-            const used = Object.values(interests.MI_ITEMS).flat()
-            const unknown = used.filter((id) => !interests.ALL_ITEMS.includes(id))
-            if (unknown.length > 0) return `unknown items: ${unknown.join(", ")}`
-            if (new Set(used).size !== used.length) return "an activity feeds two intelligences"
-            if (interests.ALL_ITEMS.length !== 60) return `expected 60 items, got ${interests.ALL_ITEMS.length}`
-            const frontend = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "interestItems.js"), "utf8")
-            const missing = interests.ALL_ITEMS.filter((id) => !frontend.includes(`id: "${id}"`))
-            return missing.length > 0 ? `not asked on the page: ${missing.join(", ")}` : null
+            const problems = []
+            const items = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/moduleItems.js"), "utf8")
+            const perspective = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/perspectiveItems.js"), "utf8")
+            const modules = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/assessmentModules.js"), "utf8")
+            ;["MI_N3", "MI_E5", "MI_L5", "CF1", "CF4", "CF5"].forEach((id) => { if (items.includes(`id: "${id}"`)) problems.push(`${id} is still asked`) })
+            if ((items.match(/id: "MI_/g) || []).length !== 32) problems.push("MI is not 32 items")
+            if (perspective.includes('id: "P13"')) problems.push("the written day plan is still asked")
+            if (modules.includes('key: "interests60"')) problems.push("the activity checklist is still a module")
+            if (require("../gradeOpenItems").OPEN_ITEMS && require("../gradeOpenItems").OPEN_ITEMS.includes("P13")) problems.push("P13 is still graded")
+            const source = fs.readFileSync(path.join(__dirname, "../../scoring/scoreProfile.js"), "utf8")
+            if (/interests60|scoreInterests/.test(source)) problems.push("the scorer still reads the activity checklist")
+
+            // an old stored day-plan grade and old checklist answers change nothing
+            const base = { perspective: { answers: { P8: "A", P9: "B", P10: "A", P11: "B", P12: "A" } } }
+            const plain = scoreProfile(base)
+            const withOld = scoreProfile({ ...base, interests60: { answers: { A4: true }, completedAt: new Date() }, perspective: { ...base.perspective, open: { P13: { criteria: { deep_work_first: true, urgency_order: true, messages_batched: true, fixed_respected: true, recovery: true } } } } })
+            if (JSON.stringify(plain.raw_scores) !== JSON.stringify(withOld.raw_scores)) problems.push("an old day-plan grade or checklist still moves a score")
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "MI — each intelligence is built from self-report, activities and (where tested) reasoning",
+        name: "MI — each intelligence is its self-report, plus half the matching reasoning part where one is tested; retired items are ignored",
         run: () => {
             const answers = {}
             ;["V", "S", "M", "B", "N", "E", "L"].forEach((letter) => { for (let item = 1; item <= 5; item += 1) answers[`MI_${letter}${item}`] = "C" })
+            answers.MI_N3 = "E"     // retired: must not count
             const onlySelf = scoreProfile({ mi: { answers } })
-            const ticks = {}
-            ;["A4", "A5", "A6", "A10"].forEach((id) => { ticks[id] = true })
-            const withActivities = scoreProfile({ mi: { answers }, interests60: { answers: ticks, completedAt: new Date() } })
-            if (onlySelf.raw_scores.existential_intelligence !== 5) return `existential is self-report only, expected 5, got ${onlySelf.raw_scores.existential_intelligence}`
-            if (onlySelf.data_quality.spatial_intelligence !== "partial") return "spatial without activities or the reasoning test should be partial"
-            // spatial: affinity 0.7*5 + 0.3*10 = 6.5, no reasoning part → 6.5
-            if (withActivities.raw_scores.spatial_intelligence !== 6.5) return `spatial with all four drawing activities ticked: expected 6.5, got ${withActivities.raw_scores.spatial_intelligence}`
-            if (withActivities.factor_coverage.spatial_intelligence !== 0.5) return `spatial coverage without the reasoning test should be 50%, got ${withActivities.factor_coverage.spatial_intelligence}`
+            if (onlySelf.raw_scores.existential_intelligence !== 5 || onlySelf.raw_scores.naturalistic_intelligence !== 5) return `self-report only, expected 5, got ${onlySelf.raw_scores.existential_intelligence} / ${onlySelf.raw_scores.naturalistic_intelligence}`
+            if (onlySelf.data_quality.spatial_intelligence !== "partial") return "spatial without the reasoning test should be partial"
+            if (onlySelf.factor_coverage.spatial_intelligence !== 0.5) return `spatial coverage without the reasoning test should be 50%, got ${onlySelf.factor_coverage.spatial_intelligence}`
+            if (onlySelf.factor_coverage.musical_intelligence !== 1) return "musical has no test half: full coverage from the self-report"
             return null
         },
         expect: null,
@@ -2873,32 +2880,6 @@ const fixtures = [
             if (/sartMeta/.test(scorer)) problems.push("scoreProfile reads sartMeta — diagnostics have become an input")
 
             return problems.length > 0 ? problems.join("; ") : null
-        },
-        expect: null,
-    },
-    {
-        name: "P13 — a day-plan grade stored the way the grader stores it actually counts",
-        // THE BUG (backend review, 2026-09-24): llmScorer flattens P13 to `{ deep_work_first: 1, … }`
-        // and that is what gets stored, but perspectiveScoring reads `criteria.<name>` as true/false.
-        // Every real student's day plan was silently unscored; the fixtures missed it because they
-        // fed the scorer its own shape. This drives the STORED shape through scoreProfile.
-        run: () => {
-            const base = buildSubmission()
-            const midRange = { ...base, perspective: fillPerspective("C") }
-            const flat = (value) => ({ deep_work_first: value, urgency_order: value, messages_batched: value, fixed_respected: value, recovery: value })
-            const withP13 = (p13) => scoreProfile({ ...midRange, perspective: { ...midRange.perspective, open: { ...midRange.perspective.open, P13: p13 } } })
-
-            const allMet = withP13(flat(1))
-            const noneMet = withP13(flat(0))
-            const picture = (profile) => JSON.stringify([profile.raw_scores, profile.banks, profile.components])
-
-            if (picture(allMet) === picture(noneMet)) return "an all-1 and an all-0 P13 grade score identically — the stored shape is still ignored"
-            if (JSON.stringify(allMet).includes("only 0 of 5 criteria")) return "the scorer still reports the stored P13 as having no criteria"
-
-            // the scorer's own shape must keep working exactly as before
-            const nested = withP13({ criteria: { deep_work_first: true, urgency_order: true, messages_batched: true, fixed_respected: true, recovery: true } })
-            if (picture(nested) !== picture(allMet)) return "the nested { criteria } shape and the stored flat shape disagree"
-            return null
         },
         expect: null,
     },

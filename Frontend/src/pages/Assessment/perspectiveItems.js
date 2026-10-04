@@ -4,7 +4,7 @@
 // three banks, two factors directly, and the values profile:
 //
 //     P1–P7    belief_bank            = 0.60 × MCQ + 0.40 × P7
-//     P8–P13   clm                    = 0.70 × MCQ + 0.30 × P13
+//     P8–P12   clm                    = the multiple choice (P13, the written day plan, retired in Round 13)
 //     P14–P22  emotion_bank           = 0.70 × MCQ + 0.30 × P22
 //     P23–P30  values_profile         importance − fulfilment, never summed into a factor
 //     P31–P32  narrative              report colour, plus the social-desirability flag
@@ -427,12 +427,6 @@ export const PERSPECTIVE_OPEN = [
             "What experience or evidence supports it?",
             "What would make you change your mind?",
         ],
-    },
-    {
-        id: "P13",
-        title: "How you would plan a free day",
-        text: "Tomorrow is free, 9 am to 9 pm. You have five things to do:\n1. A 1500-word assignment due in 2 days — needs deep focus, about 3 hours\n2. Reply to 12 pending messages and emails — about 30 minutes\n3. An online class at 4 pm you must attend — fixed, 1 hour\n4. Groceries and errands — about 1 hour\n5. Revision for a test 8 days away — about 2 hours",
-        parts: ["Write the order you would actually do them in, with rough timings."],
     },
     {
         id: "P22",

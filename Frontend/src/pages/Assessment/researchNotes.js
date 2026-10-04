@@ -73,14 +73,6 @@ export const MODULE_RESEARCH = {
             "Gardner, H. (1983). Frames of Mind: The Theory of Multiple Intelligences. Basic Books.",
         ],
     },
-    interests60: {
-        measures: "Sixty everyday work activities you would or would not like to do.",
-        why: "What you would like to DO is a second, independent view of what you are drawn to. Your answers strengthen six of the seven intelligences above.",
-        references: [
-            "National Center for O*NET Development. O*NET Interest Profiler Short Form. U.S. Department of Labor, Employment & Training Administration.",
-            "Holland, J. L. (1997). Making Vocational Choices (3rd ed.). Psychological Assessment Resources.",
-        ],
-    },
     rosenberg: {
         measures: "Self-esteem — how you see your own worth overall.",
         why: "How you rate yourself shapes which careers you even consider. It is one of the inputs to confidence, which is never shown to you as a score.",
@@ -89,7 +81,7 @@ export const MODULE_RESEARCH = {
         ],
     },
     confidence: {
-        measures: "Confidence in six real situations.",
+        measures: "Confidence in three real situations.",
         why: "Believing you can do a specific thing (self-efficacy) predicts whether people attempt it at all — more than general confidence does.",
         references: [
             "Bandura, A. (1977). Self-efficacy: Toward a unifying theory of behavioral change. Psychological Review, 84(2), 191–215.",

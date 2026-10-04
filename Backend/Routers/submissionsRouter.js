@@ -177,7 +177,6 @@ const CLIENT_OWNED = {
     "mi": null,
     "rosenberg": null,
     "confidence": null,
-    "interests60": null,
     "accommodations": null,
     "perspective": ["answers", "narrative", "openText"],
     "sartMeta": null,
