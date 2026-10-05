@@ -207,6 +207,29 @@ const offerSartRetakeIfInvalid = async (userId, rawRows, submission) => {
     return true
 }
 
+// A focus (SART) run is saved only when it ends, so a refresh in the middle would quietly hand the
+// student a second run. The page reports the start of every run here (Round 17, owner): a run
+// started while an earlier one never finished means the page was left or refreshed mid-run, and the
+// admin is told. A recorded run (sartRaw) closes it.
+router.post("/markTestStarted", authMiddleware, requireDiscovery, async (req, res) => {
+    try {
+        if (req.body.module !== "sartRaw") {
+            return res.status(400).json({ success: false, message: "Unknown test" })
+        }
+        const submission = await Submission.findOne({ user: req.user._id }).select("psychometric.sartRunOpenedAt psychometric.sartRaw").lean()
+        const psychometric = (submission && submission.psychometric) || {}
+        const interrupted = Boolean(psychometric.sartRunOpenedAt) && !psychometric.sartRaw
+        if (interrupted) {
+            await raiseIssue({ user: req.user._id, module: "sartRaw", kind: "left_mid_test", detail: "a focus run was started and never finished — the page was left or refreshed mid-run" })
+        }
+        await Submission.findOneAndUpdate({ user: req.user._id }, { $set: { "psychometric.sartRunOpenedAt": new Date() } }, { upsert: true })
+        return res.status(200).json({ success: true, message: "Run started", data: { interrupted } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not record the start", error: error.message })
+    }
+})
+
 router.post("/savePsychometric", authMiddleware, requireDiscovery, async (req, res) => {
     try {
         const { module, block } = req.body
@@ -244,6 +267,8 @@ router.post("/savePsychometric", authMiddleware, requireDiscovery, async (req, r
             }
             if (granted) unset[`psychometric.retakeGrants.${module}`] = ""
         }
+        // a recorded focus run closes the run opened by /markTestStarted
+        if (module === "sartRaw") unset["psychometric.sartRunOpenedAt"] = ""
 
         if (fields) {
             fields.forEach((field) => {
@@ -361,13 +386,19 @@ router.post("/digitSpanNext", authMiddleware, requireDiscovery, async (req, res)
             return res.status(200).json({ success: true, message: "Digit span complete", data: { done: true, trials: trials.length } })
         }
 
-        // A sequence already shown and not yet answered is shown AGAIN, not replaced. Otherwise a
-        // refresh after seeing a hard sequence deals a fresh one at the same length — a free reroll.
+        // A sequence already shown and not yet answered is NOT replaced (a fresh one would be a free
+        // reroll) and, since Round 17, NOT shown again either (that was a second look). The page was
+        // left or refreshed mid-sequence: the student types what they remember, the trial is marked
+        // interrupted, and the admin is told so they can allow a retake if something went wrong.
         if (block.pending && block.pending.length === length && block.pending.digits) {
+            if (!block.pending.interrupted) {
+                await Submission.updateOne({ user: req.user._id }, { $set: { "psychometric.digitSpan.pending.interrupted": true } })
+                await raiseIssue({ user: req.user._id, module: "digitSpan", kind: "left_mid_test", detail: `a ${length}-digit sequence: the page was left or refreshed before it was answered` })
+            }
             return res.status(200).json({
                 success: true,
-                message: "Next sequence",
-                data: { done: false, length, digits: block.pending.digits },
+                message: "Type what you remember",
+                data: { done: false, length, interrupted: true },
             })
         }
 
@@ -411,6 +442,7 @@ router.post("/digitSpanAnswer", authMiddleware, requireDiscovery, async (req, re
             response: typed,
             correct: typed === pending.digits,
             ms: typeof ms === "number" && ms >= 0 ? ms : 0,
+            ...(pending.interrupted ? { interrupted: true } : {}),
         }
 
         const trials = [...(block.trials || []), trial]
@@ -531,6 +563,13 @@ router.post("/reasoningNext", authMiddleware, requireDiscovery, async (req, res)
         // and its clock keeps running from when it was first issued
         const pending = block.pending && block.pending.index === index ? block.pending : { index, issuedAt: new Date() }
 
+        // the same puzzle asked for again means the page was left or refreshed with it open (Round 17):
+        // the admin is told once per puzzle
+        if (block.pending && block.pending.index === index && !block.pending.reopened) {
+            pending.reopened = true
+            await raiseIssue({ user: req.user._id, module: "reasoning", kind: "left_mid_test", detail: `puzzle ${index + 1}: the page was left or refreshed while it was open (its clock kept running)` })
+        }
+
         await Submission.findOneAndUpdate(
             { user: req.user._id },
             { $set: {
@@ -615,9 +654,15 @@ router.post("/wordRecallNext", authMiddleware, requireDiscovery, async (req, res
 
         const index = trials.length
 
-        // already shown and not yet written down: straight to writing, no second look
+        // already shown and not yet written down: straight to writing, no second look. The page was
+        // left or refreshed in between, so the list is marked interrupted and the admin is told
+        // (Round 17, owner) — they can allow a retake if something went wrong.
         if (block.pending && block.pending.index === index) {
-            return res.status(200).json({ success: true, message: "Write what you remember", data: { done: false, phase: "recall", number: index + 1, of: wordBank.LIST_COUNT } })
+            if (!block.pending.interrupted) {
+                await Submission.updateOne({ user: req.user._id }, { $set: { "psychometric.wordRecall.pending.interrupted": true } })
+                await raiseIssue({ user: req.user._id, module: "wordRecall", kind: "left_mid_test", detail: `list ${index + 1}: the page was left or refreshed after the list was shown` })
+            }
+            return res.status(200).json({ success: true, message: "Write what you remember", data: { done: false, phase: "recall", interrupted: true, number: index + 1, of: wordBank.LIST_COUNT } })
         }
 
         const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
@@ -671,6 +716,7 @@ router.post("/wordRecallAnswer", authMiddleware, requireDiscovery, async (req, r
             recalled: marked.recalled,
             intrusions: marked.intrusions,
             ms: Math.max(Date.now() - new Date(pending.shownAt).getTime(), 0),
+            ...(pending.interrupted ? { interrupted: true } : {}),
         }
 
         const all = [...trials, trial]

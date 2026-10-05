@@ -18,13 +18,10 @@ function ModuleProgressBar({ pages, currentIndex, isComplete, onJump }) {
     let furthest = 0
     while (furthest < pages.length - 1 && isComplete(furthest)) furthest += 1
 
-    const answered = pages.filter((page, index) => isComplete(index)).length
-
+    // Round 17 (owner): the pills alone say where you are — no "Section 2 of 4 · 1 of 4 finished"
+    // line, and no "1." numbers in front of "1–10"; a finished section keeps its ✓
     return (
         <div>
-            <p>
-                Section {currentIndex + 1} of {pages.length} · {answered} of {pages.length} finished
-            </p>
 
             {/* Wraps rather than scrolls: on a phone a horizontal row of six buttons either
                 overflows off-screen or shrinks below a usable tap target. */}
@@ -49,7 +46,7 @@ function ModuleProgressBar({ pages, currentIndex, isComplete, onJump }) {
                                 cursor: reachable && !isCurrent ? "pointer" : "default",
                             }}
                         >
-                            {index + 1}. {page.title}{done ? " ✓" : ""}
+                            {page.title}{done ? " ✓" : ""}
                         </button>
                     )
                 })}

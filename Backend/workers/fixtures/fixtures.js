@@ -4504,6 +4504,30 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "INTERRUPTED TEST — a one-attempt test left mid-way is never shown again, is flagged, and warns first",
+        // Round 17 (owner): "going back or refreshing should be flagged properly" (word memory)
+        run: () => {
+            const problems = []
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            const digit = router.slice(router.indexOf('router.post("/digitSpanNext"'), router.indexOf('router.post("/digitSpanAnswer"'))
+            if (/data: \{ done: false, length, digits: block\.pending\.digits \}/.test(digit)) problems.push("a refreshed digit sequence is shown again")
+            if (!/kind: "left_mid_test"/.test(digit)) problems.push("a refreshed digit sequence is not flagged")
+            const words = router.slice(router.indexOf('router.post("/wordRecallNext"'), router.indexOf('router.post("/wordRecallAnswer"'))
+            if (!/kind: "left_mid_test"/.test(words) || !/interrupted: true/.test(words)) problems.push("a refreshed word list is not flagged")
+            if (/words: wordBank\.listsFor\(seed\)\[index\][\s\S]*phase: "recall"/.test(words.slice(0, words.indexOf("const seed")))) problems.push("a refreshed word list is shown again")
+            const reasoning = router.slice(router.indexOf('router.post("/reasoningNext"'))
+            if (!/kind: "left_mid_test"/.test(reasoning.slice(0, 3000))) problems.push("a reopened puzzle is not flagged")
+            if (!/router\.post\("\/markTestStarted"/.test(router) || !/unset\["psychometric\.sartRunOpenedAt"\]/.test(router)) problems.push("a focus run left mid-way cannot be noticed")
+            ;["WordRecallTest.js", "DigitSpan.js", "ReasoningTest.js", "Sart.js"].forEach((file) => {
+                if (!/useLeaveWarning\(/.test(fs.readFileSync(path.join(ASSESSMENT_DIR, file), "utf8"))) problems.push(`${file} does not warn before leaving`)
+            })
+            const hook = fs.readFileSync(path.join(ASSESSMENT_DIR, "useLeaveWarning.js"), "utf8")
+            if (!/beforeunload/.test(hook) || !/closest\("a\[href\]"\)/.test(hook)) problems.push("the warning does not cover a refresh and a link")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

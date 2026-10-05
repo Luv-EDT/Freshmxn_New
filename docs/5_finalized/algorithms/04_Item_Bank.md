@@ -101,6 +101,11 @@ E) Very accurate        5
 | A9 | Feel others' emotions | + |
 | A10 | Make people feel at ease | + |
 
+> **Plainer wording (Round 17, owner).** Six items are reworded for Indian students aged 14+, keeping
+> their meaning, ids, keys and scoring: C7 (was "Like order"), C8 ("Shirk my duties"), C10 ("Am exacting
+> in my work"), ES4 / ES10 ("…feel blue"), and O6 ("Do not have a good imagination", the reversed twin of
+> O3, reworded so it doesn't read as a repeat).
+
 ### Conscientiousness — `C`
 
 | # | Item | Key |
@@ -111,10 +116,10 @@ E) Very accurate        5
 | C4 | Make a mess of things | − |
 | C5 | Get chores done right away | + |
 | C6 | Often forget to put things back in their proper place | − |
-| C7 | Like order | + |
-| C8 | Shirk my duties | − |
+| C7 | Like to keep things neat and in order | + |
+| C8 | Avoid doing my duties | − |
 | C9 | Follow a schedule | + |
-| C10 | Am exacting in my work | + |
+| C10 | Want every detail of my work to be exactly right | + |
 
 ### Emotional Stability — `ES`
 
@@ -125,13 +130,13 @@ E) Very accurate        5
 | ES1 | Get stressed out easily | − |
 | ES2 | Am relaxed most of the time | + |
 | ES3 | Worry about things | − |
-| ES4 | Seldom feel blue | + |
+| ES4 | Seldom feel sad | + |
 | ES5 | Am easily disturbed | − |
 | ES6 | Get upset easily | − |
 | ES7 | Change my mood a lot | − |
 | ES8 | Have frequent mood swings | − |
 | ES9 | Get irritated easily | − |
-| ES10 | Often feel blue | − |
+| ES10 | Often feel sad | − |
 
 ### Openness / Intellect — `O`
 
@@ -142,7 +147,7 @@ E) Very accurate        5
 | O3 | Have a vivid imagination | + |
 | O4 | Am not interested in abstract ideas | − |
 | O5 | Have excellent ideas | + |
-| O6 | Do not have a good imagination | − |
+| O6 | Find it hard to picture things I have never seen | − |
 | O7 | Am quick to understand things | + |
 | O8 | Use difficult words | + |
 | O9 | Spend time reflecting on things | + |

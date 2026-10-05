@@ -146,7 +146,10 @@ router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             const unset = { [`psychometric.${issue.module}`]: "" }
 
             // the SART's diagnostics belong to the run they describe
-            if (issue.module === "sartRaw") unset["psychometric.sartMeta"] = ""
+            if (issue.module === "sartRaw") {
+                unset["psychometric.sartMeta"] = ""
+                unset["psychometric.sartRunOpenedAt"] = ""   // the retake starts with no run left open
+            }
 
             const update = { $set: set, $unset: unset }
             if (attempt !== undefined) {

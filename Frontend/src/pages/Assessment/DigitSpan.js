@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { message } from "antd"
 import { digitSpanNext, digitSpanAnswer } from "../../apiCall/submissionsApi"
+import useLeaveWarning from "./useLeaveWarning"
 import OneAttemptWarning from "./OneAttemptWarning"
 
 // Forward digit span — 04_Item_Bank.md §5. One digit at a time, 1000 ms each, no gap.
@@ -45,8 +46,12 @@ function DigitSpan({ onDone, alreadyTaken }) {
     const [blurCount, setBlurCount] = useState(0)
     const [busy, setBusy] = useState(false)
 
+    const [interrupted, setInterrupted] = useState(false)   // the page was left mid-sequence (Round 17)
     const answerOpenedAt = useRef(null)
     const timerRef = useRef(null)
+
+    // a real sequence on screen, or waiting to be typed, can't be shown again (practice can)
+    useLeaveWarning(!isPractice && (phase === "showing" || phase === "answering"))
 
     // Page-blur is logged rather than blocked. A student who switches tabs mid-sequence has not
     // necessarily cheated — a notification steals focus on a phone constantly — but the score is
@@ -111,6 +116,17 @@ function DigitSpan({ onDone, alreadyTaken }) {
             }
 
             setIsPractice(false)
+            // the page was left or refreshed after this sequence was shown: no second look — straight
+            // to typing what they remember (the server has told the admin)
+            if (data.interrupted) {
+                setInterrupted(true)
+                setTyped("")
+                setShownIndex(-1)
+                setPhase("answering")
+                answerOpenedAt.current = performance.now()
+                return
+            }
+            setInterrupted(false)
             present(data.digits)
         } catch (error) {
             message.error("Could not load the next sequence — check your connection")
@@ -208,6 +224,12 @@ function DigitSpan({ onDone, alreadyTaken }) {
         return (
             <div style={{ textAlign: "center", padding: "40px 0" }}>
                 <p>{isPractice ? "Practice — type what you saw" : "Type what you saw, in order"}</p>
+                {interrupted && (
+                    <p className="assess-pending">
+                        You left during this sequence, so it won't be shown again. Type what you remember — our team
+                        has been told, and can let you take the test again if something went wrong.
+                    </p>
+                )}
                 <input
                     type="text"
                     inputMode="numeric"

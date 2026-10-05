@@ -21,6 +21,7 @@ const KIND_LABELS = {
     report_prose_failed: "Report saved without its summary",
     result_disputed: "Student disputes a test score",
     student_reported: "Student reported a problem",
+    left_mid_test: "Left or refreshed mid-test",
 }
 
 function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {

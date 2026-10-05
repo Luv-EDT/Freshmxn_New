@@ -235,6 +235,25 @@ const fixtures = [
         expect: { "flags.social_desirability": true },
     },
     {
+        // Round 17 (owner): P31/P32 are tick-all-that-apply, saved as lists
+        name: "17b social desirability — a ticked list that claims they never lose momentum",
+        input: buildSubmission({
+            perspective: fillPerspective("A", {
+                narrative: { P31: ["Hard work and effort over time", "Luck and timing"], P32: ["I never lose momentum"] },
+            }),
+        }),
+        expect: { "flags.social_desirability": true },
+    },
+    {
+        name: "17c a ticked list of real blockers raises no social-desirability flag",
+        input: buildSubmission({
+            perspective: fillPerspective("A", {
+                narrative: { P31: ["Knowledge and understanding"], P32: ["Self-doubt", "Too many things at once"] },
+            }),
+        }),
+        expect: { "flags.social_desirability": undefined },
+    },
+    {
         name: "18 strong but unexamined — high belief bank, no revisability",
         input: buildSubmission({
             perspective: fillPerspective("A", {
