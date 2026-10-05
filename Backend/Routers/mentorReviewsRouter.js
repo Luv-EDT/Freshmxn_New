@@ -9,7 +9,7 @@ const { studentFacing } = require("./professionsRouter")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 const { getStudyOverrides, applyStudyOverride, disciplineById, studyPlaces } = require("../utils/studyPlaces")
-const { signatureOf } = require("../housekeeping/mentorPass")
+const { stackOf, mergeOpinions, dueTopics, topicOf } = require("../housekeeping/mentorPass")
 
 const router = express.Router()
 
@@ -23,11 +23,11 @@ const router = express.Router()
 // (ProfessionSuggestions — "looks right" never reaches the admin). A fixture checks this file never
 // touches an override or a data file.
 //
-// ONE QUEUE (owner, Round 16): the admin no longer decides here. Once a month Claude checks the
-// waiting suggestions against sources (housekeeping/mentorPass.js); what holds up becomes an ordinary
-// proposal in Data updates, the rest is discarded with a reason, and the list empties. The admin's
-// Mentor reviews tab only shows what mentors said and what happened to it. A mentor can always send
-// again — their latest answers replace what was still waiting.
+// ONE QUEUE, AND NOTHING FORGOTTEN (owner, Rounds 16–17). Mentors' opinions are kept for good, stacked
+// per topic; a mentor answering a topic again replaces only their own earlier opinion on it. Once a
+// month Claude weighs the topics with new input (housekeeping/mentorPass.js) and what it proposes
+// goes to Data updates, where the admin decides. The admin's Mentor reviews tab only shows the stacks;
+// the one thing an admin can change here is "Remove as wrong" on a single opinion, which is logged.
 
 const taxonomy = require("../data/ALL-professions.json")
 const baseline = require("../data/baseline_rating.json")
@@ -170,24 +170,30 @@ const cleanReview = (body, qualities) => {
     return { items, skillsMissing }
 }
 
-// ONLY WHAT SHOULD CHANGE (owner, Round 15): "needs a change", "should be higher / lower", and a skill
-// we're missing. Everything a mentor called right stays on their own sheet.
-const changesOf = (items, skillsMissing) => [
-    ...items
-        .filter((item) => item.verdict === "change" || ["higher", "lower"].includes(item.direction))
-        .map(({ section, factor, direction, note, sourceUrl }) => ({ section, ...(factor ? { factor, direction } : {}), note: note || "", sourceUrl: sourceUrl || "" })),
-    ...(skillsMissing ? [{ section: "skills_missing", note: skillsMissing, sourceUrl: "" }] : []),
+// A mentor's opinions from their answers (Round 17): "needs a change" and "should be higher / lower"
+// with their notes, a missing skill — and "looks right" / "about right" too, as agreement with what we
+// show, because the consensus counts both sides.
+const opinionsOf = (items, skillsMissing) => [
+    ...items.map(({ section, verdict, factor, direction, note, sourceUrl }) => {
+        const agrees = section === "qualities" ? direction === "right" : verdict === "right"
+        return {
+            section,
+            ...(factor ? { factor } : {}),
+            ...(factor && !agrees ? { direction } : {}),
+            agrees,
+            note: agrees ? "" : note || "",
+            sourceUrl: agrees ? "" : sourceUrl || "",
+        }
+    }),
+    ...(skillsMissing ? [{ section: "skills_missing", agrees: false, note: skillsMissing, sourceUrl: "" }] : []),
 ]
 
-// One list per profession: this mentor's earlier suggestions are replaced by their latest, everyone
-// else's stay — so a second mentor of the same field adds to the same row. Something this mentor
-// already had checked (`processed`, Round 16) is not queued again when they re-send the same words.
-const mergeSuggestions = (current, mentorId, changes, processed = []) => {
-    const done = new Set(processed.filter((suggestion) => String(suggestion.mentor) === String(mentorId)).map(signatureOf))
-    return [
-        ...(current || []).filter((suggestion) => String(suggestion.mentor) !== String(mentorId)),
-        ...changes.filter((change) => !done.has(signatureOf(change))),
-    ]
+// how this mentor's opinions stand: still waiting for the monthly look, or already weighed
+const standingOf = (row, mentorId) => {
+    const stack = stackOf(row)
+    const due = new Set(dueTopics(stack, row && row.topics).map((topic) => topic.key))
+    const mine = stack.filter((opinion) => String(opinion.mentor) === String(mentorId) && !opinion.agrees)
+    return { waiting: mine.filter((opinion) => due.has(topicOf(opinion))).length, checked: mine.filter((opinion) => !due.has(topicOf(opinion))).length }
 }
 
 // the approved mentor and their profession, or the reason there is no sheet
@@ -218,22 +224,20 @@ router.get("/getMyReviewSheet", authMiddleware, mentorAuthMiddleware, async (req
             MentorReview.findOne({ mentor: req.user._id, professionId: profession.id }).lean(),
             ProfessionSuggestions.findOne({ professionId: profession.id }).lean(),
         ])
-        const mine = (list) => ((row && row[list]) || []).filter((suggestion) => String(suggestion.mentor) === String(req.user._id))
 
         return res.status(200).json({
             success: true,
             message: "Review sheet fetched",
             data: {
                 sheet: buildSheet(profession, overrides, studyOverrides),
-                // the mentor sees their own answers, how many are still waiting for our monthly check and
-                // how many have been checked — never another mentor's words
+                // the mentor sees their own answers, how many of their suggestions wait for the monthly
+                // look and how many have been weighed — never another mentor's words
                 review: review
                     ? {
                         items: review.items.map(({ decision, ...item }) => item),
                         skillsMissing: review.skillsMissing,
                         submittedAt: review.submittedAt,
-                        waiting: mine("mentor_suggestions").length,
-                        checked: mine("processed").length,
+                        ...standingOf(row, req.user._id),
                     }
                     : null,
             },
@@ -263,11 +267,11 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
 
         // the profession's one row of suggested changes, with this mentor's part brought up to date
         const row = await ProfessionSuggestions.findOne({ professionId: profession.id }).lean()
-        const changes = changesOf(cleaned.items, cleaned.skillsMissing).map((change) => ({ ...change, mentor: req.user._id, mentorName: mentor.name, suggestedAt: new Date() }))
-        const waiting = mergeSuggestions(row && row.mentor_suggestions, req.user._id, changes, (row && row.processed) || [])
+        const opinions = opinionsOf(cleaned.items, cleaned.skillsMissing).map((opinion) => ({ ...opinion, mentorName: mentor.name }))
+        const stack = mergeOpinions(stackOf(row), req.user._id, opinions)
         await ProfessionSuggestions.findOneAndUpdate(
             { professionId: profession.id },
-            { $set: { professionName: profession.profession, mentor_suggestions: waiting } },
+            { $set: { professionName: profession.profession, mentor_suggestions: stack, processed: [] } },
             { upsert: true }
         )
 
@@ -287,13 +291,12 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
 
         return res.status(200).json({
             success: true,
-            message: `Thank you, ${mentor.name.split(" ")[0]} — we check suggestions against sources on the 1st of each month`,
+            message: `Thank you, ${mentor.name.split(" ")[0]} — we weigh what mentors say on the 1st of each month`,
             data: {
                 items: review.items.map(({ decision, ...item }) => item),
                 skillsMissing: review.skillsMissing,
                 submittedAt: review.submittedAt,
-                waiting: waiting.filter((suggestion) => String(suggestion.mentor) === String(req.user._id)).length,
-                checked: ((row && row.processed) || []).filter((suggestion) => String(suggestion.mentor) === String(req.user._id)).length,
+                ...standingOf({ ...(row || {}), mentor_suggestions: stack, processed: [] }, req.user._id),
             },
         })
 
@@ -307,12 +310,34 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
 // Get Suggestions For Admin
 // ========================
 
-// Read only (Round 16): per profession, what mentors said that is still waiting for the monthly check,
-// and what the check did with the rest — used (with the proposal it became in Data updates) or
-// discarded, with Claude's reason. Two or more mentors saying the same thing is marked.
-const describe = (suggestion) => (suggestion.section === "qualities"
-    ? `${FACTOR_LABELS[suggestion.factor] || suggestion.factor} should be ${suggestion.direction}`
-    : suggestion.section.replace(/_/g, " "))
+// Read only: per profession, every topic's stack — who wants a change, who agrees with what we show —
+// and what the monthly look concluded and the admin decided. Topics where two or more mentors want
+// the same change are marked.
+const describe = (key) => (key.startsWith("qualities:") ? (FACTOR_LABELS[key.slice(10)] || key.slice(10)) : key.replace(/_/g, " "))
+
+const topicsOf = (row) => {
+    const stack = stackOf(row)
+    const due = new Set(dueTopics(stack, row.topics).map((topic) => topic.key))
+    const history = new Map((row.topics || []).map((topic) => [topic.key, topic]))
+    const levels = new Map(qualitiesFor(row.professionId).map((quality) => [quality.factor, quality.level]))
+    const byKey = new Map()
+    stack.forEach((opinion) => byKey.set(topicOf(opinion), [...(byKey.get(topicOf(opinion)) || []), opinion]))
+    return [...byKey.entries()].map(([key, opinions]) => {
+        const before = history.get(key) || {}
+        return {
+            key,
+            what: describe(key),
+            currentLevel: key.startsWith("qualities:") ? levels.get(key.slice(10)) || null : null,
+            opinions,
+            wantChange: opinions.filter((opinion) => !opinion.agrees).length,
+            agreeToday: opinions.filter((opinion) => opinion.agrees).length,
+            due: due.has(key),
+            lastCheckedAt: before.lastCheckedAt || null,
+            lastOutcome: before.lastOutcome || null,
+            adminDecision: before.adminDecision || null,
+        }
+    }).sort((left, right) => right.wantChange - left.wantChange || left.key.localeCompare(right.key))
+}
 
 router.get("/getSuggestionsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
@@ -322,18 +347,13 @@ router.get("/getSuggestionsForAdmin", authMiddleware, adminAuthMiddleware, async
             success: true,
             message: "Mentor suggestions fetched",
             data: rows.map((row) => {
-                const levels = new Map(qualitiesFor(row.professionId).map((quality) => [quality.factor, quality.level]))
-                const shape = (suggestion) => ({ ...suggestion, what: describe(suggestion), currentLevel: suggestion.factor ? levels.get(suggestion.factor) || null : null })
-                const waiting = (row.mentor_suggestions || []).map(shape)
-                const counts = {}
-                waiting.forEach((suggestion) => { counts[suggestion.what] = (counts[suggestion.what] || 0) + 1 })
+                const topics = topicsOf(row)
                 return {
                     professionId: row.professionId,
                     professionName: row.professionName,
-                    mentors: new Set([...(row.mentor_suggestions || []), ...(row.processed || [])].map((suggestion) => String(suggestion.mentor))).size,
-                    waiting,
-                    processed: (row.processed || []).slice(-30).reverse().map(shape),
-                    agreement: Object.entries(counts).filter(([, count]) => count >= 2).map(([what, count]) => ({ what, count })),
+                    mentors: new Set(stackOf(row).map((opinion) => String(opinion.mentor))).size,
+                    topics,
+                    removed: (row.removedOpinions || []).slice(-20).reverse(),
                 }
             }),
         })
@@ -343,12 +363,76 @@ router.get("/getSuggestionsForAdmin", authMiddleware, adminAuthMiddleware, async
     }
 })
 
+
+// ========================
+// Get Unchanged Topics For Admin
+// ========================
+
+// For the monthly review in Data updates: the topics the last look decided NOT to change (within the
+// last 45 days), each with Claude's reason and its stack, so the admin can remove anything clearly wrong.
+router.get("/getUnchangedTopicsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const since = Date.now() - 45 * 24 * 60 * 60 * 1000
+        const rows = await ProfessionSuggestions.find({ "topics.0": { $exists: true } }).lean()
+        const unchanged = rows.flatMap((row) => topicsOf(row)
+            .filter((topic) => topic.lastOutcome && topic.lastOutcome.decision === "not_changed" && new Date(topic.lastCheckedAt).getTime() >= since)
+            .map((topic) => ({ professionId: row.professionId, professionName: row.professionName, ...topic })))
+
+        return res.status(200).json({ success: true, message: "Unchanged topics fetched", data: unchanged })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch the unchanged topics", error: error.message })
+    }
+})
+
+
+// ========================
+// Remove Opinion For Admin
+// ========================
+
+// "Remove as wrong" (owner, Round 17): the ONLY way a mentor's opinion leaves the stack, done by the
+// admin in the monthly review. Logged with who removed it and when.
+router.put("/removeOpinionForAdmin/:professionId", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { mentor, topic } = req.body || {}
+        if (!mentor || typeof topic !== "string" || topic === "") {
+            return res.status(400).json({ success: false, message: "Say which mentor's opinion on which topic" })
+        }
+
+        const row = await ProfessionSuggestions.findOne({ professionId: req.params.professionId }).lean()
+        const stack = stackOf(row)
+        const target = stack.find((opinion) => String(opinion.mentor) === String(mentor) && topicOf(opinion) === topic)
+        if (!target) {
+            return res.status(404).json({ success: false, message: "That opinion is not in the stack" })
+        }
+
+        await ProfessionSuggestions.updateOne({ _id: row._id }, {
+            $set: {
+                mentor_suggestions: stack.filter((opinion) => opinion !== target),
+                processed: [],
+                removedOpinions: [...(row.removedOpinions || []), {
+                    mentorName: target.mentorName,
+                    topic,
+                    note: target.agrees ? "agrees with what we show" : `${target.direction ? `should be ${target.direction}. ` : ""}${target.note || ""}`.trim(),
+                    at: new Date(),
+                    by: req.user.email || req.user.name || "admin",
+                }].slice(-200),
+            },
+        })
+
+        return res.status(200).json({ success: true, message: "Removed — it no longer counts", data: { professionId: row.professionId, topic } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to remove the opinion", error: error.message })
+    }
+})
+
 module.exports = router
 module.exports.qualitiesFor = qualitiesFor
 module.exports.cleanReview = cleanReview
 module.exports.buildSheet = buildSheet
 module.exports.SECTIONS = SECTIONS
-module.exports.changesOf = changesOf
-module.exports.mergeSuggestions = mergeSuggestions
+module.exports.opinionsOf = opinionsOf
+module.exports.topicsOf = topicsOf
 module.exports.workingAbroadFor = workingAbroadFor
 module.exports.degreesFor = degreesFor

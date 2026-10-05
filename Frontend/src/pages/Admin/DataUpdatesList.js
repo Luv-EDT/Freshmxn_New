@@ -4,6 +4,8 @@ import dayjs from "dayjs"
 import { getProposalsForAdmin, decideProposalForAdmin, exportPatchForAdmin } from "../../apiCall/dataUpdatesApi"
 import { runHousekeepingForAdmin } from "../../apiCall/followUpsApi"
 import ModelChoiceCard from "./ModelChoiceCard"
+import MentorOpinions from "./MentorOpinions"
+import { getUnchangedTopicsForAdmin } from "../../apiCall/mentorReviewsApi"
 
 // The monthly data refresh's suggestions (Round 10): demand and pay changes found in the named public
 // sources and on Adzuna. Nothing changes until it is approved here; approving shows the new value on
@@ -13,10 +15,12 @@ import ModelChoiceCard from "./ModelChoiceCard"
 // Round 11: the monthly study bot files here too — exam rows (checked on the exam's own site) and
 // college lists (NIRF first). The Kind column tells them apart.
 //
-// Round 16 (owner: one queue): mentors' suggestions arrive here too, after Claude's monthly check
-// against sources (Backend/housekeeping/mentorPass.js), tagged "Mentor + sources" with the mentors'
-// own words beside Claude's sources. A "Mentor's wording" row changes no page when approved — it goes
-// into Export patch (mentorNotes) for a reviewed data commit.
+// Round 16–17 (owner: one queue): mentors' suggestions arrive here too, after Claude's monthly look at
+// the stacked opinions (Backend/housekeeping/mentorPass.js), tagged "Mentor + sources" with the whole
+// stack beside Claude's reason — who wants the change, who agrees with what we show, their years.
+// "Remove as wrong" on an opinion is the only way one leaves the stack. A "Mentor's wording" row
+// changes no page when approved — it goes into Export patch (mentorNotes) for Claude Code to write in.
+// Below the table: the mentor topics Claude kept unchanged this month, with the same remove button.
 const FIELD_NAMES = {
     india_demand: "Demand in India", early_earnings_lpa: "Starting pay (LPA)", mid_career_lpa: "Mid-career pay (LPA)",
     usual_application_window: "Applications usually", usual_exam_month: "Exam usually", eligibility: "Who can sit it",
@@ -24,14 +28,14 @@ const FIELD_NAMES = {
     after_undergrad: "Master's needed?", abroad: "Studying abroad", closing_rank: "Last closing rank", licence: "Licence abroad",
 }
 const MENTOR_SECTIONS = {
-    what_it_is: "What it is", path: "The path", exams: "Exams", where_to_study: "Where to study", working_abroad: "Working abroad",
+    what_it_is: "What it is", masters: "Master's", abroad: "Studying abroad", pay: "Pay", demand: "Demand", path: "The path", exams: "Exams", where_to_study: "Where to study", working_abroad: "Working abroad",
     degrees: "Degrees that count", ai: "AI exposure", nuances: "Worth knowing", skills_missing: "Skills we're missing",
 }
 const KIND_NAMES = { career: "Career", exam: "Exam", college: "College", study_fact: "Study fact", cutoff: "Cut-off", abroad_licence: "Licence abroad", mentor_text: "Mentor's wording" }
 
 // what a mentor's-wording row is about: a section of the sheet, or a quality going up or down
 const mentorWhat = (record) => (record.section === "qualities"
-    ? `Quality: ${String(record.factor || "").replace(/_/g, " ")} ${record.direction === "higher" ? "↑" : "↓"}`
+    ? `Quality: ${String(record.factor || "").replace(/_/g, " ")}`
     : MENTOR_SECTIONS[record.section] || record.section)
 
 // a college or new-exam proposal carries its institution or exam as JSON text
@@ -48,6 +52,37 @@ const readable = (value) => {
         // plain text
     }
     return value
+}
+
+// The mentor topics the last monthly look kept as they are, with Claude's reason and the stack —
+// the place to remove an opinion that is clearly wrong (owner, Round 17)
+function UnchangedTopics() {
+    const [topics, setTopics] = useState([])
+
+    const fetchTopics = useCallback(async () => {
+        try {
+            const response = await getUnchangedTopicsForAdmin()
+            setTopics(response.data.data)
+        } catch (error) {
+            message.error("Failed to fetch the mentor topics")
+        }
+    }, [])
+
+    useEffect(() => { fetchTopics() }, [fetchTopics])
+
+    if (topics.length === 0) return null
+    return (
+        <section className="section-card">
+            <h3>Mentor topics Claude didn't change this month ({topics.length})</h3>
+            <p className="report-small">Kept for good and weighed again when a mentor adds or changes an opinion. Remove only what is clearly wrong.</p>
+            {topics.map((topic) => (
+                <div key={`${topic.professionId}-${topic.key}`} className="mentor-topic">
+                    <p><strong>{topic.professionName} · {topic.what}</strong> — {topic.lastOutcome.reason || "kept as it is"}</p>
+                    <MentorOpinions professionId={topic.professionId} topic={topic.key} opinions={topic.opinions} onRemoved={fetchTopics} />
+                </div>
+            ))}
+        </section>
+    )
 }
 
 function DataUpdatesList() {
@@ -125,12 +160,17 @@ function DataUpdatesList() {
             render: (value, record) => (
                 <span>
                     {value}
-                    {(record.fromMentors || []).map((mentor, index) => (
-                        <div key={`${mentor.mentorName}-${index}`} className="report-small">
-                            {mentor.mentorName || "A mentor"}: “{mentor.note}”
-                            {mentor.sourceUrl && <> · <a href={mentor.sourceUrl} target="_blank" rel="noreferrer">their link</a></>}
-                        </div>
-                    ))}
+                    {record.origin === "mentor" && (
+                        <>
+                            <div className="report-small"><strong>{(record.support || {}).change || 0} want this · {(record.support || {}).today || 0} agree with what we show</strong></div>
+                            <MentorOpinions
+                                professionId={record.professionId}
+                                topic={record.topic}
+                                opinions={record.fromMentors || []}
+                                onRemoved={record.status === "open" && record.topic ? fetchAll : undefined}
+                            />
+                        </>
+                    )}
                 </span>
             ),
         },
@@ -178,6 +218,7 @@ function DataUpdatesList() {
                 options={[{ label: "Waiting", value: "open" }, { label: "Approved", value: "approved" }, { label: "Rejected", value: "rejected" }, { label: "Replaced", value: "superseded" }]}
             />
             <Table rowKey="_id" loading={loading} columns={columns} dataSource={data.proposals} scroll={{ x: "max-content" }} />
+            <UnchangedTopics />
         </div>
     )
 }

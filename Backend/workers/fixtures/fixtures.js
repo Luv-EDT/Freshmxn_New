@@ -4370,119 +4370,128 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "MENTOR SUGGESTIONS — only changes reach the admin; one row per profession that mentors add to; the monthly check empties it; the data file mirrors it",
-        // Round 15 (owner): "only the suggestions that suggest a change … a single entry for that
-        // profession … once approved this should be empty"
+        name: "MENTOR SUGGESTIONS — kept for good, one opinion per mentor per topic, agreement counted; the data file mirrors the stack",
+        // Round 17 (owner): "the mentors' reviews should never be deleted (only if the same mentor gives a
+        // different suggestion later, that should be overwritten)" — and "looks right" counts in the consensus
         run: () => {
-            const { changesOf, mergeSuggestions } = require("../../Routers/mentorReviewsRouter")
+            const { opinionsOf } = require("../../Routers/mentorReviewsRouter")
+            const { mergeOpinions, stackOf, dueTopics, topicOf } = require("../../housekeeping/mentorPass")
             const problems = []
-            const items = [
+            const opinions = opinionsOf([
                 { section: "exams", verdict: "right" },
                 { section: "pay", verdict: "change", note: "Freshers earn 3-4L", sourceUrl: "https://example.org" },
                 { section: "qualities", factor: "focus", direction: "right" },
                 { section: "qualities", factor: "creativity", direction: "higher", note: "" },
-            ]
-            const changes = changesOf(items, "Copy-editing tools")
-            if (changes.length !== 3 || changes.some((change) => change.verdict === "right" || change.direction === "right")) problems.push(`"looks right" reached the admin: ${JSON.stringify(changes)}`)
-            if (!changes.some((change) => change.section === "skills_missing")) problems.push("a missing skill did not reach the admin")
-            if (changesOf([{ section: "exams", verdict: "right" }], "").length !== 0) problems.push("an all-right review still sent something")
+            ], "Copy-editing tools")
+            if (opinions.length !== 5) problems.push(`every answer should become an opinion: ${opinions.length}`)
+            if (!opinions.find((entry) => entry.section === "exams").agrees || !opinions.find((entry) => entry.factor === "focus").agrees) problems.push('"looks right" / "about right" is not kept as agreement')
+            if (opinions.find((entry) => entry.section === "pay").agrees || opinions.find((entry) => entry.factor === "creativity").direction !== "higher") problems.push("a change was read as agreement")
+            if (!opinions.some((entry) => entry.section === "skills_missing")) problems.push("a missing skill was not kept")
 
-            const first = mergeSuggestions([], "m1", [{ mentor: "m1", section: "pay" }])
-            const second = mergeSuggestions(first, "m2", [{ mentor: "m2", section: "exams" }, { mentor: "m2", section: "ai" }])
-            if (second.length !== 3) problems.push("a second mentor of the same profession did not add to the same list")
-            const resaved = mergeSuggestions(second, "m1", [{ mentor: "m1", section: "nuances" }])
-            if (resaved.length !== 3 || resaved.some((entry) => entry.section === "pay")) problems.push("a mentor's re-save did not replace their own earlier suggestions")
+            const t1 = new Date("2026-10-01T00:00:00Z")
+            const t2 = new Date("2026-10-20T00:00:00Z")
+            let stack = mergeOpinions([], "m1", [{ section: "pay", agrees: false, note: "3-4L", mentorName: "Asha" }, { section: "ai", agrees: false, note: "much is AI now", mentorName: "Asha" }], t1)
+            stack = mergeOpinions(stack, "m2", [{ section: "pay", agrees: true, note: "", mentorName: "Ravi" }], t1)
+            if (stack.length !== 3) problems.push("a second mentor of the same field did not add to the same stack")
+            const resent = mergeOpinions(stack, "m1", [{ section: "pay", agrees: false, note: "4-6L now", mentorName: "Asha" }], t2)
+            const asha = resent.filter((entry) => entry.mentor === "m1")
+            if (resent.length !== 3 || asha.length !== 2 || !asha.some((entry) => entry.note === "4-6L now") || !asha.some((entry) => entry.section === "ai")) problems.push("a re-send did not replace only that mentor's opinion on that topic")
+            const ashaPay = asha.find((entry) => entry.section === "pay")
+            if (+new Date(ashaPay.suggestedAt) !== +t1 || +new Date(ashaPay.updatedAt) !== +t2) problems.push("a changed opinion should keep when it was first said and move when it changed")
+            const same = mergeOpinions(resent, "m1", [{ section: "pay", agrees: false, note: "4-6L now", mentorName: "Asha" }], new Date("2026-11-05T00:00:00Z"))
+            if (+new Date(same.find((entry) => entry.mentor === "m1" && entry.section === "pay").updatedAt) !== +t2) problems.push("re-sending the same words made the topic look new")
+            if (topicOf({ section: "qualities", factor: "focus" }) !== "qualities:focus") problems.push("a quality is not its own topic")
 
-            // Round 16 (owner, one queue): the list is no longer emptied by an admin button here but by
-            // Claude's monthly check (housekeeping/mentorPass.js), which moves every handled suggestion
-            // to `processed`. The MENTOR PASS fixture below drives it.
+            const folded = stackOf({ mentor_suggestions: [{ mentor: "m1", section: "pay", note: "new", updatedAt: t2 }], processed: [{ mentor: "m1", section: "pay", note: "old", suggestedAt: t1, outcome: "used" }, { mentor: "m2", section: "ai", note: "kept", suggestedAt: t1, outcome: "discarded" }] })
+            if (folded.length !== 2 || folded.find((entry) => entry.section === "pay").note !== "new" || folded.some((entry) => entry.outcome)) problems.push("Round 16's processed entries are not folded back into the stack")
+
+            const due = dueTopics(resent, [{ key: "pay", lastCheckedAt: new Date("2026-10-10T00:00:00Z") }, { key: "ai", lastCheckedAt: new Date("2026-10-10T00:00:00Z") }])
+            if (due.map((topic) => topic.key).join() !== "pay") problems.push(`only topics with new input should be due: ${due.map((topic) => topic.key)}`)
+            if (dueTopics([{ mentor: "m2", section: "exams", agrees: true, updatedAt: t2 }], []).length !== 0) problems.push("a topic where everyone agrees with what we show was made due")
+
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
+            if (/decideSuggestionsForAdmin|can't be changed now/.test(router)) problems.push("the admin still approves here, or a sent review still locks")
+            const removal = router.slice(router.indexOf('router.put("/removeOpinionForAdmin'))
+            if (!/adminAuthMiddleware/.test(removal.slice(0, 200)) || !/removedOpinions: \[\.\.\.\(row\.removedOpinions/.test(removal)) problems.push("removing an opinion is not admin-only, or not logged")
             const pass = fs.readFileSync(path.join(__dirname, "../../housekeeping/mentorPass.js"), "utf8")
-            if (!/mentor_suggestions: \(row\.mentor_suggestions \|\| \[\]\)\.filter\(\(suggestion\) => !handled\.has/.test(pass) || !/processed: \[\.\.\.\(row\.processed \|\| \[\]\), \.\.\.processed\]/.test(pass)) problems.push("the monthly check does not empty the waiting list into `processed`")
+            if (!/mentor_suggestions: stackOf\(row\)/.test(pass)) problems.push("the monthly look does not keep the whole stack")
             const tool = fs.readFileSync(path.join(__dirname, "../../tools/applyDataPatch.js"), "utf8")
             if (!/record\.mentor_suggestions = list/.test(tool)) problems.push("Export patch does not write mentor_suggestions into ALL-professions.json")
             const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
-            if (!/mentorSuggestions: suggestionRows\.map/.test(updates)) problems.push("Export patch does not carry each profession's list")
-            if (/mentorId|mentor: mentor\b|email/.test(updates.slice(updates.indexOf("mentorSuggestions:"), updates.indexOf("mentorSuggestions:") + 600))) problems.push("a mentor id or email would be written into the data file")
+            if (!/mentorSuggestions: suggestionRows\.map/.test(updates) || !/stackOf\(row\)/.test(updates)) problems.push("Export patch does not carry each profession's stack")
+            if (/mentorId|mentor: mentor\b|email/.test(updates.slice(updates.indexOf("mentorSuggestions:"), updates.indexOf("mentorSuggestions:") + 700))) problems.push("a mentor id or email would be written into the data file")
+            const claude = fs.readFileSync(path.join(__dirname, "../../../CLAUDE.md"), "utf8")
+            if (!/mentorNotes/.test(claude)) problems.push("CLAUDE.md does not tell Claude Code to apply the approved mentor wording")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "MENTOR PASS — Claude's monthly check turns what a source supports into ordinary proposals, discards the rest with a reason, and empties the list",
-        // Round 16 (owner): "send these suggestions to our monthly data updates, where Claude will scan
-        // these and make use of relevant ones and discard the other ones" — one queue, no clash
+        name: "MENTOR PASS — Claude weighs each topic's whole stack; mentors' consensus is evidence; nothing is removed",
+        // Round 17 (owner): stacked opinions, weighed monthly on topics with new input; Claude may accept on
+        // the mentors' consensus without a web source; the admin decides; the stack stays
         run: () => {
-            const { pickProfessionsWithSuggestions, decide, prepareItem, signatureOf } = require("../../housekeeping/mentorPass")
-            const { mergeSuggestions } = require("../../Routers/mentorReviewsRouter")
+            const { pickProfessionsWithSuggestions, decide, prepareItem } = require("../../housekeeping/mentorPass")
             const problems = []
-
-            const at = (day) => new Date(`2026-10-${day}T00:00:00Z`)
+            const at = (day) => new Date(`2026-10-${String(day).padStart(2, "0")}T00:00:00Z`)
             const rows = [
-                { professionId: "swc-software-developer", mentor_suggestions: [{ section: "pay", suggestedAt: at(20) }] },
-                { professionId: "hlt-dietitian", mentor_suggestions: [{ section: "path", suggestedAt: at(3) }, { section: "ai", suggestedAt: at(25) }] },
-                { professionId: "med-journalist", mentor_suggestions: [] },
-                { professionId: "not-a-career", mentor_suggestions: [{ section: "pay", suggestedAt: at(1) }] },
+                { professionId: "swc-software-developer", mentor_suggestions: [{ mentor: "a", section: "pay", note: "x", updatedAt: at(20) }] },
+                { professionId: "hlt-dietitian", mentor_suggestions: [{ mentor: "a", section: "path", note: "x", updatedAt: at(3) }] },
+                { professionId: "med-journalist", mentor_suggestions: [{ mentor: "a", section: "path", agrees: true, updatedAt: at(2) }] },
+                { professionId: "edu-school-teacher", mentor_suggestions: [{ mentor: "a", section: "path", note: "x", updatedAt: at(2) }], topics: [{ key: "path", lastCheckedAt: at(9) }] },
+                { professionId: "not-a-career", mentor_suggestions: [{ mentor: "a", section: "pay", note: "x", updatedAt: at(1) }] },
             ]
             const picked = pickProfessionsWithSuggestions(rows, 5).map((row) => row.professionId)
-            if (picked.join(",") !== "hlt-dietitian,swc-software-developer") problems.push(`wrong order or rows picked: ${picked.join(",")}`)
-            if (pickProfessionsWithSuggestions(rows, 1).length !== 1) problems.push("the monthly limit is not kept")
+            if (picked.join(",") !== "hlt-dietitian,swc-software-developer") problems.push(`wrong professions or order: ${picked.join(",")}`)
 
-            const suggestions = [
-                { mentor: "m1", mentorName: "Asha", section: "pay", note: "Freshers start at 5-9L now", suggestedAt: at(1) },
-                { mentor: "m2", mentorName: "Ravi", section: "pay", note: "Starting pay is higher", suggestedAt: at(2) },
-                { mentor: "m1", mentorName: "Asha", section: "masters", note: "An M.Tech is how most get in", suggestedAt: at(1) },
-                { mentor: "m2", mentorName: "Ravi", section: "qualities", factor: "focus", direction: "higher", note: "", suggestedAt: at(2) },
-                { mentor: "m3", mentorName: "Meena", section: "nuances", note: "Remote roles are common", suggestedAt: at(3) },
-                { mentor: "m3", mentorName: "Meena", section: "demand", note: "It is declining", suggestedAt: at(3) },
-                { mentor: "m3", mentorName: "Meena", section: "exams", note: "GATE matters", suggestedAt: at(3) },
+            const stack = [
+                { mentor: "m1", mentorName: "Asha", section: "pay", note: "Freshers start at 5-9L now", updatedAt: at(1) },
+                { mentor: "m2", mentorName: "Ravi", section: "pay", note: "Starting pay is higher", updatedAt: at(2) },
+                { mentor: "m3", mentorName: "Meena", section: "pay", agrees: true, updatedAt: at(2) },
+                { mentor: "m1", mentorName: "Asha", section: "masters", note: "An M.Tech is how most get in", updatedAt: at(1) },
+                { mentor: "m2", mentorName: "Ravi", section: "qualities", factor: "focus", direction: "higher", note: "", updatedAt: at(2) },
+                { mentor: "m3", mentorName: "Meena", section: "nuances", note: "Remote roles are common", updatedAt: at(3) },
+                { mentor: "m3", mentorName: "Meena", section: "demand", note: "It is declining", updatedAt: at(3) },
             ]
             const sheet = { profession: "Software Developer", sections: { nuances: ["Long hours"] }, qualities: [{ factor: "focus", label: "Focus", level: "Medium" }] }
             const current = { career: { india_demand: "high", early_earnings_lpa: "3.5-8.0", mid_career_lpa: "8.0-20.0" }, fact: { after_undergrad: "work_first", abroad: null } }
-            const item = prepareItem({ professionId: "swc-software-developer", mentor_suggestions: suggestions }, sheet, current)
-            if (!/Freshers start at 5-9L now/.test(item.request.user) || !/WHAT WE SHOW TODAY/.test(item.request.user)) problems.push("Claude is not shown the suggestions beside what we show")
-            const sources = [{ url: "https://www.naukri.com/jobspeak", title: "JobSpeak" }]
+            const years = { m1: 8, m2: 3, m3: 12 }
+            const row = { professionId: "swc-software-developer", mentor_suggestions: stack, topics: [{ key: "masters", lastCheckedAt: at(9), lastOutcome: { decision: "proposed", reason: "IIT pages" }, adminDecision: "rejected" }] }
+            const item = prepareItem(row, sheet, current, (id) => years[id])
+            const user = item.request.user
+            if (!/Freshers start at 5-9L now/.test(user) || !/agrees with what we show/.test(user) || !/12 yrs in the field/.test(user)) problems.push("Claude is not shown the whole stack with agreement and experience")
+            if (/TOPIC masters/.test(user)) problems.push("a topic with nothing new since the last look was asked again")
+            if (!/TOPIC pay .*2 want a change, 1 agree/.test(user)) problems.push("the topic's counts are not given")
+
             const reply = {
-                sources,
+                sources: [],
                 json: {
                     decisions: [
-                        { indexes: [0, 1], outcome: "use", reason: "JobSpeak puts fresher pay at 5-9 LPA", change: { field: "early_earnings_lpa", proposed: "5.0-9.0", confidence: "medium" } },
-                        { indexes: [2], outcome: "use", reason: "IIT pages", change: { proposed: "masters_is_the_entry", confidence: "low" } },
-                        { indexes: [3], outcome: "use", reason: "Job ads stress deep focus", change: { text: "Focus should be High: long debugging sessions are routine.", confidence: "low" } },
-                        { indexes: [4, 1], outcome: "use", reason: "NCS lists remote roles", change: { text: "Many roles can be done remotely." } },
-                        { indexes: [5], outcome: "use", reason: "", change: { field: "india_demand", proposed: "high" } },
-                        { indexes: [99], outcome: "use" },
+                        { topic: "pay", outcome: "propose", reason: "Two of three mentors, 8 and 3 years in", change: { field: "early_earnings_lpa", proposed: "5.0-9.0", confidence: "medium" } },
+                        { topic: "qualities:focus", outcome: "no_change", reason: "One opinion; others did not flag it" },
+                        { topic: "nuances", outcome: "propose", reason: "Meena, 12 years", change: { text: "Many roles can be done remotely." } },
+                        { topic: "demand", outcome: "propose", reason: "", change: { field: "india_demand", proposed: "high" } },
+                        { topic: "masters", outcome: "propose", change: { proposed: "masters_is_the_entry" } },
+                        { topic: "made-up", outcome: "propose" },
                     ],
                 },
             }
-            const outcomes = decide(item, reply)
-            const byIndex = new Map(outcomes.flatMap((outcome) => outcome.indexes.map((index) => [index, outcome])))
-            const pay = byIndex.get(0)
-            if (!pay || pay.kind !== "career" || pay.change.field !== "early_earnings_lpa" || pay.change.proposedValue !== "5.0-9.0") problems.push(`pay did not become a career proposal: ${JSON.stringify(pay)}`)
-            if (byIndex.get(1) !== pay) problems.push("two mentors saying the same thing did not share one proposal")
-            if (!byIndex.get(2) || byIndex.get(2).kind !== "study_fact" || byIndex.get(2).change.field !== "after_undergrad") problems.push("a master's suggestion did not become a study_fact proposal")
-            const quality = byIndex.get(3)
-            if (!quality || quality.kind !== "mentor_text" || quality.change.factor !== "focus" || quality.change.direction !== "higher" || quality.change.currentValue !== "Focus: Medium") problems.push(`a quality did not become a mentor_text proposal: ${JSON.stringify(quality)}`)
-            if (!byIndex.get(4) || byIndex.get(4).kind !== "mentor_text" || byIndex.get(4).indexes.includes(1)) problems.push("a suggestion was covered twice, or a section's wording was lost")
-            if (!byIndex.get(5) || byIndex.get(5).outcome !== "discarded" || !byIndex.get(5).reason) problems.push("a change to what we already show was not discarded with a reason")
-            if (byIndex.has(6)) problems.push("a suggestion with no decision was handled — it must keep waiting for next month")
-            if (outcomes.some((outcome) => outcome.indexes.includes(99))) problems.push("an out-of-range index was used")
+            const outcomes = new Map(decide(item, reply).map((outcome) => [outcome.key, outcome]))
+            const pay = outcomes.get("pay")
+            if (!pay || pay.outcome !== "proposed" || pay.kind !== "career" || pay.change.proposedValue !== "5.0-9.0") problems.push(`mentors' consensus with no web source was not proposed: ${JSON.stringify(pay)}`)
+            if (!outcomes.get("nuances") || outcomes.get("nuances").kind !== "mentor_text" || outcomes.get("nuances").change.section !== "nuances") problems.push("a wording change did not become a mentor_text proposal")
+            if (!outcomes.get("qualities:focus") || outcomes.get("qualities:focus").outcome !== "not_changed" || !outcomes.get("qualities:focus").reason) problems.push("a lone opinion kept as it is has no reason")
+            if (!outcomes.get("demand") || outcomes.get("demand").outcome !== "not_changed") problems.push("a 'change' to what we already show was proposed")
+            if (outcomes.has("masters") || outcomes.has("made-up")) problems.push("a topic that was not due was decided")
 
-            const unsourced = decide(item, { sources: [], json: { decisions: [{ indexes: [4], outcome: "use", reason: "I think so", change: { text: "Remote is common" } }] } })
-            if (unsourced[0].outcome !== "discarded") problems.push("a use with no page behind it was not discarded")
-            if (decide(item, { sources, json: { decisions: [{ indexes: [0], outcome: "use", change: { field: "india_demand", proposed: "low" } }] } })[0].outcome !== "discarded") problems.push("a pay suggestion could change demand")
-
-            // a re-send of something already checked is not queued again; new words are
-            const processed = [{ ...suggestions[0], outcome: "used" }]
-            const resent = mergeSuggestions([], "m1", [{ mentor: "m1", section: "pay", note: "Freshers start at 5-9L now" }, { mentor: "m1", section: "path", note: "Add bootcamps" }], processed)
-            if (resent.length !== 1 || resent[0].section !== "path") problems.push(`a re-send re-queued a checked suggestion: ${JSON.stringify(resent)}`)
-            if (signatureOf({ section: "pay", note: " Freshers START at 5-9L now " }) !== signatureOf(suggestions[0])) problems.push("the same words are not recognised as the same suggestion")
-
-            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorReviewsRouter.js"), "utf8")
-            if (/decideSuggestionsForAdmin|can't be changed now/.test(router)) problems.push("the admin still decides in Mentor reviews, or a sent review still locks")
+            const pass = fs.readFileSync(path.join(__dirname, "../../housekeeping/mentorPass.js"), "utf8")
+            if (!/requireSources: false/.test(pass)) problems.push("mentor-backed changes still need a web source")
             const refresh = fs.readFileSync(path.join(__dirname, "../../housekeeping/dataRefresh.js"), "utf8")
             if (!/require\("\.\/mentorPass"\)\.runMentorPass/.test(refresh)) problems.push("the monthly refresh does not run the mentor pass")
+            if (!/if \(requireSources && /.test(refresh)) problems.push("the career refresh no longer needs a source")
             const updates = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
             if (!/kind: "mentor_text", status: "approved"/.test(updates)) problems.push("approved mentor wording does not reach Export patch")
+            if (!/proposal\.origin === "mentor" && proposal\.topic/.test(updates)) problems.push("the admin's decision is not remembered on the topic")
             const approve = updates.slice(updates.indexOf('proposal.kind === "mentor_text"'), updates.indexOf('proposal.kind === "mentor_text"') + 400)
             if (/ProfessionOverride|StudyFactOverride|updateOne/.test(approve)) problems.push("approving mentor wording changes a live page")
             const matching = fs.readdirSync(path.join(__dirname, "../../matching")).filter((file) => file.endsWith(".js"))

@@ -216,8 +216,9 @@ function MentorReviewSheet() {
             {submittedAt && (
                 <p className="report-small">
                     You sent this on {new Date(submittedAt).toLocaleDateString("en-IN")}. Change anything and send again — it replaces what you sent.
-                    {progress.waiting > 0 && ` ${progress.waiting} ${progress.waiting === 1 ? "suggestion is" : "suggestions are"} waiting for our monthly check against sources.`}
-                    {progress.checked > 0 && ` ${progress.checked} already checked — thank you.`}
+                    {" "}Your suggestions are kept and weighed each month together with other mentors' in your field.
+                    {progress.waiting > 0 && ` ${progress.waiting} ${progress.waiting === 1 ? "is" : "are"} waiting for this month's look.`}
+                    {progress.checked > 0 && ` ${progress.checked} already weighed — thank you.`}
                 </p>
             )}
 

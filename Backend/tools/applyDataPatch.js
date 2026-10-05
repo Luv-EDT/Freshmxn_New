@@ -267,13 +267,16 @@ let abroadWorkChanged = 0
     if (position === undefined) return console.log(`skip  suggestions ${id} — not in ALL-professions.json`)
     const record = taxonomy.professions[position]
     if (JSON.stringify(record.mentor_suggestions || []) === JSON.stringify(list)) return
-    console.log(`suggest ${id} · ${list.length} waiting (was ${(record.mentor_suggestions || []).length})`)
+    console.log(`suggest ${id} · ${list.length} mentor opinions (was ${(record.mentor_suggestions || []).length})`)
     record.mentor_suggestions = list
     changed += 1
 })
 
-// mentors' approved changes are words, not values — listed for a person to act on
-;(patch.mentorNotes || []).forEach((note) => console.log(`mentor ${note.id} · ${note.factor ? `${note.factor} should be ${note.direction}` : `${note.section}: ${note.verdict === "right" ? "looks right" : "needs a change"}`}${note.note ? ` — ${note.note}` : ""}${note.sourceUrl ? ` (${note.sourceUrl})` : ""}`))
+// mentors' approved changes are words, not values — listed here, and APPLIED BY CLAUDE CODE when the
+// patch is committed (owner, Round 17; the rule is in CLAUDE.md): each edit goes into ALL-professions.json,
+// or baseline_rating.json for a quality (one level at most), then the data fixtures, then the commit
+;(patch.mentorNotes || []).forEach((note) => console.log(`mentor ${note.id} · ${note.section}${note.factor ? ` (${note.factor}${note.direction ? ` should be ${note.direction}` : ""})` : ""}${note.note ? ` — ${note.note}` : ""}${note.sourceUrl ? ` (${note.sourceUrl})` : ""}`))
+if ((patch.mentorNotes || []).length > 0) console.log(`\n${patch.mentorNotes.length} approved mentor wording changes above — Claude Code: make each edit in the data files (CLAUDE.md, "Data patches"), run the fixtures, then commit\n`)
 ;(patch.mentorReviewedRatings || []).forEach((id) => console.log(`mentor ${id} · every top quality called about right — you may set its baseline_rating.json review_status to "mentor_reviewed"`))
 
 if (write && changed > 0) {
