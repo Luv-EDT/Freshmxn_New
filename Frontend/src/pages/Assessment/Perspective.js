@@ -17,7 +17,8 @@ import {
 //
 //     MCQ        A–E, stored as the letter          → psychometric.perspective.answers
 //     values     1–5, stored as a NUMBER            → psychometric.perspective.answers
-//     narrative  a label, stored as the full string → psychometric.perspective.narrative
+//     narrative  labels, stored as an ARRAY of the full strings → psychometric.perspective.narrative
+//                (tick all that apply, Round 17; an older answer is a single string and still reads)
 //     open text  the student's own words            → psychometric.perspective.openText
 //
 // WHY openText AND NOT open. `open` holds GRADED sub-scores and is written by the pipeline after
@@ -32,8 +33,21 @@ const PAGES = [
     { key: "belief", title: "Beliefs and decisions", items: PERSPECTIVE_MCQ.filter((item) => /^P[1-6]$/.test(item.id)) },
     { key: "focus", title: "Focus and attention", items: PERSPECTIVE_MCQ.filter((item) => /^P(8|9|1[0-2])$/.test(item.id)) },
     { key: "emotion", title: "Reading emotion", items: PERSPECTIVE_MCQ.filter((item) => /^P(1[4-9]|2[01])$/.test(item.id)) },
-    { key: "uncertainty", title: "Working without certainty", items: PERSPECTIVE_MCQ.filter((item) => /^U[1-7]$/.test(item.id)) },
+    { key: "uncertainty", title: "Working without certainty", items: PERSPECTIVE_MCQ.filter((item) => /^U[1-8]$/.test(item.id)) },
+    // Round 17: U8 and PS1–PS4 were counted towards "complete" but never shown, so the module could
+    // never finish. A fixture now checks every PERSPECTIVE_MCQ id is reachable from these patterns.
+    { key: "persistence", title: "Sticking with things", items: PERSPECTIVE_MCQ.filter((item) => /^PS[1-4]$/.test(item.id)) },
 ]
+
+// P31/P32 are "tick all that apply". "I never lose momentum" can't sit beside a reason you do.
+const EXCLUSIVE = "I never lose momentum"
+const picked = (value) => (Array.isArray(value) ? value : value ? [value] : [])
+const toggled = (value, option) => {
+    const current = picked(value)
+    if (current.includes(option)) return current.filter((label) => label !== option)
+    if (option === EXCLUSIVE) return [option]
+    return [...current.filter((label) => label !== EXCLUSIVE), option]
+}
 
 function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOpenText, onDone }) {
     const [page, setPage] = useState(0)
@@ -51,7 +65,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
         const mcq = PAGES[index]
         if (mcq) return mcq.items.every((item) => answers[item.id])
         if (index === PAGES.length) return [...VALUES_FULFILMENT, ...VALUES_IMPORTANCE].every((item) => answers[item.id])
-        if (index === PAGES.length + 1) return PERSPECTIVE_NARRATIVE.every((item) => narrative[item.id])
+        if (index === PAGES.length + 1) return PERSPECTIVE_NARRATIVE.every((item) => picked(narrative[item.id]).length > 0)
         // The written answers are NOT required. A student who leaves one blank has it scored as
         // missing, which is honest — forcing text produces a sentence written to get past the
         // button, and that is worse than a null.
@@ -107,7 +121,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
                         </p>
                     )}
                     {mcqPage.items.map((item) => (
-                        <div key={item.id}>
+                        <div key={item.id} className="perspective-q">
                             <p><strong>{item.text}</strong></p>
                             {item.options.map((option) => radioRow(
                                 item.id,
@@ -127,7 +141,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
 
                     <h4>Right now, how fulfilled do you feel in each?</h4>
                     {VALUES_FULFILMENT.map((item) => (
-                        <div key={item.id}>
+                        <div key={item.id} className="perspective-q">
                             <p><strong>{item.text}</strong></p>
                             {VALUES_SCALE_FULFILMENT.map((option) => radioRow(
                                 item.id,
@@ -140,7 +154,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
 
                     <h4>How important is each to you?</h4>
                     {VALUES_IMPORTANCE.map((item) => (
-                        <div key={item.id}>
+                        <div key={item.id} className="perspective-q">
                             <p><strong>{item.text}</strong></p>
                             {VALUES_SCALE_IMPORTANCE.map((option) => radioRow(
                                 item.id,
@@ -157,13 +171,17 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
                 <>
                     <h3>Two quick ones</h3>
                     {PERSPECTIVE_NARRATIVE.map((item) => (
-                        <div key={item.id}>
-                            <p><strong>{item.text}</strong></p>
-                            {item.options.map((option) => radioRow(
-                                item.id,
-                                option,
-                                narrative[item.id] === option.value,
-                                () => onNarrative(item.id, option.value)
+                        <div key={item.id} className="perspective-q">
+                            <p><strong>{item.text}</strong> <span className="report-small">Tick all that apply.</span></p>
+                            {item.options.map((option) => (
+                                <label key={option.value} className="choice">
+                                    <input
+                                        type="checkbox"
+                                        checked={picked(narrative[item.id]).includes(option.value)}
+                                        onChange={() => onNarrative(item.id, toggled(narrative[item.id], option.value))}
+                                    />
+                                    {" "}{option.label}
+                                </label>
                             ))}
                         </div>
                     ))}
@@ -177,7 +195,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
                     <p><em>You can leave any of these blank. A blank answer is simply not scored — it is never counted against you.</em></p>
 
                     {PERSPECTIVE_OPEN.map((item) => (
-                        <div key={item.id}>
+                        <div key={item.id} className="perspective-q">
                             <h4>{item.title}</h4>
                             <p style={{ whiteSpace: "pre-line" }}>{item.text}</p>
                             {item.parts.length > 0 && (

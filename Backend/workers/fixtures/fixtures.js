@@ -4477,6 +4477,27 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "PERSPECTIVE REACHABLE — every question counted towards 'How you think' is on the page",
+        // Round 17: U8 and PS1–PS4 were counted (so the module needed 39 answers) but no page showed
+        // them (only 34 could be given) — "13% left" for good, and nobody could submit
+        run: () => {
+            const items = fs.readFileSync(path.join(ASSESSMENT_DIR, "perspectiveItems.js"), "utf8")
+            const mcq = items.slice(items.indexOf("export const PERSPECTIVE_MCQ"), items.indexOf("export const", items.indexOf("export const PERSPECTIVE_MCQ") + 10))
+            const ids = [...mcq.matchAll(/id:\s*"([A-Z]+\d+)"/g)].map((match) => match[1])
+            const page = fs.readFileSync(path.join(ASSESSMENT_DIR, "Perspective.js"), "utf8")
+            const patterns = [...page.matchAll(/PERSPECTIVE_MCQ\.filter\(\(item\) => \/(.+?)\/\.test\(item\.id\)\)/g)].map((match) => new RegExp(match[1]))
+            const problems = []
+            if (ids.length < 30) problems.push(`only ${ids.length} questions read from perspectiveItems.js`)
+            if (patterns.length < 4) problems.push(`only ${patterns.length} page patterns read from Perspective.js`)
+            const unreachable = ids.filter((id) => !patterns.some((pattern) => pattern.test(id)))
+            if (unreachable.length > 0) problems.push(`counted but never shown: ${unreachable.join(", ")}`)
+            const twice = ids.filter((id) => patterns.filter((pattern) => pattern.test(id)).length > 1)
+            if (twice.length > 0) problems.push(`shown on two pages: ${twice.join(", ")}`)
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

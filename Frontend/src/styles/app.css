@@ -533,6 +533,15 @@ button.filter-option.is-on {
     box-shadow: var(--shadow-sm);
 }
 
+/* "How you think" (Round 17): each question's answers end before the next question starts */
+.perspective-q {
+    margin-bottom: var(--space-6);
+}
+
+.perspective-q > p:first-child {
+    margin-bottom: var(--space-3);
+}
+
 /* a question reads best in a column, not across a laptop screen */
 .question-card,
 .module-nav {

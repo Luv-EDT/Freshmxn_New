@@ -53,11 +53,11 @@ export const moduleByKey = (key) => ASSESSMENT_MODULES.find((module) => module.k
 // student had barely started offer them "Review answers". Worse, it let them submit: `canSubmit`
 // counts completed modules, so one answered item per module read as a finished assessment.
 //
-// COUNTED FROM THE ITEM LISTS, NEVER TYPED. The first version of this hardcoded the numbers and got
-// Perspective wrong — 41 against a real total of 34 — which made the module impossible to finish:
-// a student answered every question and the page still said "Continue", with no way to tell why.
-// A hand-maintained count is a second source of truth that only ever drifts in the direction of
-// being unreachable, and the failure is invisible until someone completes the module.
+// COUNTED FROM THE ITEM LISTS, NEVER TYPED — a hand-maintained count only ever drifts towards
+// unreachable. Counting from the lists is not enough on its own, though: in Round 10 U8 and PS1–PS4
+// joined PERSPECTIVE_MCQ but not the page, so the module asked for 39 answers when 34 could be given
+// and "How you think" sat at "13% left" for good (fixed Round 17). A fixture now checks that every
+// counted item is on the page.
 const REQUIRED_ANSWERS = {
     ipip50: IPIP_ITEMS.length,
     mi: MI_ITEMS.length,
@@ -65,6 +65,9 @@ const REQUIRED_ANSWERS = {
     confidence: CONFIDENCE_ITEMS.length,
     perspective: PERSPECTIVE_MCQ.length + VALUES_FULFILMENT.length + VALUES_IMPORTANCE.length,
 }
+
+// P31/P32 answers: a ticked list since Round 17, a single label before — an emptied list is not an answer
+const narrativeAnswered = (narrative) => Object.values(narrative || {}).filter((value) => (Array.isArray(value) ? value.length > 0 : Boolean(value))).length
 
 // Everything a module needs, not just its scale answers.
 const isModuleComplete = (key, block) => {
@@ -102,7 +105,7 @@ const isModuleComplete = (key, block) => {
     // Perspective additionally needs both narrative labels. Its four written answers are
     // deliberately NOT required — forcing text produces a sentence written to get past the button,
     // which is worse than an honest null, and the scorer already treats a blank as missing.
-    if (key === "perspective") return Object.keys(block.narrative || {}).length >= 2
+    if (key === "perspective") return narrativeAnswered(block.narrative) >= 2
 
     return required !== undefined ? true : Object.keys(block).length > 0
 }
@@ -139,7 +142,7 @@ export const progressPct = (key, block) => {
         done = Object.keys(block.answers || {}).length
         total = REQUIRED_ANSWERS[key]
         if (key === "perspective") {
-            done += Math.min(Object.keys(block.narrative || {}).length, 2)
+            done += Math.min(narrativeAnswered(block.narrative), 2)
             total += 2
         }
     } else if (FIXED_LENGTH[key]) {
