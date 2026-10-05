@@ -22,6 +22,7 @@ import {
     getVisibleSteps,
     getVisibleLifeStages,
     showsAcademicClassification,
+    stageProblems,
     extractInterestData,
     buildSubmissionInterest,
 } from "./interestFormState"
@@ -49,6 +50,7 @@ function InterestForm() {
     // with a dialog. Saved with the answers, so "Continue where you left off" works on any device.
     const [progress, setProgress] = useState({ lastStep: null, reachedStep: null })
     const [blockedAt, setBlockedAt] = useState(null)           // the stage a refused jump points to
+    const [blockedNeeds, setBlockedNeeds] = useState([])       // what that stage still needs, in words
     const lastBlocked = useRef(null)
 
     const steps = getVisibleSteps(user)
@@ -166,10 +168,15 @@ function InterestForm() {
         }
     }, [formState, isLandingStep, hasSubmitted, canResume])
 
-    // a typed or bookmarked URL can't skip stages either
+    // a typed or bookmarked URL can't skip stages either — past the furthest stage reached, or past a
+    // stage that still has a required item empty (an old draft can say "reached Aspirations" with an
+    // unfinished Background)
     useEffect(() => {
-        if (formState && currentStepIndex > reachedIndex) {
-            navigate(`/interest/${steps[reachedIndex].key}`, { replace: true })
+        if (!formState || currentStepIndex < 0) return
+        const missing = steps.slice(0, currentStepIndex).findIndex((s) => stageProblems(s.key, formState, user).length > 0)
+        const limit = missing === -1 ? reachedIndex : Math.min(reachedIndex, missing)
+        if (currentStepIndex > limit) {
+            navigate(`/interest/${steps[limit].key}`, { replace: true })
         }
     }, [formState, currentStepIndex, reachedIndex])
 
@@ -203,6 +210,22 @@ function InterestForm() {
     const sectionForm = () => sectionRef.current?.querySelector("form")
     const sectionComplete = () => !sectionForm() || sectionForm().checkValidity()
 
+    // the first stage before `index` (other than the open one, which the section checks itself) that
+    // still has a required item empty — Round 17: a jump checks every stage it passes, not just this one
+    const firstIncompleteBefore = (index) => {
+        for (let at = 0; at < index; at += 1) {
+            if (at === currentStepIndex) continue
+            const needs = stageProblems(steps[at].key, formState, user)
+            if (needs.length > 0) return { at, needs }
+        }
+        return null
+    }
+
+    const block = (at, needs = []) => {
+        setBlockedNeeds(needs)
+        setBlockedAt(at)
+    }
+
     const goToStep = (index, { sectionOk = true } = {}) => {
         if (index < 0 || index >= steps.length) return
         const complete = sectionOk && sectionComplete()
@@ -211,9 +234,11 @@ function InterestForm() {
             const open = Math.max(reachedIndex, currentStepIndex + 1)
             if (!complete) {
                 sectionForm()?.reportValidity()
-                return setBlockedAt(currentStepIndex)
+                return block(currentStepIndex)
             }
-            if (index > open) return setBlockedAt(open)
+            const missing = firstIncompleteBefore(index)
+            if (missing) return block(missing.at, missing.needs)
+            if (index > open) return block(open)
         }
 
         const reached = index > currentStepIndex ? Math.max(reachedIndex, index) : complete ? reachedIndex : Math.min(reachedIndex, currentStepIndex)
@@ -317,7 +342,7 @@ function InterestForm() {
     // props every section gets for the progress bar and navigation; each stage knows whether it is
     // done or still closed, so the bar can show it
     const commonProps = {
-        steps: steps.map((s, index) => ({ ...s, done: index < reachedIndex, closed: index > Math.max(reachedIndex, currentStepIndex + 1) })),
+        steps: steps.map((s, index) => ({ ...s, done: index < reachedIndex && stageProblems(s.key, formState, user).length === 0, closed: index > Math.max(reachedIndex, currentStepIndex + 1) })),
         currentStepIndex,
         goToStep,
         handleNext: handleNextSection,
@@ -424,6 +449,12 @@ function InterestForm() {
                     Please complete the required items in <strong>{blockedTitle}</strong> before
                     moving ahead. The stages open in order, so nothing gets missed.
                 </p>
+                {blockedNeeds.length > 0 && (
+                    <>
+                        <p>Still needed:</p>
+                        <ul>{blockedNeeds.map((need) => <li key={need}>{need}</li>)}</ul>
+                    </>
+                )}
                 <p>You can press Save and come back any time.</p>
             </Modal>
         </div>

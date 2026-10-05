@@ -220,7 +220,7 @@ const SECTIONS = [
                 </p>
                 <p>
                     <strong>Your plans to go abroad.</strong> If you tell us in the interest form that you hope to
-                    study or work outside India, and where, we use that only to show you how each of your careers
+                    study or work outside India, we use that only to show you how each of your careers
                     travels and what those countries ask first, and to offer the study-abroad partner above. It is
                     never used to rank your careers, and it is shared with no one unless you ask to be connected.
                 </p>

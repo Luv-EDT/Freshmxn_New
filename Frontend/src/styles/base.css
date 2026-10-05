@@ -211,7 +211,9 @@ li + li {
 }
 
 /* plain (non-antd) form controls, so older pages match antd's inputs */
-:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+/* antd's own inputs are skipped: its Select/AutoComplete puts the input inside a one-line box, and a
+   44px minimum pushed the typed words down and clipped them (Round 17, the aspiration boxes) */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([class*="ant-"]), select, textarea) {
     font: inherit;
     color: var(--navy);
     background: var(--surface);

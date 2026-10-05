@@ -4298,7 +4298,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "VOICE — every rubric judges content, not language, script or dictation slips; the mic sits on every written answer",
+        name: "VOICE — every rubric judges content, not language, script or dictation slips; one Speak button with live words on every written answer",
         run: () => {
             const problems = []
             const scorer = fs.readFileSync(path.join(__dirname, "../../scoring/llmScorer.js"), "utf8")
@@ -4309,12 +4309,18 @@ const fixtures = [
             const pages = {
                 "Assessment/Perspective.js": 1, "Assessment/StoryRecall.js": 1, "Interest/ChipListInput.js": 1,
                 "Interest/AspirationalProfessions.js": 1, "Interest/BackgroundInfo.js": 1,
+                // Round 17 (owner): the problem boxes and the other written answers too
+                "Interest/LifeStageSection.js": 1, "Interest/Challenges.js": 1, "Interest/CurrentInterests.js": 1,
             }
             Object.keys(pages).forEach((file) => {
                 const source = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages", file), "utf8")
                 if (!/<VoiceInput/.test(source)) problems.push(`${file} has no voice input`)
                 if (/optional/i.test(source.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "")) && file.startsWith("Assessment")) problems.push(`${file} says "optional"`)
             })
+            // Round 17 (owner): one Speak button, Indian English only, words shown while still being heard
+            const voice = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/VoiceInput.js"), "utf8")
+            if (/hi-IN|हिंदी/.test(voice)) problems.push("the mic still offers a language choice")
+            if (!/session\.lang = "en-IN"/.test(voice) || !/interimResults = true/.test(voice)) problems.push("the mic is not Indian English with live words")
             const privacy = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Privacy.js"), "utf8")
             if (!/voice typing/i.test(privacy)) problems.push("the privacy policy does not mention voice typing")
             return problems.length > 0 ? problems.join("; ") : null

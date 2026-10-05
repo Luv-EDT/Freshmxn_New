@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
+import VoiceInput from "../VoiceInput"
 import InterestProgressBar from "./InterestProgressBar"
-import { cleanupCurrentInterests, YOU_OR_THEM_OPTIONS_WITH_TIME } from "./interestFormState"
+import { cleanupCurrentInterests, YOU_OR_THEM_OPTIONS } from "./interestFormState"
 
 const CONFIDENCE_LIST = ["High", "Medium", "Low"]
 
@@ -384,7 +385,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                                                 />
                                                 <div>
                                                     <label>What held you back?</label>
-                                                    {YOU_OR_THEM_OPTIONS_WITH_TIME.map((yotOption, yotIdx) => (
+                                                    {YOU_OR_THEM_OPTIONS.map((yotOption, yotIdx) => (
                                                         <div key={`disc-yot-${idx}-${yotIdx}`}>
                                                             <input
                                                                 type="radio"
@@ -395,11 +396,6 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                                                                     ...slot,
                                                                     isSelected: true,
                                                                     youOrThem: yotOption,
-                                                                    // "Time constraints/Phase of life ended" IS the reason, so fill it in
-                                                                    // rather than making them type it out to pass validation
-                                                                    otherReason: yotOption === YOU_OR_THEM_OPTIONS_WITH_TIME[3] && !slot.otherReason
-                                                                        ? yotOption
-                                                                        : slot.otherReason,
                                                                 })}
                                                                 required
                                                             />
@@ -446,6 +442,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                                             onChange={(e) => updateAchievement(item.activity, { ...slot, isSelected: true, achievement: e.target.value })}
                                             required
                                         />
+                                        <VoiceInput compact value={slot.achievement} onChange={(text) => updateAchievement(item.activity, { ...slot, isSelected: true, achievement: text })} />
                                     </div>
                                 )}
                             </div>

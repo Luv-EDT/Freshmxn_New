@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import VoiceInput from "../VoiceInput"
 import ActivityReferenceList from "./ActivityReferenceList"
 import InterestProgressBar from "./InterestProgressBar"
 import ProblemPromptList from "./ProblemPromptList"
@@ -163,6 +164,7 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                             onChange={(e) => handleProblemChange(group, index, e.target.value)}
                             placeholder={stage.placeholders[group][0]}
                         />
+                        <VoiceInput compact value={row.problem} onChange={(text) => handleProblemChange(group, index, text)} />
                         <label htmlFor={`${group}-${index}-helped`} className="if-small-label">What helped</label>
                         <ChipListInput
                             id={`${group}-${index}-helped`}
@@ -247,6 +249,7 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                                             value={row.reason}
                                             onChange={(e) => handleAdditionalChange(idx, "reason", e.target.value)}
                                         />
+                                        <VoiceInput compact value={row.reason} onChange={(text) => handleAdditionalChange(idx, "reason", text)} />
                                     </div>
                                 ))}
                                 <button type="button" className="if-add" onClick={handleAddMoreAdditional}>+ Add another</button>
