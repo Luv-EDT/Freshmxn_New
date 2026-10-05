@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
-import { Table, Button, Popconfirm, message } from "antd"
+import { Table, Button, Popconfirm, Input, message } from "antd"
 import dayjs from "dayjs"
-import { getActivityFoldsForAdmin, splitActivityFoldForAdmin } from "../../apiCall/dataUpdatesApi"
+import { getActivityFoldsForAdmin, splitActivityFoldForAdmin, getActivityReadingsForAdmin } from "../../apiCall/dataUpdatesApi"
 
 // ACTIVITY MATCHES (Round 14, owner: "keep 0.90, measure it"). When a student's activity is close
 // enough to one we have already rated (similarity ≥ the threshold), it reuses that rating instead of
@@ -9,6 +9,67 @@ import { getActivityFoldsForAdmin, splitActivityFoldForAdmin } from "../../apiCa
 // off, so the next student who writes it gets it rated on its own. If the bottom of this list keeps
 // holding wrong matches, raise ACTIVITY_DEDUP_COSINE on Render; if it is all obvious paraphrases
 // rated separately, lower it.
+//
+// Round 17: "How we read a student's activities" — look a student up by email to see what each of
+// their activities was read as (the cache names every new wording, e.g. "Cricketer" → "playing cricket").
+const HIT_WORDS = {
+    exact: "known wording — no AI call",
+    named: "named, matched an activity we know",
+    near: "close to an activity we know",
+    miss: "new — rated for the first time",
+    unrateable: "not an activity we can rate",
+}
+
+function StudentReadings() {
+    const [email, setEmail] = useState("")
+    const [result, setResult] = useState(null)
+    const [loading, setLoading] = useState(false)
+
+    const lookUp = async () => {
+        try {
+            setLoading(true)
+            const response = await getActivityReadingsForAdmin(email)
+            setResult(response.data.data)
+        } catch (error) {
+            setResult(null)
+            message.error(error.response?.data?.message || "Could not look that student up")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <section className="section-card">
+            <h3>How we read a student's activities</h3>
+            <p className="report-small">Only activities ticked as ongoing in Current interests reach the matcher. Readings come from the student's latest report.</p>
+            <Input.Search placeholder="Student's email" value={email} onChange={(event) => setEmail(event.target.value)} onSearch={lookUp} enterButton="Look up" loading={loading} style={{ maxWidth: 420 }} />
+            {result && (
+                <div>
+                    <p><strong>{result.name}</strong> · {result.email}</p>
+                    <p>Ticked as ongoing: {result.ticked.length > 0 ? result.ticked.join(" · ") : "none — nothing from the interest form reached the matcher"}</p>
+                    {result.readings.length > 0 ? (
+                        <div className="table-scroll">
+                            <table>
+                                <tbody>
+                                    {result.readings.map((reading, index) => (
+                                        <tr key={`${reading.said}-${index}`}>
+                                            <td>{reading.said}</td>
+                                            <td>→ <strong>{reading.readAs || "—"}</strong></td>
+                                            <td className="report-small">{HIT_WORDS[reading.cacheHit] || reading.cacheHit || "—"}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <p className="report-small">No readings stored yet — they are recorded when the student's report is next built (after Round 17).</p>
+                    )}
+                </div>
+            )}
+        </section>
+    )
+}
+
 function ActivityMatchesList() {
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(false)
@@ -54,6 +115,7 @@ function ActivityMatchesList() {
 
     return (
         <div>
+            <StudentReadings />
             {data && (
                 <p>
                     Two activities count as the same at a similarity of <strong>{data.threshold.toFixed(2)}</strong> or more

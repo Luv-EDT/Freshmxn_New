@@ -837,30 +837,6 @@ button.voice-mic.is-on {
     color: var(--navy);
 }
 
-.voice-languages {
-    display: inline-flex;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
-    overflow: hidden;
-}
-
-.app-header ~ * button.voice-language,
-button.voice-language {
-    margin: 0;
-    min-height: 40px;
-    padding: 6px 12px;
-    border: 0;
-    border-radius: 0;
-    font-weight: 400;
-}
-
-.app-header ~ * button.voice-language.is-on,
-button.voice-language.is-on {
-    background: var(--teal);
-    color: #ffffff;
-    font-weight: 700;
-}
-
 .voice-live {
     font-size: 0.9rem;
     font-weight: 700;

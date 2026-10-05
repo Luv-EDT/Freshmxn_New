@@ -27,7 +27,7 @@ job role, get a mentor; no assessment).
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
 | **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 22 (scoring) / 60 (matching) / 171 (workers) — all offline, all green |
+| **Tests** | fixtures 24 (scoring) / 60 (matching) / 173 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -58,9 +58,9 @@ cd Backend && npm run seed:admin                  # once — the admin account
 
 **Test**
 ```
-node Backend/scoring/fixtures/runFixtures.js     # 22/22
+node Backend/scoring/fixtures/runFixtures.js     # 24/24
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 171/171 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 173/173 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -135,7 +135,9 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Studying abroad** (`Backend/data/abroad.json`, Round 11) | 25 careers flagged "helps" or "often part of the route", drafted by Claude — read them once. **Name the study-abroad partner** and share leads from the admin "Study abroad" tab (consent and policy version are on each row) |
 | **Master's and studying-abroad sources** (`Backend/data/study_sources.json`, Round 12) | Master's: 24 of the 32 "required / is the way in" careers checked against an official rule, 7 supported by published information, 1 our estimate (public policy). Some sources are secondary sites (Careers360, Testbook, Indian Kanoon) — the study bot is meant to replace them with official pages. **Finding:** UPSC's Indian Statistical Service accepts a bachelor's, so Statistician's "master's required" may be wrong — decide. Abroad: 2 supported, 23 our estimate; none is "often needed" any more. Rules and tables: `docs/5_finalized/STUDY_INFO_RULES.md` |
 | **Closing ranks** (`Backend/data/cutoffs.json`, Round 12) | Seven B.Tech CSE rows (six IITs, NIT Tiruchirappalli) are **drafts and hidden**: the official sites were blocked from the build container and search summaries disagreed. The study bot checks them on JoSAA from August; approve each in Data updates. A shown rank also needs the institution list reviewed. Add more rows (other branches, MBBS, CLAT) by hand or in V2 |
-| **Mentor reviews** (Round 12; every quality since Round 13; one card per profession since Round 15; one queue since Round 16) | Approved mentors review our data for their profession and can re-send whenever they like. Only what they say should **change** is kept — one waiting list per profession. **You don't decide in Mentor reviews any more** (it is read only): on the 1st, after the career refresh, Claude checks each waiting suggestion against sources; what a source supports becomes an ordinary proposal in **Data updates**, tagged "Mentor + sources" with the mentors' own words, and the rest is discarded with a reason you can read in Mentor reviews. Pay and demand approvals show on the site at once; master's and abroad go to the study-fact layer; everything else ("Mentor's wording") only goes to **Export patch → mentorNotes**, for you or the local Claude Code to turn into a reviewed data commit. Export patch also writes each profession's waiting list into its `mentor_suggestions` in ALL-professions.json (empty once checked). A profession whose qualities a mentor answered (at least the main eight) all "about right" can be marked `mentor_reviewed` in `baseline_rating.json` — this chips at the 223-ratings gate above |
+| **Mentor reviews** (Round 12; every quality since Round 13; one card per profession since Round 15; kept for good since Round 17) | Mentors' opinions are **kept for good**, stacked per profession and topic ("looks right" included); a mentor's new answer on a topic replaces only their own. On the 1st, after the career refresh, Claude weighs only the topics with **new input**, with the whole stack, each mentor's years and last month's outcome; mentors' consensus is evidence (no web source required). Its proposals arrive in **Data updates** ("Mentor + sources", with the stack); topics it kept as they are are listed below the table. **You decide there**, and "Remove as wrong" on one opinion is the only deletion (logged). Pay and demand go live on approval; wording goes to Export patch → `mentorNotes`, which Claude Code writes into the data files when you commit the patch (CLAUDE.md, "Data patches"). The Mentor reviews tab is read only |
+| **Re-embed one career** (Round 17) | "Content Writer & Editor" is now **"Content Writer, Author & Editor"** (owner). Its stored vector still comes from the old name; it is declared in `profession_embeddings.json` → `pending_reembed`. On your laptop (VOYAGE_API_KEY in Backend/.env): `node Backend/tools/verifyEmbeddings.js --write`, run the fixtures, commit |
+| **Students stuck on "How you think"** (Round 17) | Until this round five questions (U8, PS1–PS4) were counted but never shown, so "How you think" could never finish and **Submit stayed off** for every student since Round 10. Fixed; anyone affected just answers the five new questions. Check the Students tab for anyone stuck with psychometric "in progress" and nudge them |
 | **Model for the monthly research** (Round 12) | Run the comparison once (a few dollars), then choose. Until then Opus 5.5. `REFRESH_MODEL` on Render, if set, overrides the choice |
 | **First live batch** (Round 12) | The monthly jobs now send one half-price batch. If Anthropic refuses the batch, the job asks directly as before (logged). After the 1st, look for `batch_collect: … — {…}` in the Render logs. `RESEARCH_BATCH=false` turns batching off |
 | **Mentor Only "Other" requests** (Round 12) | A Mentor Only student may describe a career we do not list; the admin's **Mentor Matches** shows it as "Other — find separately". Full refund on request if no mentor is found |
@@ -1934,3 +1936,46 @@ wording proposal, a discard with its reason, the list emptied, an undecided qual
 checked suggestion skipped, the old route gone, Export patch, the read-only tab, the "Mentor + sources" tag,
 the sheet line and re-send at 360 px with no sideways scroll); Round 15 10/10 (updated for the read-only
 card and re-sending), Round 14 14/14, deck 17/17, uiFlow 65/65. Build: the 8 known warning files.
+
+### Round 17 — the owner's walkthrough: "How you think" could never finish, the interest form, voice, activities, mentors kept for good (2026-10-05)
+The owner tested the live site with their own account and sent screenshots.
+
+| Item | What shipped |
+|---|---|
+| **"How you think" could never finish** | `Perspective.js` never showed U8 or PS1–PS4, but completion counted them: 39 answers needed, 34 possible, so "13% left" for good and **Submit off for every student since Round 10**. U8 joins "Working without certainty"; PS1–PS4 get "Sticking with things". New fixture **PERSPECTIVE REACHABLE** |
+| **P31/P32** | "Tick all that apply" ("I never lose momentum" is exclusive); older single answers still read; scoring unchanged (scoring fixtures 17b, 17c) |
+| **Interest form gating** | `stageProblems()` knows each stage's required items. A jump, Finish or a typed URL stops at the first unfinished stage it passes, and the dialog lists what's missing. ✓ only when a stage is really complete |
+| **Interest form layout** | The aspiration text no longer sits low (antd inputs skip the 44px rule); checkbox rows in Current interests and Challenges line up; "Time constraints/Phase of life ended" removed; the abroad country list removed (the yes/maybe/no stays) |
+| **Voice** | One **Speak** button, Indian English only, words appear in the box while speaking; mic added to the problem boxes, the "why you liked it" box and the achievement description |
+| **Activities** | Every new wording is **named** in one batched call ("Cricketer" / a long sentence / Hinglish → "playing cricket") before matching; a known wording costs nothing; wordings capped at 200 per row. `matching@1.3.0` (students see "Update my report"). Each report stores `activity_readings`; **Activity matches** looks a student up by email |
+| **Assessment** | Six Big Five items in plainer words (same ids and scoring); pills "1–10" with no section line; question spacing; the deck shows its stack; a story already read steps aside |
+| **Interrupted tests** | Word memory, digit span, reasoning and SART warn before a refresh or a link. Leaving anyway is flagged (`left_mid_test`, "Left or refreshed mid-test" in Assessment issues). A refreshed digit sequence or word list is not shown again; a focus run left mid-way is noticed at the next start |
+| **Mentorship copy** | The rollover/refund promise said once in short sentences; no "You're on the waitlist"; the journey card says "Included in your plan — choose your mentor's field" |
+| **Career rename** | "Content Writer, Author & Editor" (job roles unchanged); see Part 3 for the re-embed |
+| **Landing hero** | Less space above the headline |
+| **Mentors kept for good** | The owner's flow, replacing Round 16's "empty the list" (Part 3 above) |
+
+**Plain words (owner's questions):**
+- **The data patch** is the bridge from the live database to the files in git. Render can't save files,
+  so approvals live in the database until you download the patch and commit it.
+- **Mentor notes** are the part of the patch holding approved *wording*, which Claude Code writes in.
+  Number changes are applied automatically.
+- **Cost of naming activities:** about $0.002 (₹0.2) per report on Sonnet 5. It should lower the total,
+  because each rating it saves costs 25–50× more.
+- **Space:** a few MB at 10,000 students.
+
+**Fixtures:** scoring 22 → 24; workers 172 → 173 (new: PERSPECTIVE REACHABLE, INTERRUPTED TEST). Changed
+because the owner changed the product:
+- VOICE (one button, live words, more boxes);
+- HINGLISH → ACTIVITY NAMING;
+- MENTOR SUGGESTIONS and MENTOR PASS (kept for good, consensus);
+- MENTOR REVIEW flow (Export patch);
+- CAREER DRAFTS (a declared pending re-embed for the renamed career; any undeclared drift still fails).
+
+**Cloud checks:**
+- Round 17 42/42: the full "How you think" counts as done; interrupted tests flagged; the activity lookup;
+  three mentors through two monthly looks with a rejection, a removal and Export patch; gating; checkbox
+  rows; aspiration alignment; live voice; the abroad list gone; mentorship copy; the hero; the admin tabs.
+- uiFlow 65/65 (the policy wording expectation updated); Round 14 14/14; deck 17/17.
+- r15/r16 test the Round 15/16 mentor flow the owner replaced; superseded by r17.
+- Build: the 8 known warning files.

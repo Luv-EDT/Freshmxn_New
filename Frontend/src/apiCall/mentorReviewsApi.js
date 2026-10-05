@@ -25,3 +25,14 @@ export async function getSuggestionsForAdmin() {
     const response = await axiosInstance.get("/mentorReviews/getSuggestionsForAdmin")
     return response
 }
+
+// Round 17: the monthly review — topics Claude kept as they are, and the one deletion
+export async function getUnchangedTopicsForAdmin() {
+    const response = await axiosInstance.get("/mentorReviews/getUnchangedTopicsForAdmin")
+    return response
+}
+
+export async function removeOpinionForAdmin(professionId, mentor, topic) {
+    const response = await axiosInstance.put(`/mentorReviews/removeOpinionForAdmin/${professionId}`, { mentor, topic })
+    return response
+}

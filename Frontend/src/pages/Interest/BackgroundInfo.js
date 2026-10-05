@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import VoiceInput, { appendSpoken } from "../VoiceInput"
+import VoiceInput from "../VoiceInput"
 import InterestProgressBar from "./InterestProgressBar"
 import { NEEDS } from "../Assessment/accommodations"
 
@@ -19,19 +19,11 @@ const FINANCIAL_OPTIONS = ["Financially struggling", "Lower middle class", "Midd
 
 const YES_NO_OPTIONS = ["Yes", "No", "Prefer not to say"]
 
-// Round 13: the five countries Indian students go to most (MEA, 2025), and anywhere else
+// Round 13: hoping to study or work abroad shows the report's "Going abroad" parts
 const ABROAD_HOPES = [
     { value: "yes", label: "Yes" },
     { value: "maybe", label: "Maybe" },
     { value: "no", label: "No" },
-]
-const ABROAD_COUNTRIES = [
-    { value: "CA", label: "Canada" },
-    { value: "US", label: "USA" },
-    { value: "UK", label: "UK" },
-    { value: "AU", label: "Australia" },
-    { value: "DE", label: "Germany" },
-    { value: "other", label: "Somewhere else" },
 ]
 
 const COMPETITION_OPTIONS = [
@@ -81,11 +73,6 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
             ...(name === "abroadHope" && value === "no" ? { abroadCountries: [] } : {}),
         }))
     }
-
-    const toggleCountry = (code) => setLocalFormData((prev) => {
-        const countries = prev.abroadCountries || []
-        return { ...prev, abroadCountries: countries.includes(code) ? countries.filter((value) => value !== code) : [...countries, code] }
-    })
 
     const toggleNeed = (id) => setLocalFormData((prev) => {
         const needs = prev.disabilityNeeds || []
@@ -284,21 +271,8 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
                     <div>
                         <label><strong>Do you hope to study or work outside India one day?</strong></label>
                         {renderRadioGroup("abroadHope", ABROAD_HOPES)}
-                        {(localFormData.abroadHope === "yes" || localFormData.abroadHope === "maybe") && (
-                            <>
-                                <p className="if-subq">Where? Tick any.</p>
-                                <ul className="needs-list">
-                                    {ABROAD_COUNTRIES.map((country) => (
-                                        <li key={country.value}>
-                                            <label className="interest-item">
-                                                <input type="checkbox" checked={(localFormData.abroadCountries || []).includes(country.value)} onChange={() => toggleCountry(country.value)} />
-                                                <span>{country.label}</span>
-                                            </label>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </>
-                        )}
+                        {/* Round 17 (owner): no "Where?" country list here any more. The report lists the
+                            countries in its usual order; answers saved earlier are kept. */}
                     </div>
                     {/* Competition Preference */}
                     <div>
@@ -309,7 +283,7 @@ function BackgroundInfo({ formData, updateFormData, handleNext, handlePrevious, 
                             <div>
                                 <label>Please describe what actions you take for this:</label>
                                 <br />
-                                <VoiceInput onText={(spoken) => setLocalFormData((prev) => ({ ...prev, competitionActions: appendSpoken(prev.competitionActions, spoken) }))} />
+                                <VoiceInput value={localFormData.competitionActions} onChange={(text) => setLocalFormData((prev) => ({ ...prev, competitionActions: text }))} />
                                 <textarea
                                     name="competitionActions"
                                     value={localFormData.competitionActions}

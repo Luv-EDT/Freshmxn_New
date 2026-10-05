@@ -93,9 +93,14 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
     const doneCount = built.filter((module) => completed.includes(module.key)).length
     const storyPhase = storyState ? storyState.phase : null
 
-    // the deck opens on the first section still to do (the story is skipped while it is waiting)
-    const firstOpen = built.findIndex((module) => !completed.includes(module.key) && !skipped[module.key]
-        && !(module.key === "storyRecall" && storyPhase === "waiting"))
+    // the deck opens on the first section still to do. The story steps aside once it has been read —
+    // while its reading window runs and while it waits for tomorrow's questions (Round 17, owner: the
+    // test still in progress comes to the front) — unless nothing else is left.
+    const open = (module) => !completed.includes(module.key) && !skipped[module.key]
+    const storyAside = (module) => module.key === "storyRecall" && (storyPhase === "waiting" || storyPhase === "reading")
+    const firstOpen = built.findIndex((module) => open(module) && !storyAside(module)) !== -1
+        ? built.findIndex((module) => open(module) && !storyAside(module))
+        : built.findIndex((module) => open(module) && storyPhase !== "waiting")
     // until the student picks a card it follows the data, which arrives after the first render
     const [picked, setIndex] = useState(null)
     // the strip of every test stays folded until asked for (owner, Round 15) — the card in hand is the page

@@ -98,6 +98,20 @@ const recommendationSchema = new mongoose.Schema(
             type: [String],
             default: [],
         },
+
+        // What each of the student's activities was READ AS (Round 17, owner) — admin only, for
+        // "How we read their activities": their words, the activity name the cache knows it by, and
+        // whether that row was found, named, folded or newly rated. Never shown to the student.
+        activity_readings: {
+            type: [{
+                _id: false,
+                said: String,
+                readAs: String,
+                rowId: { type: mongoose.Schema.Types.ObjectId, default: null },
+                cacheHit: String,      // exact | named | near | miss | unrateable
+            }],
+            default: [],
+        },
     },
     {
         timestamps: true,

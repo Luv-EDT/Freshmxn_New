@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { message } from "antd"
-import { savePsychometric } from "../../apiCall/submissionsApi"
+import { savePsychometric, markTestStarted } from "../../apiCall/submissionsApi"
+import useLeaveWarning from "./useLeaveWarning"
 import {
     DIGIT_MS, TRIAL_MS, FONT_SIZES, GO_DIGITS, NO_GO_DIGIT,
     PRACTICE_TRIALS, TEST_TRIALS, MIN_REFRESH_HZ, MAX_MEDIAN_TIMING_ERROR_MS,
@@ -33,6 +34,8 @@ import OneAttemptWarning from "./OneAttemptWarning"
 
 function Sart({ alreadyTaken, onDone }) {
     const [phase, setPhase] = useState(alreadyTaken ? "alreadyTaken" : "intro")
+    // a run in progress can't be restarted for free — leaving is warned about (Round 17)
+    useLeaveWarning(phase === "test")
     const [retakeNotice, setRetakeNotice] = useState(false)
     const [check, setCheck] = useState(null)        // the timing-check result
     const [refresh, setRefresh] = useState(null)
@@ -240,6 +243,8 @@ function Sart({ alreadyTaken, onDone }) {
     const runTest = async () => {
         setPhase("test")
         setTrialCount(0)
+        // the server notes the start, so a run left mid-way is flagged for the admin (Round 17)
+        markTestStarted("sartRaw").catch(() => {})
         await requestFullscreen()
 
         const trials = buildTrials(TEST_TRIALS)

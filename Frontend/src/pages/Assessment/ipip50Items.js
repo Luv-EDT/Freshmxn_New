@@ -1,4 +1,8 @@
-// IPIP-50 — the item text, transcribed from 04_Item_Bank.md §2. Goldberg's official list.
+// IPIP-50 — the item text, transcribed from 04_Item_Bank.md §2. Goldberg's official list, with six
+// items put in plainer words for Indian students aged 14+ (Round 17, owner): C7 "Like order", C8
+// "Shirk my duties", C10 "Am exacting in my work", ES4/ES10 "...feel blue", and O6, the reversed twin of
+// O3 ("Have a vivid imagination"), reworded so it doesn't read as a repeat. Same meaning, same ids,
+// same keys, same scoring.
 //
 // THE IDS ARE A CONTRACT, NOT A NAMING CHOICE. Backend/scoring/ipip50.js reads
 // `psychometric.ipip50.answers.IPIP_O1` and so on, and it decides which items to reverse from that
@@ -53,7 +57,7 @@ export const IPIP_ITEMS = [
     { id: "IPIP_E4", text: "Keep in the background", key: "−" },
     { id: "IPIP_A4", text: "Sympathize with others' feelings", key: "+" },
     { id: "IPIP_C4", text: "Make a mess of things", key: "−" },
-    { id: "IPIP_ES4", text: "Seldom feel blue", key: "+" },
+    { id: "IPIP_ES4", text: "Seldom feel sad", key: "+" },
     { id: "IPIP_O4", text: "Am not interested in abstract ideas", key: "−" },
 
     { id: "IPIP_E5", text: "Start conversations", key: "+" },
@@ -66,11 +70,11 @@ export const IPIP_ITEMS = [
     { id: "IPIP_A6", text: "Have a soft heart", key: "+" },
     { id: "IPIP_C6", text: "Often forget to put things back in their proper place", key: "−" },
     { id: "IPIP_ES6", text: "Get upset easily", key: "−" },
-    { id: "IPIP_O6", text: "Do not have a good imagination", key: "−" },
+    { id: "IPIP_O6", text: "Find it hard to picture things I have never seen", key: "−" },
 
     { id: "IPIP_E7", text: "Talk to a lot of different people at parties", key: "+" },
     { id: "IPIP_A7", text: "Am not really interested in others", key: "−" },
-    { id: "IPIP_C7", text: "Like order", key: "+" },
+    { id: "IPIP_C7", text: "Like to keep things neat and in order", key: "+" },
     { id: "IPIP_ES7", text: "Change my mood a lot", key: "−" },
     { id: "IPIP_O7", text: "Am quick to understand things", key: "+" },
 
@@ -79,7 +83,7 @@ export const IPIP_ITEMS = [
 
     { id: "IPIP_E8", text: "Don't like to draw attention to myself", key: "−" },
     { id: "IPIP_A8", text: "Take time out for others", key: "+" },
-    { id: "IPIP_C8", text: "Shirk my duties", key: "−" },
+    { id: "IPIP_C8", text: "Avoid doing my duties", key: "−" },
     { id: "IPIP_ES8", text: "Have frequent mood swings", key: "−" },
     { id: "IPIP_O8", text: "Use difficult words", key: "+" },
 
@@ -91,8 +95,8 @@ export const IPIP_ITEMS = [
 
     { id: "IPIP_E10", text: "Am quiet around strangers", key: "−" },
     { id: "IPIP_A10", text: "Make people feel at ease", key: "+" },
-    { id: "IPIP_C10", text: "Am exacting in my work", key: "+" },
-    { id: "IPIP_ES10", text: "Often feel blue", key: "−" },
+    { id: "IPIP_C10", text: "Want every detail of my work to be exactly right", key: "+" },
+    { id: "IPIP_ES10", text: "Often feel sad", key: "−" },
     { id: "IPIP_O10", text: "Am full of ideas", key: "+" },
 ]
 

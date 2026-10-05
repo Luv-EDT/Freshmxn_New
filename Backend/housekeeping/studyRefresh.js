@@ -193,9 +193,10 @@ const ABROAD_NEEDS = ["not_needed", "helps", "often_needed"]
 const ABROAD_STAGES = ["undergrad", "masters", "doctorate", "training"]
 const maxFacts = () => Number(process.env.STUDY_FACT_MAX) || 10
 
-// A change is kept only with a cited page, a known value, and a real difference from today's.
-const validateFactChange = (change, current, sources) => {
-    if (!change || !Array.isArray(sources) || sources.length === 0) return null
+// A change is kept only with a cited page, a known value, and a real difference from today's — or,
+// for a mentor-backed change (Round 17, requireSources: false), without the page.
+const validateFactChange = (change, current, sources, { requireSources = true } = {}) => {
+    if (!change || (requireSources && (!Array.isArray(sources) || sources.length === 0))) return null
     const reason = String(change.reason || "").slice(0, 600)
     const confidence = CONFIDENCE.includes(change.confidence) ? change.confidence : "low"
     if (change.field === "after_undergrad") {

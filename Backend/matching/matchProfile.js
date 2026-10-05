@@ -38,7 +38,10 @@ const constants = require("./constants")
 // report on 1.0.0 shows as stale and rebuilds itself.
 // 1.2.0 (Round 10): combined careers are found beside the ranking; a career's fit is the better of the whole career and its best role group
 // (role_spread); a student's own degree waives switching cost for the careers it leads to.
-const MATCHING_VERSION = "matching@1.2.0"
+// 1.3.0 (Round 17): every new activity wording is NAMED before it is matched ("Cricketer", a long
+// sentence and Hinglish all become "playing cricket"), so the same answers can reach different
+// careers. Students see "Update my report"; nothing rebuilds by itself.
+const MATCHING_VERSION = "matching@1.3.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")

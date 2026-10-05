@@ -83,3 +83,9 @@ export async function wordRecallAnswer(payload) {
     const response = await axiosInstance.post("/submissions/wordRecallAnswer", payload)
     return response
 }
+
+// a focus (SART) run has started — the server flags one that was never finished (Round 17)
+export async function markTestStarted(module) {
+    const response = await axiosInstance.post("/submissions/markTestStarted", { module })
+    return response
+}

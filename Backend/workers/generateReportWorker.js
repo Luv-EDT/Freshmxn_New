@@ -190,6 +190,12 @@ const runOne = async (userId) => {
                 values_profile: profile.values_profile || {},
                 list_counts: match.listCounts,
                 dominant_reasons: (match.programOne && match.programOne.dominantReasons) || [],
+                activity_readings: resolvedActivities.map((resolved) => ({
+                    said: resolved.activity,
+                    readAs: resolved.readAs || resolved.canonicalActivity,
+                    rowId: resolved.rowId || null,
+                    cacheHit: resolved.unrateable ? "unrateable" : resolved.cacheHit,
+                })),
             },
         },
         { upsert: true, returnDocument: "after" }

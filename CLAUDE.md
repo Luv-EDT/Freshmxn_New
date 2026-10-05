@@ -29,11 +29,18 @@ site and both workers (`render.yaml`, deploys from `main`).
   the code, don't weaken the fixture (unless the owner changed the product; then say so).
 - Never commit `.env` or keys. Never publish the company PAN/TAN.
 
+## Data patches (owner, Round 17)
+When the owner gives you an exported data patch, run `node Backend/tools/applyDataPatch.js <file> --write`,
+then also apply its `mentorNotes` (approved mentor wording) by hand. Write each edit into
+ALL-professions.json, or into baseline_rating.json for a quality (one level at most). Then run the
+fixtures and commit. If `profession_embeddings.json` lists `pending_reembed`, run
+`node Backend/tools/verifyEmbeddings.js --write` (needs VOYAGE_API_KEY).
+
 ## Test before every commit
 ```
-node Backend/scoring/fixtures/runFixtures.js     # 22/22
+node Backend/scoring/fixtures/runFixtures.js     # 24/24
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 171/171
+node Backend/workers/fixtures/runFixtures.js     # 173/173
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

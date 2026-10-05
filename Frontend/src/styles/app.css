@@ -419,8 +419,15 @@ button.filter-option.is-on {
     position: relative;
     padding: var(--space-5);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
-    margin: var(--space-4) 0;
+    /* the rest of the deck peeks out underneath, seen from the side (Round 17, owner): two card edges,
+       each a surface strip with a line under it */
+    box-shadow:
+        var(--shadow),
+        0 12px 0 -6px var(--surface),
+        0 13px 0 -5px var(--line),
+        0 24px 0 -12px var(--surface),
+        0 25px 0 -11px var(--line);
+    margin: var(--space-4) 0 calc(var(--space-4) + 26px);
 }
 
 .deck-card.is-done {
@@ -531,6 +538,15 @@ button.filter-option.is-on {
     padding: var(--space-4);
     margin-bottom: var(--space-4);
     box-shadow: var(--shadow-sm);
+}
+
+/* "How you think" (Round 17): each question's answers end before the next question starts */
+.perspective-q {
+    margin-bottom: var(--space-6);
+}
+
+.perspective-q > p:first-child {
+    margin-bottom: var(--space-3);
 }
 
 /* a question reads best in a column, not across a laptop screen */
@@ -661,6 +677,37 @@ input[type="checkbox"] {
     height: 18px;
     flex: none;
     margin: 0;
+}
+
+/* a checkbox with its label beside it rather than inside (Current interests, Challenges): the same
+   row as the other checklists, box and words lined up with room between (Round 17) */
+div:has(> input[type="checkbox"] + label) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    margin-bottom: 8px;
+}
+
+div:has(> input[type="checkbox"] + label) > input[type="checkbox"] {
+    margin-top: 3px;
+}
+
+div:has(> input[type="checkbox"] + label) > label {
+    flex: 1 1 0;
+    min-width: 0;
+    font-weight: 400;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+/* what opens under a ticked row (confidence, reasons, the achievement) takes the full width */
+div:has(> input[type="checkbox"] + label) > div {
+    flex-basis: 100%;
 }
 
 /* labels that hold a choice sit as a stacked list with a little air */
@@ -2312,4 +2359,24 @@ button.show-rest {
 .show-tests {
     display: block;
     margin: 0 0 var(--space-4);
+}
+
+/* mentor opinions stacked per topic (admin, Round 17) */
+.mentor-topic {
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-3);
+    margin-top: var(--space-3);
+}
+
+.mentor-opinions {
+    margin: 0 0 var(--space-2);
+    padding-left: var(--space-5);
+}
+
+.mentor-opinions li {
+    margin-bottom: 4px;
+}
+
+.mentor-opinions li.is-agree {
+    color: var(--navy-soft);
 }

@@ -16,6 +16,7 @@ const { validateExamChange, validateNewExam, validateFactChange, validateCutoffC
 const { cutoffs: cutoffData } = require("../utils/cutoffs")
 const abroadWork = require("../data/abroad_work.json")
 const { qualitiesFor } = require("./mentorReviewsRouter")
+const { stackOf } = require("../housekeeping/mentorPass")
 
 const router = express.Router()
 
@@ -207,6 +208,18 @@ router.put("/decideProposalForAdmin/:id", authMiddleware, adminAuthMiddleware, a
         proposal.adminNote = typeof adminNote === "string" ? adminNote.trim().slice(0, 500) : ""
         await proposal.save()
 
+        // a mentor-backed proposal: the topic remembers the decision, so next month's look sees it
+        // (read, change in JS, $set — the form FerretDB accepts)
+        if (proposal.origin === "mentor" && proposal.topic) {
+            const ProfessionSuggestions = require("../model/professionSuggestionsModel")
+            const row = await ProfessionSuggestions.findOne({ professionId: proposal.professionId }).lean()
+            if (row) {
+                await ProfessionSuggestions.updateOne({ _id: row._id }, {
+                    $set: { topics: (row.topics || []).map((topic) => (topic.key === proposal.topic ? { ...topic, adminDecision: decision, adminDecidedAt: proposal.decidedAt } : topic)) },
+                })
+            }
+        }
+
         const approvedMessage = proposal.kind === "mentor_text" ? "Approved — it goes into Export patch for a data commit" : "Approved — the career page shows it now"
         return res.status(200).json({ success: true, message: decision === "approved" ? approvedMessage : "Rejected", data: { proposal } })
 
@@ -306,13 +319,14 @@ router.get("/exportPatchForAdmin", authMiddleware, adminAuthMiddleware, async (r
                     reviewedOn: new Date(proposal.decidedAt || proposal.updatedAt).toISOString().slice(0, 10),
                 })),
             ],
-            // each profession's waiting list, written into its `mentor_suggestions` in ALL-professions.json
-            // — once the monthly check has been through it the list goes out empty, so the file empties too
+            // each profession's whole stack of mentor opinions (kept for good, Round 17), written into its
+            // `mentor_suggestions` in ALL-professions.json — names, never ids or emails
             mentorSuggestions: suggestionRows.map((row) => ({
                 id: row.professionId,
-                mentor_suggestions: (row.mentor_suggestions || []).map(({ mentorName, section, factor, direction, note, sourceUrl, suggestedAt }) => ({
-                    mentor: mentorName, section, ...(factor ? { factor, direction } : {}), note, ...(sourceUrl ? { sourceUrl } : {}),
-                    suggestedOn: new Date(suggestedAt).toISOString().slice(0, 10),
+                mentor_suggestions: stackOf(row).map(({ mentorName, section, factor, direction, agrees, note, sourceUrl, suggestedAt, updatedAt }) => ({
+                    mentor: mentorName, section, ...(factor ? { factor } : {}), ...(direction ? { direction } : {}), ...(agrees ? { agrees: true } : {}),
+                    ...(note ? { note } : {}), ...(sourceUrl ? { sourceUrl } : {}),
+                    suggestedOn: new Date(updatedAt || suggestedAt).toISOString().slice(0, 10),
                 })),
             })),
             // careers where a mentor answered at least the main qualities and called every quality they
@@ -591,6 +605,47 @@ router.get("/getActivityFoldsForAdmin", authMiddleware, adminAuthMiddleware, asy
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to fetch activity matches", error: error.message })
+    }
+})
+
+// HOW WE READ ONE STUDENT'S ACTIVITIES (Round 17, owner). By email: the activities they ticked as
+// ongoing in Current interests (only those reach the activity matcher), and — from their latest
+// report — what each was read as and whether the cache already knew it. Admin only.
+router.get("/getActivityReadingsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const User = require("../model/userModel")
+        const Submission = require("../model/submissionsModel")
+        const Recommendation = require("../model/recommendationsModel")
+        const email = typeof req.query.email === "string" ? req.query.email.trim().toLowerCase() : ""
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Enter the student's email" })
+        }
+
+        const student = await User.findOne({ email }).select("name email").lean()
+        if (!student) {
+            return res.status(404).json({ success: false, message: "No student with that email" })
+        }
+
+        const [submission, recommendation] = await Promise.all([
+            Submission.findOne({ user: student._id }).select("interest.currentInterests.persistentInterests").lean(),
+            Recommendation.findOne({ user: student._id }).select("activity_readings updatedAt").lean(),
+        ])
+        const ticked = (((submission || {}).interest || {}).currentInterests || {}).persistentInterests || []
+
+        return res.status(200).json({
+            success: true,
+            message: "Activity readings fetched",
+            data: {
+                name: student.name,
+                email: student.email,
+                ticked: ticked.map((row) => row.activity).filter(Boolean),
+                readings: (recommendation && recommendation.activity_readings) || [],
+                reportAt: recommendation ? recommendation.updatedAt : null,
+            },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch the student's activities", error: error.message })
     }
 })
 

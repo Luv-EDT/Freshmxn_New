@@ -57,14 +57,15 @@ const sameRange = (left, right) => {
 
 // A change is kept only if it names a field we allow, carries a well-formed value that differs from
 // today's, and the reply cited at least one page. Everything else is dropped silently — the admin
-// only ever sees changes worth deciding.
-const validateProposal = (change, current, sources) => {
+// only ever sees changes worth deciding. Mentor-backed changes (Round 17) pass requireSources: false:
+// the mentors' consensus is the evidence there, and a source only supports it.
+const validateProposal = (change, current, sources, { requireSources = true } = {}) => {
     if (!change || !FIELDS.includes(change.field)) return null
     const proposed = String(change.proposed || "").replace(/\s+/g, "").toLowerCase()
     if (!isValidValue(change.field, proposed)) return null
     const now = current[change.field]
     if (now !== null && (proposed === String(now).toLowerCase() || sameRange(proposed, now))) return null
-    if (!Array.isArray(sources) || sources.length === 0) return null
+    if (requireSources && (!Array.isArray(sources) || sources.length === 0)) return null
 
     return {
         field: change.field,

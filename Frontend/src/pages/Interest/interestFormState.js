@@ -16,7 +16,8 @@ export const YOU_OR_THEM_OPTIONS = [
     "External (financial constraints, lack of opportunities, systemic issues, etc.)",
 ]
 
-// Current Interests has a 4th option; Current Challenges uses only the first 3 (ported as-is)
+// "Time constraints/Phase of life ended" was a 4th option on paused activities until Round 17 (owner:
+// not shown any more). Kept so an older answer still files under external problems.
 export const YOU_OR_THEM_OPTIONS_WITH_TIME = [...YOU_OR_THEM_OPTIONS, "Time constraints/Phase of life ended"]
 
 // Map youOrThem values to corresponding problem categories.
@@ -202,6 +203,69 @@ export const getVisibleSteps = (user) => {
 // "How did you approach your transition from school to college?" — not for someone still in school
 export const showsAcademicClassification = (user) => {
     return user?.journey === "college" || user?.journey === "early_professional"
+}
+
+
+// ─── What each stage still needs (Round 17) ──────────────────────────────────
+// The required items of every stage, read from the saved form state — so a jump from one stage to a
+// later one checks the stages in between, not only the one that is open (the owner jumped from
+// Current interests to Aspirations past an unfinished Background). Mirrors each section's own
+// checks: CurrentInterests.validateCurrentSection, Challenges.getRowError and the `required`
+// fields in BackgroundInfo. Life stages and Aspirations have nothing required.
+const blank = (value) => value === undefined || value === null || String(value).trim() === ""
+
+const BACKGROUND_REQUIRED = [
+    ["parentEducation1", "Parent 1's education"],
+    ["parentEducation2", "Parent 2's education"],
+    ["parentProfession1", "Parent 1's profession"],
+    ["parentProfession2", "Parent 2's profession"],
+    ["financialSituationGrowingUp", "Money while growing up"],
+    ["financialSituationCurrent", "Money now"],
+    ["parentsNativePlace1", "Where parent 1 is from"],
+    ["parentsNativePlace2", "Where parent 2 is from"],
+    ["familyTrauma", "The family question"],
+    ["abroadHope", "Studying or working outside India"],
+    ["competitionPreference", "How you approach success"],
+    ["disability", "The disability question"],
+    ["personalTrauma", "The personal question"],
+]
+
+export const stageProblems = (stepKey, formState, user) => {
+    const problems = []
+    if (!formState) return problems
+
+    if (stepKey === "current-interests") {
+        const current = formState.currentInterests || {}
+        ;(current.persistentInterests || []).forEach((interest) => {
+            if (blank(interest.confidence)) problems.push(`A confidence level for "${interest.activity}"`)
+        })
+        Object.entries(current.discontinuedPursuits || {}).forEach(([activity, data]) => {
+            if (!data || !data.isSelected) return
+            const reasons = data.reason || []
+            if (reasons.length === 0) problems.push(`Why you stopped "${activity}"`)
+            else if (reasons.includes("Other") && (blank(data.otherReason) || blank(data.youOrThem))) problems.push(`Your reason for stopping "${activity}"`)
+        })
+        Object.entries(current.achievementRelated || {}).forEach(([activity, data]) => {
+            if (data && data.isSelected && blank(data.achievement)) problems.push(`Your achievement in "${activity}"`)
+        })
+    }
+
+    if (stepKey === "challenges") {
+        ;((formState.currentChallenges || {}).presentConcerns || []).forEach((concern, index) => {
+            if (blank(concern.problem) !== blank(concern.youOrThem)) problems.push(`Both parts of challenge ${index + 1}`)
+        })
+    }
+
+    if (stepKey === "background") {
+        const background = formState.backgroundInfo || {}
+        BACKGROUND_REQUIRED.forEach(([key, label]) => { if (blank(background[key])) problems.push(label) })
+        if (showsAcademicClassification(user) && blank(background.academicClassification)) problems.push("Your move from school to college")
+        if (background.competitionPreference === "recognition" && blank(background.competitionActions)) problems.push("What you do to be recognised")
+        if (blank((background.culturalIdentity || [])[0])) problems.push("A place you feel culturally connected to")
+        if (blank((background.supportNetwork || [])[0])) problems.push("Someone in your support network")
+    }
+
+    return problems
 }
 
 

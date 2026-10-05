@@ -64,9 +64,9 @@ const fakeCache = (rows) => {
         writes,
         model: {
             findOne: (query) => ({
-                lean: async () => rows.find((row) => (
-                    row.canonicalActivity === query.canonicalActivity && row.rubricVersion === query.rubricVersion
-                )) || null,
+                lean: async () => rows.find((row) => row.rubricVersion === query.rubricVersion && (query.exampleRaw
+                    ? (row.exampleRaw || []).includes(query.exampleRaw)
+                    : row.canonicalActivity === query.canonicalActivity)) || null,
             }),
             find: (query) => ({ lean: async () => rows.filter((row) => row.rubricVersion === query.rubricVersion) }),
             // No vector index in the harness, so the resolver falls back to its exact scan — which
@@ -890,19 +890,20 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "HINGLISH — Hindi or Hinglish activities are put into English before embedding; English is never sent",
-        // Round 13 (voice typing): the embeddings and the rubric are English. Only text that needs it
-        // pays for a translation, and the student's own words are kept on the cached row.
+        name: "ACTIVITY NAMING — a long sentence, Hinglish and one word for the same activity reach the same rating; a known wording costs nothing",
+        // Round 17 (owner): "I have played cricket in my 10th standard", "Maine 10th standard mai
+        // cricket khela tha" and "Cricketer" are one activity. Every new wording is named in one batched
+        // call; the name finds the row, so none of them needs an embedding or a fresh rating.
         run: async () => {
             const problems = []
-            ;["playing cricket", "coding websites with friends", "the chess club", "i’m into coding — mostly games 🎮"].forEach((text) => {
+            ;["playing cricket", "the chess club", "i’m into coding — mostly games 🎮"].forEach((text) => {
                 if (needsTranslation(text)) problems.push(`"${text}" was treated as Hindi`)
             })
             ;["cricket khelna", "गाना गाना", "dosto ke saath coding karta tha"].forEach((text) => {
                 if (!needsTranslation(text)) problems.push(`"${text}" was not recognised as Hindi or Hinglish`)
             })
 
-            const cache = fakeCache([{ canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], embedding: [1, 0, 0] }])
+            const cache = fakeCache([{ _id: "row-cricket", canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], embedding: [1, 0, 0], exampleRaw: [] }])
             const real = globalThis.fetch
             const sent = { claude: [], voyage: [] }
             globalThis.fetch = async (url, options) => {
@@ -911,8 +912,9 @@ const fixtures = [
                     sent.voyage.push(...body.input)
                     return { ok: true, json: async () => ({ data: body.input.map((_, index) => ({ index, embedding: [1, 0, 0] })) }) }
                 }
-                sent.claude.push(body.messages[0].content)
-                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify({ items: ["Playing cricket"] }) }] }) }
+                const texts = JSON.parse(body.messages[0].content)
+                sent.claude.push(texts)
+                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify({ items: texts.map(() => "Playing cricket") }) }] }) }
             }
             try {
                 const resolver = createActivityResolver({
@@ -922,18 +924,45 @@ const fixtures = [
                     factorSlugs: scoreProfile.MATCHING_FACTORS,
                     voyageApiKey: "test", anthropicApiKey: "test",
                 })
-                const resolved = await resolver.resolveActivities([{ activity: "Cricket khelna", key: "cricket khelna" }])
-                if (sent.claude.length !== 1 || !sent.claude[0].includes("cricket khelna")) problems.push("the Hinglish activity was not sent for translation once")
-                if (sent.voyage.join() !== "playing cricket") problems.push(`the embedding was not of the English: ${sent.voyage.join()}`)
-                if (!resolved[0] || resolved[0].factors.bodily_intelligence !== 9) problems.push("the translated activity did not reach the cached factors")
-                const kept = cache.updates.some((update) => JSON.stringify(update).includes("cricket khelna"))
+                const wordings = ["I have played cricket in my 10th standard", "Maine 10th standard mai cricket khela tha", "Cricketer"]
+                const resolved = await resolver.resolveActivities(wordings.map((text) => ({ activity: text, key: text.toLowerCase() })))
+                if (sent.claude.length !== 1 || sent.claude[0].length !== 3) problems.push(`the three wordings were not named in one call: ${JSON.stringify(sent.claude)}`)
+                if (sent.voyage.length !== 0) problems.push("an activity the name already placed was still embedded")
+                if (resolved.length !== 3 || resolved.some((entry) => entry.factors.bodily_intelligence !== 9 || entry.readAs !== "playing cricket" || entry.cacheHit !== "named" || entry.rowId !== "row-cricket")) problems.push(`not all three reached "playing cricket": ${JSON.stringify(resolved.map((entry) => [entry.readAs, entry.cacheHit]))}`)
+                const kept = cache.updates.some((update) => JSON.stringify(update).includes("maine 10th standard mai cricket khela tha"))
                 if (!kept) problems.push("the student's own words were not kept on the cached row")
+                if (!cache.updates.some((update) => update.$push && update.$push.exampleRaw && update.$push.exampleRaw.$slice === -200)) problems.push("the kept wordings are not capped")
 
+                // the same wording again is found on the row — no call at all
+                cache.updates.length = 0
                 sent.claude.length = 0
-                await resolver.resolveActivities([{ activity: "Swimming laps", key: "swimming laps" }])
-                if (sent.claude.length !== 0) problems.push("plain English was sent for translation")
+                const row = await cache.model.findOne({ canonicalActivity: "playing cricket", rubricVersion: "2.0" }).lean()
+                row.exampleRaw = ["cricketer"]
+                const [again] = await resolver.resolveActivities([{ activity: "Cricketer", key: "cricketer" }])
+                if (sent.claude.length !== 0 || !again || again.cacheHit !== "exact") problems.push("a wording already on the row was named again")
             } finally {
                 globalThis.fetch = real
+            }
+
+            // a naming call that fails falls back to the student's words — the report is never held up
+            const failing = fakeCache([{ canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: flatFactors(5), candidateProfessionIds: [], embedding: [1, 0, 0] }])
+            const before = globalThis.fetch
+            globalThis.fetch = async (url) => {
+                if (String(url).includes("voyageai")) return { ok: true, json: async () => ({ data: [{ index: 0, embedding: [1, 0.05, 0] }] }) }
+                throw new Error("naming service down")
+            }
+            try {
+                const resolver = createActivityResolver({
+                    ActivityFactors: failing.model,
+                    professionEmbeddings: { model: "voyage-4-large", dimensions: 3, embeddings: [] },
+                    anchors: { schema_version: "2.0", bands: [], factors: [] },
+                    factorSlugs: scoreProfile.MATCHING_FACTORS,
+                    voyageApiKey: "test", anthropicApiKey: "test",
+                })
+                const [fallback] = await resolver.resolveActivities([{ activity: "Playing cricket every evening", key: "playing cricket every evening" }])
+                if (!fallback || fallback.cacheHit !== "near" || fallback.readAs !== "playing cricket") problems.push(`a failed naming call did not fall back to the student's words: ${JSON.stringify(fallback)}`)
+            } finally {
+                globalThis.fetch = before
             }
             return problems.length > 0 ? problems.join("; ") : null
         },

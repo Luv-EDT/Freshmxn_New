@@ -1,5 +1,5 @@
 import { useState } from "react"
-import VoiceInput, { appendSpoken } from "../VoiceInput"
+import VoiceInput from "../VoiceInput"
 
 // A list of short answers as chips: type one, press Add (or Enter), it becomes a chip; × removes it.
 // Round 10 (S10) — replaces a growing stack of empty boxes and "Add More Activities" buttons.
@@ -59,7 +59,7 @@ function ChipListInput({ values, onChange, placeholder, id, label, addLabel = "A
                 <button type="button" className="chip-add" onClick={add} disabled={!draft.trim()}>{addLabel}</button>
             </div>
             {/* spoken words go into the box, to be checked and added like typed ones (Round 13) */}
-            <VoiceInput compact onText={(spoken) => typeDraft(appendSpoken(draft, spoken))} />
+            <VoiceInput compact value={draft} onChange={typeDraft} />
         </div>
     )
 }

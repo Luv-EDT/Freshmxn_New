@@ -100,21 +100,22 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
   their degree and subject, working people their degree and field — so the report can say "your
   B.Com already counts".
 - **The stages open in order** (Round 13). You can always go back, but you can't jump ahead, or press
-  Finish, while a stage has a required answer missing — a box tells you which stage to finish and takes
-  you there. The form remembers how far you got, so next time it says **"Continue where you left off"**.
+  Finish, while **any** stage you'd skip past has a required answer missing (Round 17: the form checks
+  every stage in between, not just the one you're on, and a typed link can't skip either). A box names
+  the stage and lists exactly what it still needs, and takes you there. The form remembers how far you got, so next time it says **"Continue where you left off"**.
   It says "already submitted" only after you have pressed Finish.
-- **You can speak instead of typing** (Round 13). A 🎤 button above the written answers uses your
-  browser's own speech service, in English or हिंदी. The words land in the box for you to fix before
-  they are saved; we never get any audio. Hinglish is fine everywhere: the markers judge what you mean,
-  not your language or spelling, and an activity written in Hindi is put into English before we look
-  for careers that fit it.
+- **You can speak instead of typing** (Rounds 13 and 17). One **Speak** button beside the written
+  answers, including the problem boxes, uses your browser's own speech service. It listens as Indian
+  English, which writes Hinglish in Roman letters ("maine 10th mein cricket khela"). The words appear
+  in the box **as you speak**, and pressing Stop keeps what was heard. You fix anything before it is
+  saved; we never get any audio. Hinglish is fine everywhere: the markers judge what you mean, not your
+  language or spelling.
 - **If you tell us about a disability** in the interest form, it asks which tasks it makes harder (vision,
   hearing, movement, reading, attention). Those timed tests are then **set aside** on the assessment
   page — shown faded, marked "not measured", never a low score — with a small link if you'd like to try
   one anyway. It is never used to rank careers.
-- **If you hope to study or work abroad** (No / Maybe / Yes, and which of the five countries Indian
-  students go to most), your report shows a folded "Going abroad" part for each career. Nothing else
-  uses that answer.
+- **If you hope to study or work abroad** (No / Maybe / Yes), your report shows a folded "Going abroad"
+  part for each career. Nothing else uses that answer. (Round 17: the form no longer asks which countries.)
 - **The assessment** (about 81 minutes) is a deck of cards: one big card for the part you're on, arrows to
   move, and a strip showing every part's state — **Done**, **In progress · N% left**, **Set aside** or
   **Answer now**. Story questions that are waiting for you come first, in bold. The parts: a short story
@@ -124,6 +125,13 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
   patterns, letter-number series, word problems and 3D shapes (`Assessment/assessmentModules.js`). Round 13
   removed the questions that asked the same thing twice (a 60-activity checklist, a written day plan, three
   "what you're drawn to" items and three confidence situations).
+- **Tests you can take only once** (word memory, number memory, the reasoning puzzles, the focus game)
+  warn you before you refresh or leave mid-way (Round 17). If you leave anyway, the list or sequence is
+  **not shown again** (that would be a second look). You write what you remember, and the admin sees a
+  "Left or refreshed mid-test" note so they can allow one retake if something went wrong.
+- **How you think** now shows every question it counts (Round 17). Five were counted but never shown,
+  which stuck it at "13% left" and kept Submit switched off. "What do you believe in most?" and "What
+  most often causes you to lose momentum?" are **tick all that apply**.
 - **Each puzzle has its own clock** — 60 seconds for word and series puzzles, 90 for pictures and shapes.
   When it runs out the puzzle counts as not answered and the next one appears. A retake (only if the admin
   allows one) gets a different set of word puzzles and newly made picture puzzles.
@@ -172,14 +180,21 @@ you wait at the desk**. Instead:
      into numbers so it can be compared with careers, and Claude rates any activity it hasn't seen
      before on the same 27-trait scale the careers were rated on (saved, so it's rated only once).
      That's how "running the school fest stage design" can be compared with "Product Designer".
-     **How "the same activity" is decided:** the exact same words (ignoring capitals and spaces) reuse
-     the saved rating. Otherwise, if the meaning is at least **90% similar** (a cosine of 0.90 between
+     **One meaning, however it's said** (Round 17): a wording we have never seen is first **named** by
+     Claude in a few English words — "I have played cricket in my 10th standard", "Maine 10th mein
+     cricket khela tha" and "Cricketer" all become "playing cricket" — so they share one rating. All the
+     new wordings in a report go in one small, cheap call; the student's own words are kept on the row
+     (the latest 200), so the same words are recognised next time with no call at all.
+     **How "the same activity" is decided:** the exact same words (ignoring capitals and spaces), or the
+     same activity name, reuse the saved rating. Otherwise, if the meaning is at least **90% similar** (a cosine of 0.90 between
      the two sets of numbers) to an activity already rated — "i play cricket for my school team" and
      "playing cricket" — it reuses that rating too; below that it is rated fresh. Each such reuse is
      recorded with its similarity, and the admin's **Activity matches** tab lists the closest calls
      first with a **"Not the same"** button that splits a wrong one off for every later student. The
      90% is a starting judgement; it can be changed on Render (`ACTIVITY_DEDUP_COSINE`) once real
-     answers show where it should sit (Round 14);
+     answers show where it should sit (Round 14). The same tab can look a student up by email to see
+     each of their activities and **what it was read as** (Round 17). Only activities ticked as
+     **ongoing** in Current interests reach this step;
    - **matches you against 223 Indian careers** (`Backend/matching/`), in three steps:
      1. what you've done → which careers it points to;
      2. how well each career fits how you think and work;
@@ -291,20 +306,28 @@ finds changes the website until the admin approves it.
   the rest folded). They mark each part "looks
   right" or "needs a change" (with a note and a link), and each quality "about right / higher /
   lower". The sheet says plainly that these details come from our research and AI, improved by mentors.
-  Only what they say should **change** is kept — in **one list per profession**, which every mentor of
-  that field adds to. A mentor can send again whenever they like; their new answers replace what was
-  still waiting.
-- **Claude checks the list once a month.** On the 1st, after the career refresh, Claude reads each
-  profession's waiting suggestions next to what we show, and searches trusted sources (and any page the
-  mentor linked). A suggestion a source backs up becomes a normal suggested change in the admin's
-  **Data updates**, marked "Mentor + sources"; the rest are set aside with a reason. Either way the list
-  empties. So there is **one queue**: the admin approves mentors' changes and the monthly refresh's changes
-  in the same place, and a newer suggestion for the same thing replaces an older one, so they never clash.
-  A change of pay or demand shows on the site once approved; a change of wording (what the work is, the
-  path, a quality…) goes into **Export patch** — the download of approved changes that a person writes into
-  the data files and commits — because the server can't change its own files (Render wipes its disk on
-  every deploy). Export patch also copies each profession's list into its `mentor_suggestions` in
-  ALL-professions.json. **Nothing changes on the site from a mentor's answer alone.**
+  **Every answer is kept for good** (Round 17), stacked per profession and per topic: who wants a change,
+  and who says it "looks right". A mentor can send again whenever they like; their new answer on a topic
+  replaces only their own earlier answer on that topic.
+- **Claude weighs the stack once a month.** On the 1st, after the career refresh, Claude looks at every
+  topic that has **new** mentor input since last time. It reads the whole stack for that topic (how many
+  mentors agree, how many years each has in the field, what we show today, and what was decided last
+  month) and may search trusted sources. **Mentors' experience counts as evidence**, so a change can be
+  proposed on their consensus alone; one opinion against several who disagree is not enough. A proposed
+  change becomes a normal suggested change in the admin's **Data updates**, marked "Mentor + sources",
+  with the whole stack beside it. The admin approves or rejects it. A topic Claude keeps as it is is
+  listed there too, with its reason.
+- **Nothing a mentor says is deleted**, except when the admin presses **"Remove as wrong"** on one
+  opinion during that monthly review (logged). A rejected change comes back only when new mentor input
+  arrives. There is **one queue**: mentors' changes and the monthly refresh's changes are decided in the
+  same place, and a newer suggestion for the same thing replaces an older one, so they never clash.
+- **What happens after approval.** A change of pay or demand shows on the site at once. A change of
+  wording (what the work is, the path, a quality…) goes into **Export patch** as a "mentor note". Export
+  patch is the download of approved changes, needed because the server can't change its own files
+  (Render wipes its disk on every deploy). When the patch is committed, Claude Code writes each mentor
+  note into the data files. Export patch also copies each profession's whole stack into its
+  `mentor_suggestions` in ALL-professions.json. **Nothing changes on the site from a mentor's answer
+  alone.**
 - A student on the mentor plan opens their matched careers and picks **one job role** inside one of
   them (the roles that suit them best are listed first). That starts a
   **20-business-day** clock. The admin matches a mentor by hand in V1 and the student is told on

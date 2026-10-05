@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { message } from "antd"
 import { wordRecallNext, wordRecallAnswer } from "../../apiCall/submissionsApi"
 import OneAttemptWarning from "./OneAttemptWarning"
+import useLeaveWarning from "./useLeaveWarning"
 
 // The in-house word-memory test (Round 11) — two lists of fifteen everyday words, each word shown
 // once, then written down from memory in any order. See Backend/assessment/wordBank.js.
@@ -18,7 +19,11 @@ function WordRecallTest({ alreadyTaken, onDone }) {
     const [shown, setShown] = useState(0)
     const [text, setText] = useState("")
     const [busy, setBusy] = useState(false)
+    const [interrupted, setInterrupted] = useState(false)   // the page was left mid-list (Round 17)
     const timer = useRef(null)
+
+    // a list on screen, or one waiting to be written down, can't be shown again
+    useLeaveWarning(phase === "study" || phase === "recall")
 
     useEffect(() => () => clearTimeout(timer.current), [])
 
@@ -45,6 +50,7 @@ function WordRecallTest({ alreadyTaken, onDone }) {
             setList(data)
             setText("")
             setShown(0)
+            setInterrupted(Boolean(data.interrupted))
             setPhase(data.phase)
             window.scrollTo(0, 0)
         } catch (error) {
@@ -123,6 +129,12 @@ function WordRecallTest({ alreadyTaken, onDone }) {
         <section className="word-recall">
             <p className="word-recall-progress">List {list ? list.number : ""} of {list ? list.of : 2}</p>
             <h2>Write every word you remember</h2>
+            {interrupted && (
+                <p className="assess-pending">
+                    You left during this list, so it won't be shown again. Write what you remember — our team has
+                    been told, and can let you take it again if something went wrong.
+                </p>
+            )}
             <p>Any order. Separate them with spaces, commas or new lines.</p>
             <textarea
                 className="word-recall-input"

@@ -1,6 +1,11 @@
 // Are the stored profession vectors still current?
 //
-//     node Backend/tools/verifyEmbeddings.js
+//     node Backend/tools/verifyEmbeddings.js            # report only
+//     node Backend/tools/verifyEmbeddings.js --write    # also re-embed what drifted (needs VOYAGE_API_KEY)
+//
+// --write (Round 17) re-embeds every drifted profession from its current text — e.g. after the owner
+// renamed "Content Writer & Editor" — writes the vector, hash and text back, and clears it from
+// `pending_reembed`. Run it where the Voyage key is (your laptop's Backend/.env), then commit.
 //
 // The 223 × 1024 voyage-4-large vectors were generated during the professions work and are REUSED
 // rather than regenerated: they embed name + one_liner + job_roles, and the 27-factor migration
@@ -80,4 +85,39 @@ console.log(clean
     ? "\nclean — every profession has a current vector, nothing needs re-embedding"
     : "\nNOT CLEAN — re-embed the drifted and missing professions before searching against this index")
 
-process.exitCode = clean ? 0 : 1
+const write = async () => {
+    require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
+    if (!process.env.VOYAGE_API_KEY) {
+        console.log("\n--write needs VOYAGE_API_KEY (in Backend/.env) — nothing re-embedded")
+        process.exitCode = 1
+        return
+    }
+    const { embedDocument } = require("../housekeeping/draftCareer")
+    const today = new Date().toISOString().slice(0, 10)
+    for (const id of drifted) {
+        const profession = professions.find((entry) => entry.id === id)
+        const vector = await embedDocument(profession)
+        if (!Array.isArray(vector) || vector.length !== DIMENSIONS) throw new Error(`${id}: Voyage returned ${Array.isArray(vector) ? vector.length : "no"} dimensions`)
+        Object.assign(byId[id], {
+            profession: profession.profession,
+            embedded_from: sourceTextOf(profession),
+            content_hash: contentHash(sourceTextOf(profession)),
+            generated_on: today,
+            embedding: vector,
+        })
+        console.log(`  re-embedded ${id}`)
+    }
+    stored.pending_reembed = (stored.pending_reembed || []).filter((entry) => !drifted.includes(entry.id))
+    fs.writeFileSync(path.join(DATA, "profession_embeddings.json"), JSON.stringify(stored))
+    console.log(`\n${drifted.length} re-embedded — run the fixtures, then commit Backend/data/profession_embeddings.json`)
+    process.exitCode = 0
+}
+
+if (process.argv.includes("--write") && drifted.length > 0) {
+    write().catch((error) => {
+        console.error(error.message)
+        process.exitCode = 1
+    })
+} else {
+    process.exitCode = clean ? 0 : 1
+}

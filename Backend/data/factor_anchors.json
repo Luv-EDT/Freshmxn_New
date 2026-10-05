@@ -49,7 +49,7 @@
       "anchors": {
         "0-2": "Errors are cheap and instantly reversible — Model on a shoot, where a bad frame costs another frame.",
         "3-4": "Mistakes are visible and fixable the same day — Digital Content Creator, Retail & Store Operations.",
-        "5-6": "Errors cost other people time and are caught downstream — School Teacher, Content Writer & Editor.",
+        "5-6": "Errors cost other people time and are caught downstream — School Teacher, Content Writer, Author & Editor.",
         "7-8": "One missed detail costs money that cannot be recovered, or a legal consequence — Chartered Accountant, Pharmacist dispensing.",
         "9-10": "One missed detail kills someone, and there is no undo — Aircraft Maintenance Engineer, Air Traffic Controller, Anaesthesia Technologist."
       }
@@ -103,7 +103,7 @@
         "3-4": "A short sequence, re-checkable at any time — Mason & Construction Technician.",
         "5-6": "Several parallel tasks with a written fallback — Chef & Professional Cook on service, Retail & Store Operations.",
         "7-8": "Multiple live cases simultaneously, where forgetting one causes harm — Emergency Medical Technician, Nurse on a ward.",
-        "9-10": "Many moving objects tracked continuously, with no written aid and no pause - Air Traffic Controller, and live interpreting under Content Writer & Editor."
+        "9-10": "Many moving objects tracked continuously, with no written aid and no pause - Air Traffic Controller, and live interpreting under Content Writer, Author & Editor."
       }
     },
     {
@@ -139,7 +139,7 @@
       "asks": "How fast must a response be produced — at what point does being right but slow count as being wrong?",
       "anchors": {
         "0-2": "Paced entirely by the worker, where taking another week costs nothing — Art Conservator & Restorer, Classical Language & Manuscript Scholar.",
-        "3-4": "Deadlines measured in days; a slow hour is invisible — Content Writer & Editor, Architect.",
+        "3-4": "Deadlines measured in days; a slow hour is invisible — Content Writer, Author & Editor, Architect.",
         "5-6": "Steady real-time pace with room to think between items — School Teacher, Banking Professional.",
         "7-8": "Continuous decisions at the speed events arrive, with no pause available — Emergency Medical Technician, Live Sound & Stage Technician.",
         "9-10": "Seconds decide the outcome and hesitation is itself the error — Air Traffic Controller, Commercial Pilot."
@@ -155,7 +155,7 @@
         "3-4": "Clear instructions and records — Welder, Land Surveyor.",
         "5-6": "Explaining to people who do not share your training — Human Resources Professional, Sales Professional.",
         "7-8": "Writing and speaking is the deliverable — Journalist & Reporter, School Teacher.",
-        "9-10": "A single wrong word changes the outcome — Lawyer drafting, Content Writer & Editor, Patent Agent."
+        "9-10": "A single wrong word changes the outcome — Lawyer drafting, Content Writer, Author & Editor, Patent Agent."
       }
     },
     {
@@ -244,7 +244,7 @@
       "anchors": {
         "0-2": "Externally paced work where self-reflection changes nothing about the output — Logistics & Warehouse Operator, Fitter & Machine Operator.",
         "3-4": "Managing your own workload and attention, nothing deeper — Data Analyst, Accounts & Bookkeeping Executive.",
-        "5-6": "Long solo stretches where you must notice your own drift and correct it — Content Writer & Editor, Statistician.",
+        "5-6": "Long solo stretches where you must notice your own drift and correct it — Content Writer, Author & Editor, Statistician.",
         "7-8": "Your own reactions are the instrument you work with — Counsellor & Psychotherapist, Actor & Performer.",
         "9-10": "Misreading yourself does direct harm to the person in front of you — Clinical Psychologist, Religious & Ritual Professional."
       }
@@ -283,7 +283,7 @@
       "anchors": {
         "0-2": "Constant interruption is normal and costs nothing — Retail & Store Operations, Sales Professional.",
         "3-4": "Short focused stretches — Beautician & Cosmetologist, Travel & Tourism Professional.",
-        "5-6": "An hour at a time, resumable — School Teacher, Content Writer & Editor.",
+        "5-6": "An hour at a time, resumable — School Teacher, Content Writer, Author & Editor.",
         "7-8": "Hours of unbroken vigilance where a lapse is expensive — Software Tester, Radiology & Imaging Technologist, Film Editor & Post-Production Professional.",
         "9-10": "Continuous vigilance where a lapse of seconds is catastrophic and rest breaks are mandated by law - Air Traffic Controller, Anaesthesia work under Operation Theatre & Anaesthesia Technologist, Railway Operations Professional in the cab."
       }
@@ -360,7 +360,7 @@
       "asks": "How much of the output is produced jointly — to what extent is one person's work unusable without the others'?",
       "anchors": {
         "0-2": "Finished alone and handed over complete — Fine Artist, Tailor & Garment Maker.",
-        "3-4": "Mostly solo, with coordination only at the edges — Content Writer & Editor, Land Surveyor.",
+        "3-4": "Mostly solo, with coordination only at the edges — Content Writer, Author & Editor, Land Surveyor.",
         "5-6": "A team with clearly separable individual pieces — Software Developer, Civil Engineer.",
         "7-8": "Continuous interdependence; your part means nothing on its own — Filmmaker & Director, Production Crew & Studio Technician.",
         "9-10": "Simultaneous joint execution where one person failing ends the attempt — Operation Theatre & Anaesthesia Technologist, Armed Forces Officer."

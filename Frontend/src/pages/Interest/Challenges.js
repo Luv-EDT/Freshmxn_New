@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import VoiceInput from "../VoiceInput"
 import InterestProgressBar from "./InterestProgressBar"
 import { YOU_OR_THEM_OPTIONS } from "./interestFormState"
 
@@ -196,6 +197,7 @@ function Challenges({ persistentData, currentData, extractedProblems, updatePers
                                 value={val.problem || ""}
                                 onChange={(e) => handleProblemChange(idx, "problem", e.target.value)}
                             />
+                            <VoiceInput compact value={val.problem} onChange={(text) => handleProblemChange(idx, "problem", text)} />
                             {showValidationErrors && concernErrors[idx] && !val.problem && <p>Problem description is required.</p>}
 
                             <div>

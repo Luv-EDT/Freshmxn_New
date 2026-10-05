@@ -127,7 +127,6 @@ function Mentorship() {
             <Navbar />
             <main className="page">
                 <h2>🤝 Mentorship</h2>
-                {!matched && <p><strong>You're on the waitlist.</strong></p>}
 
                 {waitlist && waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
                     <section>

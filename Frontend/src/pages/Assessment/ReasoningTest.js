@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { message } from "antd"
 import { reasoningNext, reasoningAnswer } from "../../apiCall/submissionsApi"
+import useLeaveWarning from "./useLeaveWarning"
 import OneAttemptWarning from "./OneAttemptWarning"
 import { MatrixCell, CubeFigure } from "./ReasoningFigures"
 
@@ -21,6 +22,9 @@ function ReasoningTest({ alreadyTaken, onDone }) {
     const [busy, setBusy] = useState(false)
     const [secondsLeft, setSecondsLeft] = useState(null)
     const sent = useRef(false)      // one answer per puzzle, even if the clock and a tap land together
+
+    // a puzzle on screen keeps its clock running if the page is left (Round 17: warned, and flagged)
+    useLeaveWarning(phase === "item")
 
     const loadNext = async () => {
         setBusy(true)

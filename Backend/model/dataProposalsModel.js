@@ -80,10 +80,26 @@ const dataProposalSchema = new mongoose.Schema(
             enum: ["research", "mentor"],
             default: "research",
         },
+        // Round 17: the whole stack for the topic — who wants a change, who agrees with what we show,
+        // and their years in the field — so the admin weighs the same consensus Claude did
         fromMentors: {
-            type: [{ _id: false, mentorName: String, note: String, sourceUrl: String }],
+            type: [{
+                _id: false,
+                mentor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+                mentorName: String,
+                years: { type: Number, default: null },
+                agrees: { type: Boolean, default: false },
+                direction: String,
+                note: String,
+                sourceUrl: String,
+            }],
             default: [],
         },
+        support: {
+            change: { type: Number, default: 0 },   // mentors who want the change
+            today: { type: Number, default: 0 },    // mentors who agree with what we show
+        },
+        topic: { type: String, default: null },     // the mentor topic it answers: "pay", "qualities:focus"…
         // mentor_text only: which section of the sheet, and for a quality which one and which way
         section: { type: String, default: null },
         factor: { type: String, default: null },
