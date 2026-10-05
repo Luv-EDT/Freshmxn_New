@@ -31,6 +31,11 @@ The monthly mentor check (`housekeeping/mentorPass.js`, Round 16) asks Claude di
 professions a month. If mentor numbers grow, send it in the data refresh's half-price batch
 (`researchBatch.js`) and let `batch_collect` file the answers, as the career questions already are.
 
+## Hinglish speech
+The Speak button uses the browser's Indian-English recogniser (Round 17), which writes Hinglish in Roman
+letters but handles long pure-Hindi sentences less well. If students' dictated answers come out poorly,
+switch to a Hinglish speech service (for example Sarvam) behind the same button.
+
 ## Parent consent by SMS
 Parent consent is verified by an emailed code today (`/parent-consent`). Add the same flow by SMS for
 parents without email: an Indian DLT-registered sender and template, a 6-digit code, the same
