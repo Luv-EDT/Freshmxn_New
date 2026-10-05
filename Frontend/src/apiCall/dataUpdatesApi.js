@@ -54,3 +54,8 @@ export async function splitActivityFoldForAdmin(rowId, text) {
     const response = await axiosInstance.put(`/dataUpdates/splitActivityFoldForAdmin/${rowId}`, { text })
     return response
 }
+
+export async function getActivityReadingsForAdmin(email) {
+    const response = await axiosInstance.get("/dataUpdates/getActivityReadingsForAdmin", { params: { email } })
+    return response
+}

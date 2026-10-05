@@ -227,9 +227,9 @@ const SECTIONS = [
                 <p>
                     <strong>Voice typing.</strong> If you press the microphone beside an answer, your browser's own
                     speech service (for example Google's, in Chrome) turns what you say into text. We receive only
-                    that text, which you can read and edit before it is saved — never any audio. If you write or
-                    speak in Hindi or Hinglish, our AI processor (Anthropic) may put an activity into English so it
-                    can be matched to careers.
+                    that text, which you can read and edit before it is saved — never any audio. Whether you type or
+                    speak, in English, Hindi or Hinglish, our AI processor (Anthropic) may restate each activity as a
+                    short English name (for example "playing cricket") so it can be matched to careers.
                 </p>
             </>
         ),

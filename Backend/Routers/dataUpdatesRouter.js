@@ -594,6 +594,47 @@ router.get("/getActivityFoldsForAdmin", authMiddleware, adminAuthMiddleware, asy
     }
 })
 
+// HOW WE READ ONE STUDENT'S ACTIVITIES (Round 17, owner). By email: the activities they ticked as
+// ongoing in Current interests (only those reach the activity matcher), and — from their latest
+// report — what each was read as and whether the cache already knew it. Admin only.
+router.get("/getActivityReadingsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const User = require("../model/userModel")
+        const Submission = require("../model/submissionsModel")
+        const Recommendation = require("../model/recommendationsModel")
+        const email = typeof req.query.email === "string" ? req.query.email.trim().toLowerCase() : ""
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Enter the student's email" })
+        }
+
+        const student = await User.findOne({ email }).select("name email").lean()
+        if (!student) {
+            return res.status(404).json({ success: false, message: "No student with that email" })
+        }
+
+        const [submission, recommendation] = await Promise.all([
+            Submission.findOne({ user: student._id }).select("interest.currentInterests.persistentInterests").lean(),
+            Recommendation.findOne({ user: student._id }).select("activity_readings updatedAt").lean(),
+        ])
+        const ticked = (((submission || {}).interest || {}).currentInterests || {}).persistentInterests || []
+
+        return res.status(200).json({
+            success: true,
+            message: "Activity readings fetched",
+            data: {
+                name: student.name,
+                email: student.email,
+                ticked: ticked.map((row) => row.activity).filter(Boolean),
+                readings: (recommendation && recommendation.activity_readings) || [],
+                reportAt: recommendation ? recommendation.updatedAt : null,
+            },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch the student's activities", error: error.message })
+    }
+})
+
 // "Not the same": the wording leaves that cached activity and is never folded into it again, so the
 // next student who writes it gets it rated on its own. Earlier reports are not recomputed.
 router.put("/splitActivityFoldForAdmin/:rowId", authMiddleware, adminAuthMiddleware, async (req, res) => {
