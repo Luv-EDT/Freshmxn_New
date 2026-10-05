@@ -3443,10 +3443,19 @@ const fixtures = [
         run: () => {
             const { sourceTextOf, contentHash, mergePasses, decisionsText, DECISION_SECTIONS, validateCombined } = require("../../housekeeping/draftCareer")
             const professions = require("../../data/ALL-professions.json").professions
-            const stored = require("../../data/profession_embeddings.json").embeddings
+            const embeddingsFile = require("../../data/profession_embeddings.json")
+            const stored = embeddingsFile.embeddings
             const problems = []
+            // A career renamed by the owner (Round 17) keeps its old vector until it is re-embedded where a
+            // Voyage key exists (tools/verifyEmbeddings.js --write); it must be DECLARED with its reason.
+            // Any other drift still fails, and a declared one that no longer drifts must be cleared.
+            const pending = new Set((embeddingsFile.pending_reembed || []).map((entry) => entry.id))
             const drift = stored.filter((entry) => contentHash(sourceTextOf(professions.find((profession) => profession.id === entry.id))) !== entry.content_hash)
-            if (drift.length > 0) problems.push(`${drift.length} stored hashes do not reproduce — the draft would be embedded from different text`)
+            const undeclared = drift.filter((entry) => !pending.has(entry.id))
+            if (undeclared.length > 0) problems.push(`${undeclared.length} stored hashes do not reproduce — the draft would be embedded from different text`)
+            const stale = [...pending].filter((id) => !drift.some((entry) => entry.id === id))
+            if (stale.length > 0) problems.push(`declared as waiting to be re-embedded but already current: ${stale.join(", ")}`)
+            if ((embeddingsFile.pending_reembed || []).some((entry) => !entry.reason)) problems.push("a career waiting to be re-embedded has no reason")
 
             const merged = mergePasses({ id: "x", profession: "X", driving_reasons: ["curiosityDriven", "notAReason"] }, [
                 { factors: { openness: 4, focus: 2 }, weights: { openness: 0.5, focus: 0.2 } },

@@ -44,7 +44,7 @@ export const journeyStages = (user) => {
         path: "/mentorship",
         state: hasMentor(user) ? "active" : "locked",
         note: hasMentor(user)
-            ? progress.mentor === "waitlisted" ? "You are on the waitlist" : "Included in your plan"
+            ? progress.mentor === "waitlisted" ? "Included in your plan — choose your mentor's field" : "Included in your plan"
             : "Part of Discovery + Mentor",
         open: true,
     }

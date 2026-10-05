@@ -360,4 +360,4 @@ const runDraftCareer = async ({ candidateId, research, embed = embedDocument } =
     }
 }
 
-module.exports = { runDraftCareer, validateDraftRecord, validateCombined, deriveFilter, mergePasses, decisionsText, sourceTextOf, contentHash, DECISION_SECTIONS, slugify }
+module.exports = { runDraftCareer, validateDraftRecord, validateCombined, deriveFilter, mergePasses, decisionsText, sourceTextOf, contentHash, embedDocument, DECISION_SECTIONS, slugify }

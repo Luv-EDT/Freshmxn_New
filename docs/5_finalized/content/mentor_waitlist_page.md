@@ -63,13 +63,14 @@ choice.
 
 **CTA button:** Pay & join the waitlist →
 
-**If we can't match you — rollover first, refund on request.** If we cannot find a suitable
-mentor in your chosen field within 20 business days, your payment **rolls over**: we keep
-searching, or you can redirect it to a mentor for a *different* career from your matches. Prefer
-your money back instead? **Ask us and we'll move you back to Career Discovery and refund the
-difference — {upgrade price, from the server} — no questions.** You keep everything Career
-Discovery gives you, and you're never out of pocket for a match we couldn't make.
+**If we can't find you a mentor in 20 business days,** we keep looking — or you can switch to a
+different career from your matches. Prefer a refund? We'll move you back to Career Discovery and
+refund the difference ({upgrade price, from the server}). You keep everything from Career Discovery.
 
+**Mentor Only: if we can't find you a mentor in 20 business days,** we keep looking for as long as
+you like — or ask, and we'll refund the full {Mentor Only price}.
+
+*(Round 17, owner: said once, in short sentences — the same promise as before.)*
 *(Round 10, owner: the refund here is the Tier 2 → Tier 1 difference, not a full refund — that is
 what the refund tooling does. The amount on the site is read from `GET /payments/getPricing`.)*
 

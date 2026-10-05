@@ -97,7 +97,8 @@
         radial-gradient(700px 360px at 85% 10%, rgba(0, 117, 130, 0.10), transparent 70%),
         radial-gradient(520px 300px at 5% 95%, rgba(255, 179, 199, 0.28), transparent 70%),
         var(--cream);
-    padding: var(--space-7) 0 var(--space-7);
+    /* Round 17 (owner): a little less above the headline, so the first screen starts higher */
+    padding: var(--space-5) 0 var(--space-7);
 }
 
 .hero-grid {
@@ -109,7 +110,7 @@
 
 @media (min-width: 900px) {
     .hero {
-        padding: var(--space-8) 0;
+        padding: var(--space-6) 0 var(--space-8);
     }
 
     .hero-grid {
