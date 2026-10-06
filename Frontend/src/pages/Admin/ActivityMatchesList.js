@@ -47,22 +47,34 @@ function StudentReadings() {
                 <div>
                     <p><strong>{result.name}</strong> · {result.email}</p>
                     <p>Ticked as ongoing: {result.ticked.length > 0 ? result.ticked.join(" · ") : "none — nothing from the interest form reached the matcher"}</p>
-                    {result.readings.length > 0 ? (
-                        <div className="table-scroll">
-                            <table>
-                                <tbody>
-                                    {result.readings.map((reading, index) => (
-                                        <tr key={`${reading.said}-${index}`}>
-                                            <td>{reading.said}</td>
-                                            <td>→ <strong>{reading.readAs || "—"}</strong></td>
-                                            <td className="report-small">{HIT_WORDS[reading.cacheHit] || reading.cacheHit || "—"}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                    {result.storyFreeRecall && (
+                        <p className="report-small">
+                            Story free recall: {result.storyFreeRecall.graded ? "marked" : `not marked${result.storyFreeRecall.reason ? ` — ${result.storyFreeRecall.reason}` : ""} (long-term memory then counts only the 7 structured points, "Partial · 58%")`}
+                        </p>
+                    )}
+                    {/* THE TRACE (Round 19): the resolver's steps, in order, for each activity */}
+                    {(result.trace || []).length > 0 ? (
+                        <ol className="activity-trace">
+                            {result.trace.map((step, index) => (
+                                <li key={`${step.wrote}-${index}`}>
+                                    <p><strong>Wrote:</strong> {step.wrote}</p>
+                                    <p><strong>Named as:</strong> {step.namedAs || (step.cache === "exact" ? "— (this exact wording was already in the cache, so no naming call)" : "—")}</p>
+                                    <p>
+                                        <strong>Cache:</strong> {HIT_WORDS[step.cache] || step.cache || "—"}
+                                        {typeof step.nearScore === "number" && <> — similarity <strong>{step.nearScore.toFixed(3)}</strong> ≥ {result.threshold.toFixed(2)}</>}
+                                        {step.readAs && <> → row <strong>{step.readAs}</strong></>}
+                                    </p>
+                                    <p><strong>Careers this points to:</strong></p>
+                                    <ul className="report-small">
+                                        {step.careers.length > 0
+                                            ? step.careers.map((career) => <li key={career.id}>{career.name} — {career.landed}</li>)
+                                            : <li>none stored (reports built before Round 19 did not keep this)</li>}
+                                    </ul>
+                                </li>
+                            ))}
+                        </ol>
                     ) : (
-                        <p className="report-small">No readings stored yet — they are recorded when the student's report is next built (after Round 17).</p>
+                        <p className="report-small">No readings stored yet — they are recorded when the student's report is next built.</p>
                     )}
                 </div>
             )}

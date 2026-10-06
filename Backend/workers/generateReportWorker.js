@@ -195,6 +195,10 @@ const runOne = async (userId) => {
                     readAs: resolved.readAs || resolved.canonicalActivity,
                     rowId: resolved.rowId || null,
                     cacheHit: resolved.unrateable ? "unrateable" : resolved.cacheHit,
+                    // the trace (Round 19): the common name, the near-match cosine, the careers it points to
+                    namedAs: resolved.namedAs || null,
+                    nearScore: typeof resolved.nearScore === "number" ? resolved.nearScore : null,
+                    candidates: (resolved.candidateProfessionIds || []).slice(0, 20),
                 })),
             },
         },

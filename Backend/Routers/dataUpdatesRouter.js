@@ -611,6 +611,35 @@ router.get("/getActivityFoldsForAdmin", authMiddleware, adminAuthMiddleware, asy
 // HOW WE READ ONE STUDENT'S ACTIVITIES (Round 17, owner). By email: the activities they ticked as
 // ongoing in Current interests (only those reach the activity matcher), and — from their latest
 // report — what each was read as and whether the cache already knew it. Admin only.
+// THE ACTIVITY TRACE (Round 19, owner: "show me the exact flow"). One line per activity the
+// report read, in the order the resolver works:
+//   wrote → named as (the one common string) → cache (exact wording / exact name / near at a cosine
+//   ≥ the threshold / new rating) → the careers that row points to → where each landed in THIS
+//   student's report (rank and band, ruled out and why, or not in the list).
+// Pure, so a fixture can check it without a database.
+const professionNames = new Map(require("../data/ALL-professions.json").professions.map((row) => [row.id, row.profession]))
+
+const traceReadings = (readings, recommendation) => {
+    const ranked = new Map(((recommendation && recommendation.ranked_professions) || []).map((entry) => [String(entry.professionId), entry]))
+    const filtered = new Map(((recommendation && recommendation.filtered) || []).map((entry) => [String(entry.professionId), entry]))
+    return (readings || []).map((reading) => ({
+        wrote: reading.said,
+        namedAs: reading.namedAs || null,
+        cache: reading.cacheHit,
+        nearScore: typeof reading.nearScore === "number" ? reading.nearScore : null,
+        readAs: reading.readAs,
+        careers: (reading.candidates || []).map((id) => {
+            const entry = ranked.get(String(id))
+            const ruledOut = filtered.get(String(id))
+            return {
+                id,
+                name: professionNames.get(id) || id,
+                landed: entry ? `#${entry.rankedPosition} (tier ${entry.tier})` : ruledOut ? `ruled out — ${ruledOut.reason}` : "not in the list",
+            }
+        }),
+    }))
+}
+
 router.get("/getActivityReadingsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const User = require("../model/userModel")
@@ -627,10 +656,11 @@ router.get("/getActivityReadingsForAdmin", authMiddleware, adminAuthMiddleware, 
         }
 
         const [submission, recommendation] = await Promise.all([
-            Submission.findOne({ user: student._id }).select("interest.currentInterests.persistentInterests").lean(),
-            Recommendation.findOne({ user: student._id }).select("activity_readings updatedAt").lean(),
+            Submission.findOne({ user: student._id }).select("interest.currentInterests.persistentInterests psychometric.storyRecall.free psychometric.storyRecall.freeMeta psychometric.storyRecall.submittedAt").lean(),
+            Recommendation.findOne({ user: student._id }).select("activity_readings ranked_professions.professionId ranked_professions.rankedPosition ranked_professions.tier filtered updatedAt").lean(),
         ])
         const ticked = (((submission || {}).interest || {}).currentInterests || {}).persistentInterests || []
+        const story = ((submission || {}).psychometric || {}).storyRecall || {}
 
         return res.status(200).json({
             success: true,
@@ -640,6 +670,12 @@ router.get("/getActivityReadingsForAdmin", authMiddleware, adminAuthMiddleware, 
                 email: student.email,
                 ticked: ticked.map((row) => row.activity).filter(Boolean),
                 readings: (recommendation && recommendation.activity_readings) || [],
+                trace: traceReadings(recommendation && recommendation.activity_readings, recommendation),
+                threshold: require("../matching/activityResolver").DEDUP_COSINE,
+                // why long-term memory may be "Partial": was the story's free recall marked?
+                storyFreeRecall: story.submittedAt
+                    ? { graded: Boolean(story.free), reason: (story.freeMeta && story.freeMeta.unscoreable_reason) || null }
+                    : null,
                 reportAt: recommendation ? recommendation.updatedAt : null,
             },
         })
@@ -686,3 +722,4 @@ router.put("/splitActivityFoldForAdmin/:rowId", authMiddleware, adminAuthMiddlew
 })
 
 module.exports = router
+module.exports.traceReadings = traceReadings

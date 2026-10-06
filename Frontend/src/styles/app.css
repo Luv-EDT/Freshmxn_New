@@ -2507,3 +2507,11 @@ button.pc-toggle .pc-name {
     width: 100%;
     max-width: 560px;
 }
+
+/* Admin → Activity matches: the per-activity trace (Round 19) */
+.activity-trace > li {
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--line);
+}
+.activity-trace p { margin: 2px 0; }
