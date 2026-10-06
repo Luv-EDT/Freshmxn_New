@@ -14,6 +14,10 @@ import { useEffect, useRef, useState } from "react"
 // the words already settled, then the words still being heard; pressing Stop keeps only the settled
 // ones. So the component takes the box's `value` and hands back the whole new value via `onChange`.
 //
+// THE PAGE CAN TAKE THE BOX BACK (Round 18). If the box changes while we listen and it wasn't us —
+// "Add" turned the words into a chip and emptied it, or the field was cleared — the session stops and
+// writes nothing more, so the old words never come back into an empty box.
+//
 // Where the browser has no speech recognition (Firefox, some in-app browsers) the button is not
 // shown; the full version says to type instead.
 
@@ -32,6 +36,7 @@ function VoiceInput({ value, onChange, compact = false }) {
     const recognition = useRef(null)
     const base = useRef("")          // the box as it was when Speak was pressed
     const settled = useRef("")       // every final phrase heard so far in this session
+    const written = useRef(null)     // what we last put in the box, while listening
     // the words arrive after the render that started listening, so always hand them to the latest
     // onChange — an old one would write into a box that has since changed
     const latest = useRef(onChange)
@@ -39,6 +44,14 @@ function VoiceInput({ value, onChange, compact = false }) {
 
     // never leave the microphone on when the student moves away
     useEffect(() => () => { if (recognition.current) recognition.current.abort() }, [])
+
+    // the box changed under us: stop, and stop writing
+    useEffect(() => {
+        if (written.current === null || (value || "") === written.current) return
+        written.current = null
+        if (recognition.current) recognition.current.abort()
+        setListening(false)
+    }, [value])
 
     if (!Recognition) {
         return compact ? null : <p className="voice-note">Voice typing isn't available in this browser — please type your answer.</p>
@@ -51,6 +64,12 @@ function VoiceInput({ value, onChange, compact = false }) {
         session.interimResults = true
         base.current = value || ""
         settled.current = ""
+        written.current = base.current
+        const write = (text) => {
+            if (written.current === null || recognition.current !== session) return
+            written.current = text
+            latest.current(text)
+        }
         // results holds the whole session: the settled phrases, then (last) the one still being heard
         session.onresult = (event) => {
             const finals = []
@@ -60,7 +79,7 @@ function VoiceInput({ value, onChange, compact = false }) {
                 if (phrase) (event.results[index].isFinal ? finals : hearing).push(phrase)
             }
             settled.current = finals.join(" ")
-            latest.current(appendSpoken(base.current, [...finals, ...hearing].join(" ")))
+            write(appendSpoken(base.current, [...finals, ...hearing].join(" ")))
         }
         session.onerror = (event) => {
             setError(event.error === "not-allowed" || event.error === "service-not-allowed"
@@ -70,7 +89,8 @@ function VoiceInput({ value, onChange, compact = false }) {
         }
         // on stop, a phrase still half-heard is dropped: the box keeps what was settled
         session.onend = () => {
-            latest.current(appendSpoken(base.current, settled.current))
+            write(appendSpoken(base.current, settled.current))
+            written.current = null
             setListening(false)
         }
         recognition.current = session

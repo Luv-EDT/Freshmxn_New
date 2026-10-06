@@ -179,10 +179,12 @@ export const ALL_STEPS = [
     { key: "done", title: "Done" },
 ]
 
-// school students: High School + Pre-High School only. College appears once enrolled; Post-College when working.
+// school students: High School + Pre-High School only. College appears for a college student unless
+// they said they haven't joined yet; Post-College when working. Accounts made before collegeStage
+// existed have none — they are in college, so College shows (Round 18; it used to be hidden).
 export const getVisibleLifeStages = (user) => {
     const journey = user?.journey
-    const isEnrolledInCollege = journey === "college" && user?.journeyDetail?.collegeStage === "enrolled"
+    const isEnrolledInCollege = journey === "college" && user?.journeyDetail?.collegeStage !== "pre_admission"
     const stages = []
 
     if (journey === "early_professional") stages.push("postCollege")

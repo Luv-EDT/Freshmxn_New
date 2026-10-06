@@ -137,7 +137,7 @@ const scoreStoryRecall = (block, freeRecallResult) => {
     } else {
         // the structured half still stands on its own, marked partial
         freeRecallQuality = "partial"
-        flags.llm_unscoreable = true
+        flags.llm_unscoreable = ["story_free_recall"]     // a list, like perspective's (Round 18)
         outOf = TOTAL_POINTS - FREE_RECALL_SLOTS
     }
 

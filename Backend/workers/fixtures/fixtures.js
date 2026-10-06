@@ -4330,6 +4330,8 @@ const fixtures = [
             const voice = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/VoiceInput.js"), "utf8")
             if (/hi-IN|हिंदी/.test(voice)) problems.push("the mic still offers a language choice")
             if (!/session\.lang = "en-IN"/.test(voice) || !/interimResults = true/.test(voice)) problems.push("the mic is not Indian English with live words")
+            // Round 18 (owner): after Add empties the box, the words never come back
+            if (!/\}, \[value\]\)/.test(voice) || !/written\.current === null/.test(voice)) problems.push("the mic keeps writing after the page empties the box")
             const privacy = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Privacy.js"), "utf8")
             if (!/voice typing/i.test(privacy)) problems.push("the privacy policy does not mention voice typing")
             return problems.length > 0 ? problems.join("; ") : null

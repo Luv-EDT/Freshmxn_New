@@ -215,12 +215,15 @@ const scoreProfile = (submitted = {}) => {
     const flags = {}
     const modules_missing = []
 
+    // One flag can be raised as `true` by one test and as a list by another (llm_unscoreable: the
+    // story recall says true, perspective lists items). The list wins and nothing is lost — a mix
+    // used to crash scoring for every student with an ungraded free recall (Round 18).
     const mergeFlags = (source) => {
         Object.entries(source || {}).forEach(([key, value]) => {
             if (value === true) {
-                flags[key] = true
+                if (!Array.isArray(flags[key])) flags[key] = true
             } else if (Array.isArray(value) && value.length > 0) {
-                flags[key] = (flags[key] || []).concat(value)
+                flags[key] = (Array.isArray(flags[key]) ? flags[key] : []).concat(value)
             } else if (value && !Array.isArray(value) && flags[key] === undefined) {
                 flags[key] = value
             }
@@ -355,7 +358,13 @@ const scoreProfile = (submitted = {}) => {
         confidence: raw_scores.confidence,
     })
 
-    mergeFlags(perspective.flags)
+    // P13 is retired and always passed null, so the ported scorer always lists it as unscoreable —
+    // it isn't missing, it isn't asked (Round 18)
+    const perspectiveFlags = { ...(perspective.flags || {}) }
+    if (Array.isArray(perspectiveFlags.llm_unscoreable)) {
+        perspectiveFlags.llm_unscoreable = perspectiveFlags.llm_unscoreable.filter((item) => item !== "p13_dayplan")
+    }
+    mergeFlags(perspectiveFlags)
 
     // The ported file receives its fetched traits as bare numbers, so it cannot know how good they
     // were. Re-propagate here, or a factor built on a partial input would report "full".

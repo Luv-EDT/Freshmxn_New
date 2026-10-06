@@ -1,4 +1,5 @@
 const AssessmentIssue = require("../model/assessmentIssuesModel")
+const User = require("../model/userModel")
 const { notifyAdmin, escapeHtml } = require("./mailer")
 
 // Records a problem with a student's test. ONE OPEN ROW per student, module and kind: a worker that
@@ -21,9 +22,12 @@ const raiseIssue = async ({ user, module, kind, detail = "", raisedBy = "system"
         const issue = await AssessmentIssue.create({ user, module, kind, detail: String(detail).slice(0, 2000), raisedBy, status })
 
         if (notify) {
+            // the name and email beside the id, so the admin knows who it is without a lookup (Round 18)
+            const student = await User.findById(user).select("name email").lean()
+            const who = student ? `${escapeHtml(student.name || "—")} (${escapeHtml(student.email || "no email")}) · ` : ""
             await notifyAdmin(
-                `Assessment issue: ${kind.replace(/_/g, " ")}`,
-                `<p>Student <strong>${escapeHtml(String(user))}</strong>, module <strong>${escapeHtml(module)}</strong>.</p>
+                `Assessment issue: ${kind.replace(/_/g, " ")}${student && student.name ? ` — ${student.name}` : ""}`,
+                `<p>Student ${who}<strong>${escapeHtml(String(user))}</strong>, module <strong>${escapeHtml(module)}</strong>.</p>
                  <p>${escapeHtml(detail) || "No detail given."}</p>
                  <p>Open the admin dashboard → Assessment issues to allow a retake or dismiss it.</p>`
             )

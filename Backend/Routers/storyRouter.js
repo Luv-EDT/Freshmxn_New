@@ -224,6 +224,21 @@ router.post("/submitStoryRecall", authMiddleware, requireDiscovery, async (req, 
 
         await Submission.findOneAndUpdate({ user: req.user._id }, { $set: changes })
 
+        // RECALL AFTER SUBMIT (Round 18). The recall opens a day after the story, so many students
+        // submit the assessment first. Their profile was scored without long-term memory, which left
+        // learning capacity, convergent thinking and going deep "Partial". Their answer is the
+        // student's own action, so the profile is scored again and the report rebuilt with it.
+        if (req.user.progress && req.user.progress.psychometric === "done") {
+            try {
+                const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
+                const { withTimeout } = require("../workers/queueHelpers")
+                await withTimeout(enqueueScoreProfile(req.user._id), "queueing the re-score")
+            } catch (queueError) {
+                // the answers are saved; "Update my report" or the next submit picks them up
+                console.error(`story recall: could not queue a re-score for ${req.user._id}: ${queueError.message}`)
+            }
+        }
+
         return res.status(201).json({ success: true, message: "Recall saved", data: { delayHours: changes["psychometric.storyRecall.delayHours"] } })
 
     } catch (error) {

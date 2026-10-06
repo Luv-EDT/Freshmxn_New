@@ -284,18 +284,22 @@ const fixtures = [
 
     // ── LLM open items ───────────────────────────────────────────────────────
     {
-        name: "20 all four open items unscoreable — banks fall back to MCQ alone",
+        // Round 18 (owner): P13 is retired, so only the three written items still asked can be missing
+        name: "20 all three open items unscoreable — banks fall back to MCQ alone",
         input: buildSubmission({ perspective: fillPerspective("A", { open: {} }) }),
         assert: (profile) => {
             if (profile.banks.belief_bank === null) return "belief_bank should still score from its MCQ items"
             if (profile.data_quality.firmness === "full") return "firmness sits downstream of a partial bank, so it cannot be full"
             const unscoreable = profile.flags.llm_unscoreable
-            if (!unscoreable || unscoreable.length < 4) return `expected 4 items in llm_unscoreable, got ${JSON.stringify(unscoreable)}`
+            const expected = ["p7_belief", "p22_emotion", "p33_intrapersonal"]
+            if (!Array.isArray(unscoreable) || expected.some((item) => !unscoreable.includes(item))) return `expected ${expected.join(", ")} in llm_unscoreable, got ${JSON.stringify(unscoreable)}`
             return null
         },
     },
     {
-        name: "21 P13 returns three of five criteria — rejected outright, not scored 3/5",
+        // Round 18: P13 is retired (owner, Round 13). An old stored grade is never read, and the item
+        // is never listed as missing — it isn't asked
+        name: "21 P13 is retired — a stored grade is ignored and never listed as unscoreable",
         input: buildSubmission({
             perspective: fillPerspective("A", {
                 open: {
@@ -308,10 +312,10 @@ const fixtures = [
         }),
         assert: (profile) => {
             const unscoreable = profile.flags.llm_unscoreable || []
-            if (!unscoreable.some((item) => String(item).toLowerCase().includes("13"))) {
-                return `P13 should be unscoreable, got ${JSON.stringify(unscoreable)}`
+            if (unscoreable.some((item) => String(item).toLowerCase().includes("13"))) {
+                return `P13 is not asked, so it can't be unscoreable — got ${JSON.stringify(unscoreable)}`
             }
-            return profile.data_quality.focus === "full" ? "clm is partial, so focus cannot be full" : null
+            return null
         },
     },
     {
@@ -330,6 +334,21 @@ const fixtures = [
             const problems = profile.flags.llm_problems || []
             if (problems.length === 0) return "an out-of-range sub-score must be recorded in llm_problems"
             return profile.banks.belief_bank > 10 ? "belief_bank must stay within 0–10 after clamping" : null
+        },
+    },
+    {
+        // Round 18: the story recall and perspective both raise llm_unscoreable. Mixing true with a
+        // list crashed scoring ("concat is not a function"), so no report could be built
+        name: "23 an ungraded story free recall plus missing written items scores without crashing",
+        input: buildSubmission({
+            storyRecall: buildStoryRecall({ free: null }),
+            perspective: fillPerspective("A", { open: {} }),
+        }),
+        assert: (profile) => {
+            const unscoreable = profile.flags.llm_unscoreable
+            if (!Array.isArray(unscoreable)) return `llm_unscoreable should be one list, got ${JSON.stringify(unscoreable)}`
+            if (!unscoreable.includes("story_free_recall") || !unscoreable.includes("p7_belief")) return `both sources must be kept, got ${JSON.stringify(unscoreable)}`
+            return null
         },
     },
 ]
