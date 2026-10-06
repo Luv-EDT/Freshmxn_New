@@ -39,9 +39,9 @@ fixtures and commit. If `profession_embeddings.json` lists `pending_reembed`, ru
 
 ## Test before every commit
 ```
-node Backend/scoring/fixtures/runFixtures.js     # 24/24
+node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 173/173
+node Backend/workers/fixtures/runFixtures.js     # 178/178
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

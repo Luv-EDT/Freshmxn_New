@@ -27,7 +27,7 @@ job role, get a mentor; no assessment).
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
 | **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 24 (scoring) / 60 (matching) / 173 (workers) — all offline, all green |
+| **Tests** | fixtures 25 (scoring) / 60 (matching) / 178 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -58,9 +58,9 @@ cd Backend && npm run seed:admin                  # once — the admin account
 
 **Test**
 ```
-node Backend/scoring/fixtures/runFixtures.js     # 24/24
+node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 173/173 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 178/178 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -101,8 +101,10 @@ To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.
 - **Patterns.** Buttons 44 px tall. Collapsibles are `<details>`; a summary that should look tappable is a
   chip (`.if-chip-summary`, with a "?" where it explains). Agree-scales are one row of five tiles (numbers
   on a phone with the two ends named, words on a laptop). The assessment is a card deck plus a strip of
-  every section. Career cards: name only when closed (top three coloured); opened: what it is → why it
-  fits → your next 12 months, then The road / Money / The future / More about the work / Going abroad.
+  every section. Career cards (Round 18): a rank number and the name when closed (top three coloured);
+  opened: what it is (job roles and where the work happens fold under it) → why it fits → what to work
+  on → your next 12 months, then The road / Money / The future / Worth knowing, each with sub-headings
+  written as the student's own question. Each note sits under the part it is about.
 - **Lean rules.** One star colour. At most three report-level collapsibles. No provenance labels on what
   students read. No page scrolls sideways at 360 px. The journey bar is a slim row above pages on a
   phone; Home has the full stepper.
@@ -144,6 +146,10 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Going abroad** (`Backend/data/abroad_work.json`, Round 13) | Top five countries from MEA's count of Indian students abroad (Canada, USA, UK, Australia, Germany). Every career: travels well (183) / re-qualify first (28) / India-based (12). Licence routes per country for 12 of the 28 re-qualify careers so far, each with the licensing body's own page — **5 rows are drafts and hidden** (clinical psychologist Canada and Germany, CA Germany, school teacher USA and Germany); the other 16 re-qualify careers show the portability line only. Read the file once; the study bot re-checks licences each January |
 | **Activity-cache threshold** (Round 14) | Two activities count as the same at a cosine of **0.90** (judgement, not measured). Every reuse is now recorded with its score. After about 200 students, read admin → **Activity matches** (closest calls first): split wrong merges with "Not the same"; if wrong merges keep appearing near the bottom, raise `ACTIVITY_DEDUP_COSINE` on Render (0.80–0.99; each step trades AI rating cost for accuracy); if the list is all obvious paraphrases rated separately, lower it. A split helps later students only — earlier reports are not recomputed |
 | **Voice typing and Hinglish** (Round 13) | Browser dictation only (Chrome/Edge/Android; no mic on Firefox). Never tried with real Hindi speakers — if accuracy is poor, V2 has a Hinglish speech service. Hindi/Hinglish activities are put into English before matching — proven with stubs, first live use on Render |
+| **Reports that crashed** (Round 18) | Any student whose story-recall free answer had no grade got "score_profile: (flags[key] \|\| []).concat is not a function" and **no report** (e.g. 6aad069b61181cfa69c61605). Fixed. After the deploy, open **Assessment issues**, and for each "report failed" row the student presses **Try again** on their report (or you re-queue it). The admin email now names the student |
+| **The 438 rewritten career notes** (Round 18) | Every note was rewritten in plain words (`nuances[i].student` in ALL-professions.json); 13 that only explain how the data was built are hidden. Read a sample; mentors also see and review them on their sheet. Edit by hand in the file, run the fixtures, commit |
+| **Subjects per route** (`Backend/data/subject_routes.json`, Round 18) | Eight "any stream" careers with a stream-gated route (B.Tech, MBBS, B.Pharm) now say the subjects per route. `reviewed_by_owner: false` — read it once |
+| **"What this says about you" is off** (Round 18) | The AI still writes its three lines into every report (a model call per report); the page no longer shows them. Switching the call off is in V2 |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
 **Owner to know (Round 10):**
@@ -1979,3 +1985,47 @@ because the owner changed the product:
 - uiFlow 65/65 (the policy wording expectation updated); Round 14 14/14; deck 17/17.
 - r15/r16 test the Round 15/16 mentor flow the owner replaced; superseded by r17.
 - Build: the 8 known warning files.
+
+### Round 18 — the owner's full test of a student account: a report crash, the profile, the report rebuilt around each career, plain-word notes, mentorship (2026-10-06)
+The owner went through the whole app as a college student and sent 15 items.
+
+| Item | What shipped |
+|---|---|
+| **Report crash** | `scoreProfile` merged flags with `.concat`; the story recall raised `llm_unscoreable: true` and perspective raised a list, so **every student with an ungraded free recall got no report**. Lists now win (the story raises `["story_free_recall"]` too), and the retired P13 is no longer listed as missing. Scoring fixtures 20/21 rewritten (P13 is retired), new 23 |
+| **"Partial" after a complete assessment** | Learning capacity, convergent thinking and going deep all use long-term memory (the story recall). A recall sent after Submit was never scored. Now sending it re-scores the profile and rebuilds the report |
+| **Admin email** | Names the student and their email beside the id |
+| **College stage hidden** | Accounts from before `collegeStage` existed had none, so College never showed. College now shows unless the student said they haven't joined yet |
+| **Voice refilled the box** | After Add (or anything else emptying the box) the mic stops and writes nothing more |
+| **"What held you back"** | "Internal / Interpersonal / External **problems** (…)" plus "Life moved on / time didn't allow", which never becomes a challenge. Old answers move to the new labels on load; radio rows line up like the checkboxes |
+| **Editing a sent form** | One **Save changes** button (Save and Finish did the same thing) |
+| **Profile** | Six groups in the owner's order — the four fundamentals (open first), personality ("how you tend to react to the world"), cognitive abilities, areas you feel drawn to, uncertainty tolerance, ways you solve problems — each with a meaning; every factor a plain name, a few words, its level, and Partial % where it applies. Names come from one table, `Backend/utils/factorGuide.js`. **Confidence now shows as a word level** (owner; CLAUDE.md updated) |
+| **Report list** | Top three, then "Show the other N"; a rank number on each card in the order chosen; the core-engineering tag gone; "Show first" became filters: **Core engineering only** and **Studying abroad helps** (`studyAbroadHelps` from abroad.json), beside "Leave out blue-collar careers" — all off by default, with "N careers hidden … Show them again" |
+| **Removed from the report** | "What this says about you" (the AI's lines — still generated, not shown) and "Your options at a glance" / "What you can move into": every detail is inside the career |
+| **The four fundamentals** | Their own fold near the top: each as a word, what it means and why it matters in any career |
+| **The career card** | One layout: what it is (job roles sorted by fit with "suits you", and plain industry names, each a fold) → why it fits → **what to work on** (qualities the career leans on, weight ≥ 0.3, where the student is more than 1.5 below — computed on the server, names only) → next 12 months → The road (How long, and the path · Subjects in Class 11–12 · Do I need a degree? · Can I move into this from another course or job? · Exams · Is there a deadline? · Where to study · A master's in India? · Studying and working abroad) → Money → The future (Will there be jobs? · How AI affects this · Can I start my own business or freelance?) → Worth knowing (only notes whose part isn't shown) |
+| **Subjects per route** | New `Backend/data/subject_routes.json`: "BCA / B.Sc CS: any stream (some want Maths) · B.Tech CSE: Physics, Chemistry and Maths". Class 9–10 next steps use it too |
+| **Abroad** | No foreign links on the card: "Studying and working abroad … needs specialist advice. When you reach that stage, we'll connect you with a consultant." The report's study-abroad card is a **waitlist** ("in a future version"); leads record `kind: "waitlist"` |
+| **Compare** | The plain questions, "What to work on" and "Worth knowing" rows |
+| **Aspirations** | One line for all ("on our list unless demand is falling and the pay is weak"), then **Direct match** or **Indirect match**, why it sits where it does (its band), and for a name that isn't a career: "Not a career on our list — we read it as an activity, *long distance running*" (from `activity_readings`) |
+| **The 438 notes** | Rewritten in plain words into `nuances[i].student`; only those are served, each under the part of the card it is about; 13 builder-only notes hidden |
+| **Mentorship** | "Suits you" explained (roles are sorted by fit; careers without role types list them as one group); "What do you want from your mentor?" lists what the sessions cover plus an open box (600 characters, `helpWanted`); a tick for help with a master's or settling abroad later (`abroadHelpWaitlist`). `PUT /mentorWaitlist/saveMyHelp`, any time; the admin's Mentor Matches shows both |
+
+**Plain words (owner's questions):**
+- **Your activity cache (item 12):** the live database can't be read from the cloud session. Your report
+  crashed before matching, so nothing was stored. After this deploy press "Update my report" (or "Try
+  again"), then Admin → Activity matches → your email. Aspirations are read as activities too.
+- **Why "long distance runner" wasn't an activity:** it was — but the old page didn't say so. Now it does.
+
+**Fixtures:** scoring 24 → 25; workers 173 → 178 (new: INTEREST FORM (Round 18), PROFILE GROUPS, REPORT
+(Round 18), NOTES (Round 18), MENTORSHIP (Round 18)). Changed because the owner changed the product:
+- scoring 20 and 21 (P13 is retired, so it is never "unscoreable");
+- REPORT PAGE "only the owner-approved filters hide careers" (filters replaced "show first"; three, not five; numbered);
+- NEXT STEPS (the report-level overview is gone);
+- VOICE (the mic stops when the box is emptied);
+- PROFESSION DETAIL whitelist (a note is served only through its student text).
+
+**Cloud checks:** Round 18 58/58 (the crash path, the late recall, the email, the profile, the report and
+card at 360 and 1280, both filters, compare, aspirations, mentorship, the sent form's single button, College
+for an older account, voice after Add); uiFlow 65/65; Round 17 42/42; Round 14 14/14. r13k's report checks
+("Your options at a glance", the readiness line) describe what the owner removed — superseded by r18.
+Build: the 8 known warning files.
