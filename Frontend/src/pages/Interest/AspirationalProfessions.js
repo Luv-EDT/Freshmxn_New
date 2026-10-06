@@ -8,7 +8,7 @@ import { searchProfessions } from "../../apiCall/professionsApi"
 // Each profession typed here is saved as an aspiration AND as a Medium-confidence persistent interest
 // flagged source: "aspiration", so the career-choice bias stays visible instead of blending in.
 
-function AspirationalProfessions({ formData, updateFormData, handleNext, handlePrevious, steps, currentStepIndex, goToStep, isLastContentStep, isSaving, requestSave, reportDraft }) {
+function AspirationalProfessions({ formData, updateFormData, handleNext, handlePrevious, steps, currentStepIndex, goToStep, isLastContentStep, isEditing = false, isSaving, requestSave, reportDraft }) {
     const [localFormData, setLocalFormData] = useState(formData)   // [{ professionText, professionId }]
     const [suggestions, setSuggestions] = useState({})              // { [rowIndex]: [{ value, label, id }] }
     const searchTimer = useRef(null)
@@ -83,8 +83,9 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
     const handleContinue = (e) => {
         e.preventDefault()
 
-        // this is the last section, so Next is what completes the form — worth asking
-        if (isLastContentStep && !window.confirm("Finish and submit your interest form? You can still come back and edit it.")) {
+        // this is the last section, so Next is what completes the form — worth asking (not when
+        // editing a form already sent: there it just saves the changes)
+        if (isLastContentStep && !isEditing && !window.confirm("Finish and submit your interest form? You can still come back and edit it.")) {
             return
         }
 
@@ -107,7 +108,7 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
             <div className="if-step-head">
                 <h2>🌟 Professions You're Drawn To</h2>
                 <p>Which professions do you think you'd like to be in, based on what you currently fancy or think is good?</p>
-                <p><em>Nothing comes to mind? Leave it empty and press Finish.</em></p>
+                <p><em>Nothing comes to mind? Leave it empty and press {isEditing ? "Save changes" : "Finish"}.</em></p>
             </div>
 
             <form onSubmit={handleContinue}>
@@ -134,10 +135,11 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
                 <div className="if-nav">
                     <button type="button" onClick={handleContinuePrevious} disabled={isSaving}>Previous</button>
                     {" "}
-                    <button type="button" onClick={handleSaveForLater} disabled={isSaving}>Save</button>
-                    {" "}
+                    {/* editing a form already sent: Save and Finish did the same thing, so there is one
+                        button (owner, Round 18) */}
+                    {!isEditing && <><button type="button" onClick={handleSaveForLater} disabled={isSaving}>Save</button>{" "}</>}
                     <button type="submit" disabled={isSaving}>
-                        {isSaving ? "Saving..." : isLastContentStep ? "Finish" : "Next"}
+                        {isSaving ? "Saving..." : isEditing ? "Save changes" : isLastContentStep ? "Finish" : "Next"}
                     </button>
                 </div>
             </form>

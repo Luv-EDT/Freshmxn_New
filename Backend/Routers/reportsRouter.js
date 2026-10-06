@@ -8,6 +8,7 @@ const requireDiscovery = require("../middlewares/requireDiscovery")
 const User = require("../model/userModel")
 const { directionUpdate } = require("../utils/direction")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
+const { FACTOR_GUIDE, GUIDE_GROUPS, WHY_IT_MATTERS } = require("../utils/factorGuide")
 const DEGREE_OPTIONS = require("../data/degree_options.json")
 const DISABILITY_SUPPORT = require("../data/disability_support.json")
 
@@ -108,6 +109,45 @@ const cleanSignal = (signal) => ({
 })
 
 
+// WHAT TO WORK ON (owner, Round 18): the qualities this career leans on (weight 0.3 or more in
+// baseline_rating.json) where the student sits more than 1.5 below what the work asks. Sent as NAMES
+// ONLY — never the gap, the weight or either score. A factor not measured is never listed (missing is
+// not low), and uncertainty tolerance is a position, so it is never something to "work on".
+const BASELINE = new Map(require("../data/baseline_rating.json").ratings.map((row) => [row.id, row]))
+const WORK_ON_WEIGHT = 0.3
+const WORK_ON_GAP = 1.5
+const WORK_ON_SHOWN = 4
+
+const workOnFor = (professionId, raw = {}) => {
+    const rating = BASELINE.get(professionId)
+    if (!rating) return []
+    return Object.entries(rating.weights || {})
+        .filter(([slug, weight]) => weight >= WORK_ON_WEIGHT && slug !== "uncertainty_tolerance" && FACTOR_GUIDE[slug])
+        .filter(([slug]) => typeof raw[slug] === "number" && typeof rating.factors[slug] === "number")
+        .map(([slug, weight]) => ({ slug, weight, gap: rating.factors[slug] - raw[slug] }))
+        .filter((row) => row.gap > WORK_ON_GAP)
+        .sort((left, right) => right.gap * right.weight - left.gap * left.weight || left.slug.localeCompare(right.slug))
+        .slice(0, WORK_ON_SHOWN)
+        .map((row) => FACTOR_GUIDE[row.slug].name)
+}
+
+// THE FOUR FUNDAMENTALS (owner, Round 18) — words and meanings, never the score
+const fundamentalsFor = (raw = {}) => GUIDE_GROUPS[0].factors.map((slug) => ({
+    slug,
+    name: FACTOR_GUIDE[slug].name,
+    meaning: FACTOR_GUIDE[slug].meaning,
+    why: WHY_IT_MATTERS[slug],
+    level: levelFor(raw[slug]),
+}))
+
+// An aspiration that names no career on our list still fed matching — as an activity (Round 17's
+// naming step). The report says what it was read as ("long distance running").
+const sameText = (left, right) => String(left || "").trim().toLowerCase() === String(right || "").trim().toLowerCase()
+const readAsFor = (signal, readings) => {
+    const hit = (readings || []).find((reading) => sameText(reading.said, signal.professionText))
+    return hit && hit.readAs && !sameText(hit.readAs, signal.professionText) ? hit.readAs : null
+}
+
 // ========================
 // Get My Report
 // ========================
@@ -118,11 +158,14 @@ const cleanSignal = (signal) => ({
 // has since moved.
 router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) => {
     try {
-        const [report, recommendation, submission] = await Promise.all([
+        const [report, recommendation, submission, profile] = await Promise.all([
             Report.findOne({ user: req.user._id }).lean(),
             Recommendation.findOne({ user: req.user._id }).lean(),
             Submission.findOne({ user: req.user._id }).select("psychometricSubmittedAt psychometric.accommodations interest.backgroundInfo.abroadHope interest.backgroundInfo.abroadCountries").lean(),
+            Profile.findOne({ user: req.user._id }).select("raw_scores").lean(),
         ])
+        const raw = (profile && profile.raw_scores) || {}
+        const withWorkOn = (entry) => ({ ...entry, workOn: workOnFor(entry.professionId, raw) })
 
         // A REPORT OLDER THAN THE LAST SUBMIT IS BEING REPLACED, not the answer.
         //
@@ -194,16 +237,20 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 abroadPlans: abroadPlansFor(submission),
                 generatedAt: report.lastGeneratedAt || report.generatedAt,
                 sections: report.sections,
-                ranked: recommendation ? recommendation.ranked_professions.map(stripInternal) : [],
+                ranked: recommendation ? recommendation.ranked_professions.map((entry) => withWorkOn(stripInternal(entry))) : [],
                 combined: recommendation ? (recommendation.combined_careers || []).map(stripInternal) : [],
                 // ROUTED THROUGH THE SAME CLEANER, which it was not before. worth_the_switch
                 // carries `supportingFactors` exactly like the ranking does, and it was the one
                 // array that skipped this — so its factors reached the page as raw engine slugs
                 // (`propensity_to_go_deep`) while the ranking beside it showed proper labels. A
                 // latent bug until the redesign gave this list its own card.
-                worthTheSwitch: recommendation ? (recommendation.worth_the_switch || []).map(stripInternal) : [],
+                worthTheSwitch: recommendation ? (recommendation.worth_the_switch || []).map((entry) => withWorkOn(stripInternal(entry))) : [],
                 filtered: recommendation ? recommendation.filtered : [],
-                aspirationSignals: recommendation ? (recommendation.aspiration_signals || []).map(cleanSignal) : [],
+                aspirationSignals: recommendation
+                    ? (recommendation.aspiration_signals || []).map((signal) => ({ ...cleanSignal(signal), readAs: readAsFor(signal, recommendation.activity_readings) }))
+                    : [],
+                // the four fundamentals, as words (owner, Round 18)
+                fundamentals: profile ? fundamentalsFor(raw) : null,
                 dominantReasons: recommendation ? (recommendation.dominant_reasons || []) : [],
                 // The raw readiness and values numbers are NOT sent: the page never used them, and
                 // a 0-10 confidence score is exactly what a student must never be shown.
@@ -229,38 +276,14 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
 // the number itself never leaves the server.
 //
 // Two factors are deliberately special:
-//   confidence            — left out entirely. It is never shown to a student as "your confidence
-//                           score" (profilesModel.js; PRD §B.4).
+//   confidence            — shown as a WORD LEVEL only, never a number (owner, Round 18; it was left
+//                           out entirely before). It is one of the four fundamentals.
 //   uncertainty_tolerance — a POSITION, not a level (Master Plan rule 4), so it goes out as where the
 //                           student sits between two ways of working, never as high or low.
 // data_quality, flags, banks and components are never sent.
 //
-// Grouped and labelled with FACTOR_LABELS, the same map the report uses, so a factor has one name
-// everywhere a student sees it.
-const SCORE_GROUPS = [
-    { title: "Personality", factors: ["openness", "conscientiousness", "agreeableness", "extraversion", "emotional_stability"] },
-    { title: "Thinking and memory", factors: ["reasoning", "short_term_memory", "long_term_memory", "processing_speed", "focus", "learning_capacity"] },
-    // The seven intelligences are mostly SELF-REPORT — what a student feels drawn to, not a measured
-    // ability (mi.js). The title says so, so "High" reads as a strong pull rather than a test score.
-    {
-        title: "Areas you feel drawn to",
-        factors: [
-            "logical_intelligence", "verbal_intelligence", "spatial_intelligence", "musical_intelligence",
-            "bodily_intelligence", "naturalistic_intelligence", "existential_intelligence",
-        ],
-    },
-    {
-        title: "People and practical sense",
-        factors: ["intrapersonal_intelligence", "interpersonal_intelligence", "emotional_intelligence", "practical_intelligence"],
-    },
-    {
-        title: "How you work",
-        factors: [
-            "firmness", "collaboration", "consistency_grit", "divergent_thinking", "convergent_thinking",
-            "propensity_to_go_deep", "informed_decision_making",
-        ],
-    },
-]
+// Grouped, named and explained with utils/factorGuide.js — the same table the report's fundamentals
+// use, so a factor has one name and one meaning everywhere a student sees it (owner, Round 18).
 
 // THIRDS, with a rounding tolerance. Scores are stored to two decimals, so the top third starts at
 // 6.67 (20/3) — the old 6.7 cut put a digit span of 7, a verbal memory of 24/36 and a story recall
@@ -289,6 +312,21 @@ const coveragePctOf = (coverage, score) => {
     const pct = Math.round(coverage * 100)
     return pct < 100 ? pct : null
 }
+
+// The Profile's groups, built from the raw scores — words out, numbers never (pure, for the fixture)
+const scoreGroupsFor = (raw = {}, coverage = {}) => GUIDE_GROUPS.map((group) => ({
+    key: group.key,
+    title: group.title,
+    meaning: group.meaning,
+    factors: group.factors.map((slug) => ({
+        slug,
+        name: FACTOR_GUIDE[slug].name,
+        meaning: FACTOR_GUIDE[slug].meaning,
+        // null → "not measured yet" on the page
+        ...(slug === "uncertainty_tolerance" ? { position: uncertaintyPosition(raw[slug]) } : { level: levelFor(raw[slug]) }),
+        partialPct: coveragePctOf(coverage[slug], raw[slug]),
+    })),
+}))
 
 // ========================
 // Retry My Report
@@ -396,19 +434,7 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
                 // Round 13: a profile scored before Round 10 stored no coverage, so it can show no
                 // "Partial · N%" until it is scored again ("Update my report")
                 coverageKnown: Object.keys(coverage).length > 0,
-                groups: SCORE_GROUPS.map((group) => ({
-                    title: group.title,
-                    factors: group.factors.map((slug) => ({
-                        slug,
-                        label: FACTOR_LABELS[slug] || String(slug).replace(/_/g, " "),
-                        level: levelFor(raw[slug]),   // null → "not measured yet" on the page
-                        partialPct: coveragePctOf(coverage[slug], raw[slug]),
-                    })),
-                })),
-                uncertainty: {
-                    label: FACTOR_LABELS.uncertainty_tolerance,
-                    position: uncertaintyPosition(raw.uncertainty_tolerance),
-                },
+                groups: scoreGroupsFor(raw, coverage),
             },
         })
 
@@ -423,3 +449,6 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
 
 module.exports = router
 module.exports.levelFor = levelFor
+module.exports.scoreGroupsFor = scoreGroupsFor
+module.exports.workOnFor = workOnFor
+module.exports.fundamentalsFor = fundamentalsFor

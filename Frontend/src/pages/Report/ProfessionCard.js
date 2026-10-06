@@ -92,13 +92,21 @@ const Section = ({ title, children }) => (
     </div>
 )
 
-// A collapsed sub-section inside an opened card. The owner's rule for the report (2026-09-29): the
-// first three things are always visible, everything else is one tap away, so opening a career is
-// never a wall of text. Rendered only when it has something in it.
+// ONE LAYOUT FOR EVERY PART OF THE CARD (owner, Round 18): a short title, plain one-line answers,
+// then a note where one applies. A part that is a question is written as the question a student
+// would ask. `More` is a top-level part (The road, Money…); `Fold` is a sub-heading inside one.
+// Each renders only when it has something in it.
 const More = ({ title, children }) => (
     <details className="pc-more">
         <summary>{title}</summary>
         <div className="pc-more-body">{children}</div>
+    </details>
+)
+
+const Fold = ({ title, children }) => (
+    <details className="pc-sub">
+        <summary>{title}</summary>
+        <div className="pc-sub-body">{children}</div>
     </details>
 )
 
@@ -111,10 +119,11 @@ const DEGREE_WORDS = {
     professional: "A professional degree (like MBBS, LLB or CA)",
 }
 
-const MID_STREAM_WORDS = {
-    open: "Yes — you can move in from almost any background",
-    after_any_degree: "Yes, after any degree",
-    restart_undergrad: "Only by starting its own degree",
+// "Can I move into this from another course or job?" — answers that explain themselves (Round 18)
+const MOVE_IN_WORDS = {
+    open: "Yes — you can move in from almost any course or job, without starting a new degree.",
+    after_any_degree: "Yes — finish whatever degree you're doing (any subject), then move in.",
+    restart_undergrad: "Only by starting the degree this career needs",
 }
 
 const MASTERS_WORDS = {
@@ -124,10 +133,11 @@ const MASTERS_WORDS = {
     masters_is_the_entry: "The master's is the way in",
 }
 
+// "Can I start my own business or freelance?" (was "Working for yourself", Round 18)
 const SELF_WORDS = {
-    common: "Common — many people do this for themselves",
-    possible_later: "Possible later, once you have experience",
-    rare: "Rare — this is mostly employed work",
+    common: "Yes, often — many people in this work run their own business or freelance",
+    possible_later: "Yes, later — once you have a few years of experience",
+    rare: "Rarely — this is mostly a job with an employer",
 }
 
 const ABROAD_STAGE = {
@@ -143,19 +153,15 @@ const ABROAD_STAGE = {
 // Going abroad to work (Round 13): how a career travels, in a student's words
 const PORTABILITY_WORDS = {
     travels_well: "Travels well",
-    requalify: "A licence first",
-    india_based: "India-based",
+    requalify: "A licence first — you would need that country's licence or exam before you can work",
+    india_based: "India-based — this is a role in India's own system",
 }
 
-// the student's own countries first, then the rest in the file's order
-const countriesFor = (goingAbroad, plans) => {
-    const chosen = (plans && plans.countries) || []
-    return [...goingAbroad.countries].sort((left, right) => Number(chosen.includes(right.code)) - Number(chosen.includes(left.code)))
-}
+// Owner, Round 18: no foreign links — specialist advice, later
+const ABROAD_ADVICE = "Studying and working abroad, especially a master's abroad, needs specialist advice. When you reach that stage, we'll connect you with a consultant."
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, showAi, degreeLabel, abroadPlans }) {
-    // a student who said maybe or yes to going abroad gets the "Going abroad" section, with the
-    // studying-abroad line moved into it; everyone else sees that line where it always was
+function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, rank, showAi, degreeLabel, abroadPlans }) {
+    // a student who said maybe or yes to going abroad also sees how this career travels
     const abroadMinded = Boolean(abroadPlans && abroadPlans.hope !== "no")
     const [open, setOpen] = useState(false)
 
@@ -181,23 +187,44 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
         : (nextIndex >= 0 ? steps[nextIndex] : null)
     const nextSteps = cardSteps(entry, detail, journey, stepForPlan)
 
-    // Nuances attach under the section they annotate, so a caveat about money sits with the money.
-    // The server sends a section id rather than the taxonomy's own field name — the card needs to
-    // know where to put it, the student does not need to see `entry_competition`.
-    const Nuances = ({ section }) => {
-        const rows = (detail && detail.nuances ? detail.nuances : []).filter((nuance) => nuance.section === section)
-        if (rows.length === 0) return null
-        return rows.map((nuance, index) => (
-            <p key={index} className="pc-nuance"><em>{nuance.statement}</em></p>
-        ))
-    }
-
     const subjects = detail && Array.isArray(detail.class12Prerequisite) && !detail.class12Prerequisite.includes("any")
         ? detail.class12Prerequisite.map((subject) => SUBJECTS[subject] || subject).join(" + ")
         : null
     const laterStage = journey === "college" || journey === "early_professional"
     const blueCollar = Boolean(detail && detail.blueCollar)
     const aiValue = aiExposureText(detail)
+    const years = entry.display && typeof entry.display.yearsToQualify === "number" ? entry.display.yearsToQualify : null
+
+    // WHICH PARTS SHOW — worked out once, so a note whose part isn't shown can go to "Worth knowing"
+    // rather than vanish (owner, Round 18: each note sits in the part it is about).
+    const shows = detail ? {
+        what: true,
+        roles: detail.jobRoles.length > 0,
+        where: detail.industries.length > 0,
+        path: steps.length > 0 || years !== null,
+        subjects: true,
+        degree: Boolean(entryRoute(detail) || DEGREE_WORDS[detail.degreeDependency] || detail.licensingBody),
+        move_in: laterStage && Boolean(MOVE_IN_WORDS[detail.midStreamEntry]),
+        exams: Boolean(detail.entranceExams && (detail.entranceExams.publicRoutes.length > 0 || detail.entranceExams.note)),
+        deadline: Boolean(detail.entryWindow && detail.entryWindow.constrainedRoute),
+        masters: Boolean(MASTERS_WORDS[detail.afterUndergrad]),
+        pay: Boolean(detail.economics),
+        demand: Boolean(detail.demand),
+        ai: Boolean(detail.aiExposure),
+        own_business: Boolean(detail.selfEmployment && SELF_WORDS[detail.selfEmployment.likelihood]),
+    } : {}
+
+    const notesFor = (section) => (detail && detail.nuances ? detail.nuances : []).filter((nuance) => nuance.section === section)
+    const Notes = ({ section }) => notesFor(section).map((nuance, index) => (
+        <p key={index} className="pc-nuance"><em>{nuance.statement}</em></p>
+    ))
+    const leftover = detail && detail.nuances ? detail.nuances.filter((nuance) => !shows[nuance.section]) : []
+
+    // JOB ROLES, SORTED BY FIT (owner, Round 18): the roles that suit this student first, marked
+    const suits = new Set((entry.bestRoles && entry.bestRoles.roles) || [])
+    const roles = detail ? [...detail.jobRoles].sort((left, right) => Number(suits.has(right)) - Number(suits.has(left))) : []
+
+    const abroadShown = Boolean(detail && (detail.abroad || abroadMinded))
 
     return (
         <div className={`profession-card${topRank ? ` is-top is-top-${topRank}` : ""}${open ? " is-open" : ""}`}>
@@ -207,10 +234,10 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                 className="pc-toggle"
                 aria-expanded={open}
             >
-                {/* THE NAME, AND NOTHING ELSE (owner, 2026-09-24) — plus, since 2026-09-30, the
-                    blue-collar tag, which the owner asked to travel with these careers everywhere. */}
+                {/* THE RANK, THEN THE NAME (owner, Round 18): 1, 2, 3… down the left, in the order
+                    the student chose — plus the blue-collar tag, which travels with these careers. */}
+                {rank > 0 && <span className="pc-rank">{rank}</span>}
                 <span className="pc-name">
-                    {topRank > 0 && <span className="pc-top">Top match</span>}
                     {entry.profession}
                     {blueCollar && <span className="pc-tag">Blue-collar</span>}
                     {/* the AI sub-sort shows the number it is sorting by */}
@@ -230,15 +257,40 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                         <p><em>The details for this one could not be loaded. Everything above it is still accurate.</em></p>
                     )}
 
-                    {/* 1. WHAT IT IS */}
+                    {/* 1. WHAT IT IS — the one-liner, then the roles and where the work happens */}
                     {detail && (
-                        <div className="pc-what">
+                        <Section title="What it is">
                             {detail.oneLiner && <p className="pc-oneliner">{detail.oneLiner}</p>}
-                            <p className="pc-small">
-                                {detail.professionalSector}
-                                {detail.jobRoles.length > 0 && <span> · e.g. {detail.jobRoles.slice(0, 3).join(", ")}</span>}
-                            </p>
-                        </div>
+                            <Notes section="what" />
+                            {roles.length > 0 && (
+                                <Fold title={`Job roles (${roles.length})`}>
+                                    <p className="pc-small">Listed by how well they fit you{suits.size > 0 ? " — the ones that suit you most come first" : ""}.</p>
+                                    <ul className="pc-roles">
+                                        {roles.map((role) => (
+                                            <li key={role}>{role}{suits.has(role) && <span className="pc-suits"> · suits you</span>}</li>
+                                        ))}
+                                    </ul>
+                                    {detail.roleSpread && detail.roleSpread.deviatingRoles.length > 0 && (
+                                        <div className="pc-group">
+                                            <p className="pc-small">Not every role is the same job:</p>
+                                            {detail.roleSpread.deviatingRoles.map((group, index) => (
+                                                <p key={index} className="pc-small tight">
+                                                    <strong>{group.roles.join(", ")}</strong> lean more on {group.higher.join(", ")}
+                                                    {group.lower.length > 0 && <span>, and less on {group.lower.join(", ")}</span>}.
+                                                </p>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <Notes section="roles" />
+                                </Fold>
+                            )}
+                            {detail.industries.length > 0 && (
+                                <Fold title="Where this work happens">
+                                    <p className="pc-line">{detail.industries.join(" · ")}</p>
+                                    <Notes section="where" />
+                                </Fold>
+                            )}
+                        </Section>
                     )}
 
                     {/* 2. WHY IT FITS YOU — built from the ranking, never from a model, never a number */}
@@ -248,7 +300,6 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                 <p className="pc-line">It uses what you're strongest at: <strong>{fit.strengths.join(", ")}</strong>.</p>
                             )}
                             {fit.via && <p className="pc-line">You got here through: <strong>{fit.via}</strong>.</p>}
-                            {fit.stretch && <p className="pc-small">It would stretch you on {fit.stretch}.</p>}
                             {/* Round 10: the role group inside this career that fits better than the whole */}
                             {entry.bestRoles && entry.bestRoles.roles && (
                                 <p className="pc-line">
@@ -259,7 +310,16 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                         </Section>
                     )}
 
-                    {/* 3. YOUR NEXT 12 MONTHS — for this student's stage, inside each career (Round 13, owner) */}
+                    {/* 3. WHAT TO WORK ON (owner, Round 18) — qualities this work leans on where you are
+                        well below what it asks. Worked out on the server; names only, never a number. */}
+                    {Array.isArray(entry.workOn) && entry.workOn.length > 0 && (
+                        <Section title="What to work on">
+                            <p className="pc-line">This work leans on <strong>{entry.workOn.join(", ")}</strong> — more than you show right now.</p>
+                            <p className="pc-small">Each of these grows with practice. It's a starting point, not a verdict.</p>
+                        </Section>
+                    )}
+
+                    {/* 4. YOUR NEXT 12 MONTHS — for this student's stage, inside each career (Round 13, owner) */}
                     {(nextSteps.length > 0 || switchCost > 0 || (entry.degreeCounts && degreeLabel)) && (
                         <Section title="Your next 12 months">
                             {/* Round 10: the student's own degree already leads here */}
@@ -280,67 +340,71 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
 
                     {detail && (
                         <>
-                            {/* 4. THE ROAD */}
+                            {/* 5. THE ROAD — one sub-heading per question */}
                             <More title="The road">
-                                {typeof entry.display.yearsToQualify === "number" && (
-                                    <p className="pc-years">About <strong>{entry.display.yearsToQualify} years</strong> to qualify</p>
+                                {shows.path && (
+                                    <Fold title="How long, and the path">
+                                        {years !== null && <p className="pc-years">About <strong>{years} years</strong> to qualify</p>}
+                                        {steps.length > 0 && (
+                                            <ol className="pc-path">
+                                                {steps.map((step, index) => {
+                                                    const isNext = index === nextIndex
+                                                    const isPast = studentLevel !== undefined && step.level < studentLevel
+
+                                                    return (
+                                                        <li
+                                                            key={step.step}
+                                                            className={`${isPast ? "is-past" : ""}${isNext ? " is-next" : ""}`.trim() || undefined}
+                                                        >
+                                                            <span className="pc-stage">{stageLabel(step.stage)}</span>
+                                                            {isNext && <span className="pc-next"> · your next step</span>}
+                                                            <br />
+                                                            {step.requirement}
+                                                        </li>
+                                                    )
+                                                })}
+                                            </ol>
+                                        )}
+                                        <Notes section="path" />
+                                    </Fold>
                                 )}
 
-                                {steps.length > 0 && (
-                                    <Section title="How you get there">
-                                        <ol className="pc-path">
-                                            {steps.map((step, index) => {
-                                                const isNext = index === nextIndex
-                                                const isPast = studentLevel !== undefined && step.level < studentLevel
+                                {/* Subjects PER ROUTE where the routes differ (owner, Round 18) */}
+                                <Fold title="Subjects in Class 11–12">
+                                    {detail.subjectRoutes ? (
+                                        <ul className="pc-routes">
+                                            {detail.subjectRoutes.map((row) => (
+                                                <li key={row.route}><strong>{row.route}:</strong> {row.subjects}</li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="pc-line">{subjects || "Any stream"}</p>
+                                    )}
+                                    <Notes section="subjects" />
+                                </Fold>
 
-                                                return (
-                                                    <li
-                                                        key={step.step}
-                                                        className={`${isPast ? "is-past" : ""}${isNext ? " is-next" : ""}`.trim() || undefined}
-                                                    >
-                                                        <span className="pc-stage">{stageLabel(step.stage)}</span>
-                                                        {isNext && <span className="pc-next"> · your next step</span>}
-                                                        <br />
-                                                        {step.requirement}
-                                                    </li>
-                                                )
-                                            })}
-                                        </ol>
-                                        <Nuances section="path" />
-                                    </Section>
+                                {shows.degree && (
+                                    <Fold title="Do I need a degree?">
+                                        {(entryRoute(detail) || DEGREE_WORDS[detail.degreeDependency]) && (
+                                            <p className="pc-line">{entryRoute(detail) || DEGREE_WORDS[detail.degreeDependency]}</p>
+                                        )}
+                                        {detail.licensingBody && <p className="pc-small">You also need a licence, from {detail.licensingBody}.</p>}
+                                        <Notes section="degree" />
+                                    </Fold>
                                 )}
 
-                                <dl className="pc-facts">
-                                    <dt>Subjects in Class 11–12</dt>
-                                    <dd>{subjects || "Any stream"}</dd>
-                                    {(entryRoute(detail) || DEGREE_WORDS[detail.degreeDependency]) && (
-                                        <>
-                                            <dt>Degree needed</dt>
-                                            <dd>{entryRoute(detail) || DEGREE_WORDS[detail.degreeDependency]}</dd>
-                                        </>
-                                    )}
-                                    {laterStage && MID_STREAM_WORDS[detail.midStreamEntry] && (
-                                        <>
-                                            <dt>Can you switch in?</dt>
-                                            <dd>{MID_STREAM_WORDS[detail.midStreamEntry]}</dd>
-                                        </>
-                                    )}
-                                    {laterStage && MASTERS_WORDS[detail.afterUndergrad] && (
-                                        <>
-                                            <dt>A master's?</dt>
-                                            <dd>{MASTERS_WORDS[detail.afterUndergrad]}</dd>
-                                        </>
-                                    )}
-                                    {detail.licensingBody && (
-                                        <>
-                                            <dt>Licence</dt>
-                                            <dd>From {detail.licensingBody}</dd>
-                                        </>
-                                    )}
-                                </dl>
+                                {shows.move_in && (
+                                    <Fold title="Can I move into this from another course or job?">
+                                        <p className="pc-line">
+                                            {MOVE_IN_WORDS[detail.midStreamEntry]}
+                                            {detail.midStreamEntry === "restart_undergrad" && (years !== null ? ` — about ${years} years.` : ".")}
+                                        </p>
+                                        <Notes section="move_in" />
+                                    </Fold>
+                                )}
 
-                                {detail.entranceExams && (detail.entranceExams.publicRoutes.length > 0 || detail.entranceExams.note) && (
-                                    <Section title="Exams">
+                                {shows.exams && (
+                                    <Fold title="Exams">
                                         {/* the exam calendar (Round 11): what USUALLY happens, and the official site — never this year's dates */}
                                         {(detail.exams || []).length > 0 && (
                                             <ul className="pc-exams">
@@ -377,33 +441,23 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                         {detail.entryGate && detail.entryGate.ifUnsuccessful.length > 0 && (
                                             <p className="pc-small">If it doesn't work out: {detail.entryGate.ifUnsuccessful.join(" · ")}.</p>
                                         )}
-                                        <Nuances section="exams" />
-                                    </Section>
+                                        <Notes section="exams" />
+                                    </Fold>
                                 )}
 
-                                {detail.entryWindow && detail.entryWindow.constrainedRoute && (
-                                    <Section title="Deadline">
+                                {shows.deadline && (
+                                    <Fold title="Is there a deadline?">
                                         <p className="pc-line">{detail.entryWindow.constrainedRoute}</p>
                                         {detail.entryWindow.bypass.length > 0 && (
                                             <p className="pc-small">Other ways in: {detail.entryWindow.bypass.join(" · ")}</p>
                                         )}
-                                    </Section>
-                                )}
-
-                                {/* Studying abroad (Round 11): whether it is needed — never which university */}
-                                {detail.abroad && !abroadMinded && (
-                                    <Section title="Studying abroad">
-                                        <p className="pc-line">
-                                            {detail.abroad.need === "often_needed" ? "Often part of the route" : "Helps, but not needed"}
-                                            {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}
-                                        </p>
-                                        <p className="pc-small">{detail.abroad.why}.</p>
-                                    </Section>
+                                        <Notes section="deadline" />
+                                    </Fold>
                                 )}
 
                                 {/* Where to study (Round 11): NIRF first; a ranked place shows its rank */}
                                 {detail.studyPlaces && (
-                                    <Section title="Where to study">
+                                    <Fold title="Where to study">
                                         {detail.studyPlaces.institutions.length > 0 && (
                                             <ul className="pc-exams">
                                                 {detail.studyPlaces.institutions.map((place) => (
@@ -447,11 +501,37 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                 </p>
                                             </div>
                                         )}
-                                    </Section>
+                                    </Fold>
+                                )}
+
+                                {shows.masters && (
+                                    <Fold title="A master's in India?">
+                                        <p className="pc-line">{MASTERS_WORDS[detail.afterUndergrad]}</p>
+                                        <Notes section="masters" />
+                                    </Fold>
+                                )}
+
+                                {/* STUDYING AND WORKING ABROAD (owner, Round 18) — inside the career, as a
+                                    note: no foreign links; a consultant when the student gets there */}
+                                {abroadShown && (
+                                    <Fold title="Studying and working abroad">
+                                        {detail.abroad && (
+                                            <p className="pc-line">
+                                                Studying abroad: {detail.abroad.need === "often_needed" ? "often part of the route" : "helps, but not needed"}
+                                                {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}. {detail.abroad.why}.
+                                            </p>
+                                        )}
+                                        {abroadMinded && detail.goingAbroad && (
+                                            <p className="pc-line">
+                                                Working abroad: {PORTABILITY_WORDS[detail.goingAbroad.portability]}. {detail.goingAbroad.note}
+                                            </p>
+                                        )}
+                                        <p className="pc-small">{ABROAD_ADVICE}</p>
+                                    </Fold>
                                 )}
                             </More>
 
-                            {/* 5. MONEY — ranges only (owner: no payback) */}
+                            {/* 6. MONEY — ranges only (owner: no payback) */}
                             {detail.economics && (
                                 <More title="Money">
                                     <p className="pc-line">
@@ -480,26 +560,26 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                     {detail.payCaution && (
                                         <p className="pc-caution">Pay often stays low even after 5–8 years in a city. It goes further in smaller towns.</p>
                                     )}
-                                    <Nuances section="pay" />
+                                    <Notes section="pay" />
                                 </More>
                             )}
 
-                            {/* 6. THE FUTURE */}
-                            {(detail.demand || detail.aiExposure || detail.selfEmployment) && (
+                            {/* 7. THE FUTURE */}
+                            {(shows.demand || shows.ai || shows.own_business) && (
                                 <More title="The future">
                                     {detail.demand && (
-                                        <Section title="Demand">
+                                        <Fold title="Will there be jobs?">
                                             <p className="pc-line">{DEMAND_WORDS[detail.demand.india] || detail.demand.india}</p>
                                             {detail.demand.pathway === "any" && (
                                                 <p className="pc-small">This work can be done for clients anywhere, not only in India.</p>
                                             )}
                                             {detail.demand.note && <p className="pc-small"><em>{detail.demand.note}</em></p>}
-                                            <Nuances section="demand" />
-                                        </Section>
+                                            <Notes section="demand" />
+                                        </Fold>
                                     )}
 
                                     {detail.aiExposure && (
-                                        <Section title="How AI affects this">
+                                        <Fold title="How AI affects this">
                                             <p className="pc-line">{AI_WORDS[detail.aiExposure.band] || detail.aiExposure.band}</p>
                                             {aiValue && <p className="pc-small">AI exposure: <strong>{aiValue}</strong> — higher means more of the work is exposed to AI.</p>}
                                             {detail.aiExposure.workMostly && detail.aiExposure.workMostly.length > 0 && (
@@ -509,83 +589,26 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                                                 <p className="pc-small">A qualified person has to sign off on this work and be accountable for it — that part AI can't take over.</p>
                                             )}
                                             {detail.aiExposure.reason && <p className="pc-small">{detail.aiExposure.reason}</p>}
-                                            <Nuances section="ai" />
-                                        </Section>
+                                            <Notes section="ai" />
+                                        </Fold>
                                     )}
 
-                                    {detail.selfEmployment && SELF_WORDS[detail.selfEmployment.likelihood] && (
-                                        <Section title="Working for yourself">
+                                    {shows.own_business && (
+                                        <Fold title="Can I start my own business or freelance?">
                                             <p className="pc-line">{SELF_WORDS[detail.selfEmployment.likelihood]}</p>
                                             {detail.selfEmployment.route && <p className="pc-small">{detail.selfEmployment.route}</p>}
-                                        </Section>
+                                            <Notes section="own_business" />
+                                        </Fold>
                                     )}
                                 </More>
                             )}
 
-                            {/* 6b. GOING ABROAD (Round 13) — only for a student who hopes to go abroad */}
-                            {abroadMinded && detail.goingAbroad && (
-                                <More title="Going abroad">
-                                    <p className="pc-line">
-                                        <strong>{PORTABILITY_WORDS[detail.goingAbroad.portability]}.</strong> {detail.goingAbroad.note}
-                                    </p>
-                                    {detail.abroad && (
-                                        <p className="pc-small">
-                                            Studying abroad: {detail.abroad.need === "often_needed" ? "often part of the route" : "helps, but not needed"}
-                                            {ABROAD_STAGE[detail.abroad.stage] && <span> — {ABROAD_STAGE[detail.abroad.stage]}</span>}. {detail.abroad.why}.
-                                        </p>
-                                    )}
-                                    {detail.goingAbroad.portability !== "india_based" && countriesFor(detail.goingAbroad, abroadPlans).map((country) => (
-                                        <details key={country.code} className="pc-country">
-                                            <summary>{country.name}{country.licence ? ` — ${country.licence.exam}` : ""}</summary>
-                                            {country.licence ? (
-                                                <p className="pc-small">
-                                                    {country.licence.steps}. <strong>{country.licence.body}</strong> ·{" "}
-                                                    <a href={country.licence.url} target="_blank" rel="noopener noreferrer">official page ↗</a>
-                                                </p>
-                                            ) : (
-                                                <p className="pc-small">
-                                                    {detail.goingAbroad.portability === "requalify" ? "This work is licensed there too. " : ""}
-                                                    Start with <a href={country.recognition.url} target="_blank" rel="noopener noreferrer">{country.recognition.name} ↗</a>
-                                                </p>
-                                            )}
-                                        </details>
+                            {/* 8. WORTH KNOWING — only the notes whose part isn't shown above */}
+                            {leftover.length > 0 && (
+                                <More title="Worth knowing">
+                                    {leftover.map((nuance, index) => (
+                                        <p key={index} className="pc-nuance"><em>{nuance.statement}</em></p>
                                     ))}
-                                </More>
-                            )}
-
-                            {/* 7. MORE ABOUT THE WORK */}
-                            {(detail.industries.length > 0 || (detail.roleSpread && detail.roleSpread.deviatingRoles.length > 0)) && (
-                                <More title="More about the work">
-                                    {detail.industries.length > 0 && (
-                                        <Section title="Where this work happens">
-                                            <p className="pc-line">{detail.industries.join(" · ")}</p>
-                                            {detail.jobRoles.length > 0 && (
-                                                <p className="pc-small">
-                                                    Roles: {detail.jobRoles.slice(0, 8).join(" · ")}
-                                                    {detail.jobRoles.length > 8 && <span> and {detail.jobRoles.length - 8} more</span>}
-                                                </p>
-                                            )}
-                                            <Nuances section="where" />
-                                        </Section>
-                                    )}
-
-                                    {/* The join nothing else in the product makes: which roles INSIDE this
-                                        profession suit this student, from role_spread's deviating groups. */}
-                                    {detail.roleSpread && detail.roleSpread.deviatingRoles.length > 0 && (
-                                        <Section title="Not all of it is the same job">
-                                            {detail.roleSpread.deviatingRoles.map((group, index) => (
-                                                <div key={index} className="pc-group">
-                                                    <p className="pc-small tight">
-                                                        <strong>{group.roles.join(", ")}</strong> lean on{" "}
-                                                        {group.higher.join(", ")}
-                                                        {group.lower.length > 0 && <span>, and less on {group.lower.join(", ")}</span>}.
-                                                    </p>
-                                                    <p className="pc-small tight"><em>{group.why}</em></p>
-                                                </div>
-                                            ))}
-                                            <Nuances section="roles" />
-                                        </Section>
-                                    )}
                                 </More>
                             )}
                         </>

@@ -38,3 +38,13 @@ export async function resetChoiceForAdmin(studentId, payload) {
     const response = await axiosInstance.put(`/mentorWaitlist/resetChoiceForAdmin/${studentId}`, payload)
     return response
 }
+
+// Round 18: what the student wants from the sessions, and the master's/settling-abroad waitlist
+export async function saveMyHelp(payload) {
+    try {
+        const response = await axiosInstance.put("/mentorWaitlist/saveMyHelp", payload)
+        return response
+    } catch (error) {
+        return error.response
+    }
+}

@@ -1,11 +1,11 @@
 import { useState } from "react"
-import { PRIMARY_SORTS, SECONDARY_SORTS, SHOW_FIRST } from "./reportFilters"
+import { PRIMARY_SORTS, SECONDARY_SORTS } from "./reportFilters"
 
 // The report's only control (owner, Round 6): one "Sort your list" button, collapsed by default,
 // so the list — not the controls — is what a student sees first. Two primary orders are
-// highlighted; a secondary "then order by" is optional; "Show first" moves core engineering up.
-// The one filter, "Leave out blue-collar careers", sits beside this menu on the page (Round 13).
-function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint, showFirst, onShowFirst }) {
+// highlighted; a secondary "then order by" is optional. The filters — blue-collar, core engineering,
+// studying abroad — sit beside this menu on the page, in plain sight (Rounds 13 and 18).
+function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint }) {
     const [open, setOpen] = useState(false)
 
     const primaries = PRIMARY_SORTS
@@ -22,7 +22,6 @@ function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint
                 <span>Sort your list</span>
                 <span className="sort-current">
                     {primaryLabel}{secondaryLabel ? ` · then ${secondaryLabel.toLowerCase()}` : ""}
-                    {showFirst ? " · engineering first" : ""}
                 </span>
             </button>
 
@@ -67,21 +66,6 @@ function ReportSortMenu({ primary, onPrimary, secondary, onSecondary, noCostHint
                         ))}
                     </div>
 
-                    <p className="sort-title">Show first <span className="sort-note">(if you like)</span></p>
-                    <div className="sort-secondaries">
-                        {SHOW_FIRST.map((option) => (
-                            <button
-                                type="button"
-                                key={option.value}
-                                className={`filter-option${showFirst === option.value ? " is-on" : ""}`}
-                                aria-pressed={showFirst === option.value}
-                                title={option.hint}
-                                onClick={() => onShowFirst(showFirst === option.value ? null : option.value)}
-                            >
-                                {option.label}
-                            </button>
-                        ))}
-                    </div>
                 </div>
             )}
         </div>

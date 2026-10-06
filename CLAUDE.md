@@ -13,7 +13,8 @@ site and both workers (`render.yaml`, deploys from `main`).
 - Follow `docs/2_build/CODING_STYLE.md`: router → model (no controllers/services), every response
   `{ success, message, data }`, one try/catch returning 500 per handler, double quotes, **no
   semicolons**, 4-space indent. Match the comment density of the file you're in.
-- Never show a student `match_confidence` or `data_quality`; confidence is never a score;
+- Never show a student `match_confidence` or `data_quality`; confidence is shown only as a word level
+  (High / Medium / Low), never a number (owner, Round 18);
   uncertainty tolerance is a position, not a level. The one owner-approved exception is the coverage
   line "Partial · N%" (a share, never the raw field) — on the assessment page and the profile only,
   never on a career card or the compare page (owner, Round 13).
@@ -38,9 +39,9 @@ fixtures and commit. If `profession_embeddings.json` lists `pending_reembed`, ru
 
 ## Test before every commit
 ```
-node Backend/scoring/fixtures/runFixtures.js     # 24/24
+node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 173/173
+node Backend/workers/fixtures/runFixtures.js     # 178/178
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

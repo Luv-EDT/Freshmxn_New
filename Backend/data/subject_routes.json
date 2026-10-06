@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "generated_on": "2026-10-06",
+  "rule": "Owner, Round 18: a career whose Class 12 rule is 'any stream' but whose usual routes include a degree that needs particular subjects (B.Tech: Physics, Chemistry and Maths; MBBS/BDS/nursing: Physics, Chemistry and Biology; B.Pharm: Physics and Chemistry with Biology or Maths) shows the subjects PER ROUTE, so 'Any stream' never hides the stream a common route needs. Covers every such career and every 'degree is common, not required' career (degree_dependency undergrad + mid_stream_entry open). Display only; matching never reads this file — eligibility stays class12_prerequisite.",
+  "review": { "reviewed_by_owner": false },
+  "careers": {
+    "swc-software-developer": [
+      { "route": "BCA or B.Sc Computer Science", "subjects": "Any stream — some colleges want Maths in Class 12" },
+      { "route": "B.Tech CSE", "subjects": "Physics, Chemistry and Maths, plus JEE or a state CET" },
+      { "route": "Skills route (no degree)", "subjects": "Any stream — you build projects and show them" }
+    ],
+    "swc-ai-ml-engineer": [
+      { "route": "BCA, or B.Sc in Computer Science, Statistics or Maths", "subjects": "Any stream for BCA; Maths in Class 12 helps a lot, and B.Sc Maths or Statistics needs it" },
+      { "route": "B.Tech", "subjects": "Physics, Chemistry and Maths, plus JEE or a state CET" }
+    ],
+    "swc-data-engineer": [
+      { "route": "BCA or B.Sc Computer Science", "subjects": "Any stream — some colleges want Maths in Class 12" },
+      { "route": "B.Tech", "subjects": "Physics, Chemistry and Maths, plus JEE or a state CET" },
+      { "route": "Skills route (no degree)", "subjects": "Any stream — you build data projects and show them" }
+    ],
+    "swc-enterprise-software-consultant": [
+      { "route": "B.Com or BBA", "subjects": "Any stream — Commerce helps" },
+      { "route": "B.Tech", "subjects": "Physics, Chemistry and Maths, plus JEE or a state CET" }
+    ],
+    "swc-it-business-systems-analyst": [
+      { "route": "BBA, B.Com or BCA", "subjects": "Any stream — some BCA colleges want Maths in Class 12" },
+      { "route": "B.Tech", "subjects": "Physics, Chemistry and Maths, plus JEE or a state CET" }
+    ],
+    "swc-vfx-graphics-developer": [
+      { "route": "B.Sc Computer Science, or a VFX or animation diploma", "subjects": "Any stream — Maths matters for the work itself" },
+      { "route": "B.Tech CSE", "subjects": "Physics, Chemistry and Maths, plus JEE or a state CET" }
+    ],
+    "hlt-public-health-professional": [
+      { "route": "MBBS, BDS or B.Sc Nursing, then a master's in public health", "subjects": "Physics, Chemistry and Biology, plus NEET for MBBS and BDS" },
+      { "route": "A degree in life sciences, statistics or social sciences, then a master's in public health", "subjects": "Biology for life sciences, Maths for statistics, any stream for social sciences" }
+    ],
+    "mgt-sales-professional": [
+      { "route": "Any bachelor's degree", "subjects": "Any stream" },
+      { "route": "Medical representative: B.Pharm or B.Sc", "subjects": "Physics and Chemistry with Biology or Maths" }
+    ]
+  }
+}

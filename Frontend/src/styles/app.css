@@ -681,7 +681,8 @@ input[type="checkbox"] {
 
 /* a checkbox with its label beside it rather than inside (Current interests, Challenges): the same
    row as the other checklists, box and words lined up with room between (Round 17) */
-div:has(> input[type="checkbox"] + label) {
+div:has(> input[type="checkbox"] + label),
+div:has(> input[type="radio"] + label) {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
@@ -693,11 +694,13 @@ div:has(> input[type="checkbox"] + label) {
     margin-bottom: 8px;
 }
 
-div:has(> input[type="checkbox"] + label) > input[type="checkbox"] {
+div:has(> input[type="checkbox"] + label) > input[type="checkbox"],
+div:has(> input[type="radio"] + label) > input[type="radio"] {
     margin-top: 3px;
 }
 
-div:has(> input[type="checkbox"] + label) > label {
+div:has(> input[type="checkbox"] + label) > label,
+div:has(> input[type="radio"] + label) > label {
     flex: 1 1 0;
     min-width: 0;
     font-weight: 400;
@@ -953,6 +956,7 @@ button.sort-primary.is-on {
    the column explicitly (Round 13 lean pass). */
 .report-page > .app-header ~ div.report-banner,
 .report-page > .app-header ~ .blue-collar-toggle,
+.report-page > .app-header ~ .report-filters,
 .report-page > .app-header ~ hr {
     box-sizing: border-box;
     width: calc(100% - 32px);
@@ -1017,7 +1021,7 @@ button.sort-primary.is-on {
     border-top: 1px solid var(--line);
 }
 
-.pc-more summary {
+.pc-more > summary {
     list-style: none;
     cursor: pointer;
     display: flex;
@@ -1029,11 +1033,11 @@ button.sort-primary.is-on {
     color: var(--navy);
 }
 
-.pc-more summary::-webkit-details-marker {
+.pc-more > summary::-webkit-details-marker {
     display: none;
 }
 
-.pc-more summary::after {
+.pc-more > summary::after {
     content: "+";
     width: 26px;
     height: 26px;
@@ -1047,7 +1051,7 @@ button.sort-primary.is-on {
     font-weight: 900;
 }
 
-.pc-more[open] summary::after {
+.pc-more[open] > summary::after {
     content: "−";
 }
 
@@ -2379,4 +2383,127 @@ button.show-rest {
 
 .mentor-opinions li.is-agree {
     color: var(--navy-soft);
+}
+
+/* Profile → Your psychometric profile (Round 18): one collapsible per group; each factor a row with
+   its name and meaning on the left, its level (and Partial · N%) on the right — stacked on a phone */
+.score-groups .score-group { margin-bottom: var(--space-2); }
+.score-list { list-style: none; padding: 0; margin: var(--space-2) 0 0; }
+.score-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+}
+.score-row > div:first-child { flex: 1 1 260px; min-width: 0; }
+.score-level { display: flex; flex-wrap: wrap; gap: 6px; }
+.score-level .score-partial { margin-left: 0; }
+
+/* ── Round 18: the report card's rank, its sub-headings, the filter row ─────────────────────── */
+
+/* 1, 2, 3… down the left, in the order the student chose */
+.pc-rank {
+    flex: none;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-weight: 900;
+    font-size: 0.95rem;
+}
+
+button.pc-toggle .pc-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.profession-card.is-top-1 .pc-rank,
+.profession-card.is-top-2 .pc-rank {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* a sub-heading inside a part of the card: the same row, a size smaller */
+.pc-sub {
+    border-top: 1px dashed var(--line);
+}
+
+.pc-sub summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 44px;
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.pc-sub summary::-webkit-details-marker {
+    display: none;
+}
+
+.pc-sub summary::after {
+    content: "+";
+    flex: none;
+    color: var(--teal-dark);
+    font-weight: 900;
+}
+
+.pc-sub[open] summary::after {
+    content: "−";
+}
+
+.pc-sub-body {
+    padding: 0 0 var(--space-3);
+}
+
+.pc-roles,
+.pc-routes {
+    margin: var(--space-2) 0;
+    padding-left: 1.2em;
+}
+
+.pc-suits {
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+.report-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-2);
+}
+
+.report-filters .blue-collar-toggle {
+    margin: var(--space-1) 0;
+}
+
+.fundamentals-list {
+    list-style: none;
+    padding: 0;
+}
+
+.fundamentals-list li {
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+}
+
+.compare-notes {
+    margin: 0;
+    padding-left: 1.1em;
+}
+
+/* Mentorship → "What do you want from your mentor?" (Round 18) */
+.mentor-help textarea {
+    width: 100%;
+    max-width: 560px;
 }

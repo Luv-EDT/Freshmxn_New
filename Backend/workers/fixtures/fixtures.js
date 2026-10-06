@@ -1596,10 +1596,11 @@ const fixtures = [
                 nuances: [
                     // Plain English, no identifier, no builder marker — and absolutely not for a
                     // student. Only the field whitelist can stop this one.
-                    { field: "filter", statement: "This career is hidden by default because it pays too little to recommend." },
-                    { field: "verification", statement: "We are fairly sure about this one but have not checked it recently." },
+                    // Round 18: only a note's plain `student` text is ever served, so each carries one
+                    { field: "filter", statement: "x", student: "This career is hidden by default because it pays too little to recommend." },
+                    { field: "verification", statement: "x", student: "We are fairly sure about this one but have not checked it recently." },
                     // A legitimate one, to prove the whitelist is not simply dropping everything.
-                    { field: "economics", statement: "Pay rises sharply once you have your own clients." },
+                    { field: "economics", statement: "x", student: "Pay rises sharply once you have your own clients." },
                 ],
             }
 
@@ -1981,7 +1982,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT PAGE — nothing hides a career except the owner-approved blue-collar opt-out",
+        name: "REPORT PAGE — only the owner-approved filters hide careers: off by default, labelled, the hidden count shown",
         // REPLACES "nothing is pinned; the controls apply uniformly" (owner, Round 6). Filters were
         // removed from the page because they crowded the screen and confused students; the filter
         // module stays (its own fixtures still run) but nothing on the page may hide, fade or pin a
@@ -1996,12 +1997,15 @@ const fixtures = [
             if (/isPinned|const pinned/.test(page)) problems.push("the page exempts rows again")
             if (/missedBy\(|dimmed=\{/.test(page)) problems.push("the page fades rows again")
 
-            // The ONE exception (owner, 2026-09-30): "Leave out blue-collar careers" — off by default,
-            // removes only blue-collar ids, and the page says how many it hid.
+            // The exceptions the owner approved: "Leave out blue-collar careers" (2026-09-30), and since
+            // Round 18 "Core engineering only" and "Studying abroad helps" (they replaced "Show first").
+            // All off by default; the page says how many they hid, with one tap to undo.
             if (!/const \[excludeBlueCollar, setExcludeBlueCollar\] = useState\(false\)/.test(page)) {
                 problems.push("the blue-collar filter is not off by default")
             }
-            if (!/hiddenBlueCollar > 0/.test(page)) problems.push("the page does not say how many careers the blue-collar filter hid")
+            if (!/const \[only, setOnly\] = useState\(\[\]\)/.test(page)) problems.push("the core-engineering and abroad filters are not off by default")
+            if (!/hiddenCount > 0/.test(page) || !/Show them again/.test(page)) problems.push("the page does not say how many careers the filters hid, or offer to undo")
+            if (filters.ONLY_FILTERS.map((option) => option.value).join() !== "coreEngineering,studyAbroadHelps") problems.push("the filters are not the two the owner chose")
 
             const { buildList } = filters
             const ranked = [{ professionId: "a" }, { professionId: "b" }, { professionId: "c" }]
@@ -2009,14 +2013,18 @@ const fixtures = [
             const ids = (list) => list.map((entry) => entry.professionId).join(",")
             if (ids(buildList(ranked, [], "best", null, details, {})) !== "a,b,c") problems.push("with no options set the list is not the full ranking")
             if (ids(buildList(ranked, [], "best", null, details, { excludeBlueCollar: true })) !== "b,c") problems.push("the blue-collar filter removed the wrong careers")
-            if (ids(buildList(ranked, [], "best", null, details, { showFirst: "coreEngineering" })) !== "b,a,c") problems.push("show-first is not a stable partition that keeps everything")
-            // Round 13 (owner): the top five of the CHOSEN order show first and the rest are one tap away —
-            // a fold, not a filter: "Show the other N" opens the same ordered list in full
+            if (ids(buildList(ranked, [], "best", null, details, { only: ["coreEngineering"] })) !== "b") problems.push("core engineering only kept the wrong careers")
+            const abroadDetails = { a: { studyAbroadHelps: true, coreEngineering: true }, b: { studyAbroadHelps: true }, c: { coreEngineering: true } }
+            if (ids(buildList(ranked, [], "best", null, abroadDetails, { only: ["studyAbroadHelps"] })) !== "a,b") problems.push("studying abroad helps kept the wrong careers")
+            if (ids(buildList(ranked, [], "best", null, abroadDetails, { only: ["studyAbroadHelps", "coreEngineering"] })) !== "a") problems.push("two filters do not both apply")
+            // Round 13 (owner), three since Round 18: the top of the CHOSEN order shows first and the rest
+            // is one tap away — a fold, not a filter: "Show the other N" opens the same ordered list in full
             const listBlock = page.split('<div className="match-list">')[1] || ""
-            if (!/^\s*\{\(showAllFor === sortKey \? ordered : ordered\.slice\(0, TOP_SHOWN\)\)\.map\(/.test(listBlock)) problems.push("the rendered list is not the chosen order (top five, then all)")
+            if (!/^\s*\{\(showAllFor === sortKey \? ordered : ordered\.slice\(0, TOP_SHOWN\)\)\.map\(/.test(listBlock)) problems.push("the rendered list is not the chosen order (top three, then all)")
             if (!/Show the other \{ordered\.length - TOP_SHOWN\}/.test(page)) problems.push("the rest of the list has no 'Show the other N' button")
-            if (!/const TOP_SHOWN = 5/.test(page)) problems.push("the list does not open on five")
-            if (!/const sortKey = \[primary, secondary, showFirst, excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at five")
+            if (!/const TOP_SHOWN = 3/.test(page)) problems.push("the list does not open on three")
+            if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at three")
+            if (!/rank=\{index \+ 1\}/.test(listBlock)) problems.push("the cards are not numbered in the order shown")
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2300,7 +2308,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "NEXT STEPS — the next 12 months live inside each career, built from its own data; the report keeps the overview",
+        name: "NEXT STEPS — the next 12 months live inside each career, built from its own data; nothing about a career sits outside it",
         // REPLACES "collapsible, and carries derived actions rather than prose alone" (owner, Round 13:
         // "what to do next in 12 months should be inside each profession"). The report-level roll-up
         // of the top three went; each card's own steps already named the same path step and exams.
@@ -2311,7 +2319,8 @@ const fixtures = [
 
             const problems = []
             if (/What to do next/.test(page)) problems.push("the report still has its own 'What to do next' section")
-            if (!/<strong>Your options at a glance<\/strong>/.test(page)) problems.push("the report-level overview is gone")
+            // Round 18 (owner): "every detail has to be inside the profession" — the overview went too
+            if (/<strong>Your options at a glance<\/strong>|ReportHeadline/.test(page)) problems.push("the report-level overview is back")
             if (!/<Section title="Your next 12 months">/.test(card)) problems.push("the card has no 'Your next 12 months'")
 
             // the card's steps come from real data: its path step (levelPath) and its exams
@@ -4330,6 +4339,8 @@ const fixtures = [
             const voice = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/VoiceInput.js"), "utf8")
             if (/hi-IN|हिंदी/.test(voice)) problems.push("the mic still offers a language choice")
             if (!/session\.lang = "en-IN"/.test(voice) || !/interimResults = true/.test(voice)) problems.push("the mic is not Indian English with live words")
+            // Round 18 (owner): after Add empties the box, the words never come back
+            if (!/\}, \[value\]\)/.test(voice) || !/written\.current === null/.test(voice)) problems.push("the mic keeps writing after the page empties the box")
             const privacy = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Privacy.js"), "utf8")
             if (!/voice typing/i.test(privacy)) problems.push("the privacy policy does not mention voice typing")
             return problems.length > 0 ? problems.join("; ") : null
@@ -4542,6 +4553,208 @@ const fixtures = [
             })
             const hook = fs.readFileSync(path.join(ASSESSMENT_DIR, "useLeaveWarning.js"), "utf8")
             if (!/beforeunload/.test(hook) || !/closest\("a\[href\]"\)/.test(hook)) problems.push("the warning does not cover a refresh and a link")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "INTEREST FORM (Round 18) — College shows for college students, \"life moved on\" is never a challenge, old labels still read, one Save button when editing",
+        run: () => {
+            const problems = []
+            // the file imports string-similarity; these checks never reach it, so a plain stand-in is enough
+            const file = path.join(__dirname, "../../../Frontend/src/pages/Interest/interestFormState.js")
+            const source = fs.readFileSync(file, "utf8").replace(/^import stringSimilarity from "string-similarity"$/m, "const stringSimilarity = { compareTwoStrings: (a, b) => (a === b ? 1 : 0) }")
+            const scratch = path.join(require("os").tmpdir(), `interestFormState-${process.pid}.js`)
+            fs.writeFileSync(scratch, source)
+            const state = loadEsModule(scratch)
+            fs.unlinkSync(scratch)
+
+            const stages = (detail) => state.getVisibleLifeStages({ journey: "college", journeyDetail: detail })
+            if (!stages({}).includes("college")) problems.push("a college student with no collegeStage (older account) does not see College")
+            if (!stages({ collegeStage: "enrolled" }).includes("college")) problems.push("an enrolled student does not see College")
+            if (stages({ collegeStage: "pre_admission" }).includes("college")) problems.push("a student not yet in college sees College")
+
+            if (!state.HELD_BACK_OPTIONS.includes(state.LIFE_MOVED_ON) || state.YOU_OR_THEM_OPTIONS.includes(state.LIFE_MOVED_ON)) problems.push("\"Life moved on\" must be a paused-activity answer only")
+            if (!state.YOU_OR_THEM_OPTIONS.every((label) => /^(Internal|Interpersonal|External) problems \(/.test(label))) problems.push("the held-back labels do not say \"problems\"")
+            if (state.currentHeldBack("Internal (self-doubt, fear, lack of clarity, difficult to handle, lacked skills etc)") !== state.YOU_OR_THEM_OPTIONS[0]) problems.push("an old label does not map to today's")
+            if (state.currentHeldBack("Time constraints/Phase of life ended") !== state.LIFE_MOVED_ON) problems.push("the old time option does not read as life moved on")
+
+            const form = state.normalizeFormState({
+                currentInterests: { discontinuedPursuits: {
+                    chess: { isSelected: true, reason: ["Other"], otherReason: "school got busy", youOrThem: state.LIFE_MOVED_ON },
+                    dance: { isSelected: true, reason: ["Other"], otherReason: "family said no", youOrThem: "Interpersonal (influence or pressure from family, friends, mentors, etc.)" },
+                } },
+            })
+            if (form.currentInterests.discontinuedPursuits.dance.youOrThem !== state.YOU_OR_THEM_OPTIONS[1]) problems.push("a saved old label is not moved to today's when loaded")
+            const { extractedProblems } = state.extractInterestData(form, ["highSchool"])
+            if (extractedProblems.some((item) => /school got busy/.test(item.problem))) problems.push("\"Life moved on\" became a challenge")
+            if (!extractedProblems.some((item) => /family said no/.test(item.problem) && item.reason === "interpersonalInternalProblems")) problems.push("an interpersonal reason did not become an interpersonal challenge")
+
+            const aspirations = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Interest/AspirationalProfessions.js"), "utf8")
+            if (!/!isEditing && <>/.test(aspirations) || !/isEditing \? "Save changes"/.test(aspirations)) problems.push("editing a sent form still shows Save and Finish")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "PROFILE GROUPS (Round 18) — every factor in one of six groups, named and explained; words out, never a number; confidence as a word",
+        run: () => {
+            const problems = []
+            const { MAJOR_FACTORS, MINOR_FACTORS } = require("../../scoring/scoreProfile")
+            const { FACTOR_GUIDE, GUIDE_GROUPS } = require("../../utils/factorGuide")
+            const { scoreGroupsFor } = require("../../Routers/reportsRouter")
+            const all = [...new Set([...MAJOR_FACTORS, ...MINOR_FACTORS])]
+            const grouped = GUIDE_GROUPS.flatMap((group) => group.factors)
+            all.filter((slug) => !grouped.includes(slug)).forEach((slug) => problems.push(`${slug} is in no group`))
+            grouped.filter((slug, index) => grouped.indexOf(slug) !== index).forEach((slug) => problems.push(`${slug} is in two groups`))
+            grouped.filter((slug) => !FACTOR_GUIDE[slug] || !FACTOR_GUIDE[slug].name || !FACTOR_GUIDE[slug].meaning).forEach((slug) => problems.push(`${slug} has no name or meaning`))
+            if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,uncertainty,solving") problems.push("the groups are not in the owner's order")
+            if (GUIDE_GROUPS.some((group) => !group.meaning)) problems.push("a group has no meaning line")
+
+            const raw = Object.fromEntries(all.map((slug, index) => [slug, (index * 37) % 11]))
+            const coverage = Object.fromEntries(all.map((slug) => [slug, 0.5]))
+            const groups = scoreGroupsFor(raw, coverage)
+            const factors = groups.flatMap((group) => group.factors)
+            factors.forEach((factor) => {
+                Object.entries(factor).forEach(([key, value]) => {
+                    if (typeof value === "number" && key !== "partialPct") problems.push(`${factor.slug}.${key} went out as a number`)
+                })
+            })
+            const confidence = factors.find((factor) => factor.slug === "confidence")
+            if (!confidence || !["High", "Medium", "Low"].includes(confidence.level)) problems.push("confidence is not shown as a word level")
+            const uncertainty = factors.find((factor) => factor.slug === "uncertainty_tolerance")
+            if (!uncertainty || uncertainty.level !== undefined || !uncertainty.position) problems.push("uncertainty tolerance is not a position")
+            if (factors.some((factor) => factor.partialPct !== 50)) problems.push("Partial · N% is missing")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "REPORT (Round 18) — what to work on is names only; the fundamentals are words; subjects per route; plain questions; no core-engineering tag, no AI summary, no foreign links",
+        run: () => {
+            const problems = []
+            const { workOnFor, fundamentalsFor } = require("../../Routers/reportsRouter")
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const professions = require("../../data/ALL-professions.json").professions
+            const routes = require("../../data/subject_routes.json")
+            const { FACTOR_GUIDE } = require("../../utils/factorGuide")
+            const names = new Set(Object.values(FACTOR_GUIDE).map((entry) => entry.name))
+
+            // what to work on: weight >= 0.3, more than 1.5 below, names only, never uncertainty, never unmeasured
+            const low = { focus: 1, reasoning: 2, logical_intelligence: 1, uncertainty_tolerance: 0 }
+            const workOn = workOnFor("swc-software-developer", low)
+            if (workOn.length === 0 || workOn.length > 4) problems.push(`what to work on gave ${workOn.length} items`)
+            if (workOn.some((item) => typeof item !== "string" || !names.has(item) || /\d/.test(item))) problems.push(`what to work on is not plain names: ${JSON.stringify(workOn)}`)
+            if (workOn.includes(FACTOR_GUIDE.uncertainty_tolerance.name)) problems.push("uncertainty tolerance became something to work on")
+            if (workOnFor("swc-software-developer", {}).length !== 0) problems.push("an unmeasured factor was listed as something to work on")
+            if (workOnFor("swc-software-developer", { focus: 7.5 }).length !== 0) problems.push("a small gap was listed")
+
+            const fundamentals = fundamentalsFor({ confidence: 8 })
+            if (fundamentals.length !== 4 || fundamentals.some((item) => !item.name || !item.meaning || !item.why)) problems.push("the four fundamentals are not all named and explained")
+            if (fundamentals.some((item) => Object.values(item).some((value) => typeof value === "number"))) problems.push("a fundamental went out as a number")
+            if (fundamentals[0].level !== "High" || fundamentals[1].level !== null) problems.push("fundamental levels are wrong (or a missing one is not null)")
+
+            // subjects per route for every any-stream career whose routes need particular subjects,
+            // and every "degree is common, not required" career
+            const gated = /\bB\.?\s?Tech\b|\bB\.E\.|\bMBBS\b|\bBDS\b|\bB\.?\s?Arch\b|\bB\.?\s?Pharm\b/
+            professions.forEach((profession) => {
+                const any = profession.class12_prerequisite === "any" || (Array.isArray(profession.class12_prerequisite) && profession.class12_prerequisite.includes("any"))
+                const needs = any && ((profession.path_to_entry || []).some((step) => gated.test(step.requirement)) || (profession.degree_dependency === "undergrad" && profession.mid_stream_entry === "open"))
+                if (needs && !routes.careers[profession.id]) problems.push(`${profession.id} has no subjects per route`)
+            })
+            Object.entries(routes.careers).forEach(([id, rows]) => {
+                if (!professions.some((profession) => profession.id === id)) problems.push(`subject routes for an unknown career ${id}`)
+                if (!Array.isArray(rows) || rows.length < 2 || rows.some((row) => !row.route || !row.subjects)) problems.push(`${id}: a route without its subjects`)
+            })
+            const software = studentFacing(professions.find((profession) => profession.id === "swc-software-developer"))
+            if (!software.subjectRoutes || software.studyAbroadHelps !== true && software.studyAbroadHelps !== false) problems.push("the card does not get its subject routes or the abroad flag")
+            if (software.industries.some((name) => /Council/.test(name))) problems.push("an industry still reads as a council name")
+
+            // what reaches the screen — comments may still name what was removed
+            const read = (name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
+            const card = read("ProfessionCard.js")
+            const page = read("ReportPage.js")
+            const compare = read("ComparePage.js")
+            const combined = read("CombinedCareers.js")
+            const all = [card, page, compare, combined].join("\n")
+            if (/pc-tag">Core engineering/.test(all)) problems.push("the core-engineering tag is back")
+            if (/What this says about you|sections\.opening|sections\.readiness/.test(page)) problems.push("the AI summary is back on the report")
+            if (/Working for yourself|Can you switch in\?/.test(all)) problems.push("an old unclear heading is back")
+            if (!/Can I start my own business or freelance\?/.test(card) || !/Can I move into this from another course or job\?/.test(card)) problems.push("the card does not ask the plain questions")
+            if (!/<Section title="What to work on">/.test(card) || !/What to work on/.test(compare)) problems.push("what to work on is missing")
+            if (!/"Worth knowing"/.test(compare)) problems.push("compare has no Worth knowing row")
+            if (/official page ↗|recognition\.url/.test(card)) problems.push("the card still links to foreign pages")
+            if (!/we'll connect you with a consultant/.test(card)) problems.push("the abroad part has no consultant note")
+            if (!/subjectRoutes/.test(card)) problems.push("the card does not show subjects per route")
+            if (/journeyHeadline|mastersOptions/.test(page)) problems.push("a report-level overview is back")
+            if (!/data\.fundamentals/.test(page)) problems.push("the fundamentals are not on the report")
+            if (!/Not a career on our list/.test(page) || !/signal\.readAs/.test(page) || !/Direct match/.test(page) || !/Indirect match/.test(page)) problems.push("the aspiration copy is not the owner's")
+            const abroadCard = read("StudyAbroadCard.js")
+            if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad card is not a waitlist")
+            if (!/kind: "waitlist"/.test(fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8"))) problems.push("the waitlist is not recorded as such")
+            return problems.length > 0 ? problems.slice(0, 8).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "NOTES (Round 18) — every career note has a plain student version (or is marked builder-only); only that version is served; short, no builder terms",
+        // The owner asked for every note rewritten so a Class 9 student and a working professional can
+        // both follow it. The original stays in the file for the admin; only `student` is served.
+        run: () => {
+            const problems = []
+            const professions = require("../../data/ALL-professions.json").professions
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const BUILDER = /DECISIONS\.md|§|merge test|substitution test|Sector \d|taxonomy|audit\.py|compensation filter|\bTier [ABC]\b|this record|admin_review|\b[a-z]+_[a-z_]+\b/
+            let notes = 0
+            let builderOnly = 0
+            professions.forEach((profession) => {
+                const served = studentFacing(profession).nuances.map((nuance) => nuance.statement)
+                ;(profession.nuances || []).forEach((nuance, index) => {
+                    notes += 1
+                    if (!("student" in nuance)) return problems.push(`${profession.id}#${index} has no student version`)
+                    if (nuance.student === null) {
+                        builderOnly += 1
+                        return
+                    }
+                    if (typeof nuance.student !== "string" || nuance.student.trim() === "") problems.push(`${profession.id}#${index}: empty student text`)
+                    else if (nuance.student.length > 300) problems.push(`${profession.id}#${index}: ${nuance.student.length} characters`)
+                    else if (BUILDER.test(nuance.student)) problems.push(`${profession.id}#${index}: builder words in "${nuance.student.slice(0, 50)}…"`)
+                    if (served.includes(nuance.statement) && nuance.statement !== nuance.student) problems.push(`${profession.id}#${index}: the original wording was served`)
+                })
+                served.forEach((text) => {
+                    if (!(profession.nuances || []).some((nuance) => nuance.student === text)) problems.push(`${profession.id}: served text that is not a student version`)
+                })
+            })
+            if (notes !== 438) problems.push(`expected 438 notes, found ${notes}`)
+            if (builderOnly > 20) problems.push(`${builderOnly} notes hidden as builder-only — too many`)
+            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "MENTORSHIP (Round 18) — the sessions are listed, the student says what they want (600 at most), the abroad-help waitlist is a tick box; the admin sees both; \"Suits you\" is explained",
+        run: () => {
+            const problems = []
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../..", file), "utf8")
+            const router = read("Backend/Routers/mentorWaitlistRouter.js")
+            const model = read("Backend/model/mentorWaitlistModel.js")
+            const page = read("Frontend/src/pages/User/Mentorship.js")
+            const admin = read("Frontend/src/pages/Admin/MentorMatchesList.js")
+            const save = (router.split('router.put("/saveMyHelp"')[1] || "").split("router.")[0]
+            if (!save) problems.push("there is no saveMyHelp route")
+            if (!/hasMentorPlan\(req\.user\)/.test(save)) problems.push("saveMyHelp is open to students without a mentor plan")
+            if (!/const HELP_MAX = 600/.test(router) || !/cleanText\(req\.body\.helpWanted, HELP_MAX\)/.test(save)) problems.push("the help text is not cleaned and capped at 600")
+            if (!/req\.body\.abroadHelpWaitlist === true/.test(save)) problems.push("the abroad tick is not read as a strict yes")
+            if (/choiceSentAt/.test(save)) problems.push("saving the help text touches the clock")
+            if (!/helpWanted: "", abroadHelpWaitlist: ""/.test(router)) problems.push("a re-joined place keeps the old help text")
+            if (!/helpWanted:/.test(model) || !/abroadHelpWaitlist:/.test(model)) problems.push("the model has no help fields")
+            ;["What the work is like day to day", "The drawbacks and the perks", "mentor's own story", "How to get in, and the skills", "Your questions, answered"]
+                .forEach((topic) => { if (!page.includes(topic)) problems.push(`the session list lacks "${topic}"`) })
+            if (!/Anything specific you want to know\?/.test(page)) problems.push("there is no open question box")
+            if (!/In a future version we'll help/.test(page)) problems.push("the abroad waitlist box is missing")
+            if (!/Job roles are listed by how well they fit you/.test(page)) problems.push("\"Suits you\" is not explained")
+            if (!/dataIndex: "helpWanted"/.test(admin) || !/dataIndex: "abroadHelpWaitlist"/.test(admin)) problems.push("the admin does not see what the student asked for")
+            if (/optional/i.test(page.replace(/\/\/.*$/gm, ""))) problems.push("the page says \"optional\"")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

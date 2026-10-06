@@ -5,16 +5,10 @@ import { whyFits } from "./reportPlan"
 // Photographer when photography and nature both showed up, Sports Nutritionist for nutrition and
 // sport. Hand-checked careers, never invented per student.
 //
-// The tags travel as they do on every other card: Blue-collar from the reviewed list, Core
-// engineering when either side's career is core engineering — and "Show first: core engineering"
-// moves those to the top here too.
-function CombinedCareers({ combined, details, showFirst }) {
+// The Blue-collar tag travels as it does on every other card. There is no Core engineering tag
+// any more (owner, Round 18) — core engineering is a filter on the main list.
+function CombinedCareers({ combined }) {
     if (!Array.isArray(combined) || combined.length === 0) return null
-
-    const isCore = (career) => (career.parentIds || []).some((id) => details[id] && details[id].coreEngineering)
-    const ordered = showFirst === "coreEngineering"
-        ? [...combined.filter(isCore), ...combined.filter((career) => !isCore(career))]
-        : combined
 
     return (
         <section className="combined-careers">
@@ -22,7 +16,7 @@ function CombinedCareers({ combined, details, showFirst }) {
             <p className="report-small">
                 Some careers sit between two fields. These join two areas your own activities led to.
             </p>
-            {ordered.map((career) => {
+            {combined.map((career) => {
                 const strengths = whyFits(career).strengths
                 return (
                     <details key={career.combinedId} className="profession-card combined-card">
@@ -30,7 +24,6 @@ function CombinedCareers({ combined, details, showFirst }) {
                             <span className="pc-name">
                                 {career.profession}
                                 {career.blueCollar && <span className="pc-tag">Blue-collar</span>}
-                                {isCore(career) && <span className="pc-tag">Core engineering</span>}
                             </span>
                             <span className="pc-sign" aria-hidden="true" />
                         </summary>

@@ -14,9 +14,11 @@ const blueCollar = require("../data/blue_collar.json")
 const abroad = require("../data/abroad.json")
 const abroadWork = require("../data/abroad_work.json")
 const studySources = require("../data/study_sources.json")
+const subjectRoutes = require("../data/subject_routes.json")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 const { examsFor } = require("../utils/examCalendar")
 const { studyPlacesFor, getStudyOverrides } = require("../utils/studyPlaces")
+const { industryByCode } = require("../utils/industries")
 
 // The full records, for /getProfession. The slim projection below is what /search walks.
 const fullById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
@@ -107,20 +109,23 @@ const factStatus = (professionId, field, approvedOverride) => {
 
 const labelFactors = (slugs) => asArray(slugs).map((slug) => FACTOR_LABELS[slug] || String(slug).replace(/_/g, " "))
 
-// ⚠ THE NUANCE WHITELIST. `nuances` ARE NOT UNIFORMLY STUDENT-SAFE.
+// THE NOTES A STUDENT READS ARE WRITTEN FOR THEM (owner, Round 18). Every one of the 438 nuances
+// was rewritten in one or two plain sentences that a Class 9 student and a working professional can
+// both follow, and stored beside the original as `nuances[i].student`. The original `statement` —
+// written for whoever built the data, full of "the merge test", "Sector 5" and field names — stays
+// in the file for the admin and is never served. Notes that only explain how the data was built
+// have `student: null` and are not shown at all.
 //
-// Each nuance names the field it annotates. Most are written for the student and are the best
-// content in the dataset. Two `field` values are not:
-//
-//   "filter"        notes addressed to the BUILDER about the compensation filter. The Farmer one
-//                   reads "Fails the compensation filter, and it is the largest occupation in the
-//                   country… the application must be able to reverse it." Shown to a student from a
-//                   farming family that is the worst content failure this redesign could produce.
-//                   Handloom Weaver and Anganwadi Educator are the same shape.
-//   "verification"  sourcing notes about why a record is tier B rather than C. Internal QA.
-//
-// A WHITELIST, NOT A BLACKLIST, and that is the point: a new `field` value added to the taxonomy
-// later is excluded by default and someone has to decide it is safe. A blacklist would ship it.
+// The two screens below stay as a safety net on the student text itself — a sentence addressed to a
+// builder, or any snake_case identifier, still never reaches a student's screen:
+//   BUILDER_MARKERS   sentences addressed to whoever is building this, not to a student.
+//   RAW_IDENTIFIER    any snake_case token — `mid_career`, `admin_review`, `india_demand`.
+const BUILDER_MARKERS = /audit\.py|this record carries|the application must|compensation filter|tier [ABC] rather than|rejected by audit|admin review|DECISIONS\.md|merge test/i
+const RAW_IDENTIFIER = /\b[a-z]+_[a-z_]+\b/
+
+// AND A FIELD WHITELIST, kept from before (a whitelist, not a blacklist): a note on a new `field`
+// is excluded until someone decides it is safe. "filter" and "verification" notes are about how the
+// data was built.
 const STUDENT_SAFE_NUANCE_FIELDS = [
     "profession", "job_roles", "role_spread", "professional_sector", "industrial_sectors",
     "degree_dependency", "class12_prerequisite", "path_to_entry", "entrance_exams",
@@ -129,48 +134,36 @@ const STUDENT_SAFE_NUANCE_FIELDS = [
     "mid_stream_entry",
 ]
 
-// ⚠ AND A SECOND SCREEN ON THE STATEMENT ITSELF, because the field whitelist is not enough.
-//
-// A fixture caught this: nuances sitting in perfectly student-facing FIELDS still contain prose
-// written for the builder. Real examples from `economics` and `job_roles`, both whitelisted above:
-//
-//     "mid_career EXCLUDES business ownership by design…"
-//     "…which would duplicate a job role across professions and is rejected by audit.py."
-//
-// Two different leaks, so two rules:
-//
-//   BUILDER_MARKERS   sentences addressed to whoever is building this, not to a student.
-//   RAW_IDENTIFIER    any snake_case token — `mid_career`, `admin_review`, `verified_facts`,
-//                     `india_demand`. This is the same rule the rest of the product already
-//                     enforces everywhere: an identifier never reaches a student's screen. 74 of
-//                     438 nuances carry one.
-//
-// Together these drop 90 of 438 and keep 348. The dropped ones are not lost — they are in the
-// taxonomy and an admin can still read them. They are simply not shown to a child.
-const BUILDER_MARKERS = /audit\.py|this record carries|the application must|compensation filter|tier [ABC] rather than|rejected by audit|admin review/i
-const RAW_IDENTIFIER = /\b[a-z]+_[a-z_]+\b/
-
 const nuanceIsStudentSafe = (nuance) => (
     STUDENT_SAFE_NUANCE_FIELDS.includes(nuance.field)
-    && !BUILDER_MARKERS.test(nuance.statement)
-    && !RAW_IDENTIFIER.test(nuance.statement)
+    && typeof nuance.student === "string"
+    && nuance.student.trim() !== ""
+    && !BUILDER_MARKERS.test(nuance.student)
+    && !RAW_IDENTIFIER.test(nuance.student)
 )
 
 // The nuance's `field` says which part of the record it annotates — but it says it in the
 // taxonomy's own field names. The card needs to know where to attach it; the student does not need
 // to see `entry_competition`. Translated to a section id at the boundary, like everything else.
+//
+// ONE SECTION PER PART OF THE CARD (owner, Round 18): "each field's nuance should show in that field
+// as a note", so a note about Class 12 subjects sits under the subjects, one about freelancing under
+// "Can I start my own business or freelance?". A note whose part isn't shown goes to "Worth knowing".
 const NUANCE_SECTION = {
-    path_to_entry: "path", class12_prerequisite: "path", years_to_qualify: "path",
-    degree_dependency: "path", after_undergrad: "path", mid_stream_entry: "path",
-    entry_window: "path",
+    path_to_entry: "path", years_to_qualify: "path",
+    class12_prerequisite: "subjects",
+    degree_dependency: "degree", licensing_body: "degree",
+    mid_stream_entry: "move_in",
+    after_undergrad: "masters",
+    entry_window: "deadline",
     entrance_exams: "exams", entry_competition: "exams",
-    industrial_sectors: "where", job_roles: "where", professional_sector: "where",
-    profession: "where",
-    economics: "pay", self_employment: "pay",
+    industrial_sectors: "where", professional_sector: "where",
+    profession: "what",
+    job_roles: "roles", role_spread: "roles",
+    economics: "pay",
+    self_employment: "own_business",
     demand_signal: "demand",
     ai_exposure: "ai",
-    role_spread: "roles",
-    licensing_body: "path",
 }
 
 // What a student is allowed to see. A PROJECTION, NEVER THE RAW RECORD — the raw one carries
@@ -217,7 +210,9 @@ const studentFacing = (profession, studyOverrides) => {
         oneLiner: profession.one_liner,
         jobRoles: profession.job_roles || [],
 
-        industries: (profession.industrial_sectors || []).map((code) => SECTOR_NAMES.get(code) || code),
+        // in the words a person would say — "Agriculture", not "Agriculture Skill Council of India"
+        // (owner, Round 18: easy terms)
+        industries: (profession.industrial_sectors || []).map((code) => (industryByCode.get(code) || {}).name || SECTOR_NAMES.get(code) || code),
 
         pathToEntry: (profession.path_to_entry || []).map((step) => ({
             step: step.step,
@@ -249,6 +244,13 @@ const studentFacing = (profession, studyOverrides) => {
         // Where to study (Round 11): official links always; the institution list once the owner has
         // reviewed it. null for careers with no formal programme to point at.
         studyPlaces: studyPlacesFor(profession.id, layers.places, layers.cutoffs || new Map()),
+
+        // Class 11–12 subjects PER ROUTE (owner, Round 18) — for a career that takes any stream but
+        // whose usual routes include a degree that needs particular subjects. null for the rest.
+        subjectRoutes: subjectRoutes.careers[profession.id] || null,
+
+        // The report's "Studying abroad helps" filter (owner, Round 18) — the same reviewed file
+        studyAbroadHelps: Boolean(abroadRow && abroadRow.need !== "not_needed"),
 
         // Is studying abroad needed (Round 11)? null when it is not — the card then says nothing.
         // Never a ranking input: matching does not read data/abroad.json.
@@ -365,7 +367,7 @@ const studentFacing = (profession, studyOverrides) => {
 
         nuances: (profession.nuances || [])
             .filter(nuanceIsStudentSafe)
-            .map((nuance) => ({ section: NUANCE_SECTION[nuance.field] || "path", statement: nuance.statement })),
+            .map((nuance) => ({ section: NUANCE_SECTION[nuance.field] || "other", statement: nuance.student })),
 
         taxonomyVersion: taxonomy.generated_on || null,
     }
