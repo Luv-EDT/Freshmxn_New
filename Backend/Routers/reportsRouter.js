@@ -8,6 +8,7 @@ const requireDiscovery = require("../middlewares/requireDiscovery")
 const User = require("../model/userModel")
 const { directionUpdate } = require("../utils/direction")
 const { FACTOR_LABELS } = require("../workers/reportComposer")
+const { FACTOR_GUIDE, GUIDE_GROUPS, WHY_IT_MATTERS } = require("../utils/factorGuide")
 const DEGREE_OPTIONS = require("../data/degree_options.json")
 const DISABILITY_SUPPORT = require("../data/disability_support.json")
 
@@ -229,38 +230,14 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
 // the number itself never leaves the server.
 //
 // Two factors are deliberately special:
-//   confidence            — left out entirely. It is never shown to a student as "your confidence
-//                           score" (profilesModel.js; PRD §B.4).
+//   confidence            — shown as a WORD LEVEL only, never a number (owner, Round 18; it was left
+//                           out entirely before). It is one of the four fundamentals.
 //   uncertainty_tolerance — a POSITION, not a level (Master Plan rule 4), so it goes out as where the
 //                           student sits between two ways of working, never as high or low.
 // data_quality, flags, banks and components are never sent.
 //
-// Grouped and labelled with FACTOR_LABELS, the same map the report uses, so a factor has one name
-// everywhere a student sees it.
-const SCORE_GROUPS = [
-    { title: "Personality", factors: ["openness", "conscientiousness", "agreeableness", "extraversion", "emotional_stability"] },
-    { title: "Thinking and memory", factors: ["reasoning", "short_term_memory", "long_term_memory", "processing_speed", "focus", "learning_capacity"] },
-    // The seven intelligences are mostly SELF-REPORT — what a student feels drawn to, not a measured
-    // ability (mi.js). The title says so, so "High" reads as a strong pull rather than a test score.
-    {
-        title: "Areas you feel drawn to",
-        factors: [
-            "logical_intelligence", "verbal_intelligence", "spatial_intelligence", "musical_intelligence",
-            "bodily_intelligence", "naturalistic_intelligence", "existential_intelligence",
-        ],
-    },
-    {
-        title: "People and practical sense",
-        factors: ["intrapersonal_intelligence", "interpersonal_intelligence", "emotional_intelligence", "practical_intelligence"],
-    },
-    {
-        title: "How you work",
-        factors: [
-            "firmness", "collaboration", "consistency_grit", "divergent_thinking", "convergent_thinking",
-            "propensity_to_go_deep", "informed_decision_making",
-        ],
-    },
-]
+// Grouped, named and explained with utils/factorGuide.js — the same table the report's fundamentals
+// use, so a factor has one name and one meaning everywhere a student sees it (owner, Round 18).
 
 // THIRDS, with a rounding tolerance. Scores are stored to two decimals, so the top third starts at
 // 6.67 (20/3) — the old 6.7 cut put a digit span of 7, a verbal memory of 24/36 and a story recall
@@ -289,6 +266,21 @@ const coveragePctOf = (coverage, score) => {
     const pct = Math.round(coverage * 100)
     return pct < 100 ? pct : null
 }
+
+// The Profile's groups, built from the raw scores — words out, numbers never (pure, for the fixture)
+const scoreGroupsFor = (raw = {}, coverage = {}) => GUIDE_GROUPS.map((group) => ({
+    key: group.key,
+    title: group.title,
+    meaning: group.meaning,
+    factors: group.factors.map((slug) => ({
+        slug,
+        name: FACTOR_GUIDE[slug].name,
+        meaning: FACTOR_GUIDE[slug].meaning,
+        // null → "not measured yet" on the page
+        ...(slug === "uncertainty_tolerance" ? { position: uncertaintyPosition(raw[slug]) } : { level: levelFor(raw[slug]) }),
+        partialPct: coveragePctOf(coverage[slug], raw[slug]),
+    })),
+}))
 
 // ========================
 // Retry My Report
@@ -396,19 +388,7 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
                 // Round 13: a profile scored before Round 10 stored no coverage, so it can show no
                 // "Partial · N%" until it is scored again ("Update my report")
                 coverageKnown: Object.keys(coverage).length > 0,
-                groups: SCORE_GROUPS.map((group) => ({
-                    title: group.title,
-                    factors: group.factors.map((slug) => ({
-                        slug,
-                        label: FACTOR_LABELS[slug] || String(slug).replace(/_/g, " "),
-                        level: levelFor(raw[slug]),   // null → "not measured yet" on the page
-                        partialPct: coveragePctOf(coverage[slug], raw[slug]),
-                    })),
-                })),
-                uncertainty: {
-                    label: FACTOR_LABELS.uncertainty_tolerance,
-                    position: uncertaintyPosition(raw.uncertainty_tolerance),
-                },
+                groups: scoreGroupsFor(raw, coverage),
             },
         })
 
@@ -423,3 +403,4 @@ router.get("/getMyScores", authMiddleware, requireDiscovery, async (req, res) =>
 
 module.exports = router
 module.exports.levelFor = levelFor
+module.exports.scoreGroupsFor = scoreGroupsFor

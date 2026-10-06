@@ -4587,6 +4587,39 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "PROFILE GROUPS (Round 18) — every factor in one of six groups, named and explained; words out, never a number; confidence as a word",
+        run: () => {
+            const problems = []
+            const { MAJOR_FACTORS, MINOR_FACTORS } = require("../../scoring/scoreProfile")
+            const { FACTOR_GUIDE, GUIDE_GROUPS } = require("../../utils/factorGuide")
+            const { scoreGroupsFor } = require("../../Routers/reportsRouter")
+            const all = [...new Set([...MAJOR_FACTORS, ...MINOR_FACTORS])]
+            const grouped = GUIDE_GROUPS.flatMap((group) => group.factors)
+            all.filter((slug) => !grouped.includes(slug)).forEach((slug) => problems.push(`${slug} is in no group`))
+            grouped.filter((slug, index) => grouped.indexOf(slug) !== index).forEach((slug) => problems.push(`${slug} is in two groups`))
+            grouped.filter((slug) => !FACTOR_GUIDE[slug] || !FACTOR_GUIDE[slug].name || !FACTOR_GUIDE[slug].meaning).forEach((slug) => problems.push(`${slug} has no name or meaning`))
+            if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,uncertainty,solving") problems.push("the groups are not in the owner's order")
+            if (GUIDE_GROUPS.some((group) => !group.meaning)) problems.push("a group has no meaning line")
+
+            const raw = Object.fromEntries(all.map((slug, index) => [slug, (index * 37) % 11]))
+            const coverage = Object.fromEntries(all.map((slug) => [slug, 0.5]))
+            const groups = scoreGroupsFor(raw, coverage)
+            const factors = groups.flatMap((group) => group.factors)
+            factors.forEach((factor) => {
+                Object.entries(factor).forEach(([key, value]) => {
+                    if (typeof value === "number" && key !== "partialPct") problems.push(`${factor.slug}.${key} went out as a number`)
+                })
+            })
+            const confidence = factors.find((factor) => factor.slug === "confidence")
+            if (!confidence || !["High", "Medium", "Low"].includes(confidence.level)) problems.push("confidence is not shown as a word level")
+            const uncertainty = factors.find((factor) => factor.slug === "uncertainty_tolerance")
+            if (!uncertainty || uncertainty.level !== undefined || !uncertainty.position) problems.push("uncertainty tolerance is not a position")
+            if (factors.some((factor) => factor.partialPct !== 50)) problems.push("Partial · N% is missing")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

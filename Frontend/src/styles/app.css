@@ -2383,3 +2383,20 @@ button.show-rest {
 .mentor-opinions li.is-agree {
     color: var(--navy-soft);
 }
+
+/* Profile → Your psychometric profile (Round 18): one collapsible per group; each factor a row with
+   its name and meaning on the left, its level (and Partial · N%) on the right — stacked on a phone */
+.score-groups .score-group { margin-bottom: var(--space-2); }
+.score-list { list-style: none; padding: 0; margin: var(--space-2) 0 0; }
+.score-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+}
+.score-row > div:first-child { flex: 1 1 260px; min-width: 0; }
+.score-level { display: flex; flex-wrap: wrap; gap: 6px; }
+.score-level .score-partial { margin-left: 0; }
