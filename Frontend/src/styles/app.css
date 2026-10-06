@@ -2501,3 +2501,9 @@ button.pc-toggle .pc-name {
     margin: 0;
     padding-left: 1.1em;
 }
+
+/* Mentorship → "What do you want from your mentor?" (Round 18) */
+.mentor-help textarea {
+    width: 100%;
+    max-width: 560px;
+}

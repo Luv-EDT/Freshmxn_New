@@ -113,6 +113,9 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         },
         { title: "Industry", dataIndex: "chosenIndustry", render: (value) => value || "—" },
         // shared only when the student ticked "my mentor can know" on the assessment page
+        // Round 18: what the student wants from the sessions, for the mentor, and the abroad-help waitlist
+        { title: "Wants to know", dataIndex: "helpWanted", render: (value) => value || "—" },
+        { title: "Abroad help waitlist", dataIndex: "abroadHelpWaitlist", render: (value) => (value ? "Yes" : "—") },
         { title: "Support needs (shared)", render: (_, record) => ((record.sharedSupportNeeds || []).length > 0 ? record.sharedSupportNeeds.join(", ") : "—") },
         { title: "Chosen on", render: (_, record) => (record.choiceSentAt ? dayjs(record.choiceSentAt).format("DD MMM YYYY") : "—") },
         {

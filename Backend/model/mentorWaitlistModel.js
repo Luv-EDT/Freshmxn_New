@@ -39,6 +39,13 @@ const mentorWaitlistSchema = new mongoose.Schema(
         otherRequest: {
             type: String, // Round 12, Mentor Only: the career they want in their own words — the admin finds this mentor separately
         },
+        helpWanted: {
+            type: String, // Round 18: "Anything specific you want to know?" in the student's words (≤600), for the mentor
+        },
+        abroadHelpWaitlist: {
+            type: Boolean, // Round 18: wants help with a master's abroad / settling abroad when we offer it (a later version)
+            default: false,
+        },
         planTier: {
             type: Number, // 2 | 3 — the plan the choice was made on
         },

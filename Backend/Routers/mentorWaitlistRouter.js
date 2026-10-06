@@ -102,7 +102,7 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 { _id: row._id },
                 {
                     $set: { matchStatus: "awaiting_choice", resolution: null, adminNote: "Re-joined the mentor plan after leaving it — waiting for a new choice" },
-                    $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                    $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", helpWanted: "", abroadHelpWaitlist: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
                 },
                 { returnDocument: "after" }
             )
@@ -126,6 +126,8 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 chosenJobRole: row.chosenJobRole || null,
                 chosenIndustry: row.chosenIndustryCode && industryByCode.get(row.chosenIndustryCode) ? industryByCode.get(row.chosenIndustryCode).name : null,
                 otherRequest: row.otherRequest || null,
+                helpWanted: row.helpWanted || "",
+                abroadHelpWaitlist: Boolean(row.abroadHelpWaitlist),
                 mentorOnly: isMentorOnly(req.user),
                 options,
                 choiceSentAt: row.choiceSentAt,
@@ -140,6 +142,49 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to fetch your waitlist place",
+            error: error.message,
+        })
+    }
+})
+
+
+// ========================
+// Save My Help (Round 18)
+// ========================
+
+// What the student wants from the session, in their own words, and whether they want help with a
+// master's abroad or settling abroad when we offer it. Can be changed any time — it is not part of
+// the one-time choice and does not touch the 20-business-day clock.
+const HELP_MAX = 600
+
+router.put("/saveMyHelp", authMiddleware, async (req, res) => {
+    try {
+        if (!hasMentorPlan(req.user)) {
+            return res.status(403).json({
+                success: false,
+                message: "The mentor waitlist comes with the Discovery + Mentor or Mentor Only plan"
+            })
+        }
+
+        const helpWanted = cleanText(req.body.helpWanted, HELP_MAX)
+        const abroadHelpWaitlist = req.body.abroadHelpWaitlist === true
+
+        const row = await MentorWaitlist.findOneAndUpdate(
+            { user: req.user._id },
+            { $set: { helpWanted, abroadHelpWaitlist }, $setOnInsert: { user: req.user._id, matchStatus: "awaiting_choice" } },
+            { upsert: true, returnDocument: "after" }
+        )
+
+        return res.status(200).json({
+            success: true,
+            message: "Saved — your mentor will see this",
+            data: { helpWanted: row.helpWanted, abroadHelpWaitlist: row.abroadHelpWaitlist },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to save",
             error: error.message,
         })
     }

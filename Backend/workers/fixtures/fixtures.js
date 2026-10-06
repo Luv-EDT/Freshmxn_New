@@ -4731,6 +4731,34 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "MENTORSHIP (Round 18) — the sessions are listed, the student says what they want (600 at most), the abroad-help waitlist is a tick box; the admin sees both; \"Suits you\" is explained",
+        run: () => {
+            const problems = []
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../..", file), "utf8")
+            const router = read("Backend/Routers/mentorWaitlistRouter.js")
+            const model = read("Backend/model/mentorWaitlistModel.js")
+            const page = read("Frontend/src/pages/User/Mentorship.js")
+            const admin = read("Frontend/src/pages/Admin/MentorMatchesList.js")
+            const save = (router.split('router.put("/saveMyHelp"')[1] || "").split("router.")[0]
+            if (!save) problems.push("there is no saveMyHelp route")
+            if (!/hasMentorPlan\(req\.user\)/.test(save)) problems.push("saveMyHelp is open to students without a mentor plan")
+            if (!/const HELP_MAX = 600/.test(router) || !/cleanText\(req\.body\.helpWanted, HELP_MAX\)/.test(save)) problems.push("the help text is not cleaned and capped at 600")
+            if (!/req\.body\.abroadHelpWaitlist === true/.test(save)) problems.push("the abroad tick is not read as a strict yes")
+            if (/choiceSentAt/.test(save)) problems.push("saving the help text touches the clock")
+            if (!/helpWanted: "", abroadHelpWaitlist: ""/.test(router)) problems.push("a re-joined place keeps the old help text")
+            if (!/helpWanted:/.test(model) || !/abroadHelpWaitlist:/.test(model)) problems.push("the model has no help fields")
+            ;["What the work is like day to day", "The drawbacks and the perks", "mentor's own story", "How to get in, and the skills", "Your questions, answered"]
+                .forEach((topic) => { if (!page.includes(topic)) problems.push(`the session list lacks "${topic}"`) })
+            if (!/Anything specific you want to know\?/.test(page)) problems.push("there is no open question box")
+            if (!/In a future version we'll help/.test(page)) problems.push("the abroad waitlist box is missing")
+            if (!/Job roles are listed by how well they fit you/.test(page)) problems.push("\"Suits you\" is not explained")
+            if (!/dataIndex: "helpWanted"/.test(admin) || !/dataIndex: "abroadHelpWaitlist"/.test(admin)) problems.push("the admin does not see what the student asked for")
+            if (/optional/i.test(page.replace(/\/\/.*$/gm, ""))) problems.push("the page says \"optional\"")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures
