@@ -109,20 +109,23 @@ const factStatus = (professionId, field, approvedOverride) => {
 
 const labelFactors = (slugs) => asArray(slugs).map((slug) => FACTOR_LABELS[slug] || String(slug).replace(/_/g, " "))
 
-// ⚠ THE NUANCE WHITELIST. `nuances` ARE NOT UNIFORMLY STUDENT-SAFE.
+// THE NOTES A STUDENT READS ARE WRITTEN FOR THEM (owner, Round 18). Every one of the 438 nuances
+// was rewritten in one or two plain sentences that a Class 9 student and a working professional can
+// both follow, and stored beside the original as `nuances[i].student`. The original `statement` —
+// written for whoever built the data, full of "the merge test", "Sector 5" and field names — stays
+// in the file for the admin and is never served. Notes that only explain how the data was built
+// have `student: null` and are not shown at all.
 //
-// Each nuance names the field it annotates. Most are written for the student and are the best
-// content in the dataset. Two `field` values are not:
-//
-//   "filter"        notes addressed to the BUILDER about the compensation filter. The Farmer one
-//                   reads "Fails the compensation filter, and it is the largest occupation in the
-//                   country… the application must be able to reverse it." Shown to a student from a
-//                   farming family that is the worst content failure this redesign could produce.
-//                   Handloom Weaver and Anganwadi Educator are the same shape.
-//   "verification"  sourcing notes about why a record is tier B rather than C. Internal QA.
-//
-// A WHITELIST, NOT A BLACKLIST, and that is the point: a new `field` value added to the taxonomy
-// later is excluded by default and someone has to decide it is safe. A blacklist would ship it.
+// The two screens below stay as a safety net on the student text itself — a sentence addressed to a
+// builder, or any snake_case identifier, still never reaches a student's screen:
+//   BUILDER_MARKERS   sentences addressed to whoever is building this, not to a student.
+//   RAW_IDENTIFIER    any snake_case token — `mid_career`, `admin_review`, `india_demand`.
+const BUILDER_MARKERS = /audit\.py|this record carries|the application must|compensation filter|tier [ABC] rather than|rejected by audit|admin review|DECISIONS\.md|merge test/i
+const RAW_IDENTIFIER = /\b[a-z]+_[a-z_]+\b/
+
+// AND A FIELD WHITELIST, kept from before (a whitelist, not a blacklist): a note on a new `field`
+// is excluded until someone decides it is safe. "filter" and "verification" notes are about how the
+// data was built.
 const STUDENT_SAFE_NUANCE_FIELDS = [
     "profession", "job_roles", "role_spread", "professional_sector", "industrial_sectors",
     "degree_dependency", "class12_prerequisite", "path_to_entry", "entrance_exams",
@@ -131,31 +134,12 @@ const STUDENT_SAFE_NUANCE_FIELDS = [
     "mid_stream_entry",
 ]
 
-// ⚠ AND A SECOND SCREEN ON THE STATEMENT ITSELF, because the field whitelist is not enough.
-//
-// A fixture caught this: nuances sitting in perfectly student-facing FIELDS still contain prose
-// written for the builder. Real examples from `economics` and `job_roles`, both whitelisted above:
-//
-//     "mid_career EXCLUDES business ownership by design…"
-//     "…which would duplicate a job role across professions and is rejected by audit.py."
-//
-// Two different leaks, so two rules:
-//
-//   BUILDER_MARKERS   sentences addressed to whoever is building this, not to a student.
-//   RAW_IDENTIFIER    any snake_case token — `mid_career`, `admin_review`, `verified_facts`,
-//                     `india_demand`. This is the same rule the rest of the product already
-//                     enforces everywhere: an identifier never reaches a student's screen. 74 of
-//                     438 nuances carry one.
-//
-// Together these drop 90 of 438 and keep 348. The dropped ones are not lost — they are in the
-// taxonomy and an admin can still read them. They are simply not shown to a child.
-const BUILDER_MARKERS = /audit\.py|this record carries|the application must|compensation filter|tier [ABC] rather than|rejected by audit|admin review/i
-const RAW_IDENTIFIER = /\b[a-z]+_[a-z_]+\b/
-
 const nuanceIsStudentSafe = (nuance) => (
     STUDENT_SAFE_NUANCE_FIELDS.includes(nuance.field)
-    && !BUILDER_MARKERS.test(nuance.statement)
-    && !RAW_IDENTIFIER.test(nuance.statement)
+    && typeof nuance.student === "string"
+    && nuance.student.trim() !== ""
+    && !BUILDER_MARKERS.test(nuance.student)
+    && !RAW_IDENTIFIER.test(nuance.student)
 )
 
 // The nuance's `field` says which part of the record it annotates — but it says it in the
@@ -383,7 +367,7 @@ const studentFacing = (profession, studyOverrides) => {
 
         nuances: (profession.nuances || [])
             .filter(nuanceIsStudentSafe)
-            .map((nuance) => ({ section: NUANCE_SECTION[nuance.field] || "other", statement: nuance.statement })),
+            .map((nuance) => ({ section: NUANCE_SECTION[nuance.field] || "other", statement: nuance.student })),
 
         taxonomyVersion: taxonomy.generated_on || null,
     }

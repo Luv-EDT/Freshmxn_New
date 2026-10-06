@@ -1596,10 +1596,11 @@ const fixtures = [
                 nuances: [
                     // Plain English, no identifier, no builder marker — and absolutely not for a
                     // student. Only the field whitelist can stop this one.
-                    { field: "filter", statement: "This career is hidden by default because it pays too little to recommend." },
-                    { field: "verification", statement: "We are fairly sure about this one but have not checked it recently." },
+                    // Round 18: only a note's plain `student` text is ever served, so each carries one
+                    { field: "filter", statement: "x", student: "This career is hidden by default because it pays too little to recommend." },
+                    { field: "verification", statement: "x", student: "We are fairly sure about this one but have not checked it recently." },
                     // A legitimate one, to prove the whitelist is not simply dropping everything.
-                    { field: "economics", statement: "Pay rises sharply once you have your own clients." },
+                    { field: "economics", statement: "x", student: "Pay rises sharply once you have your own clients." },
                 ],
             }
 
@@ -4692,6 +4693,41 @@ const fixtures = [
             if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad card is not a waitlist")
             if (!/kind: "waitlist"/.test(fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8"))) problems.push("the waitlist is not recorded as such")
             return problems.length > 0 ? problems.slice(0, 8).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "NOTES (Round 18) — every career note has a plain student version (or is marked builder-only); only that version is served; short, no builder terms",
+        // The owner asked for every note rewritten so a Class 9 student and a working professional can
+        // both follow it. The original stays in the file for the admin; only `student` is served.
+        run: () => {
+            const problems = []
+            const professions = require("../../data/ALL-professions.json").professions
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const BUILDER = /DECISIONS\.md|§|merge test|substitution test|Sector \d|taxonomy|audit\.py|compensation filter|\bTier [ABC]\b|this record|admin_review|\b[a-z]+_[a-z_]+\b/
+            let notes = 0
+            let builderOnly = 0
+            professions.forEach((profession) => {
+                const served = studentFacing(profession).nuances.map((nuance) => nuance.statement)
+                ;(profession.nuances || []).forEach((nuance, index) => {
+                    notes += 1
+                    if (!("student" in nuance)) return problems.push(`${profession.id}#${index} has no student version`)
+                    if (nuance.student === null) {
+                        builderOnly += 1
+                        return
+                    }
+                    if (typeof nuance.student !== "string" || nuance.student.trim() === "") problems.push(`${profession.id}#${index}: empty student text`)
+                    else if (nuance.student.length > 300) problems.push(`${profession.id}#${index}: ${nuance.student.length} characters`)
+                    else if (BUILDER.test(nuance.student)) problems.push(`${profession.id}#${index}: builder words in "${nuance.student.slice(0, 50)}…"`)
+                    if (served.includes(nuance.statement) && nuance.statement !== nuance.student) problems.push(`${profession.id}#${index}: the original wording was served`)
+                })
+                served.forEach((text) => {
+                    if (!(profession.nuances || []).some((nuance) => nuance.student === text)) problems.push(`${profession.id}: served text that is not a student version`)
+                })
+            })
+            if (notes !== 438) problems.push(`expected 438 notes, found ${notes}`)
+            if (builderOnly > 20) problems.push(`${builderOnly} notes hidden as builder-only — too many`)
+            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
         },
         expect: null,
     },
