@@ -87,7 +87,12 @@ const andList = (items) => {
     return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`
 }
 
-const subjectsLine = (required) => {
+// A career that takes any stream but whose usual routes need particular subjects names them per
+// route (owner, Round 18) — "any stream" alone would hide that B.Tech needs Physics, Chemistry, Maths
+const subjectsLine = (required, routes) => {
+    if (Array.isArray(routes) && routes.length > 0) {
+        return `Subjects depend on the route: ${routes.slice(0, 2).map((row) => `${row.route} — ${row.subjects}`).join("; ")}.`
+    }
     if (!Array.isArray(required) || required.length === 0 || required.includes("any")) {
         return "Any stream in Class 11 keeps this open."
     }
@@ -151,7 +156,7 @@ export const cardSteps = (entry, detail, journey, nextStep) => {
 
     if (journey === "class9_10") {
         steps = [
-            subjectsLine(detail.class12Prerequisite),
+            subjectsLine(detail.class12Prerequisite, detail.subjectRoutes),
             detail.degreeDependency === "none" || detail.degreeDependency === "certificate"
                 ? "No degree needed — training or a certificate is the way in."
                 : examLine(detail),

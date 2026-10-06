@@ -956,6 +956,7 @@ button.sort-primary.is-on {
    the column explicitly (Round 13 lean pass). */
 .report-page > .app-header ~ div.report-banner,
 .report-page > .app-header ~ .blue-collar-toggle,
+.report-page > .app-header ~ .report-filters,
 .report-page > .app-header ~ hr {
     box-sizing: border-box;
     width: calc(100% - 32px);
@@ -2400,3 +2401,103 @@ button.show-rest {
 .score-row > div:first-child { flex: 1 1 260px; min-width: 0; }
 .score-level { display: flex; flex-wrap: wrap; gap: 6px; }
 .score-level .score-partial { margin-left: 0; }
+
+/* ── Round 18: the report card's rank, its sub-headings, the filter row ─────────────────────── */
+
+/* 1, 2, 3… down the left, in the order the student chose */
+.pc-rank {
+    flex: none;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-weight: 900;
+    font-size: 0.95rem;
+}
+
+button.pc-toggle .pc-name {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.profession-card.is-top-1 .pc-rank,
+.profession-card.is-top-2 .pc-rank {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* a sub-heading inside a part of the card: the same row, a size smaller */
+.pc-sub {
+    border-top: 1px dashed var(--line);
+}
+
+.pc-sub summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 44px;
+    font-weight: 700;
+    color: var(--navy);
+}
+
+.pc-sub summary::-webkit-details-marker {
+    display: none;
+}
+
+.pc-sub summary::after {
+    content: "+";
+    flex: none;
+    color: var(--teal-dark);
+    font-weight: 900;
+}
+
+.pc-sub[open] summary::after {
+    content: "−";
+}
+
+.pc-sub-body {
+    padding: 0 0 var(--space-3);
+}
+
+.pc-roles,
+.pc-routes {
+    margin: var(--space-2) 0;
+    padding-left: 1.2em;
+}
+
+.pc-suits {
+    color: var(--teal-dark);
+    font-weight: 700;
+}
+
+.report-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-2);
+}
+
+.report-filters .blue-collar-toggle {
+    margin: var(--space-1) 0;
+}
+
+.fundamentals-list {
+    list-style: none;
+    padding: 0;
+}
+
+.fundamentals-list li {
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+}
+
+.compare-notes {
+    margin: 0;
+    padding-left: 1.1em;
+}

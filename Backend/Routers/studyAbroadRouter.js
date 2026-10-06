@@ -52,11 +52,12 @@ router.post("/expressInterest", authMiddleware, requireDiscovery, async (req, re
                 careers: chosen.map((entry) => entry.profession),
                 consentAt: new Date(),
                 policyVersion: POLICY_VERSION,
+                kind: "waitlist",     // Round 18: the report offers the future-version waitlist
             },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         ).lean()
 
-        return res.status(200).json({ success: true, message: "Thanks — we'll be in touch", data: { careers: lead.careers, consentAt: lead.consentAt } })
+        return res.status(200).json({ success: true, message: "You're on the waitlist", data: { careers: lead.careers, consentAt: lead.consentAt } })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to save your interest", error: error.message })

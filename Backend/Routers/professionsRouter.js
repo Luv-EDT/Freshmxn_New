@@ -14,9 +14,11 @@ const blueCollar = require("../data/blue_collar.json")
 const abroad = require("../data/abroad.json")
 const abroadWork = require("../data/abroad_work.json")
 const studySources = require("../data/study_sources.json")
+const subjectRoutes = require("../data/subject_routes.json")
 const { applyOverride, getOverrides } = require("../utils/professionOverrides")
 const { examsFor } = require("../utils/examCalendar")
 const { studyPlacesFor, getStudyOverrides } = require("../utils/studyPlaces")
+const { industryByCode } = require("../utils/industries")
 
 // The full records, for /getProfession. The slim projection below is what /search walks.
 const fullById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
@@ -159,18 +161,25 @@ const nuanceIsStudentSafe = (nuance) => (
 // The nuance's `field` says which part of the record it annotates — but it says it in the
 // taxonomy's own field names. The card needs to know where to attach it; the student does not need
 // to see `entry_competition`. Translated to a section id at the boundary, like everything else.
+//
+// ONE SECTION PER PART OF THE CARD (owner, Round 18): "each field's nuance should show in that field
+// as a note", so a note about Class 12 subjects sits under the subjects, one about freelancing under
+// "Can I start my own business or freelance?". A note whose part isn't shown goes to "Worth knowing".
 const NUANCE_SECTION = {
-    path_to_entry: "path", class12_prerequisite: "path", years_to_qualify: "path",
-    degree_dependency: "path", after_undergrad: "path", mid_stream_entry: "path",
-    entry_window: "path",
+    path_to_entry: "path", years_to_qualify: "path",
+    class12_prerequisite: "subjects",
+    degree_dependency: "degree", licensing_body: "degree",
+    mid_stream_entry: "move_in",
+    after_undergrad: "masters",
+    entry_window: "deadline",
     entrance_exams: "exams", entry_competition: "exams",
-    industrial_sectors: "where", job_roles: "where", professional_sector: "where",
-    profession: "where",
-    economics: "pay", self_employment: "pay",
+    industrial_sectors: "where", professional_sector: "where",
+    profession: "what",
+    job_roles: "roles", role_spread: "roles",
+    economics: "pay",
+    self_employment: "own_business",
     demand_signal: "demand",
     ai_exposure: "ai",
-    role_spread: "roles",
-    licensing_body: "path",
 }
 
 // What a student is allowed to see. A PROJECTION, NEVER THE RAW RECORD — the raw one carries
@@ -217,7 +226,9 @@ const studentFacing = (profession, studyOverrides) => {
         oneLiner: profession.one_liner,
         jobRoles: profession.job_roles || [],
 
-        industries: (profession.industrial_sectors || []).map((code) => SECTOR_NAMES.get(code) || code),
+        // in the words a person would say — "Agriculture", not "Agriculture Skill Council of India"
+        // (owner, Round 18: easy terms)
+        industries: (profession.industrial_sectors || []).map((code) => (industryByCode.get(code) || {}).name || SECTOR_NAMES.get(code) || code),
 
         pathToEntry: (profession.path_to_entry || []).map((step) => ({
             step: step.step,
@@ -249,6 +260,13 @@ const studentFacing = (profession, studyOverrides) => {
         // Where to study (Round 11): official links always; the institution list once the owner has
         // reviewed it. null for careers with no formal programme to point at.
         studyPlaces: studyPlacesFor(profession.id, layers.places, layers.cutoffs || new Map()),
+
+        // Class 11–12 subjects PER ROUTE (owner, Round 18) — for a career that takes any stream but
+        // whose usual routes include a degree that needs particular subjects. null for the rest.
+        subjectRoutes: subjectRoutes.careers[profession.id] || null,
+
+        // The report's "Studying abroad helps" filter (owner, Round 18) — the same reviewed file
+        studyAbroadHelps: Boolean(abroadRow && abroadRow.need !== "not_needed"),
 
         // Is studying abroad needed (Round 11)? null when it is not — the card then says nothing.
         // Never a ranking input: matching does not read data/abroad.json.
@@ -365,7 +383,7 @@ const studentFacing = (profession, studyOverrides) => {
 
         nuances: (profession.nuances || [])
             .filter(nuanceIsStudentSafe)
-            .map((nuance) => ({ section: NUANCE_SECTION[nuance.field] || "path", statement: nuance.statement })),
+            .map((nuance) => ({ section: NUANCE_SECTION[nuance.field] || "other", statement: nuance.statement })),
 
         taxonomyVersion: taxonomy.generated_on || null,
     }

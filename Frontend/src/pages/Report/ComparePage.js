@@ -17,14 +17,23 @@ const SUBJECTS = { physics: "Physics", chemistry: "Chemistry", maths: "Maths", b
 const DEGREE = { none: "No degree needed", certificate: "Certificate or diploma", undergrad: "Bachelor's degree", professional: "Professional degree" }
 const DEMAND = { high: "High", moderate: "Moderate", low: "Low", declining: "Declining" }
 const AI = { low: "Low", medium: "Medium", high: "High" }
-const SELF = { common: "Common", possible_later: "Possible later", rare: "Rare" }
+const SELF = { common: "Yes, often", possible_later: "Yes, later", rare: "Rarely" }
+const MOVE_IN = { open: "Yes, without a new degree", after_any_degree: "Yes, after any degree", restart_undergrad: "Only by starting its degree" }
+
+// Round 18 (owner): the same plain questions as the card, "What to work on", and the notes
+const subjectsFor = (detail) => {
+    if (detail.subjectRoutes) return detail.subjectRoutes.map((row) => `${row.route}: ${row.subjects}`).join(" · ")
+    return detail.class12Prerequisite.includes("any") ? "Any stream" : detail.class12Prerequisite.map((subject) => SUBJECTS[subject] || subject).join(" + ")
+}
 
 const ROWS = [
     ["What it is", (entry, detail) => detail.oneLiner],
     ["Why it fits you", (entry) => whyFits(entry).strengths.join(", ") || "—"],
+    ["What to work on", (entry) => (entry.workOn && entry.workOn.length > 0 ? entry.workOn.join(", ") : "Nothing stands out")],
     ["Years to qualify", (entry, detail) => (typeof detail.yearsToQualify === "number" ? `About ${detail.yearsToQualify}` : "—")],
-    ["Subjects in Class 11–12", (entry, detail) => (detail.class12Prerequisite.includes("any") ? "Any stream" : detail.class12Prerequisite.map((subject) => SUBJECTS[subject] || subject).join(" + "))],
-    ["Degree needed", (entry, detail) => entryRoute(detail) || DEGREE[detail.degreeDependency] || "—"],
+    ["Subjects in Class 11–12", (entry, detail) => subjectsFor(detail)],
+    ["Do I need a degree?", (entry, detail) => entryRoute(detail) || DEGREE[detail.degreeDependency] || "—"],
+    ["Can I move into this from another course or job?", (entry, detail) => MOVE_IN[detail.midStreamEntry] || "—"],
     ["Main exam", (entry, detail) => {
         if (detail.entryGate) {
             return `${detail.entryGate.name}${typeof detail.entryGate.applicantsPerSeat === "number" ? ` — about ${Math.round(detail.entryGate.applicantsPerSeat)} per seat` : ""}`
@@ -37,9 +46,12 @@ const ROWS = [
     ["Mid-career pay", (entry, detail) => (detail.economics && detail.economics.midCareerLpa ? `₹${detail.economics.midCareerLpa}L a year` : "—")],
     ["Demand", (entry, detail) => (detail.demand ? DEMAND[detail.demand.india] || detail.demand.india : "—")],
     ["AI exposure", (entry, detail) => aiExposureText(detail) || (detail.aiExposure ? AI[detail.aiExposure.band] || detail.aiExposure.band : "—")],
-    ["Working for yourself", (entry, detail) => (detail.selfEmployment ? SELF[detail.selfEmployment.likelihood] || "—" : "—")],
+    ["Can I start my own business or freelance?", (entry, detail) => (detail.selfEmployment ? SELF[detail.selfEmployment.likelihood] || "—" : "—")],
     ["Years of what you've done left behind", (entry) => (entry.wastedYears > 0 ? `About ${entry.wastedYears}` : "None")],
     ["Licence", (entry, detail) => detail.licensingBody || "None"],
+    ["Worth knowing", (entry, detail) => ((detail.nuances || []).length > 0 ? (
+        <ul className="compare-notes">{detail.nuances.slice(0, 3).map((nuance, index) => <li key={index}>{nuance.statement}</li>)}</ul>
+    ) : "—")],
 ]
 
 function ComparePage() {

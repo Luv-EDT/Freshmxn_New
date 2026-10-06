@@ -287,17 +287,18 @@ export const buildList = (ranked, switchList, primary, secondary, details = {}, 
         list = sortRanked(positioned, secondary, details)
     }
 
-    // "Show first" (filter_rules.json's core_engineering_track, computed on the server as
-    // `coreEngineering`): a STABLE PARTITION — matching careers move up in their current order, the
-    // rest follow in theirs. Nothing is removed.
-    if (options.showFirst) {
-        const hit = (entry) => Boolean((details[entry.professionId] || {})[options.showFirst])
-        list = [...list.filter(hit), ...list.filter((entry) => !hit(entry))]
-    }
+    // FILTERS THE STUDENT TURNS ON (owner, Round 18 — "Show first" used to move these up; now they
+    // keep only these): "Core engineering only" (filter_rules.json's core_engineering_track, computed
+    // on the server as `coreEngineering`) and "Studying abroad helps" (`studyAbroadHelps`, from
+    // data/abroad.json). Off by default; with more than one on, a career must match each. The page
+    // always says how many were hidden, with one tap to show them again.
+    ;(options.only || []).forEach((key) => {
+        list = list.filter((entry) => Boolean((details[entry.professionId] || {})[key]))
+    })
 
-    // THE ONE CONTROL THAT MAY HIDE ROWS (owner, 2026-09-30): "Leave out blue-collar careers", off by
-    // default. The list is data/blue_collar.json, reviewed by the owner; the page always says how
-    // many were hidden and that some of the most AI-proof careers are among them.
+    // "Leave out blue-collar careers" (owner, 2026-09-30), off by default. The list is
+    // data/blue_collar.json, reviewed by the owner; the page always says how many were hidden and
+    // that some of the most AI-proof careers are among them.
     if (options.excludeBlueCollar) {
         list = list.filter((entry) => !(details[entry.professionId] || {}).blueCollar)
     }
@@ -305,8 +306,9 @@ export const buildList = (ranked, switchList, primary, secondary, details = {}, 
     return list
 }
 
-// The "Show first" choices. Only core engineering: the two manual-work presets in filter_rules.json
-// are covered by the blue-collar tag and its filter (owner, 2026-09-30).
-export const SHOW_FIRST = [
-    { value: "coreEngineering", label: "Core engineering and around it", hint: "Engineering careers and the roles around them move to the top. Nothing is hidden." },
+// The filters a student can turn on (owner, Round 18). Each hides careers, so each is labelled,
+// off by default, and the page says how many it hid.
+export const ONLY_FILTERS = [
+    { value: "coreEngineering", label: "Core engineering only", hidden: "not core engineering" },
+    { value: "studyAbroadHelps", label: "Studying abroad helps", hidden: "where studying abroad doesn't help much" },
 ]

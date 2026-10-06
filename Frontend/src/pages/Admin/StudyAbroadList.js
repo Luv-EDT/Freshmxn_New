@@ -41,6 +41,8 @@ function StudyAbroadList() {
         { title: "Student", render: (_, record) => (record.user ? record.user.name : "—") },
         { title: "Email", render: (_, record) => (record.user ? record.user.email : "—") },
         { title: "Phone", render: (_, record) => (record.user && record.user.phone) || "—" },
+        // Round 18: the report now offers a waitlist (help with a master's abroad, later), not a partner
+        { title: "Asked for", dataIndex: "kind", render: (value) => (value === "waitlist" ? "Master's-abroad waitlist" : "Partner connection") },
         { title: "Careers", dataIndex: "careers", render: (value) => (value || []).join(", ") },
         { title: "Consent", render: (_, record) => `${dayjs(record.consentAt).format("DD MMM YYYY")} · policy ${record.policyVersion}` },
         {

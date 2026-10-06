@@ -9,10 +9,8 @@ import UpgradeToMentorship from "../UpgradeToMentorship"
 import ProfessionCard from "./ProfessionCard"
 import ReportSortMenu from "./ReportSortMenu"
 import { studentTags } from "./reportTags"
-import { buildList } from "./reportFilters"
-import { journeyHeadline, mastersOptions } from "./reportPlan"
+import { buildList, ONLY_FILTERS } from "./reportFilters"
 import StudyAbroadCard from "./StudyAbroadCard"
-import ReportHeadline from "./ReportHeadline"
 import CombinedCareers from "./CombinedCareers"
 import DirectionModal from "../DirectionModal"
 
@@ -88,8 +86,11 @@ const TIER_GROUPS = [
 
 // "a, b and c" — because "spatial thinking, reasoning" reads like a truncated list rather than a
 // finished sentence, and these strings sit inside prose.
-// how many careers show before "Show the other N" (owner, Round 13)
-const TOP_SHOWN = 5
+// how many careers show before "Show the other N" (owner, Round 13; three since Round 18)
+const TOP_SHOWN = 3
+
+// the band a tier sits in, for "why it ranked there"
+const tierGroupFor = (tier) => (typeof tier === "number" ? TIER_GROUPS.find((group) => tier <= group.upTo) : null)
 
 const listOf = (items) => {
     if (items.length === 0) return ""
@@ -146,11 +147,13 @@ function ReportPage() {
     const [detailsLoaded, setDetailsLoaded] = useState(false)
     const [primary, setPrimary] = useState("best")
     const [secondary, setSecondary] = useState(null)
-    const [showFirst, setShowFirst] = useState(null)
-    // Off by default. The only control that may hide careers (owner, 2026-09-30).
+    // THE FILTERS (owner, Rounds 9 and 18), all off by default, each labelled, each saying how many it
+    // hid: leave out blue-collar careers; keep only core engineering; keep only careers where
+    // studying abroad helps.
     const [excludeBlueCollar, setExcludeBlueCollar] = useState(false)
-    // TOP FIVE FIRST (owner, Round 13): the first five of whatever order is chosen, the rest one tap
-    // away. Opening the rest belongs to that order — a new sort or filter starts again at five.
+    const [only, setOnly] = useState([])
+    // TOP THREE FIRST (owner, Rounds 13 and 18): the first three of whatever order is chosen, the rest
+    // one tap away. Opening the rest belongs to that order — a new sort or filter starts again at three.
     const [showAllFor, setShowAllFor] = useState(null)
     // Bumped after a retry so the polling effect below starts again.
     const [reloadKey, setReloadKey] = useState(0)
@@ -273,21 +276,23 @@ function ReportPage() {
 
     const data = state.data
 
-    // THE LIST THE STUDENT SEES — see buildList in reportFilters.js. No filter ever hides a career.
+    // THE LIST THE STUDENT SEES — see buildList in reportFilters.js. Only the filters the student
+    // turned on ever hide a career.
     const ordered = useMemo(
-        () => buildList(ranked, switchList, primary, secondary, details, { showFirst, excludeBlueCollar }),
-        [ranked, switchList, primary, secondary, details, showFirst, excludeBlueCollar]
+        () => buildList(ranked, switchList, primary, secondary, details, { only, excludeBlueCollar }),
+        [ranked, switchList, primary, secondary, details, only, excludeBlueCollar]
     )
 
-    const sortKey = [primary, secondary, showFirst, excludeBlueCollar].join("|")
+    const sortKey = [primary, secondary, only.join("+"), excludeBlueCollar].join("|")
 
-    // How many the blue-collar filter hid, so the page can say so — a filter that hides silently is
-    // the thing this report was rebuilt to avoid.
-    const hiddenBlueCollar = useMemo(() => {
-        if (!excludeBlueCollar) return 0
-        const all = buildList(ranked, switchList, primary, secondary, details, { showFirst })
-        return all.length - ordered.length
-    }, [excludeBlueCollar, ranked, switchList, primary, secondary, details, showFirst, ordered])
+    // How many the filters hid, so the page can say so — a filter that hides silently is the thing
+    // this report was rebuilt to avoid.
+    const hiddenCount = useMemo(() => {
+        if (!excludeBlueCollar && only.length === 0) return 0
+        return buildList(ranked, switchList, primary, secondary, details, {}).length - ordered.length
+    }, [excludeBlueCollar, only, ranked, switchList, primary, secondary, details, ordered])
+    const hiddenBlueCollar = excludeBlueCollar ? hiddenCount : 0
+    const toggleOnly = (key) => setOnly((current) => (current.includes(key) ? current.filter((value) => value !== key) : [...current, key]))
 
     // The engine's top three keep their colours under every order, so "my best matches" never
     // gets lost when a student sorts by pay.
@@ -296,7 +301,7 @@ function ReportPage() {
     if (state.loading) return <div><Navbar />Loading your report…</div>
     if (state.error) return <div><Navbar /><p>{state.error}</p></div>
 
-    const { status, release, sections, aspirationSignals, filtered, journey, dominantReasons } = data
+    const { status, release, aspirationSignals, filtered, journey, dominantReasons } = data
     const framing = framingFor(journey)
 
     if (status === "not_started") {
@@ -426,6 +431,26 @@ function ReportPage() {
                 </p>
             )}
 
+            {/* THE FOUR FUNDAMENTALS (owner, Round 18) — what helps in every career, as words */}
+            {Array.isArray(data.fundamentals) && (
+                <details className="report-details report-fundamentals">
+                    <summary className="report-summary">
+                        <strong>The four fundamentals</strong> — what helps in every career
+                    </summary>
+                    <ul className="fundamentals-list">
+                        {data.fundamentals.map((item) => (
+                            <li key={item.slug}>
+                                <strong>{item.name}</strong>{" "}
+                                <span className={`status-chip${item.level ? " is-done" : ""}`}>{item.level || "not measured yet"}</span>
+                                <br />
+                                <span className="report-small">{item.meaning}. {item.why}</span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="report-small"><em>From your own answers, not a comparison with anyone. All four grow with practice.</em></p>
+                </details>
+            )}
+
             <hr />
 
             <div className="report-matches-head">
@@ -443,22 +468,28 @@ function ReportPage() {
                 secondary={secondary}
                 onSecondary={setSecondary}
                 noCostHint={framing.switchIsDistinct ? framing.switchIntro : null}
-                showFirst={showFirst}
-                onShowFirst={setShowFirst}
             />
 
-            {/* Round 13 (owner): the one filter sits in plain sight beside the sort, not inside it */}
-            <label className={`blue-collar-toggle${excludeBlueCollar ? " is-on" : ""}`}>
-                <input
-                    type="checkbox"
-                    checked={excludeBlueCollar}
-                    onChange={(event) => setExcludeBlueCollar(event.target.checked)}
-                />
-                <span>
-                    Leave out blue-collar careers
-                    <span className="sort-note"> — some of the most AI-proof careers are blue-collar</span>
-                </span>
-            </label>
+            {/* THE FILTERS sit in plain sight beside the sort, not inside it (Rounds 13 and 18) */}
+            <div className="report-filters">
+                <label className={`blue-collar-toggle${excludeBlueCollar ? " is-on" : ""}`}>
+                    <input
+                        type="checkbox"
+                        checked={excludeBlueCollar}
+                        onChange={(event) => setExcludeBlueCollar(event.target.checked)}
+                    />
+                    <span>
+                        Leave out blue-collar careers
+                        <span className="sort-note"> — some of the most AI-proof careers are blue-collar</span>
+                    </span>
+                </label>
+                {ONLY_FILTERS.map((option) => (
+                    <label key={option.value} className={`blue-collar-toggle${only.includes(option.value) ? " is-on" : ""}`}>
+                        <input type="checkbox" checked={only.includes(option.value)} onChange={() => toggleOnly(option.value)} />
+                        <span>{option.label}</span>
+                    </label>
+                ))}
+            </div>
 
             {/* THE RANKING EXPLAINS ITSELF, in one place. A student who cannot see why one career
                 sits above another has been handed an opinion with a number on it. */}
@@ -505,7 +536,7 @@ function ReportPage() {
             </details>
 
             <div className="match-list">
-                {(showAllFor === sortKey ? ordered : ordered.slice(0, TOP_SHOWN)).map((entry) => {
+                {(showAllFor === sortKey ? ordered : ordered.slice(0, TOP_SHOWN)).map((entry, index) => {
                     const topRank = topIds.indexOf(String(entry.professionId)) + 1
 
                     return (
@@ -516,6 +547,7 @@ function ReportPage() {
                             detailsLoaded={detailsLoaded}
                             journey={journey}
                             topRank={topRank}
+                            rank={index + 1}
                             switchCost={primary === "noCost" ? entry.wastedYears : 0}
                             showAi={secondary === "ai"}
                             degreeLabel={data.degree || null}
@@ -531,16 +563,17 @@ function ReportPage() {
                 </button>
             )}
 
-            {hiddenBlueCollar > 0 && (
+            {hiddenCount > 0 && (
                 <p className="report-hidden-note">
-                    {hiddenBlueCollar} blue-collar {hiddenBlueCollar === 1 ? "career is" : "careers are"} hidden — some of the most
-                    AI-proof careers are among them.{" "}
-                    <button type="button" className="link-button" onClick={() => setExcludeBlueCollar(false)}>Show them again</button>
+                    {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters
+                    {hiddenBlueCollar > 0 && " — some of the most AI-proof careers are blue-collar"}.{" "}
+                    <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
                 </p>
             )}
+            {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
 
             {/* COMBINED CAREERS (Round 10) — beside the list, never in it */}
-            <CombinedCareers combined={data.combined} details={details} showFirst={showFirst} />
+            <CombinedCareers combined={data.combined} />
 
             {/* SUPPORT FOR YOUR EXAMS (Round 10) — only for a student who told us about a difficulty,
                 and only once the owner has checked every line against its official source. */}
@@ -559,57 +592,18 @@ function ReportPage() {
                 </details>
             )}
 
-            {/* YOUR OPTIONS AT A GLANCE (Round 13, owner). The next 12 months now live inside each
-                career; what stays here is the picture across the whole list for this student's stage —
-                the stream map, the exam map, or what they can move into — and, for college and working
-                students, the master's picture. */}
-            <details className="report-details">
-                <summary className="report-summary">
-                    <strong>Your options at a glance</strong>
-                </summary>
-
-                <ReportHeadline headline={journeyHeadline(journey, ranked, details)} />
-
-                {/* A report written before report@3.0.0 still carries the model's own next steps. */}
-                {sections.nextSteps && <p>{sections.nextSteps}</p>}
-
-                {/* Round 11: for college and working students, the master's picture across the top matches */}
-                {(journey === "college" || journey === "early_professional") && (() => {
-                    const masters = mastersOptions(ranked, details)
-                    if (masters.groups.length === 0) return null
-                    return (
-                        <details className="report-details report-nested">
-                            <summary className="report-summary"><strong>Your master's options</strong></summary>
-                            {masters.groups.map((group) => (
-                                <div key={group.key}>
-                                    <p><strong>{group.title}</strong></p>
-                                    <ul>
-                                        {group.careers.map((career) => (
-                                            <li key={career.professionId}>
-                                                {career.profession}
-                                                {career.step && <span className="report-small"> — {career.step}</span>}
-                                                {career.exams.length > 0 && <span className="report-small"> · Exams: {career.exams.join(", ")}</span>}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ))}
-                            {masters.notNeeded > 0 && (
-                                <p className="report-small">For {masters.notNeeded} of your top matches a master's isn't needed — you can start working after your degree.</p>
-                            )}
-                        </details>
-                    )
-                })()}
-
-                <p className="report-small"><em>Your next 12 months for each career are inside it — open one to see them.</em></p>
-            </details>
+            {/* "Your options at a glance" — the stream map, exam map and what you can move into — left the
+                report (owner, Round 18): every detail now lives inside each career. */}
 
             {/* Round 11: offered only when a top-ten match is one where studying abroad helps */}
             <StudyAbroadCard ranked={ranked} details={details} abroadPlans={data.abroadPlans || null} />
 
             {/* THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —
-                but a student who is happy with their list does not have to scroll past all of it. */}
+                but a student who is happy with their list does not have to scroll past all of it.
+                Round 18 (owner): one line for all of them, then for each: a DIRECT match (you named
+                it and it is in your list) or an INDIRECT one (your words pointed to other careers),
+                and why it sits where it does. */}
             {aspirationSignals.length > 0 && (
                 <details className="report-details">
                     <summary className="report-summary">
@@ -617,14 +611,18 @@ function ReportPage() {
                     </summary>
 
                     <p>
-                        You named these when we asked what you want to be. Every one is answered here,
-                        including the ones that did not work out, and why.
+                        Every career you named is on our list unless its demand is falling and the pay is
+                        weak. Here is where each one landed, and why.
                     </p>
 
                     {aspirationSignals.map((signal) => (
                         <div key={signal.professionText} className="aspiration-card">
                             <p className="aspiration-title">
-                                <strong>{signal.professionText}</strong>
+                                <strong>{signal.professionText}</strong>{" "}
+                                {signal.outcome === "ranked" && <span className="status-chip is-done">Direct match</span>}
+                                {signal.outcome !== "ranked" && signal.alsoReached && signal.alsoReached.length > 0 && (
+                                    <span className="status-chip">Indirect match</span>
+                                )}
                             </p>
 
                             {/* RANKED — say where it landed AND what put it there. "Ranked #4" on its
@@ -634,14 +632,20 @@ function ReportPage() {
                                 <>
                                     {/* "#4 IN YOUR LIST ABOVE" WAS WRONG THE MOMENT SORTING EXISTED.
                                         `rankedPosition` is the engine's match rank and never changes;
-                                        the on-screen order does. A student sorting by pay would count
-                                        to the fourth row and find something else. Stated as what it
-                                        actually is — a rank on match strength — it stays true under
-                                        every sort and filter. */}
-                                    <p><strong>It came {signal.rankedPosition === 1 ? "top" : `#${signal.rankedPosition}`} of your matches on strength of fit.</strong></p>
+                                        the on-screen order does. Stated as what it actually is — a
+                                        rank on match strength — it stays true under every sort. */}
+                                    <p>
+                                        You named it, and it came <strong>{signal.rankedPosition === 1 ? "top" : `#${signal.rankedPosition}`}</strong> of
+                                        your matches on strength of fit.
+                                    </p>
+                                    {tierGroupFor(signal.tier) && (
+                                        <p>
+                                            <strong>Why there:</strong> it is in "{tierGroupFor(signal.tier).label}" — {tierGroupFor(signal.tier).why.charAt(0).toLowerCase()}{tierGroupFor(signal.tier).why.slice(1)}
+                                        </p>
+                                    )}
                                     {signal.supportingFactors.length > 0 && (
                                         <p>
-                                            It ranked there because your profile shows{" "}
+                                            It suits you because your profile shows{" "}
                                             {listOf(signal.supportingFactors.map((factor) => factor.factor))}.
                                         </p>
                                     )}
@@ -651,6 +655,9 @@ function ReportPage() {
                                             {listOf(signal.divergingFactors.map((factor) => factor.factor))}.{" "}
                                             <em>That is a gap to work on, not a door closing.</em>
                                         </p>
+                                    )}
+                                    {signal.alsoReached && signal.alsoReached.length > 0 && (
+                                        <p>Your words also pointed to: <strong>{signal.alsoReached.map((hit) => hit.profession).join(", ")}</strong>.</p>
                                     )}
                                 </>
                             )}
@@ -684,10 +691,10 @@ function ReportPage() {
                                 "you are not suited to it". */}
                             {signal.outcome === "unranked" && (
                                 <>
-                                    <p><strong>Nothing you told us about pointed here yet.</strong></p>
+                                    <p><strong>It is on our list, but nothing you told us about pointed here yet.</strong></p>
                                     <p>
-                                        That is not the same as it being wrong for you. It means none of
-                                        the things you said you do are ones this career is usually built
+                                        That is not the same as it being wrong for you. None of the
+                                        things you said you do are ones this career is usually built
                                         from — so we have no evidence either way, rather than evidence
                                         against.
                                     </p>
@@ -706,29 +713,25 @@ function ReportPage() {
                                 </>
                             )}
 
-                            {/* UNMATCHED — our gap, not theirs, and it should read that way. */}
-                            {/* DOES NOT ANNOUNCE THAT WE DO NOT COVER IT. Leading with our own gap
-                                tells a student their ambition is off the map, which is both
-                                discouraging and not what happened — what they wrote DID feed the
-                                matching. So this says what their words pointed at, and mentions the
-                                limit quietly and second. */}
+                            {/* UNMATCHED — not a career on our list. It still counted: since Round 17
+                                every aspiration is read as an ACTIVITY ("long distance runner" →
+                                long distance running), and that is what pointed to the careers named. */}
                             {signal.outcome === "unmatched" && (
                                 <>
                                     <p>
-                                        <strong>What you wrote here still counted.</strong> It fed into
-                                        the matching above, so the list you are looking at already has
-                                        it in the mix.
+                                        <strong>Not a career on our list</strong> — so we read it as an
+                                        activity{signal.readAs ? <>, <em>{signal.readAs}</em></> : ""}, and it
+                                        still counted in your matches.
                                     </p>
                                     {signal.alsoReached && signal.alsoReached.length > 0 ? (
                                         <p>
-                                            It pointed at:{" "}
+                                            It pointed you to:{" "}
                                             <strong>{signal.alsoReached.map((hit) => hit.profession).join(", ")}</strong>.
                                         </p>
                                     ) : (
                                         <p>
-                                            We match against a fixed set of careers, and this one is not
-                                            in it yet — so we could not rank it by name. Worth raising
-                                            with a teacher or a mentor, who is not limited to our list.
+                                            It did not lead to a particular career on its own. Worth
+                                            raising with a teacher or a mentor, who is not limited to our list.
                                         </p>
                                     )}
                                 </>
@@ -751,23 +754,8 @@ function ReportPage() {
                 </details>
             )}
 
-            {/* THE PROSE SITS AFTER THE LIST, NOT BEFORE IT. The student came for careers; making
-                them read two paragraphs to reach the thing they came for is the same mistake the
-                1,500-word version made, just smaller. Read here it works as a wrap-up — you have
-                seen the careers, this is what your profile says about why. */}
-            {(sections.opening || sections.yourMatches) && (
-                <>
-                    <hr />
-                    <h2>What this says about you</h2>
-                    {sections.opening && <p>{sections.opening}</p>}
-                    {sections.yourMatches && <p>{sections.yourMatches}</p>}
-                </>
-            )}
-
-            {/* one sentence needs no collapsible — it closes the wrap-up (Round 13 lean pass) */}
-            {sections.readiness && (
-                <p className="report-readiness"><strong>One thing to build next:</strong> {sections.readiness}</p>
-            )}
+            {/* "What this says about you" — the AI's short lines — is not shown (owner, Round 18). The
+                report is still written and stored; switching it off is in docs/4_v2. */}
 
             {/* Named from the student's own top matches, so the offer is about the thing they have
                 just read rather than a generic upsell. Renders nothing for the full plan. */}
