@@ -4548,6 +4548,45 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "INTEREST FORM (Round 18) — College shows for college students, \"life moved on\" is never a challenge, old labels still read, one Save button when editing",
+        run: () => {
+            const problems = []
+            // the file imports string-similarity; these checks never reach it, so a plain stand-in is enough
+            const file = path.join(__dirname, "../../../Frontend/src/pages/Interest/interestFormState.js")
+            const source = fs.readFileSync(file, "utf8").replace(/^import stringSimilarity from "string-similarity"$/m, "const stringSimilarity = { compareTwoStrings: (a, b) => (a === b ? 1 : 0) }")
+            const scratch = path.join(require("os").tmpdir(), `interestFormState-${process.pid}.js`)
+            fs.writeFileSync(scratch, source)
+            const state = loadEsModule(scratch)
+            fs.unlinkSync(scratch)
+
+            const stages = (detail) => state.getVisibleLifeStages({ journey: "college", journeyDetail: detail })
+            if (!stages({}).includes("college")) problems.push("a college student with no collegeStage (older account) does not see College")
+            if (!stages({ collegeStage: "enrolled" }).includes("college")) problems.push("an enrolled student does not see College")
+            if (stages({ collegeStage: "pre_admission" }).includes("college")) problems.push("a student not yet in college sees College")
+
+            if (!state.HELD_BACK_OPTIONS.includes(state.LIFE_MOVED_ON) || state.YOU_OR_THEM_OPTIONS.includes(state.LIFE_MOVED_ON)) problems.push("\"Life moved on\" must be a paused-activity answer only")
+            if (!state.YOU_OR_THEM_OPTIONS.every((label) => /^(Internal|Interpersonal|External) problems \(/.test(label))) problems.push("the held-back labels do not say \"problems\"")
+            if (state.currentHeldBack("Internal (self-doubt, fear, lack of clarity, difficult to handle, lacked skills etc)") !== state.YOU_OR_THEM_OPTIONS[0]) problems.push("an old label does not map to today's")
+            if (state.currentHeldBack("Time constraints/Phase of life ended") !== state.LIFE_MOVED_ON) problems.push("the old time option does not read as life moved on")
+
+            const form = state.normalizeFormState({
+                currentInterests: { discontinuedPursuits: {
+                    chess: { isSelected: true, reason: ["Other"], otherReason: "school got busy", youOrThem: state.LIFE_MOVED_ON },
+                    dance: { isSelected: true, reason: ["Other"], otherReason: "family said no", youOrThem: "Interpersonal (influence or pressure from family, friends, mentors, etc.)" },
+                } },
+            })
+            if (form.currentInterests.discontinuedPursuits.dance.youOrThem !== state.YOU_OR_THEM_OPTIONS[1]) problems.push("a saved old label is not moved to today's when loaded")
+            const { extractedProblems } = state.extractInterestData(form, ["highSchool"])
+            if (extractedProblems.some((item) => /school got busy/.test(item.problem))) problems.push("\"Life moved on\" became a challenge")
+            if (!extractedProblems.some((item) => /family said no/.test(item.problem) && item.reason === "interpersonalInternalProblems")) problems.push("an interpersonal reason did not become an interpersonal challenge")
+
+            const aspirations = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Interest/AspirationalProfessions.js"), "utf8")
+            if (!/!isEditing && <>/.test(aspirations) || !/isEditing \? "Save changes"/.test(aspirations)) problems.push("editing a sent form still shows Save and Finish")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

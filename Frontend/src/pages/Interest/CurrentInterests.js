@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import VoiceInput from "../VoiceInput"
 import InterestProgressBar from "./InterestProgressBar"
-import { cleanupCurrentInterests, YOU_OR_THEM_OPTIONS } from "./interestFormState"
+import { cleanupCurrentInterests, HELD_BACK_OPTIONS } from "./interestFormState"
 
 const CONFIDENCE_LIST = ["High", "Medium", "Low"]
 
@@ -385,7 +385,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                                                 />
                                                 <div>
                                                     <label>What held you back?</label>
-                                                    {YOU_OR_THEM_OPTIONS.map((yotOption, yotIdx) => (
+                                                    {HELD_BACK_OPTIONS.map((yotOption, yotIdx) => (
                                                         <div key={`disc-yot-${idx}-${yotIdx}`}>
                                                             <input
                                                                 type="radio"

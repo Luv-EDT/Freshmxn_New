@@ -681,7 +681,8 @@ input[type="checkbox"] {
 
 /* a checkbox with its label beside it rather than inside (Current interests, Challenges): the same
    row as the other checklists, box and words lined up with room between (Round 17) */
-div:has(> input[type="checkbox"] + label) {
+div:has(> input[type="checkbox"] + label),
+div:has(> input[type="radio"] + label) {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
@@ -693,11 +694,13 @@ div:has(> input[type="checkbox"] + label) {
     margin-bottom: 8px;
 }
 
-div:has(> input[type="checkbox"] + label) > input[type="checkbox"] {
+div:has(> input[type="checkbox"] + label) > input[type="checkbox"],
+div:has(> input[type="radio"] + label) > input[type="radio"] {
     margin-top: 3px;
 }
 
-div:has(> input[type="checkbox"] + label) > label {
+div:has(> input[type="checkbox"] + label) > label,
+div:has(> input[type="radio"] + label) > label {
     flex: 1 1 0;
     min-width: 0;
     font-weight: 400;

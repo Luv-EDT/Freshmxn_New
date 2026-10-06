@@ -10,25 +10,33 @@ export const LIFE_STAGE_KEYS = ["postCollege", "college", "highSchool", "preHigh
 export const PROBLEM_GROUPS = ["individualInternalProblems", "interpersonalInternalProblems", "externalProblems"]
 const ACTIVITY_GROUPS = ["personalGrowth", "curiosityDriven", "socialRecognition", "effortlessEngagement"]
 
+// What held you back — the kind of PROBLEM it was (owner, Round 18: the labels say "problems").
 export const YOU_OR_THEM_OPTIONS = [
-    "Internal (self-doubt, fear, lack of clarity, difficult to handle, lacked skills etc)",
-    "Interpersonal (influence or pressure from family, friends, mentors, etc.)",
-    "External (financial constraints, lack of opportunities, systemic issues, etc.)",
+    "Internal problems (self-doubt, fear, lack of clarity, difficult to handle, lacked skills etc)",
+    "Interpersonal problems (influence or pressure from family, friends, mentors, etc.)",
+    "External problems (financial constraints, lack of opportunities, systemic issues, etc.)",
 ]
 
-// "Time constraints/Phase of life ended" was a 4th option on paused activities until Round 17 (owner:
-// not shown any more). Kept so an older answer still files under external problems.
-export const YOU_OR_THEM_OPTIONS_WITH_TIME = [...YOU_OR_THEM_OPTIONS, "Time constraints/Phase of life ended"]
+// Paused activities get a 4th answer (owner, Round 18): sometimes nothing held you back — life just
+// moved on. It is not a problem, so it never becomes one of your challenges.
+export const LIFE_MOVED_ON = "Life moved on / time didn't allow"
+export const HELD_BACK_OPTIONS = [...YOU_OR_THEM_OPTIONS, LIFE_MOVED_ON]
 
-// Map youOrThem values to corresponding problem categories.
-// "Time constraints/Phase of life ended" is an external circumstance, not something about the
-// student — without this line it fell through to "none" and the answer silently disappeared
-// from the challenges checklist.
+// Answers saved under earlier labels still read. "Time constraints/Phase of life ended" (removed in
+// Round 17) meant the same as "Life moved on".
+const LEGACY_HELD_BACK = {
+    "Internal (self-doubt, fear, lack of clarity, difficult to handle, lacked skills etc)": YOU_OR_THEM_OPTIONS[0],
+    "Interpersonal (influence or pressure from family, friends, mentors, etc.)": YOU_OR_THEM_OPTIONS[1],
+    "External (financial constraints, lack of opportunities, systemic issues, etc.)": YOU_OR_THEM_OPTIONS[2],
+    "Time constraints/Phase of life ended": LIFE_MOVED_ON,
+}
+export const currentHeldBack = (value) => LEGACY_HELD_BACK[value] || value || ""
+
+// Map youOrThem values to corresponding problem categories. "Life moved on" has none on purpose.
 const REASON_MAP = {
     [YOU_OR_THEM_OPTIONS[0]]: "individualInternalProblems",
     [YOU_OR_THEM_OPTIONS[1]]: "interpersonalInternalProblems",
     [YOU_OR_THEM_OPTIONS[2]]: "externalProblems",
-    [YOU_OR_THEM_OPTIONS_WITH_TIME[3]]: "externalProblems",
 }
 
 
@@ -140,6 +148,12 @@ export const normalizeFormState = (saved) => {
 
     merged.currentInterests = { ...initial.currentInterests, ...(saved.currentInterests || {}) }
     merged.currentChallenges = { ...initial.currentChallenges, ...(saved.currentChallenges || {}) }
+
+    // answers saved under the old "What held you back" labels move to today's (Round 18)
+    merged.currentInterests.discontinuedPursuits = Object.fromEntries(Object.entries(merged.currentInterests.discontinuedPursuits || {})
+        .map(([activity, slot]) => [activity, slot && slot.youOrThem ? { ...slot, youOrThem: currentHeldBack(slot.youOrThem) } : slot]))
+    merged.currentChallenges.presentConcerns = (merged.currentChallenges.presentConcerns || [])
+        .map((item) => (item && item.youOrThem ? { ...item, youOrThem: currentHeldBack(item.youOrThem) } : item))
     merged.persistentProblems = { ...initial.persistentProblems, ...(saved.persistentProblems || {}) }
     merged.backgroundInfo = { ...initial.backgroundInfo, ...(saved.backgroundInfo || {}) }
 
@@ -394,11 +408,13 @@ export const extractInterestData = (formState, visibleLifeStages) => {
     Object.values(formState.currentInterests?.discontinuedPursuits || {}).forEach((item) => {
         if (!item.isSelected) return
 
-        // Handle otherReason when "Other" is in the reason array
-        if (item.reason && item.reason.includes("Other") && item.otherReason) {
+        // Handle otherReason when "Other" is in the reason array. "Life moved on" is not a problem,
+        // so it never becomes a challenge (owner, Round 18)
+        const heldBack = currentHeldBack(item.youOrThem)
+        if (item.reason && item.reason.includes("Other") && item.otherReason && heldBack !== LIFE_MOVED_ON) {
             extractedProblems.push({
                 problem: `${normalize(item.otherReason)}*`,
-                reason: REASON_MAP[item.youOrThem] || "none",
+                reason: REASON_MAP[heldBack] || "none",
                 activityFailure: true,
             })
         }
@@ -428,7 +444,7 @@ export const extractInterestData = (formState, visibleLifeStages) => {
         .forEach((item) => {
             extractedProblems.push({
                 problem: normalize(item.problem),
-                reason: REASON_MAP[item.youOrThem] || "none",
+                reason: REASON_MAP[currentHeldBack(item.youOrThem)] || "none",
                 activityFailure: false,
             })
         })

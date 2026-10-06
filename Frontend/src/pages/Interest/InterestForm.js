@@ -410,6 +410,7 @@ function InterestForm() {
                         updateFormData={(data) => updateFormState("aspirationalProfessions", data)}
                         reportDraft={(data) => reportSectionDraft({ aspirationalProfessions: data })}
                         isLastContentStep={true}
+                        isEditing={hasSubmitted}
                     />
                 )
             case "done":
