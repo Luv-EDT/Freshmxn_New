@@ -1021,7 +1021,7 @@ button.sort-primary.is-on {
     border-top: 1px solid var(--line);
 }
 
-.pc-more summary {
+.pc-more > summary {
     list-style: none;
     cursor: pointer;
     display: flex;
@@ -1033,11 +1033,11 @@ button.sort-primary.is-on {
     color: var(--navy);
 }
 
-.pc-more summary::-webkit-details-marker {
+.pc-more > summary::-webkit-details-marker {
     display: none;
 }
 
-.pc-more summary::after {
+.pc-more > summary::after {
     content: "+";
     width: 26px;
     height: 26px;
@@ -1051,7 +1051,7 @@ button.sort-primary.is-on {
     font-weight: 900;
 }
 
-.pc-more[open] summary::after {
+.pc-more[open] > summary::after {
     content: "−";
 }
 

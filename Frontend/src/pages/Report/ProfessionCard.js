@@ -152,7 +152,7 @@ const ABROAD_STAGE = {
 
 // Going abroad to work (Round 13): how a career travels, in a student's words
 const PORTABILITY_WORDS = {
-    travels_well: "Travels well — the skills are recognised in most countries",
+    travels_well: "Travels well",
     requalify: "A licence first — you would need that country's licence or exam before you can work",
     india_based: "India-based — this is a role in India's own system",
 }
