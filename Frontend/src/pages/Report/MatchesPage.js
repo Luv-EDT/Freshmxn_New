@@ -4,16 +4,18 @@ import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
 import ProfessionCard from "./ProfessionCard"
 import ReportSortMenu from "./ReportSortMenu"
+import ReportFilterMenu from "./ReportFilterMenu"
 import CombinedCareers from "./CombinedCareers"
 import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
-import { groupList, ONLY_FILTERS, SWITCH_COST_GROUP_YEARS } from "./reportFilters"
+import { groupList, SWITCH_COST_GROUP_YEARS } from "./reportFilters"
 import { abroadLines } from "./reportPlan"
-import { TOP_SHOWN, tierNameFor, framingFor, listOf } from "./reportFraming"
+import { TOP_SHOWN, tierNameFor, buildFirstFor, BUILD_FIRST_TITLE, BUILD_FIRST_NOTE, framingFor, listOf } from "./reportFraming"
 
 // "YOUR MATCHES" — the whole list on its own page (owner, Round 19, /report/matches). The report
 // itself is a short overview with the top three; this page holds every match with the sort, the
-// filters, how the list is ordered, the studying- and working-abroad lines and the combined careers.
+// filters, the combined careers and, last, the studying- and working-abroad lines. How the list is
+// ordered is explained on the overview (owner, Round 24).
 //
 // ONE LIST, TWO ORDERS (owner, Round 20). The top three show first; opening the rest shows the tiers
 // as headed groups. "Best match" puts careers that would cost 2+ years to switch in a last group of
@@ -44,6 +46,11 @@ function MatchesPage() {
         [ranked, primary, secondary, details, only, excludeBlueCollar]
     )
     const ordered = useMemo(() => groups.flatMap((group) => group.entries), [groups])
+    // the first not-a-fit tier on show, which carries the "Build skills first" band
+    const firstBuildTier = useMemo(() => {
+        const first = groups.find((group) => !group.costly && buildFirstFor(group.tier))
+        return first ? first.tier : null
+    }, [groups])
 
     const sortKey = [primary, secondary, only.join("+"), excludeBlueCollar].join("|")
 
@@ -109,19 +116,6 @@ function MatchesPage() {
 
             <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
 
-            {/* STUDYING AND WORKING ABROAD ACROSS YOUR MATCHES (owner, Round 19) — replaces the
-                report-level "A master's abroad" card; each line shows only when it names something */}
-            {(abroad.study.length > 0 || abroad.work.length > 0) && (
-                <div className="report-abroad">
-                    {abroad.study.length > 0 && (
-                        <p className="report-small"><strong>Good prospects for studying abroad:</strong> {listOf(abroad.study)}.</p>
-                    )}
-                    {abroad.work.length > 0 && (
-                        <p className="report-small"><strong>Good chances of working abroad:</strong> {listOf(abroad.work)}.</p>
-                    )}
-                </div>
-            )}
-
             <ReportSortMenu
                 primary={primary}
                 onPrimary={setPrimary}
@@ -137,71 +131,20 @@ function MatchesPage() {
                 </p>
             )}
 
-            {/* THE FILTERS sit in plain sight beside the sort, not inside it (Rounds 13 and 18) */}
-            <div className="report-filters">
-                <label className={`blue-collar-toggle${excludeBlueCollar ? " is-on" : ""}`}>
-                    <input
-                        type="checkbox"
-                        checked={excludeBlueCollar}
-                        onChange={(event) => setExcludeBlueCollar(event.target.checked)}
-                    />
-                    <span>Leave out blue-collar careers*</span>
-                </label>
-                {ONLY_FILTERS.map((option) => (
-                    <label key={option.value} className={`blue-collar-toggle${only.includes(option.value) ? " is-on" : ""}`}>
-                        <input type="checkbox" checked={only.includes(option.value)} onChange={() => toggleOnly(option.value)} />
-                        <span>{option.label}</span>
-                    </label>
-                ))}
-            </div>
-            <p className="report-small report-filter-note">* Some of the most AI-proof careers are blue-collar.</p>
-
-            {/* THE RANKING EXPLAINS ITSELF, in one place. A student who cannot see why one career
-                sits above another has been handed an opinion with a number on it. */}
-            <details className="report-details">
-                <summary className="report-summary small">
-                    <strong>How this list is ordered</strong>
-                </summary>
-                <p className="report-small">Three things decide where a career sits, in this order:</p>
-                <ol className="report-small">
-                    <li>
-                        <strong>What you have actually done.</strong> Something you have stuck with for
-                        years counts for more than something you picked up recently, and both count for
-                        more than a career that reached you on your profile alone.
-                    </li>
-                    <li>
-                        <strong>Whether it fits how you think and work.</strong> Measured from the
-                        assessment against what the work actually demands.
-                    </li>
-                    <li>
-                        <strong>How strongly you feel about it.</strong> Loving something outranks having
-                        won at it, which outranks saying you are confident about it — what you told us
-                        about yourself is the softest of the three, so it counts least.
-                    </li>
-                </ol>
-                <p className="report-small">
-                    Together these make up to sixteen groups, from "Long-time passions you've achieved in" down to
-                    "A stretch — reached on your profile alone". Open the full list to see yours under their
-                    headings; inside each group, the careers that fit you best come first. A career counts as a
-                    fit when your profile meets or goes beyond what the work asks: having more of a quality than the
-                    work needs doesn't count against you — except comfort with uncertainty and how firmly you
-                    hold a view, where careers can want either end.
+            {/* THE FILTERS, folded away like the sort (owner, Round 24) */}
+            <ReportFilterMenu
+                excludeBlueCollar={excludeBlueCollar}
+                onExcludeBlueCollar={setExcludeBlueCollar}
+                only={only}
+                onToggleOnly={toggleOnly}
+            />
+            {/* said outside the folded menu, so a filter never hides careers silently */}
+            {hiddenCount > 0 && (
+                <p className="report-hidden-note">
+                    {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters.{" "}
+                    <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
                 </p>
-                {framing.switchIsDistinct && (
-                    <p className="report-small">
-                        <strong>Switching cost.</strong> Under <em>Best match</em>, careers that would leave {SWITCH_COST_GROUP_YEARS} or
-                        more years of what you've already done behind go to a last group of their own, the least
-                        affected first. Choose <em>Best fit, ignoring switching cost</em> under "Sort your list" to keep
-                        them in their groups, or sort by <em>Least switching cost</em>.
-                    </p>
-                )}
-                <p className="report-small">
-                    <em>
-                        Nothing here is a verdict on what you are capable of. It is a reading of the
-                        evidence you gave us, and it moves when you give us more.
-                    </em>
-                </p>
-            </details>
+            )}
 
             {/* COLLAPSED: the top three of the chosen order. OPEN: every group under its heading. */}
             {showAllFor !== sortKey ? (
@@ -219,6 +162,13 @@ function MatchesPage() {
                     </details>
                 ) : (
                     <section key={group.key} className="match-group">
+                        {/* "Build skills first" heads the not-a-fit tiers once, above the first of them */}
+                        {buildFirstFor(group.tier) && group.tier === firstBuildTier && (
+                            <div className="match-band">
+                                <h2 className="match-band-title">{BUILD_FIRST_TITLE}</h2>
+                                <p className="report-small">{BUILD_FIRST_NOTE}</p>
+                            </div>
+                        )}
                         <h3 className="match-group-title">{tierNameFor(group.tier) || "Your other matches"}</h3>
                         <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
                     </section>
@@ -231,16 +181,23 @@ function MatchesPage() {
                 </button>
             )}
 
-            {hiddenCount > 0 && (
-                <p className="report-hidden-note">
-                    {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters.{" "}
-                    <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
-                </p>
-            )}
             {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
 
             {/* COMBINED CAREERS (Round 10) — beside the list, never in it; the same card since Round 19 */}
             <CombinedCareers combined={data.combined} journey={journey} />
+
+            {/* STUDYING AND WORKING ABROAD ACROSS YOUR MATCHES (owner, Round 19; at the bottom since Round 24) —
+                each line shows only when it names something */}
+            {(abroad.study.length > 0 || abroad.work.length > 0) && (
+                <div className="report-abroad">
+                    {abroad.study.length > 0 && (
+                        <p className="report-small"><strong>Good prospects for studying abroad:</strong> {listOf(abroad.study)}.</p>
+                    )}
+                    {abroad.work.length > 0 && (
+                        <p className="report-small"><strong>Good chances of working abroad:</strong> {listOf(abroad.work)}.</p>
+                    )}
+                </div>
+            )}
         </div>
     )
 }

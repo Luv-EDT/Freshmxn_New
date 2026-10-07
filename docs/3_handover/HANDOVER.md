@@ -2195,3 +2195,21 @@ failure). Workers 190 → 191 (the worker checks unread activities before writin
 test-only overrides): Voyage 429 twice then fine → the job rode it out, one call for both activities,
 a report with careers and a filled trace; Voyage 429 for good → five attempts, then the previous report
 kept with "Try again" and a `report_failed` issue naming the 429.
+
+### Round 24 — matches page tidy-up and crisp tier labels (2026-10-07)
+Owner: four design changes, presentation only.
+
+| Item | What shipped |
+|---|---|
+| **Tier labels** | `TIER_NAMES` (`reportFraming.js`) are two or three words: Proven long-time passion · Proven current passion · Confident long-time passion · Confident current passion · Long-time passion · Current passion · Long-time achievement · Current achievement · Long-time interest · Current interest · Other interests; then, under one band **"Build skills first"** ("These link to what you do, but ask for more than your profile shows today — skills you can build"): Long-time favourites · Current favourites · Long-time interests · Current interests · Other interests. "A stretch" is gone; each row carries `buildFirst`, and the aspiration "Why there" line says "build skills first" for those tiers |
+| **Filters folded** | New `ReportFilterMenu.js`: "☰ Filter your list", collapsed, "No filters / N on", the same look as the sort; the three filters and the blue-collar side note inside. "N careers hidden … Show them again" stays outside the menu, right under it |
+| **Abroad lines** | "Good prospects for studying abroad" / "Good chances of working abroad" moved to the bottom of `/report/matches`, after the combined careers |
+| **How your list is ordered** | Moved from the matches page to the overview, a fold styled like the five fundamentals, right after Your matches; rewritten for the new labels (what you've done → how strongly you feel: proven, confident, passion, interest → fits you now vs build skills first), with the switching-cost paragraph for journeys where it applies |
+
+**Fixtures:** workers stay 191. Changed for the owner's change: TIERS (`buildFirst` marks exactly the
+not-a-fit tiers; every label ≤ 4 words, no "stretch"; a label may repeat across the two bands, never within
+one; the ordering fold is on the overview, not the matches page); the report fixture reads the blue-collar
+asterisk from `ReportFilterMenu.js` and checks the abroad lines come after the combined careers.
+Browser: r20 50/50 (+ the Round 24 checks: filters folded and opening, no ordering fold on the matches
+page, abroad lines last, the overview fold after Your matches; four medium headings now), r19 60/60.
+Build: the 8 known warning files.

@@ -262,8 +262,14 @@ you wanted**. The last three share one medium heading size; Your matches is only
 **"See all" opens `/report/matches`**, the whole list: the first **three** of the order you've chosen,
 each with its **rank number** (1, 2, 3…) on the left, and a **"Show the other N careers"** button for the
 rest (choosing a new order starts again at three). Opened, the list is shown **under its tier headings**
-— "Long-time passions you've achieved in", "Current passions", "Fits your profile", "A stretch — …" — only
-the ones you have, numbers running on across them (Round 20). Under **Best match**, careers that would leave
+— two or three words each since Round 24: "Proven long-time passion", "Confident current passion",
+"Long-time interest", "Other interests"… (*proven* = you achieved at it, *confident* = you said you're sure,
+*passion* = you love it). The careers that ask for more than your profile shows today sit under one band,
+**"Build skills first"**, instead of the old "A stretch — …". Only the groups you have are shown, numbers
+running on across them (Round 20). The **filters** fold away behind one **"Filter your list"** button, like
+the sort, and the page still says how many careers they hide; the **studying / working abroad** lines are
+the last thing on the page; and **how the list is ordered** is explained on the overview, in a fold beside
+the five fundamentals (Round 24). Under **Best match**, careers that would leave
 **2 or more years** of what you've done behind move into a last fold, "Would cost you 2+ years to switch",
 the least affected first; **Best fit, ignoring switching cost** leaves them in their tiers. Nothing is ever
 added from outside your list. Just the names, with your top 3 coloured, and a
@@ -476,7 +482,8 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 - **Deploy** — putting the new version live.
 - **Switching cost** — how much of what you've already done you'd leave behind by changing to a
   career.
-- **Tier** — a group in the ranking; there are 16, shown as 5 bands in "How this list is ordered".
+- **Tier** — a group in the ranking; there are 16, each with a two-or-three-word label, the last five
+  under "Build skills first" (Round 24); explained in "How your list is ordered" on the overview.
 - **Coverage** — how much of what a trait needs was actually measured for you. Under 100% it shows as
   "Partial · N%" on the assessment page and your profile (not on the careers).
 - **Override** — an admin-approved new value for a career's demand or pay, shown on top of the data file.
