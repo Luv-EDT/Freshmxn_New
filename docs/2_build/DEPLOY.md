@@ -72,7 +72,7 @@ the Upstash database can be deleted too.
 | `RESEND_API_KEY` | resend.com → API Keys | ✅ **the server crashes at boot without it** |
 | `EMAIL_FROM` | The sender you use locally, e.g. `Freshmxn <onboarding@resend.dev>` | ✅ |
 | `ANTHROPIC_API_KEY` | console.anthropic.com | ✅ grading + reports |
-| `VOYAGE_API_KEY` | dash.voyageai.com | ✅ activity matching |
+| `VOYAGE_API_KEY` | dash.voyageai.com — **also add a payment method there** (Billing): without one Voyage allows 3 requests a minute, and activity matching stalls | ✅ activity matching |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud → Credentials (same as local) | for Google sign-in |
 | `FRONTEND_URL` | Put `https://freshmxn.onrender.com` for now — fix in Step 5 once you see the real URL | ✅ |
 | `GOOGLE_CALLBACK_URL` | `https://freshmxn.onrender.com/auth/google/callback` for now — fix in Step 5 | for Google sign-in |

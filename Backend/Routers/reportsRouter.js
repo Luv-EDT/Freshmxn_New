@@ -182,9 +182,10 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
         // fall back to when they were last written.
         const submittedAt = submission && submission.psychometricSubmittedAt
         const builtFrom = report && (report.sourceSubmittedAt || report.lastGeneratedAt || report.generatedAt)
-        const isRegenerating = Boolean(report && submittedAt && builtFrom && new Date(builtFrom).getTime() < new Date(submittedAt).getTime())
-            // ...or the student pressed "Update my report" and the new one is not written yet
-            || Boolean(report && req.user.reportUpdateRequestedAt && new Date(report.lastGeneratedAt || report.generatedAt).getTime() < new Date(req.user.reportUpdateRequestedAt).getTime())
+        const newerSubmit = Boolean(report && submittedAt && builtFrom && new Date(builtFrom).getTime() < new Date(submittedAt).getTime())
+        // ...or the student pressed "Update my report" and the new one is not written yet
+        const updatePending = Boolean(report && req.user.reportUpdateRequestedAt && new Date(report.lastGeneratedAt || report.generatedAt).getTime() < new Date(req.user.reportUpdateRequestedAt).getTime())
+        const isRegenerating = newerSubmit || updatePending
 
         // THE PIPELINE GAVE UP (see userModel `reportFailedAt`). Without this a first-time student
         // saw "generating" and a resubmitter "being rebuilt" — forever, with the page polling every
@@ -192,7 +193,9 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
         // shows that report plus a banner (`rebuildFailed` below).
         const failed = Boolean(req.user.reportFailedAt) && req.user.progress.psychometric === "done"
 
-        if (failed && (!report || isRegenerating)) {
+        // An UPDATE that failed is different from a new submit that failed (Round 23): the answers did not
+        // change, so the report they already have is still theirs — shown, with "Try again" above it.
+        if (failed && (!report || newerSubmit)) {
             return res.status(200).json({
                 success: true,
                 message: "Report generation failed",
@@ -200,7 +203,7 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
             })
         }
 
-        if (isRegenerating) {
+        if (isRegenerating && !failed) {
             return res.status(200).json({
                 success: true,
                 message: "Report is being rebuilt",
