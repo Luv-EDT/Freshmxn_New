@@ -4907,10 +4907,13 @@ const fixtures = [
             if (!/unscoreable_reason/.test(worker.split('kind: "story_unmarked"')[1] || "")) problems.push("the issue does not carry the reason")
             const { traceReadings } = require("../../Routers/dataUpdatesRouter")
             const trace = traceReadings(
-                [{ said: "I ran marathons", namedAs: "long distance running", cacheHit: "near", nearScore: 0.93, readAs: "running", candidates: ["spt-athlete", "spt-coach", "hlt-dietitian"] }],
+                [{ said: "I ran marathons", namedAs: "long distance running", pointsTo: ["sport", "fitness"], cacheHit: "near", nearScore: 0.93, readAs: "running", candidates: ["spt-athlete", "spt-coach", "hlt-dietitian"] }],
                 { ranked_professions: [{ professionId: "spt-coach", rankedPosition: 4, tier: 6 }], filtered: [{ professionId: "hlt-dietitian", reason: "needs biology" }] }
             )[0]
             if (trace.nearScore !== 0.93 || trace.cache !== "near" || trace.namedAs !== "long distance running") problems.push(`the near hit is not traced: ${JSON.stringify(trace)}`)
+            // Round 21: the areas the activity points to are shown too
+            if ((trace.pointsTo || []).join() !== "sport,fitness") problems.push("the trace does not show what the activity points to")
+            if (!/pointsTo: resolved\.pointsTo/.test(fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8"))) problems.push("the report worker does not store what each activity points to")
             const landed = Object.fromEntries(trace.careers.map((career) => [career.id, career.landed]))
             if (landed["spt-coach"] !== "#4 (tier 6)") problems.push(`a ranked career does not show its place: ${landed["spt-coach"]}`)
             if (landed["spt-athlete"] !== "not in the list") problems.push("an unranked career is not marked")

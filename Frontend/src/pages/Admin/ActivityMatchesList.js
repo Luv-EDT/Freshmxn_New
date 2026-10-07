@@ -59,6 +59,8 @@ function StudentReadings() {
                                 <li key={`${step.wrote}-${index}`}>
                                     <p><strong>Wrote:</strong> {step.wrote}</p>
                                     <p><strong>Named as:</strong> {step.namedAs || (step.cache === "exact" ? "— (this exact wording was already in the cache, so no naming call)" : "—")}</p>
+                                    {/* Round 21: the areas the activity points to, searched as well as its name */}
+                                    {(step.pointsTo || []).length > 0 && <p><strong>Points to:</strong> {step.pointsTo.join(" · ")}</p>}
                                     <p>
                                         <strong>Cache:</strong> {HIT_WORDS[step.cache] || step.cache || "—"}
                                         {typeof step.nearScore === "number" && <> — similarity <strong>{step.nearScore.toFixed(3)}</strong> ≥ {result.threshold.toFixed(2)}</>}

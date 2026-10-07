@@ -45,7 +45,10 @@ const constants = require("./constants")
 // full fit (uncertainty tolerance and firmness stay two-sided); "fits how you think" is 0.85, not 0.7;
 // careers are ordered by fit inside a tier (the switching cost no longer reorders them); the
 // worth-the-switch extras are gone. Students see "Update my report"; nothing rebuilds by itself.
-const MATCHING_VERSION = "matching@2.0.0"
+// 2.1.0 (Round 21, owner): activities are no longer rated and there is no 0.80 activity gate —
+// every career an activity points to (its name and the areas it points to, a meaning search, the AI
+// shortlist) is a candidate, and the student's own profile decides fit and tier.
+const MATCHING_VERSION = "matching@2.1.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")
@@ -130,7 +133,6 @@ const matchProfile = ({ profile, interest, user, professions, baseline, resolved
 
         sort: sort || "default",
         constants: {
-            ACTIVITY_MATCH_FLOOR: constants.ACTIVITY_MATCH_FLOOR,
             COMFORT_THRESHOLD: constants.COMFORT_THRESHOLD,
             MINOR_GROUP_WEIGHT: constants.MINOR_GROUP_WEIGHT,
             WEIGHTS_PROVISIONAL: true,

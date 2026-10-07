@@ -625,6 +625,7 @@ const traceReadings = (readings, recommendation) => {
     return (readings || []).map((reading) => ({
         wrote: reading.said,
         namedAs: reading.namedAs || null,
+        pointsTo: reading.pointsTo || [],
         cache: reading.cacheHit,
         nearScore: typeof reading.nearScore === "number" ? reading.nearScore : null,
         readAs: reading.readAs,

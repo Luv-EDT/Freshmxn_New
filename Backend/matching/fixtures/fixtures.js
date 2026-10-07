@@ -235,21 +235,23 @@ const fixtures = [
     },
 
     // ── Program 2 ───────────────────────────────────────────────────────────────────────────────
+    // REPLACES "the 0.80 activity match is a FLOOR" and "a better-than-floor match is kept" (owner,
+    // Round 21): there is no floor. An activity's own ratings no longer decide anything — every career
+    // it points to is a candidate, and the student's profile places it.
     {
-        name: "the 0.80 activity match is a FLOOR — tst-beta at 0.40 never enters the list",
+        name: "NO GATE — every career an activity points to enters the candidates, whatever the activity's ratings",
         run: () => matchProfile(baseInput({})),
         assert: (result) => {
-            const beta = findEntry(result, "tst-beta")
-            return beta ? "tst-beta matched at 0.40 and should have been excluded by the floor" : null
+            const missing = ["tst-alpha", "tst-beta", "tst-gamma", "tst-delta"].filter((id) => !findEntry(result, id))
+            return missing.length > 0 ? `not in the list: ${missing.join(", ")}` : null
         },
     },
     {
-        name: "a better-than-floor match is kept, not discarded for being too good",
+        name: "matchScore follows the activity's shortlist order (1.0 for the first, 0.01 less per place)",
         run: () => matchProfile(baseInput({})),
         assert: (result) => {
-            const alpha = findEntry(result, "tst-alpha")
-            if (!alpha) return "tst-alpha matched at 1.00 and is missing"
-            return alpha.matchScore === 1 ? null : `expected matchScore 1, got ${alpha.matchScore}`
+            const scores = ["tst-alpha", "tst-beta", "tst-gamma", "tst-delta"].map((id) => (findEntry(result, id) || {}).matchScore)
+            return scores.join() === "1,0.99,0.98,0.97" ? null : `got ${scores.join()}`
         },
     },
     {
@@ -559,10 +561,10 @@ const fixtures = [
     },
 
     {
-        name: "an unrateable activity contributes nothing rather than matching everything",
-        // activityResolver returns {} for text it cannot rate — "stuff", "things I like". An empty
-        // vector must drop out, not sail past the floor by having no disagreement to measure.
-        run: () => matchProfile(baseInput({ resolvedActivities: [resolved("stuff", {}, ["tst-alpha", "tst-beta"])] })),
+        name: "something that is not an activity contributes nothing rather than matching everything",
+        // The naming call flags "stuff" / "things I like" as not an activity (Round 21; it used to be
+        // the rating that said so). Even with careers attached, it must point nowhere.
+        run: () => matchProfile(baseInput({ resolvedActivities: [{ ...resolved("stuff", {}, ["tst-alpha", "tst-beta"]), unrateable: true }] })),
         expect: { "ranked.length": 0 },
     },
 
@@ -635,6 +637,7 @@ const fixtures = [
                 rubricVersion: "2.0",
                 factors: { ...flatFactors(5), bodily_intelligence: 9 },
                 candidateProfessionIds: ["tst-alpha"],
+                pointsTo: [],
                 embedding: [1, 0, 0],
             }])
 
@@ -652,14 +655,14 @@ const fixtures = [
         assert: (resolved) => {
             if (resolved.length !== 1) return `expected 1 resolved activity, got ${resolved.length}`
             if (resolved[0].cacheHit !== "exact") return `expected an exact hit, got ${resolved[0].cacheHit}`
-            if (resolved[0].factors.bodily_intelligence !== 9) return "the cached factors were not returned"
+            if (resolved[0].candidateProfessionIds[0] !== "tst-alpha") return "the cached shortlist was not returned"
             // Canonicalisation is what makes the hit possible — the student typed it differently.
             if (resolved[0].canonicalActivity !== "playing cricket") return `expected canonicalisation, got ${resolved[0].canonicalActivity}`
             return null
         },
     },
     {
-        name: "a rubric version change MISSES the cache rather than reusing a stale rating",
+        name: "a rubric version change MISSES the cache rather than reusing a stale row",
         // A vector scored against one rubric must never be served under another. The miss is the
         // correct, expensive answer; silently reusing it would be the cheap wrong one.
         run: async () => {
@@ -668,6 +671,7 @@ const fixtures = [
                 rubricVersion: "1.0",
                 factors: flatFactors(5),
                 candidateProfessionIds: ["tst-alpha"],
+                pointsTo: [],
                 embedding: [1, 0, 0],
             }])
 
@@ -697,6 +701,7 @@ const fixtures = [
                 rubricVersion: "2.0",
                 factors: { ...flatFactors(5), bodily_intelligence: 9 },
                 candidateProfessionIds: ["tst-alpha"],
+                pointsTo: [],
                 embedding: [1, 0, 0],
             }])
 
@@ -716,7 +721,7 @@ const fixtures = [
         },
         assert: ({ resolved, cache }) => {
             if (resolved[0].cacheHit !== "near") return `expected a near hit, got ${resolved[0].cacheHit}`
-            if (resolved[0].factors.bodily_intelligence !== 9) return "the folded entry did not supply its factors"
+            if (resolved[0].candidateProfessionIds[0] !== "tst-alpha") return "the folded entry did not supply its shortlist"
             if (cache.writes.length > 0) return "a near-duplicate must not create a second cache row"
             const folded = cache.updates.find((update) => update.$addToSet)
             if (!folded) return "the new wording was not recorded on the existing row"
@@ -925,7 +930,7 @@ const fixtures = [
                 if (!needsTranslation(text)) problems.push(`"${text}" was not recognised as Hindi or Hinglish`)
             })
 
-            const cache = fakeCache([{ _id: "row-cricket", canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], embedding: [1, 0, 0], exampleRaw: [] }])
+            const cache = fakeCache([{ _id: "row-cricket", canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], pointsTo: [], embedding: [1, 0, 0], exampleRaw: [] }])
             const real = globalThis.fetch
             const sent = { claude: [], voyage: [] }
             globalThis.fetch = async (url, options) => {
@@ -950,7 +955,7 @@ const fixtures = [
                 const resolved = await resolver.resolveActivities(wordings.map((text) => ({ activity: text, key: text.toLowerCase() })))
                 if (sent.claude.length !== 1 || sent.claude[0].length !== 3) problems.push(`the three wordings were not named in one call: ${JSON.stringify(sent.claude)}`)
                 if (sent.voyage.length !== 0) problems.push("an activity the name already placed was still embedded")
-                if (resolved.length !== 3 || resolved.some((entry) => entry.factors.bodily_intelligence !== 9 || entry.readAs !== "playing cricket" || entry.cacheHit !== "named" || entry.rowId !== "row-cricket")) problems.push(`not all three reached "playing cricket": ${JSON.stringify(resolved.map((entry) => [entry.readAs, entry.cacheHit]))}`)
+                if (resolved.length !== 3 || resolved.some((entry) => entry.candidateProfessionIds[0] !== "tst-alpha" || entry.readAs !== "playing cricket" || entry.cacheHit !== "named" || entry.rowId !== "row-cricket")) problems.push(`not all three reached "playing cricket": ${JSON.stringify(resolved.map((entry) => [entry.readAs, entry.cacheHit]))}`)
                 const kept = cache.updates.some((update) => JSON.stringify(update).includes("maine 10th standard mai cricket khela tha"))
                 if (!kept) problems.push("the student's own words were not kept on the cached row")
                 if (!cache.updates.some((update) => update.$push && update.$push.exampleRaw && update.$push.exampleRaw.$slice === -200)) problems.push("the kept wordings are not capped")
@@ -967,7 +972,7 @@ const fixtures = [
             }
 
             // a naming call that fails falls back to the student's words — the report is never held up
-            const failing = fakeCache([{ canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: flatFactors(5), candidateProfessionIds: [], embedding: [1, 0, 0] }])
+            const failing = fakeCache([{ canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: flatFactors(5), candidateProfessionIds: [], pointsTo: [], embedding: [1, 0, 0] }])
             const before = globalThis.fetch
             globalThis.fetch = async (url) => {
                 if (String(url).includes("voyageai")) return { ok: true, json: async () => ({ data: [{ index: 0, embedding: [1, 0.05, 0] }] }) }
@@ -1000,8 +1005,8 @@ const fixtures = [
             if (thresholdFrom("0.95") !== 0.95) problems.push("a valid threshold was ignored")
 
             const cache = fakeCache([
-                { canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], embedding: [1, 0, 0], refusedFolds: ["watching cricket"] },
-                { canonicalActivity: "cricket commentary", rubricVersion: "2.0", factors: { ...flatFactors(5), linguistic_intelligence: 8 }, candidateProfessionIds: ["tst-beta"], embedding: [0.95, 0.31, 0] },
+                { canonicalActivity: "playing cricket", rubricVersion: "2.0", factors: { ...flatFactors(5), bodily_intelligence: 9 }, candidateProfessionIds: ["tst-alpha"], pointsTo: [], embedding: [1, 0, 0], refusedFolds: ["watching cricket"] },
+                { canonicalActivity: "cricket commentary", rubricVersion: "2.0", factors: { ...flatFactors(5), linguistic_intelligence: 8 }, candidateProfessionIds: ["tst-beta"], pointsTo: [], embedding: [0.95, 0.31, 0] },
             ])
             await withStubbedEmbedding([[1, 0, 0]], async () => {
                 const resolver = createActivityResolver({
@@ -1012,10 +1017,79 @@ const fixtures = [
                     voyageApiKey: "test",
                 })
                 const [watching] = await resolver.resolveActivities([{ activity: "Watching cricket", key: "watching cricket" }])
-                if (!watching || watching.factors.linguistic_intelligence !== 8) problems.push("a split-off wording folded into the row that refused it")
+                if (!watching || watching.candidateProfessionIds[0] !== "tst-beta") problems.push("a split-off wording folded into the row that refused it")
                 const fold = cache.updates.map((update) => update.$push && update.$push.folds && update.$push.folds.$each[0]).find(Boolean)
                 if (!fold || fold.text !== "watching cricket" || typeof fold.score !== "number" || fold.score < 0.9) problems.push(`the fold's similarity was not recorded: ${JSON.stringify(fold)}`)
             })
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "POINTS TO (Round 21) — the naming call says where an activity points, those areas are searched too, nothing is rated, 'stuff' is not cached, and an old row is topped up once",
+        // Owner, Round 21: "helping servant" found nothing because only its name was searched. Now the
+        // one naming call also returns 2-4 areas ("social work", "public service"); each is searched by
+        // meaning beside the name, and the AI shortlist keeps the relevant careers. No rating passes.
+        run: async () => {
+            const problems = []
+            // 29 careers close to the activity's name, and one (p-social) close only to an area
+            const embeddings = [...Array.from({ length: 29 }, (_, index) => ({ id: `c${index}`, profession: `Career ${index}`, embedding: [1, 0.01 * index, 0] })), { id: "p-social", profession: "Social Worker", embedding: [0, 1, 0] }]
+            const vectors = { "helping others": [0, 0, 1], "social work": [0, 1, 0], "public service": [0, 0.9, 0.1], "dancing": [1, 0.02, 0], "performing arts": [1, 0, 0] }
+            const calls = { name: 0, rerank: 0, other: 0 }
+            const real = globalThis.fetch
+            globalThis.fetch = async (url, options) => {
+                const body = JSON.parse(options.body)
+                if (String(url).includes("voyageai")) {
+                    return { ok: true, json: async () => ({ data: body.input.map((text, index) => ({ index, embedding: vectors[text] || [0, 0, 1] })) }) }
+                }
+                const system = body.system[0].text
+                const reply = (object) => ({ ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(object) }] }) })
+                if (system.startsWith("You name the activity")) {
+                    calls.name += 1
+                    const texts = JSON.parse(body.messages[0].content)
+                    return reply({ items: texts.map((text) => (text === "stuff" ? { name: "stuff", pointsTo: [], notAnActivity: true }
+                        : text === "dancing" ? { name: "dancing", pointsTo: ["performing arts"], notAnActivity: false }
+                            : { name: "helping others", pointsTo: ["social work", "public service"], notAnActivity: false })) })
+                }
+                if (system.startsWith("You filter a shortlist")) {
+                    calls.rerank += 1
+                    return reply({ keep: [...body.messages[0].content.matchAll(/^\d+\. (\S+) — /gm)].map((match) => match[1]) })
+                }
+                calls.other += 1
+                throw new Error("an unexpected call — activities are no longer rated")
+            }
+            try {
+                const cache = fakeCache([{ _id: "old-dance", canonicalActivity: "dancing", rubricVersion: "2.0", factors: flatFactors(5), candidateProfessionIds: ["c1"], embedding: [1, 0.02, 0], exampleRaw: [] }])
+                const resolver = createActivityResolver({
+                    ActivityFactors: cache.model,
+                    professionEmbeddings: { model: "voyage-4-large", dimensions: 3, embeddings },
+                    anchors: { schema_version: "2.0", bands: [], factors: [] },
+                    voyageApiKey: "test", anthropicApiKey: "test",
+                })
+                const out = await resolver.resolveActivities([
+                    { activity: "helping servant", key: "helping servant" },
+                    { activity: "stuff", key: "stuff" },
+                ])
+                const helping = out.find((entry) => entry.key === "helping servant")
+                const stuff = out.find((entry) => entry.key === "stuff")
+                if (!helping || helping.pointsTo.join() !== "social work,public service") problems.push(`the areas were not kept: ${JSON.stringify(helping)}`)
+                if (!helping || !helping.candidateProfessionIds.includes("p-social")) problems.push("a career reached only through an area it points to was not shortlisted")
+                if (!stuff || !stuff.unrateable || stuff.candidateProfessionIds.length !== 0) problems.push("'stuff' still points somewhere")
+                if (cache.writes.some((write) => write.canonicalActivity === "stuff")) problems.push("'stuff' was cached")
+                const saved = cache.writes.find((write) => write.canonicalActivity === "helping others")
+                if (!saved || saved.pointsTo.join() !== "social work,public service" || "factors" in saved) problems.push(`the new row is not name + points to + shortlist, unrated: ${JSON.stringify(saved && Object.keys(saved))}`)
+                if (calls.other > 0) problems.push("a rating call was made")
+                if (calls.name !== 1) problems.push(`expected one naming call, got ${calls.name}`)
+
+                // an old row (rated, no pointsTo) is topped up once on first use
+                calls.name = 0
+                calls.rerank = 0
+                const [danced] = await resolver.resolveActivities([{ activity: "dancing", key: "dancing" }])
+                if (!danced || danced.pointsTo.join() !== "performing arts" || calls.name !== 1 || calls.rerank !== 1) problems.push(`the old row was not topped up: ${JSON.stringify({ danced, calls })}`)
+                if (!cache.updates.some((update) => update.$set && Array.isArray(update.$set.pointsTo))) problems.push("the top-up was not saved")
+            } finally {
+                globalThis.fetch = real
+            }
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

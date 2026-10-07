@@ -52,12 +52,15 @@ const activityFactorsSchema = new mongoose.Schema(
             default: [],
         },
         factors: {
-            type: Object,
-            required: true, // the 27 matching slugs, 0-10 or null. Mixed: write with $set, never .push() + .save()
+            type: Object, // rows before Round 21 only: the activity rated on the 27 slugs. No longer written or read by matching
+        },
+        pointsTo: {
+            type: [String],
+            default: undefined, // Round 21: the 2-4 areas this activity points to ("social work", "public service"); absent on older rows until topped up
         },
         candidateProfessionIds: {
             type: [String],
-            default: [], // the reranked shortlist this activity points at — cached with the rating, because re-running retrieval for a known activity buys nothing
+            default: [], // the shortlist this activity points at (its name and areas searched by meaning, then the AI shortlist) — cached, because re-running it for a known activity buys nothing
         },
         embedding: {
             type: [Number],

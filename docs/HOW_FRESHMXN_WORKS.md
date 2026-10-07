@@ -186,24 +186,32 @@ you wait at the desk**. Instead:
      records **how much of each trait was actually measured** (`factor_coverage`);
    - then **drops a second job in the tray**: `generate_report`.
 4. **Another worker picks that up** (`workers/generateReportWorker.js`) and:
-   - **reads your activities** (`matching/activityResolver.js`) — Voyage turns each thing you've done
-     into numbers so it can be compared with careers, and Claude rates any activity it hasn't seen
-     before on the same 27-trait scale the careers were rated on (saved, so it's rated only once).
-     That's how "running the school fest stage design" can be compared with "Product Designer".
-     **One meaning, however it's said** (Round 17): a wording we have never seen is first **named** by
-     Claude in a few English words — "I have played cricket in my 10th standard", "Maine 10th mein
-     cricket khela tha" and "Cricketer" all become "playing cricket" — so they share one rating. All the
+   - **reads your activities** (`matching/activityResolver.js`) and works out **where each one points**
+     (Round 21, owner). A wording we have never seen goes to Claude in one small call that **names** it
+     in a few English words — "I have played cricket in my 10th standard", "Maine 10th mein cricket
+     khela tha" and "Cricketer" all become "playing cricket" (Round 17) — and says **what it points
+     to**: 2–4 areas of work, so "helping servant" → "helping others", pointing to social work, public
+     service, NGO and philanthropy, care work. Voyage turns the name and each area into numbers
+     (embeddings) and compares them with the 223 careers by meaning; the nearest are pooled, and
+     Claude keeps the ones the activity is genuinely relevant to. That shortlist is saved, so each
+     activity is worked out only once. **Activities are not rated any more**: they used to be scored
+     on the 27 qualities and had to match each career's ratings at 0.80, which kept Dancer &
+     Choreographer out of a dancer's list (a hobby's "what it demands, mostly 0" against a career's
+     full job profile). Now every career an activity points to joins your list, and **your own
+     measured profile** decides how well it fits you. All the
      new wordings in a report go in one small, cheap call; the student's own words are kept on the row
      (the latest 200), so the same words are recognised next time with no call at all.
      **How "the same activity" is decided:** the exact same words (ignoring capitals and spaces), or the
-     same activity name, reuse the saved rating. Otherwise, if the meaning is at least **90% similar** (a cosine of 0.90 between
-     the two sets of numbers) to an activity already rated — "i play cricket for my school team" and
-     "playing cricket" — it reuses that rating too; below that it is rated fresh. Each such reuse is
+     same activity name, reuse the saved shortlist. Otherwise, if the meaning is at least **90% similar** (a cosine of 0.90 between
+     the two sets of numbers) to an activity already worked out — "i play cricket for my school team" and
+     "playing cricket" — it reuses that shortlist too; below that it is worked out fresh. An activity
+     saved before Round 21 gets its "points to" areas once, the first time a report uses it. Each such reuse is
      recorded with its similarity, and the admin's **Activity matches** tab lists the closest calls
      first with a **"Not the same"** button that splits a wrong one off for every later student. The
      90% is a starting judgement; it can be changed on Render (`ACTIVITY_DEDUP_COSINE`) once real
      answers show where it should sit (Round 14). The same tab can look a student up by email to see
-     each of their activities and **what it was read as** (Round 17). Only activities ticked as
+     each of their activities, **what it was read as** (Round 17), what it points to (Round 21) and where each
+     career it reached landed in their report. Only activities ticked as
      **ongoing** in Current interests reach this step;
    - **matches you against 223 Indian careers** (`Backend/matching/`), in three steps:
      1. what you've done → which careers it points to;
