@@ -113,6 +113,7 @@ const recommendationSchema = new mongoose.Schema(
                 namedAs: { type: String, default: null },     // the common string the naming step gave it
                 nearScore: { type: Number, default: null },   // cosine to the reused row, on a near hit
                 candidates: { type: [String], default: [] },  // the careers this row points to
+                pointsTo: { type: [String], default: [] },    // Round 21: the areas the activity points to
             }],
             default: [],
         },

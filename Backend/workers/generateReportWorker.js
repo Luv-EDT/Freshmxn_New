@@ -171,6 +171,7 @@ const runOne = async (userId) => {
                     namedAs: resolved.namedAs || null,
                     nearScore: typeof resolved.nearScore === "number" ? resolved.nearScore : null,
                     candidates: (resolved.candidateProfessionIds || []).slice(0, 20),
+                    pointsTo: resolved.pointsTo || [],
                 })),
             },
         },

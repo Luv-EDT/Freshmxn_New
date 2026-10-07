@@ -1,11 +1,14 @@
-// PROGRAM 2 — activity to profession. Every activity the student named is itself rated on the 27
-// factors, then compared against each candidate profession's demands:
+// PROGRAM 2 — activity to profession. Every career an activity POINTS TO (activityResolver.js: its
+// name and the areas it points to, a meaning search, the AI shortlist) becomes a candidate.
 //
-//     similarity(f) = 1 − |profession[f] − activity[f]| / 10
-//     match         = Σ(weight_f · similarity_f) / Σ(weight_f)
+// ROUND 21 (owner): NO 0.80 GATE. Activities used to be rated on the 27 factors and had to match a
+// career's ratings at 0.80 — a sparse "what the activity demands" profile against a full job profile,
+// which kept Dancer & Choreographer out of a dancer's list. Whether a career suits the STUDENT is
+// decided by their own measured profile in program3.js; here an activity only says where it points.
+// `matchScore` is now the career's place in the activity's shortlist (1.0 first, 0.01 less per place),
+// kept so `matchedBy` and the within-tier tiebreak still have an order.
 //
-// Retrieval and the rubric-scoring of activities happen OUTSIDE this file, in activityResolver.js,
-// and arrive here already resolved. That is the same discipline the scoring engine keeps with
+// Retrieval happens OUTSIDE this file, in activityResolver.js, and arrives here already resolved. That is the same discipline the scoring engine keeps with
 // llmScorer.js: the maths does no I/O, so it is testable, reproducible and free to run.
 //
 // THE THREE LISTS
@@ -19,8 +22,7 @@
 // intersect, so BetaList becomes BList whole — inventing an overlap to fill CList would be making
 // up a finding.
 
-const { weightedMatch } = require("./similarity")
-const { ACTIVITY_MATCH_FLOOR } = require("./constants")
+const SHORTLIST_STEP = 0.01
 
 const CONFIDENCE_RANK = { High: 3, Medium: 2, Low: 1 }
 
@@ -75,29 +77,26 @@ const runProgramTwo = ({ pList, resolvedActivities, baselineById, dominantReason
 
     ;(resolvedActivities || []).forEach((resolved) => {
         const row = rowByKey.get(resolved.key)
-        if (!row) return
+        // "stuff" is not an activity (the naming call says so) — it points nowhere
+        if (!row || resolved.unrateable) return
 
-        ;(resolved.candidateProfessionIds || []).forEach((professionId) => {
-            const rating = baselineById[professionId]
-            if (!rating) return
+        ;(resolved.candidateProfessionIds || []).forEach((professionId, place) => {
+            if (!baselineById[professionId]) return
 
-            const result = weightedMatch(rating.factors, rating.weights, resolved.factors || {})
-            if (result.score === null || result.score < ACTIVITY_MATCH_FLOOR) return
-
-            // A FLOOR, NOT A WINDOW — 0.95 lands here exactly like 0.81, and ranks above it.
+            const matchScore = Math.round((1 - place * SHORTLIST_STEP) * 100) / 100
             const existing = byProfession.get(professionId) || blankCandidate(professionId)
 
             existing.matchedBy.push({
                 activity: row.activity,
                 key: row.key,
                 source: row.source,
-                matchScore: result.score,
+                matchScore,
                 longTerm: row.longTerm,
             })
 
-            if (result.score > existing.matchScore) {
-                existing.matchScore = result.score
-                existing.activity_match_confidence = result.match_confidence
+            if (matchScore > existing.matchScore) {
+                existing.matchScore = matchScore
+                existing.activity_match_confidence = 1
             }
 
             existing.longTerm = existing.longTerm || row.longTerm

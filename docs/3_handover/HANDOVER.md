@@ -26,8 +26,8 @@ job role, get a mentor; no assessment).
 | **Code** | `main` (Rounds 9–11 merged 3 Oct 2026; Round 12 and Round 13 merged after it). The cloud work happens on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@2.0.0` since Round 20: one-sided fit, 16 tiers ordered by fit, "fits you" at 0.85, switching cost shown as a group, degree that already counts, best role group, combined careers) · report (`report@4.0.0` — no AI prose since Round 19; a short overview plus every match on `/report/matches`, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 25 (scoring) / 62 (matching) / 186 (workers) — all offline, all green |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@2.1.0` since Round 21: activities point to careers by name + "points to" areas, no 0.80 gate; one-sided fit, 16 tiers ordered by fit, "fits you" at 0.85, switching cost shown as a group, degree that already counts, best role group, combined careers) · report (`report@4.0.0` — no AI prose since Round 19; a short overview plus every match on `/report/matches`, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
+| **Tests** | fixtures 25 (scoring) / 63 (matching) / 186 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -59,7 +59,7 @@ cd Backend && npm run seed:admin                  # once — the admin account
 **Test**
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
-node Backend/matching/fixtures/runFixtures.js    # 62/62
+node Backend/matching/fixtures/runFixtures.js    # 63/63
 node Backend/workers/fixtures/runFixtures.js     # 186/186 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
@@ -149,6 +149,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **The 438 rewritten career notes** (Round 18) | Every note was rewritten in plain words (`nuances[i].student` in ALL-professions.json); 13 that only explain how the data was built are hidden. Read a sample; mentors also see and review them on their sheet. Edit by hand in the file, run the fixtures, commit |
 | **Subjects per route** (`Backend/data/subject_routes.json`, Round 18) | Eight "any stream" careers with a stream-gated route (B.Tech, MBBS, B.Pharm) now say the subjects per route. `reviewed_by_owner: false` — read it once |
 | **Matching 2.0.0 — two judgement numbers** (Round 20) | "Fits how you think and work" is now **0.85** (one-sided fit; uncertainty tolerance and firmness two-sided) and the "Would cost you 2+ years to switch" group starts at **2 years** (`SWITCH_COST_GROUP_YEARS`, page and engine checked equal by a fixture). Both were chosen from sample profiles, not real students — read real reports after the first ~100 students and retune. Every existing student sees **"Update my report"** (major version) |
+| **Activities no longer rated** (Round 21) | Every career an activity points to joins the student's list; the 0.80 gate is gone. Rows cached before Round 21 get their "points to" areas once, on first use (one naming call + one shortlist call each). Read a few students' traces in Activity matches after the first week: if lists feel too long or loosely related, the shortlist prompt (`RERANK_SYSTEM_PROMPT`) is the place to tighten, not a new gate |
 | **Long-term memory stuck at "Partial"** (Round 19) | 58% = 7 of 12 points: the story's short questions were scored, the free recall had no mark. After the deploy, a recall that can't be marked raises **"Story answers couldn't be marked — reason"** in Assessment issues, and Activity matches shows the story's marking beside the trace. Check your own account there |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
@@ -2107,3 +2108,25 @@ top three, tier headings, the 2+ years group least-first, running numbers, ignor
 switch-cost sort, mentorship status-first and How it works, the choose page, the Profile positions group, no
 sideways scroll at 360); Round 19 60/60, Round 18 60/60, uiFlow 65/65 (their mentor and overview
 expectations follow the owner's changes), Round 17 42/42, Round 14 14/14. Build: the 8 known warning files.
+
+### Round 21 — activities point to careers; no 0.80 gate, no activity ratings (2026-10-07)
+The owner read their own activity trace: dancing, running and exercising pointed to the right careers
+(Dancer & Choreographer, Fitness Trainer, Athlete, Coach…) but every one said "not in the list"; "helping
+servant" found nothing at all. Cause: Program 2's 0.80 gate compared each activity's 27 ratings — made
+under "0 is a real and common answer; most activities demand nothing of most factors", so sparse — with
+each career's full job profile (Dancer asks ~8 on memory, confidence, being organised, focus, openness).
+The zeros failed nearly every broad career even when the meaning was exact.
+
+| Item | What shipped |
+|---|---|
+| **Naming + points to** | The one batched naming call now also returns 2–4 areas each activity points to ("helping others" → social work, public service, NGO and philanthropy, care work) and flags text that is not an activity ("stuff") |
+| **Where it points** | The name's 25 nearest careers by meaning, pooled with each area's 10 nearest (`AREA_K`), then the AI shortlist (`RERANK_KEEP` 12 → 16). Embeddings only up to the shortlist |
+| **No ratings, no gate** | Activities are no longer rated (the 3 rating passes are gone — a cost saving); `ACTIVITY_MATCH_FLOOR` removed. Every shortlisted career is a candidate; `matchScore` is its place in the shortlist. The student's measured profile decides fit and tier as in Round 20 |
+| **Old cache rows** | A row without `pointsTo` is topped up once on first use: named again for its areas, searched, re-shortlisted, saved |
+| **Trace** | Activity matches shows "Points to" for each activity; `activity_readings.pointsTo` stored |
+| **Version** | `matching@2.1.0` — students see "Update my report" |
+
+**Fixtures:** matching 62 → 63 (POINTS TO: areas searched, nothing rated, "stuff" not cached, old rows
+topped up). Changed for the owner's change: the two FLOOR fixtures → "no gate" and "matchScore follows
+the shortlist"; "an unrateable activity contributes nothing" now uses the naming call's flag; the cache
+fixtures check shortlists instead of ratings. Workers: the trace fixture checks `pointsTo`.

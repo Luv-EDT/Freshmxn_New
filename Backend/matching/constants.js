@@ -11,9 +11,9 @@
 
 // ── Program 2: activity → profession ────────────────────────────────────────────────────────────
 
-// A FLOOR, NOT A WINDOW. 0.95 is a better match than 0.80 and is never discarded for being too
-// good — a mistake worth naming because "80% match" reads like a band.
-const ACTIVITY_MATCH_FLOOR = 0.8
+// Round 21 (owner): there is no activity → profession floor any more. The 0.80 ACTIVITY_MATCH_FLOOR
+// compared an activity's sparse ratings with a career's full job profile and kept the right careers
+// out; every career an activity points to now enters the candidates (program2.js).
 
 // ── Program 3: student → profession ─────────────────────────────────────────────────────────────
 
@@ -105,7 +105,6 @@ const ROLE_SHIFT = 1.5
 
 module.exports = {
     ROLE_SHIFT,
-    ACTIVITY_MATCH_FLOOR,
     COMFORT_THRESHOLD,
     TWO_SIDED_FACTORS,
     MINOR_GROUP_WEIGHT,
