@@ -1,166 +1,14 @@
-// Shared by both workers, because getting this wrong is silent in both.
+// Shared by everything that queues a job.
 //
-// THE BUG THIS EXISTS TO FIX. Both queues use the student's id as the job id, so that a double-tap
-// on Submit produces one job instead of two racing writes to the same profile. That much is right.
-// What was missed: BullMQ treats a job id as unique FOREVER, not just while the job is in flight —
-// and `removeOnComplete` keeps finished jobs for 24 hours. So the second submission of the day was
-// silently discarded. No error, no new job, nothing in any terminal, and the student's page still
-// said "your report is being prepared" while their old report sat there unchanged.
+// Until Round 22 this file also held the Redis plumbing — the ioredis DNS workaround, the reconnect
+// log, the idle-polling settings and `addOnce`. The queue now lives in MongoDB (workers/jobQueue.js,
+// where `addOnce`'s rule survives as the one-job-per-student guard), so only the timeout is left.
+
+// ── a bound on "the queue is unreachable" ───────────────────────────────────────────────────────
 //
-// It cost real debugging time to find, because every individual piece looked healthy: the workers
-// were alive, the queues were empty, the API returned 200, and a report existed.
-//
-// The fix keeps the guard and drops the accident. A job that is genuinely IN FLIGHT is still not
-// duplicated — that was the whole point. A job that has FINISHED or FAILED is cleared out of the
-// way first, so resubmitting actually re-runs. Redoing a module and asking for a fresh report is
-// an ordinary thing a student will do, and it has to work more than once a day.
-
-const dns = require("dns")
-
-// ── the Windows loopback-DNS fault, again — but ioredis needs a different fix ────────────────────
-//
-// Some Windows machines hand Node a single DNS server of 127.0.0.1 that answers unreliably. Every
-// few lookups fails with ENOTFOUND, so a hosted Redis appears to vanish and come back. config/
-// MongoDBCon.js already works around this with dns.setServers(["1.1.1.1", "8.8.8.8"]).
-//
-// THAT WORKAROUND CANNOT HELP IOREDIS, and the reason is easy to miss. dns.setServers() only
-// affects the dns.resolve*() family. It does NOT affect dns.lookup(), which delegates to the
-// operating system's getaddrinfo — and dns.lookup() is what net.connect(), and therefore ioredis,
-// actually uses. So Mongo was fixed (mongodb+srv:// goes through dns.resolveSrv) while Redis kept
-// failing through the same broken resolver, which is exactly the split we were seeing: the database
-// connected every time and Redis dropped every few minutes.
-//
-// The fix is to give ioredis its own lookup that goes through a Resolver pointed at public DNS,
-// bypassing the faulty local one entirely. Applied ONLY on Windows machines showing the fault, so
-// a correctly configured machine and every deployment target keep using the system resolver.
-const publicResolver = new dns.Resolver()
-publicResolver.setServers(["1.1.1.1", "8.8.8.8"])
-
-const hasLoopbackOnlyDns = () => dns.getServers().every((server) => server.startsWith("127.") || server === "::1")
-
-// net.connect calls lookup(hostname, options, callback); the callback wants (err, address, family).
-const publicLookup = (hostname, options, callback) => {
-    const done = typeof options === "function" ? options : callback
-
-    publicResolver.resolve4(hostname, (error, addresses) => {
-        if (error || !addresses || addresses.length === 0) {
-            // Fall back to the system resolver rather than failing outright — a machine that cannot
-            // reach 1.1.1.1 might still resolve locally, and half a chance beats none.
-            return dns.lookup(hostname, { family: 4 }, done)
-        }
-        done(null, addresses[0], 4)
-    })
-}
-
-// Merge into the options every Queue and Worker is built with.
-const withDnsWorkaround = (options) => {
-    if (process.platform !== "win32" || !hasLoopbackOnlyDns()) return options
-    return { ...options, lookup: publicLookup }
-}
-
-const IN_FLIGHT = ["active", "waiting", "waiting-children", "delayed", "prioritized"]
-
-const addOnce = async (queue, queueName, userId, options) => {
-    const jobId = `${queueName}-${userId}`
-    const existing = await queue.getJob(jobId)
-
-    if (existing) {
-        const state = await existing.getState()
-
-        // Still running or still queued — this is the double-tap case the id was chosen for.
-        // Hand back the job already in progress rather than starting a second one.
-        if (IN_FLIGHT.includes(state)) return existing
-
-        // Finished, failed, or otherwise done with. Clear it so the id is free to be reused.
-        // A remove can still lose a race against a worker picking the job up in the same instant;
-        // if it does, the job we wanted is running anyway, which is the outcome we were after.
-        try {
-            await existing.remove()
-        } catch (error) {
-            return existing
-        }
-    }
-
-    return queue.add(queueName, { userId: String(userId) }, { jobId, ...options })
-}
-
-// ── how often an idle worker talks to Redis ─────────────────────────────────────────────────────
-//
-// An idle worker is never silent. It sits in a blocking BZPOPMIN that times out every `drainDelay`
-// seconds and is re-issued, and separately runs a stalled-job sweep every `stalledInterval` ms.
-// BullMQ's defaults (5 s and 30 s) cost roughly 20k Redis commands a day PER WORKER while nothing
-// is happening — two workers idling for a month is over a million commands, far past Upstash's
-// free tier, spent on a queue that is empty almost all the time.
-//
-// RAISING drainDelay DOES NOT DELAY JOBS. That is the part that is easy to get wrong. The blocking
-// pop returns the instant a job lands (BullMQ writes a marker key on add), so drainDelay is only the
-// longest a worker waits when NOTHING arrives. Verified in bullmq 6.3.8's worker.js getBlockTimeout():
-// with no delayed jobs the block is max(drainDelay, minimumBlockTimeout) and is NOT clipped to the
-// 10 s maximumBlockTimeout — that ceiling applies only while a retry is sitting in the delayed set.
-//
-// The cost of a longer stalledInterval is on the unhappy path only: a job orphaned by a restart
-// mid-run is noticed within about two sweeps instead of one minute. Both workers' jobs are safe to
-// re-run (the LLM grades are stored on the submission), so a slower rescue loses nothing.
-//
-// Both are env-tunable so a paid deployment with traffic can go back towards the defaults.
-const idleTimings = () => ({
-    drainDelay: Number(process.env.WORKER_DRAIN_DELAY_S) || 60,
-    stalledInterval: Number(process.env.WORKER_STALLED_INTERVAL_MS) || 120000,
-})
-
-// ── connection noise ────────────────────────────────────────────────────────────────────────────
-//
-// ioredis reconnects by itself when the network drops, which is the behaviour we want — a worker
-// should ride out a flaky connection rather than dying. What it also does is emit a fully
-// stack-traced error on EVERY failed attempt, and against a hosted Redis on a patchy line that is
-// several screens a minute.
-//
-// That noise is not harmless. A real line — "score_profile <id> — scored profile@1.0.0" — sat in
-// the middle of forty ENOTFOUND traces and was invisible, and the conclusion drawn was that the
-// worker had stopped working when in fact it had just succeeded. Logs that bury their own signal
-// are worse than quiet ones.
-//
-// So: one compact line per connection problem, repeats collapsed, and an explicit note when the
-// connection comes back. The error is still reported — it is just reported once.
-const attachConnectionLogging = (emitter, label) => {
-    let lastMessage = null
-    let repeats = 0
-    let down = false
-
-    emitter.on("error", (error) => {
-        const message = `${error.code || error.name || "error"}${error.hostname ? ` ${error.hostname}` : ""}`
-
-        if (message === lastMessage) {
-            repeats += 1
-            // Only mark the milestones. A count on every single retry is the same flood in
-            // shorter sentences.
-            if (repeats === 5 || repeats % 25 === 0) {
-                console.warn(`${label}: still cannot reach Redis (${message}) — ${repeats} attempts, retrying`)
-            }
-            return
-        }
-
-        lastMessage = message
-        repeats = 1
-        down = true
-        console.warn(`${label}: Redis connection problem (${message}) — retrying automatically, jobs are not lost`)
-    })
-
-    emitter.on("ready", () => {
-        if (down) console.log(`${label}: Redis connection restored`)
-        down = false
-        lastMessage = null
-        repeats = 0
-    })
-}
-
-// ── a bound on "Redis is unreachable" ──────────────────────────────────────────────────────────
-//
-// With maxRetriesPerRequest: null (which BullMQ requires) a first connection that never comes up
-// does not fail — it waits, forever, and the student's Submit request hangs with it (backend review
-// #17). A finite retry count does not bound that first wait either: the queue waits for 'ready'. So
-// the bound is here, around the call: after QUEUE_TIMEOUT_MS the request gives up with a clear error
-// and the caller decides what the student sees.
+// A database that is not answering must not hang the student's Submit request with it (backend
+// review #17). After QUEUE_TIMEOUT_MS the request gives up with a clear error and the caller decides
+// what the student sees.
 const QUEUE_TIMEOUT_MS = Number(process.env.QUEUE_TIMEOUT_MS) || 8000
 
 const withTimeout = (promise, what) => {
@@ -171,4 +19,20 @@ const withTimeout = (promise, what) => {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
-module.exports = { addOnce, IN_FLIGHT, attachConnectionLogging, withDnsWorkaround, idleTimings, withTimeout }
+// EVERY PLACE A STUDENT'S ACTION QUEUES THEIR REPORT goes through here (Round 22): Submit, "Try again",
+// "Update my report", a story recall sent after Submit, and the admin's re-queue. Bounded by the
+// timeout, and a failure is never silent — the admin gets an Assessment issue, and an email, with the
+// real error. Before this, a queue that could not be reached left only "Try again" on the student's
+// screen and nothing at all in the admin's.
+const queueReport = async (userId, what) => {
+    const { enqueueScoreProfile } = require("./scoreProfileWorker")
+    try {
+        return await withTimeout(enqueueScoreProfile(userId), what)
+    } catch (error) {
+        const { raiseIssue } = require("../utils/assessmentIssues")
+        await raiseIssue({ user: userId, module: "report", kind: "queue_unreachable", detail: `${what}: ${String(error.message).slice(0, 300)}`, notify: true })
+        throw error
+    }
+}
+
+module.exports = { withTimeout, queueReport, QUEUE_TIMEOUT_MS }

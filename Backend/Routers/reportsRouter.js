@@ -353,11 +353,9 @@ router.post("/retryMyReport", authMiddleware, requireDiscovery, async (req, res)
 
         // Queued FIRST, flag cleared after: if the queue cannot be reached the student still sees
         // the retry screen rather than a "generating" that nothing is working on.
-        // Required here, as in submissionsRouter: the queue is built lazily, and this router must
-        // load on a machine with no REDIS_URL.
-        const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
-        const { withTimeout } = require("../workers/queueHelpers")
-        await withTimeout(enqueueScoreProfile(req.user._id), "queueing the report")
+        // Required here, as in submissionsRouter, so this router loads without the workers
+        const { queueReport } = require("../workers/queueHelpers")
+        await queueReport(req.user._id, "queueing the report")
 
         await req.user.updateOne({ reportFailedAt: null })
 
@@ -401,9 +399,8 @@ router.post("/updateMyReport", authMiddleware, requireDiscovery, async (req, res
             return res.status(400).json({ success: false, message: "Tell us whether you're heading the same way or looking for something new" })
         }
 
-        const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
-        const { withTimeout } = require("../workers/queueHelpers")
-        await withTimeout(enqueueScoreProfile(req.user._id), "queueing the update")
+        const { queueReport } = require("../workers/queueHelpers")
+        await queueReport(req.user._id, "queueing the update")
 
         await User.updateOne({ _id: req.user._id }, {
             ...direction,

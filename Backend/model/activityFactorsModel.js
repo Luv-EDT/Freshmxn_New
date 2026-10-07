@@ -60,7 +60,15 @@ const activityFactorsSchema = new mongoose.Schema(
         },
         candidateProfessionIds: {
             type: [String],
-            default: [], // the shortlist this activity points at (its name and areas searched by meaning, then the AI shortlist) — cached, because re-running it for a known activity buys nothing
+            default: [], // the shortlist this activity points at (its name and areas searched by meaning, then the AI shortlist) — cached, because re-running it for a known activity buys nothing. Since Round 22 only the careers marked STRONG
+        },
+        partialProfessionIds: {
+            type: [String],
+            default: [], // Round 22: careers the shortlist marked PARTIAL — stored for the admin trace, never matched
+        },
+        shortlistVersion: {
+            type: String,
+            default: null, // Round 22: "strict-1" once shortlisted strong/partial; an older row is shortlisted again on first use
         },
         embedding: {
             type: [Number],

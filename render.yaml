@@ -1,7 +1,8 @@
 # Render Blueprint — Freshmxn. Render → New → Blueprint → pick this repo. See docs/2_build/DEPLOY.md.
 #
 # ONE free web service runs everything: the Express API, the built React app, and — because
-# RUN_WORKERS_IN_WEB is "true" — both BullMQ workers inside the same process (see server.js).
+# RUN_WORKERS_IN_WEB is "true" — the background workers inside the same process (see server.js).
+# The job queue is a MongoDB collection (Round 22) — there is no Redis.
 #
 # Values marked `sync: false` are secrets: Render asks for them once, in the dashboard, and they are
 # never written to this file or to git.
@@ -25,17 +26,11 @@ services:
         value: "22"
       - key: RUN_WORKERS_IN_WEB
         value: "true"
-      - key: WORKER_DRAIN_DELAY_S
-        value: "60"
-      - key: WORKER_STALLED_INTERVAL_MS
-        value: "120000"
       - key: PAYMENT_MODE
         value: manual
 
       # ── secrets: filled in on the Render dashboard ──
       - key: DB_URI
-        sync: false
-      - key: REDIS_URL
         sync: false
       - key: JWT_SECRET
         sync: false

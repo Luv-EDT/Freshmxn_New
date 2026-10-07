@@ -48,7 +48,9 @@ const constants = require("./constants")
 // 2.1.0 (Round 21, owner): activities are no longer rated and there is no 0.80 activity gate —
 // every career an activity points to (its name and the areas it points to, a meaning search, the AI
 // shortlist) is a candidate, and the student's own profile decides fit and tier.
-const MATCHING_VERSION = "matching@2.1.0"
+// 2.2.0 (Round 22, owner): the AI shortlist is strict — it marks each career strong or partial and
+// only strong ones become candidates (no cap); cached activities are shortlisted again once.
+const MATCHING_VERSION = "matching@2.2.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")

@@ -20,8 +20,7 @@ const path = require("path")
 
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
-const { Queue, Worker } = require("bullmq")
-const { addOnce, attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
+const { jobQueue } = require("./jobQueue")
 const { raiseIssue } = require("../utils/assessmentIssues")
 const mongoose = require("mongoose")
 
@@ -62,26 +61,12 @@ const loadData = () => {
     return cachedData
 }
 
-const connectionOptions = () => {
-    const url = process.env.REDIS_URL
-    if (!url) throw new Error("REDIS_URL is not set — the generate_report queue cannot be reached")
-    return withDnsWorkaround({ url, maxRetriesPerRequest: null })
-}
-
-let queue = null
-
-const reportQueue = () => {
-    if (!queue) queue = new Queue(QUEUE_NAME, { connection: connectionOptions() })
-    return queue
-}
-
-// Enqueued by score_profile on completion. `addOnce` keeps a re-score from racing a re-report on
-// the same student, while still allowing a genuine re-run — see queueHelpers.js.
-const enqueueGenerateReport = async (userId) => addOnce(reportQueue(), QUEUE_NAME, userId, {
+// Enqueued by score_profile on completion. Keyed on the student, so a re-score never races a
+// re-report on the same student, while a finished job never blocks a genuine re-run — see jobQueue.js.
+const enqueueGenerateReport = async (userId) => jobQueue().enqueue(QUEUE_NAME, QUEUE_NAME, { userId: String(userId) }, {
+    key: String(userId),
     attempts: 5,
-    backoff: { type: "exponential", delay: 10000 },
-    removeOnComplete: { age: 86400, count: 1000 },
-    removeOnFail: { age: 604800 },
+    backoffMs: 10000,
 })
 
 const runOne = async (userId) => {
@@ -172,6 +157,7 @@ const runOne = async (userId) => {
                     nearScore: typeof resolved.nearScore === "number" ? resolved.nearScore : null,
                     candidates: (resolved.candidateProfessionIds || []).slice(0, 20),
                     pointsTo: resolved.pointsTo || [],
+                    partial: (resolved.partialProfessionIds || []).slice(0, 20),
                 })),
             },
         },
@@ -211,17 +197,11 @@ const runOne = async (userId) => {
 const start = async () => {
     require("../config/MongoDBCon")
 
-    const worker = new Worker(QUEUE_NAME, async (job) => runOne(job.data.userId), {
-        connection: connectionOptions(),
+    const worker = jobQueue().createWorker(QUEUE_NAME, async (job) => runOne(job.data.userId), {
         // Deliberately low. Each job holds the whole profession set in memory and makes model
         // calls; four of these at once is plenty and keeps us inside the API's rate limits.
         concurrency: 2,
-        ...idleTimings(),
     })
-
-    // See queueHelpers.js: ioredis retries a dropped connection forever and stack-traces every
-    // attempt. One compact line per problem, so a completed job stays visible.
-    attachConnectionLogging(worker, QUEUE_NAME)
 
     worker.on("completed", async (job, result) => {
         console.log(`${QUEUE_NAME} ${job.id} — ${result.ranked} professions ranked, release ${result.release}`)

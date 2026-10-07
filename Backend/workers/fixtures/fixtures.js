@@ -625,42 +625,165 @@ const fixtures = [
 
     // ── THE WORKERS CAN ACTUALLY START ──────────────────────────────────────────────────────────
     {
-        name: "WORKERS — ioredis is installed, so BullMQ can construct a Worker",
-        // BullMQ declares ioredis as an OPTIONAL peer dependency and only reaches for it when a
-        // Queue or Worker is constructed — not when the module is required. So `require()`ing the
-        // worker file passes happily on a machine where it can never actually run, which is
-        // exactly what happened: both workers loaded fine in CI-style checks and then died on
-        // `npm run worker:score` with "BullMQ could not load the optional 'ioredis' package".
-        //
-        // Checking that the module resolves is enough, and it needs no Redis — which matters,
-        // because these fixtures must stay runnable offline.
+        name: "WORKERS — the queue needs no Redis: nothing requires bullmq or ioredis (Round 22)",
+        // OWNER CHANGE (Round 22). These two fixtures used to check that ioredis was installed and that
+        // no BullMQ job id held a colon. The queue moved to MongoDB after an idle scheduled BullMQ queue
+        // used up Upstash's free 500k commands a month, so the rule now is the opposite: no Redis at all.
         run: () => {
-            try {
-                require.resolve("ioredis")
-                return null
-            } catch (error) {
-                return "ioredis is not installed — BullMQ will throw the moment a Worker is constructed"
-            }
+            const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "package.json"), "utf8"))
+            const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) }
+            const problems = ["bullmq", "ioredis"].filter((name) => deps[name]).map((name) => `${name} is still a dependency`)
+            const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+                if (entry.name === "node_modules" || entry.name.startsWith(".")) return []
+                const full = path.join(dir, entry.name)
+                return entry.isDirectory() ? walk(full) : entry.name.endsWith(".js") ? [full] : []
+            })
+            walk(path.join(__dirname, "..", "..")).forEach((file) => {
+                if (/require\("(bullmq|ioredis)"\)/.test(fs.readFileSync(file, "utf8"))) problems.push(`${path.relative(path.join(__dirname, "..", ".."), file)} requires Redis`)
+            })
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "WORKERS — no job id contains a colon",
-        // BullMQ reserves ":" for its own Redis key namespacing and rejects a custom id containing
-        // one: "Custom Id cannot contain :". It throws at ENQUEUE time, which is after the student
-        // has pressed Submit — so the failure lands on them, not on us, and the message they get
-        // is about their report not starting.
-        //
-        // Read from source because the alternative is constructing a real Queue, and these
-        // fixtures have to stay runnable without Redis. Crude, but it encodes the actual rule.
-        run: () => {
-            const offenders = ["scoreProfileWorker.js", "generateReportWorker.js"].filter((file) => {
-                const source = fs.readFileSync(path.join(__dirname, "..", file), "utf8")
-                const jobIdLine = source.match(/jobId:\s*`([^`]*)`/)
-                return jobIdLine && jobIdLine[1].includes(":")
-            })
+        name: "JOB QUEUE — one job per student while it waits or runs; a finished one never blocks the next",
+        // The resubmit bug the BullMQ version once had (a finished job's id kept blocking for 24 hours)
+        // must not come back, and a double-tap must still queue one job.
+        run: async () => {
+            const { createJobQueue } = require("../jobQueue")
+            const { createFakeJobModel } = require("./fakeJobModel")
+            const Job = createFakeJobModel()
+            const queue = createJobQueue(Job)
+            const problems = []
 
-            return offenders.length > 0 ? `job id contains a colon in: ${offenders.join(", ")}` : null
+            const first = await queue.enqueue("score_profile", "score_profile", { userId: "u1" }, { key: "u1", attempts: 5 })
+            const second = await queue.enqueue("score_profile", "score_profile", { userId: "u1" }, { key: "u1", attempts: 5 })
+            if (String(first._id) !== String(second._id) || Job.rows.length !== 1) problems.push("a double-tap queued two jobs")
+            await queue.enqueue("score_profile", "score_profile", { userId: "u2" }, { key: "u2" })
+            if (Job.rows.length !== 2) problems.push("another student's job was refused")
+
+            const done = []
+            const worker = queue.createWorker("score_profile", async (job) => ({ scored: job.data.userId }), { pollMs: 60000 })
+            worker.on("completed", (job) => done.push(job.data.userId))
+            for (let wait = 0; wait < 50 && done.length < 2; wait += 1) await new Promise((resolve) => setTimeout(resolve, 10))
+            await worker.close()
+            if (done.length !== 2) problems.push(`expected both jobs to run, ran ${done.length}`)
+            if (Job.rows.some((row) => row.activeKey === row.key)) problems.push("a finished job still holds its student's place")
+
+            await queue.enqueue("score_profile", "score_profile", { userId: "u1" }, { key: "u1" })
+            if (Job.rows.length !== 3) problems.push("a resubmit after a finished job was swallowed")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "JOB QUEUE — retries with a doubling pause; the last failure says so, as BullMQ's did",
+        // The give-up handlers read job.attemptsMade >= job.opts.attempts (PIPELINE fixture below), so
+        // the queue must hand them exactly that, on every failed attempt.
+        run: async () => {
+            const { createJobQueue, backoffFor, failureUpdate } = require("../jobQueue")
+            const { createFakeJobModel } = require("./fakeJobModel")
+            const problems = []
+
+            if (backoffFor(5000, 1) !== 5000 || backoffFor(5000, 2) !== 10000 || backoffFor(5000, 3) !== 20000 || backoffFor(0, 3) !== 0) problems.push("the pause does not double")
+            const now = new Date("2026-10-07T10:00:00Z")
+            const retry = failureUpdate({ attempts: 5, attemptsMade: 1, backoffMs: 5000 }, new Error("x"), now)
+            if (!retry.retry || retry.attemptsMade !== 2 || retry.update.$set.runAt.getTime() !== now.getTime() + 10000) problems.push("a retry is not paused 10s after the second failure")
+            const last = failureUpdate({ attempts: 5, attemptsMade: 4, backoffMs: 5000 }, new Error("x"), now)
+            if (last.retry || last.update.$set.status !== "failed" || !/#/.test(last.update.$set.activeKey || "")) problems.push("the fifth failure does not end the job and free the student's place")
+
+            const Job = createFakeJobModel()
+            const queue = createJobQueue(Job)
+            const seen = []
+            let calls = 0
+            await queue.enqueue("generate_report", "generate_report", { userId: "u1" }, { key: "u1", attempts: 2 })
+            const worker = queue.createWorker("generate_report", async () => { calls += 1; throw new Error(`boom ${calls}`) }, { pollMs: 20 })
+            worker.on("failed", (job, error) => seen.push({ made: job.attemptsMade, of: job.opts.attempts, message: error.message }))
+            for (let wait = 0; wait < 100 && seen.length < 2; wait += 1) await new Promise((resolve) => setTimeout(resolve, 10))
+            await worker.close()
+            if (seen.length !== 2 || seen[0].made !== 1 || seen[1].made !== 2 || seen[1].of !== 2) problems.push(`failed events were ${JSON.stringify(seen)}`)
+            const row = Job.rows[0]
+            if (row.status !== "failed" || row.lastError !== "boom 2" || row.activeKey === "u1") problems.push("the job did not end failed with its last error")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "JOB QUEUE — a job left running by a restart is taken over; one restarted too often is given up",
+        run: async () => {
+            const { createJobQueue, MAX_STALLS } = require("../jobQueue")
+            const { createFakeJobModel } = require("./fakeJobModel")
+            const problems = []
+            const Job = createFakeJobModel()
+            const queue = createJobQueue(Job)
+            const past = new Date(Date.now() - 1000)
+            await Job.create({ queue: "score_profile", name: "score_profile", data: { userId: "u1" }, key: "u1", activeKey: "u1", status: "active", lockedUntil: past, attempts: 5, runAt: past })
+            await Job.create({ queue: "score_profile", name: "score_profile", data: { userId: "u2" }, key: "u2", activeKey: "u2", status: "active", lockedUntil: past, attempts: 5, stalls: MAX_STALLS, runAt: past })
+
+            const done = []
+            const failed = []
+            const worker = queue.createWorker("score_profile", async (job) => job.data.userId, { pollMs: 60000, concurrency: 2 })
+            worker.on("completed", (job) => done.push(job.data.userId))
+            worker.on("failed", (job) => failed.push({ user: job.data.userId, final: job.attemptsMade >= job.opts.attempts }))
+            for (let wait = 0; wait < 50 && done.length + failed.length < 2; wait += 1) await new Promise((resolve) => setTimeout(resolve, 10))
+            await worker.close()
+            if (!done.includes("u1")) problems.push("an orphaned job was not taken over")
+            if (!failed.some((row) => row.user === "u2" && row.final)) problems.push("a job restarted too often was not given up as a final failure")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "JOB QUEUE — the calendar is read in IST, an overdue run waits for no one, and the next run is queued",
+        run: async () => {
+            const { createJobQueue, nextRun } = require("../jobQueue")
+            const { createFakeJobModel } = require("./fakeJobModel")
+            const problems = []
+            const ist = (date) => new Date(date.getTime() + 330 * 60000).toISOString().slice(0, 16)
+            const from = new Date("2026-10-07T10:00:00Z")   // a Wednesday, 15:30 IST
+            if (ist(nextRun("0 9 1 * *", from)) !== "2026-11-01T09:00") problems.push(`monthly lands on ${ist(nextRun("0 9 1 * *", from))}`)
+            if (ist(nextRun("0 5 * * 1", from)) !== "2026-10-12T05:00") problems.push(`weekly lands on ${ist(nextRun("0 5 * * 1", from))}`)
+            if (ist(nextRun("17 * * * *", from)) !== "2026-10-07T16:17") problems.push(`hourly lands on ${ist(nextRun("17 * * * *", from))}`)
+            if (ist(nextRun("0 */6 * * *", from)) !== "2026-10-07T18:00") problems.push(`every six hours lands on ${ist(nextRun("0 */6 * * *", from))}`)
+
+            const Job = createFakeJobModel()
+            const queue = createJobQueue(Job)
+            // a run that fell due while the server slept is left due, so it runs on wake
+            const overdue = new Date(Date.now() - 3600 * 1000)
+            await Job.create({ queue: "housekeeping", name: "followup_scan", data: {}, key: "schedule:followup_scan", activeKey: "schedule:followup_scan", repeat: "0 9 1 * *", attempts: 2, runAt: overdue })
+            await queue.schedule("housekeeping", { name: "followup_scan", pattern: "0 9 1 * *" }, { attempts: 2 })
+            if (Job.rows.length !== 1 || Job.rows[0].runAt.getTime() !== overdue.getTime()) problems.push("registering the calendar moved or doubled an overdue run")
+
+            const ran = []
+            const worker = queue.createWorker("housekeeping", async (job) => { ran.push(job.name); return {} }, { pollMs: 60000 })
+            for (let wait = 0; wait < 50 && ran.length < 1; wait += 1) await new Promise((resolve) => setTimeout(resolve, 10))
+            for (let wait = 0; wait < 20 && Job.rows.length < 2; wait += 1) await new Promise((resolve) => setTimeout(resolve, 10))
+            await worker.close()
+            const next = Job.rows.find((row) => row.status === "waiting")
+            if (ran.length !== 1) problems.push("the overdue run did not run")
+            if (!next || next.key !== "schedule:followup_scan" || ist(next.runAt).slice(8) !== "01T09:00") problems.push("the next monthly run was not queued for the 1st at 09:00 IST")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "JOB QUEUE — a report that cannot be queued tells the admin, from every place a student queues one",
+        // The Round 22 symptom: Upstash refused every command, the student got "Try again", and the
+        // admin saw nothing at all.
+        run: () => {
+            const read = (...parts) => fs.readFileSync(path.join(__dirname, "..", "..", ...parts), "utf8")
+            const problems = []
+            const helpers = read("workers", "queueHelpers.js")
+            if (!/kind: "queue_unreachable"[^\n]*notify: true/.test(helpers)) problems.push("queueReport does not raise a notified queue_unreachable issue")
+            const sites = { "submissionsRouter.js": 1, "reportsRouter.js": 2, "storyRouter.js": 1, "assessmentIssuesRouter.js": 1 }
+            Object.entries(sites).forEach(([file, count]) => {
+                const source = read("Routers", file)
+                const found = (source.match(/queueReport\(/g) || []).length
+                if (found < count) problems.push(`${file} queues a report without queueReport`)
+                if (/enqueueScoreProfile\(/.test(source)) problems.push(`${file} still queues directly`)
+            })
+            if (!/queue_unreachable/.test(read("..", "Frontend", "src", "pages", "Admin", "AssessmentIssuesList.js"))) problems.push("the admin list has no label for it")
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },
@@ -4907,12 +5030,15 @@ const fixtures = [
             if (!/unscoreable_reason/.test(worker.split('kind: "story_unmarked"')[1] || "")) problems.push("the issue does not carry the reason")
             const { traceReadings } = require("../../Routers/dataUpdatesRouter")
             const trace = traceReadings(
-                [{ said: "I ran marathons", namedAs: "long distance running", pointsTo: ["sport", "fitness"], cacheHit: "near", nearScore: 0.93, readAs: "running", candidates: ["spt-athlete", "spt-coach", "hlt-dietitian"] }],
+                [{ said: "I ran marathons", namedAs: "long distance running", pointsTo: ["sport", "fitness"], cacheHit: "near", nearScore: 0.93, readAs: "running", candidates: ["spt-athlete", "spt-coach", "hlt-dietitian"], partial: ["hlt-physiotherapist"] }],
                 { ranked_professions: [{ professionId: "spt-coach", rankedPosition: 4, tier: 6 }], filtered: [{ professionId: "hlt-dietitian", reason: "needs biology" }] }
             )[0]
             if (trace.nearScore !== 0.93 || trace.cache !== "near" || trace.namedAs !== "long distance running") problems.push(`the near hit is not traced: ${JSON.stringify(trace)}`)
             // Round 21: the areas the activity points to are shown too
             if ((trace.pointsTo || []).join() !== "sport,fitness") problems.push("the trace does not show what the activity points to")
+            // Round 22: what the strict shortlist marked partial is shown, by name, and stored by the worker
+            if ((trace.partial || []).map((career) => career.id).join() !== "hlt-physiotherapist" || /hlt-/.test(trace.partial[0].name)) problems.push("the trace does not show the partial careers by name")
+            if (!/partial: \(resolved\.partialProfessionIds/.test(fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8"))) problems.push("the report worker does not store the partial careers")
             if (!/pointsTo: resolved\.pointsTo/.test(fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8"))) problems.push("the report worker does not store what each activity points to")
             const landed = Object.fromEntries(trace.careers.map((career) => [career.id, career.landed]))
             if (landed["spt-coach"] !== "#4 (tier 6)") problems.push(`a ranked career does not show its place: ${landed["spt-coach"]}`)

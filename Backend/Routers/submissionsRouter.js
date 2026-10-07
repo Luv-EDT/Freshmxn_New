@@ -796,14 +796,11 @@ router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req,
             $set: { ...(direction.$set || {}), "progress.psychometric": "done", reportFailedAt: null },
         })
 
-        // Required here rather than at the top of the file: the queue is built lazily, and a
-        // machine with no REDIS_URL must still be able to load this router and serve every other
-        // route on it.
-        const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
-        const { withTimeout } = require("../workers/queueHelpers")
+        // Required here rather than at the top of the file, so this router loads without the workers
+        const { queueReport } = require("../workers/queueHelpers")
 
         try {
-            await withTimeout(enqueueScoreProfile(req.user._id), "queueing the report")
+            await queueReport(req.user._id, "queueing the report")
         } catch (queueError) {
             // The answers and "done" are committed, but nothing is working on them. Without this the
             // student's page would say "generating" forever (backend review #17); marked as failed,

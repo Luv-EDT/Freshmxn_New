@@ -10,9 +10,14 @@
 //                      (housekeeping/researchBatch.js); with no batch waiting it makes no AI call
 //     model_compare    on demand — the one-time Opus/Sonnet comparison (housekeeping/modelCompare.js)
 //
-// ONE QUEUE, ONE WORKER, three job names — each extra worker costs idle Redis commands (see
-// queueHelpers idleTimings), and these jobs are rare and small. BullMQ's job schedulers keep the
-// calendar in Redis, so a redeploy does not lose it, and upserting them at every start is harmless.
+// ONE QUEUE, ONE WORKER, several job names — these jobs are rare and small. The calendar lives in the
+// database (workers/jobQueue.js `schedule`: one waiting row per schedule, due at its next time), so a
+// redeploy does not lose it, and registering the schedules at every start is harmless.
+//
+// ROUND 22: this calendar is what used up the free Redis. BullMQ kept each schedule's next run as a
+// delayed job, and with one waiting an idle worker re-asked Redis every 10 seconds instead of once a
+// minute — about 500k commands a month from this worker alone. The queue moved to MongoDB, which has
+// no command quota, so the hourly batch check costs nothing when no batch is waiting.
 //
 // ON THE FREE PLAN a schedule only fires while the server is awake. A job that fell due while it
 // slept runs when it wakes; the follow-up scan's catch-up window and the refresh's oldest-first order
@@ -24,12 +29,11 @@
 const path = require("path")
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
-const { Queue, Worker } = require("bullmq")
 const mongoose = require("mongoose")
-const { attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
+const { jobQueue } = require("./jobQueue")
 
 const QUEUE_NAME = "housekeeping"
-const TZ = "Asia/Kolkata"
+// Every pattern is read in IST (Asia/Kolkata) — see nextRun in jobQueue.js
 
 const SCHEDULES = [
     { name: "followup_scan", pattern: "0 9 1 * *" },   // monthly (owner, Round 11) — the scan's 45-day window covers the gap
@@ -52,49 +56,36 @@ const JOBS = {
 // jobs the admin may start from "Run now" — draft_career is started only by approving a scout row
 const RUNNABLE = ["followup_scan", "data_refresh", "career_scout", "study_refresh", "batch_collect", "model_compare"]
 
-const connectionOptions = () => {
-    const url = process.env.REDIS_URL
-    if (!url) throw new Error("REDIS_URL is not set — the housekeeping queue cannot be reached")
-    return withDnsWorkaround({ url, maxRetriesPerRequest: null })
-}
+const JOB_OPTIONS = { attempts: 2, backoffMs: 60000 }
 
-let queue = null
-const housekeepingQueue = () => {
-    if (!queue) queue = new Queue(QUEUE_NAME, { connection: connectionOptions() })
-    return queue
-}
-
-// The admin's "Run now". A hyphenated id with the time, so it never collides with a scheduled run
-// (BullMQ rejects ":" in custom ids).
+// The admin's "Run now" — no key, so it never waits behind (or blocks) the scheduled run.
 const runNow = async (name, data = {}) => {
     if (!JOBS[name]) throw new Error(`unknown housekeeping job ${name}`)
-    return housekeepingQueue().add(name, data, { jobId: `${name}-manual-${Date.now()}`, attempts: 2, backoff: { type: "exponential", delay: 60000 }, removeOnComplete: { count: 50 }, removeOnFail: { count: 50 } })
+    return jobQueue().enqueue(QUEUE_NAME, name, data, JOB_OPTIONS)
 }
 
 const registerSchedules = async () => {
     for (const schedule of SCHEDULES) {
-        await housekeepingQueue().upsertJobScheduler(
-            schedule.name,
-            { pattern: schedule.pattern, tz: TZ },
-            { name: schedule.name, data: {}, opts: { attempts: 2, backoff: { type: "exponential", delay: 60000 }, removeOnComplete: { count: 50 }, removeOnFail: { count: 50 } } }
-        )
+        await jobQueue().schedule(QUEUE_NAME, schedule, JOB_OPTIONS)
     }
 }
 
 const start = async () => {
     require("../config/MongoDBCon")
 
+    // Never holds up the other workers: a database still connecting gets a second try a minute later
     if (process.env.HOUSEKEEPING_ENABLED !== "false") {
-        await registerSchedules()
+        registerSchedules().catch((error) => {
+            console.warn(`${QUEUE_NAME}: could not register the calendar (${error.message}) — trying again in a minute`)
+            setTimeout(() => registerSchedules().catch((retryError) => console.error(`${QUEUE_NAME}: the calendar is not registered — ${retryError.message}`)), 60000)
+        })
     }
 
-    const worker = new Worker(QUEUE_NAME, async (job) => {
+    const worker = jobQueue().createWorker(QUEUE_NAME, async (job) => {
         const run = JOBS[job.name]
         if (!run) throw new Error(`unknown housekeeping job ${job.name}`)
         return run(job.data)
-    }, { connection: connectionOptions(), concurrency: 1, ...idleTimings() })
-
-    attachConnectionLogging(worker, QUEUE_NAME)
+    }, { concurrency: 1 })
 
     worker.on("completed", (job, result) => {
         console.log(`${QUEUE_NAME} ${job.name} done — ${JSON.stringify(result).slice(0, 300)}`)

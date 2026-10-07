@@ -5,6 +5,15 @@ import { getProfessions } from "../../apiCall/professionsApi"
 // THE REPORT'S DATA, shared by the overview (ReportPage.js) and the full list (MatchesPage.js) since
 // Round 19: the report itself, polling while it is being built, "Try again", "Update my report", and
 // one detail request for every career in it.
+// What the server said, when it said something (Round 22) — "Your report is already up to date" is
+// worth more to the student than a generic "could not", and tells us more when they send a screenshot.
+// Its messages are written for students; they end with a full stop here so the next sentence reads on.
+const serverMessage = (error) => {
+    const text = (error && error.response && error.response.data && error.response.data.message) || (error && error.message && !/status code/.test(error.message) ? error.message : "")
+    if (!text) return ""
+    return /[.!?]$/.test(text.trim()) ? text.trim() : `${text.trim()}.`
+}
+
 function useReportData() {
     const [state, setState] = useState({ loading: true, data: null, error: "" })
     const [details, setDetails] = useState({})        // professionId → the full student-facing record
@@ -57,7 +66,7 @@ function useReportData() {
             setState({ loading: false, data: { status: "generating" }, error: "" })
             setReloadKey((key) => key + 1)
         } catch (error) {
-            window.alert("We could not restart it just now. Please try again in a minute, or message us on WhatsApp.")
+            window.alert(serverMessage(error) ? `${serverMessage(error)} If it keeps happening, message us on WhatsApp.` : "We could not restart it just now. Please try again in a minute, or message us on WhatsApp.")
         }
         setRetrying(false)
     }
@@ -72,7 +81,7 @@ function useReportData() {
             setState({ loading: false, data: { status: "generating" }, error: "" })
             setReloadKey((key) => key + 1)
         } catch (error) {
-            window.alert("We could not start the update just now. Please try again in a minute, or message us on WhatsApp.")
+            window.alert(serverMessage(error) ? `${serverMessage(error)} If it keeps happening, message us on WhatsApp.` : "We could not start the update just now. Please try again in a minute, or message us on WhatsApp.")
         }
         setUpdating(false)
     }

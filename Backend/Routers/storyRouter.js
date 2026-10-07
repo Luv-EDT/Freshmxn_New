@@ -230,9 +230,8 @@ router.post("/submitStoryRecall", authMiddleware, requireDiscovery, async (req, 
         // student's own action, so the profile is scored again and the report rebuilt with it.
         if (req.user.progress && req.user.progress.psychometric === "done") {
             try {
-                const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
-                const { withTimeout } = require("../workers/queueHelpers")
-                await withTimeout(enqueueScoreProfile(req.user._id), "queueing the re-score")
+                const { queueReport } = require("../workers/queueHelpers")
+                await queueReport(req.user._id, "queueing the re-score")
             } catch (queueError) {
                 // the answers are saved; "Update my report" or the next submit picks them up
                 console.error(`story recall: could not queue a re-score for ${req.user._id}: ${queueError.message}`)

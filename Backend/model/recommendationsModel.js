@@ -114,6 +114,7 @@ const recommendationSchema = new mongoose.Schema(
                 nearScore: { type: Number, default: null },   // cosine to the reused row, on a near hit
                 candidates: { type: [String], default: [] },  // the careers this row points to
                 pointsTo: { type: [String], default: [] },    // Round 21: the areas the activity points to
+                partial: { type: [String], default: [] },     // Round 22: careers the shortlist marked partial — shown, never matched
             }],
             default: [],
         },

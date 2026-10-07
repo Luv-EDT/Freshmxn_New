@@ -1,8 +1,9 @@
 # Freshmxn — notes for Claude Code
 
 Career-guidance web app for Indian students (www.freshmxn.com). React (CRA) + antd in `Frontend/`,
-Express 5 + Mongoose + BullMQ in `Backend/`. One free Render web service runs the API, the built
-site and both workers (`render.yaml`, deploys from `main`).
+Express 5 + Mongoose in `Backend/`, with the job queue kept in MongoDB (`workers/jobQueue.js` — no
+Redis since Round 22). One free Render web service runs the API, the built site and the workers
+(`render.yaml`, deploys from `main`).
 
 ## Read first
 1. `docs/3_handover/HANDOVER.md` — Part 1 (where things stand) and Part 3 (open items, owner gates).
@@ -40,8 +41,8 @@ fixtures and commit. If `profession_embeddings.json` lists `pending_reembed`, ru
 ## Test before every commit
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
-node Backend/matching/fixtures/runFixtures.js    # 63/63
-node Backend/workers/fixtures/runFixtures.js     # 186/186
+node Backend/matching/fixtures/runFixtures.js    # 64/64
+node Backend/workers/fixtures/runFixtures.js     # 190/190
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

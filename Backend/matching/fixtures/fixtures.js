@@ -1053,7 +1053,7 @@ const fixtures = [
                 }
                 if (system.startsWith("You filter a shortlist")) {
                     calls.rerank += 1
-                    return reply({ keep: [...body.messages[0].content.matchAll(/^\d+\. (\S+) — /gm)].map((match) => match[1]) })
+                    return reply({ strong: [...body.messages[0].content.matchAll(/^\d+\. (\S+) — /gm)].map((match) => match[1]), partial: [] })
                 }
                 calls.other += 1
                 throw new Error("an unexpected call — activities are no longer rated")
@@ -1087,6 +1087,61 @@ const fixtures = [
                 const [danced] = await resolver.resolveActivities([{ activity: "dancing", key: "dancing" }])
                 if (!danced || danced.pointsTo.join() !== "performing arts" || calls.name !== 1 || calls.rerank !== 1) problems.push(`the old row was not topped up: ${JSON.stringify({ danced, calls })}`)
                 if (!cache.updates.some((update) => update.$set && Array.isArray(update.$set.pointsTo))) problems.push("the top-up was not saved")
+            } finally {
+                globalThis.fetch = real
+            }
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "STRICT SHORTLIST (Round 22) — only careers marked strong are matched, with no cap; partial ones are kept for the trace; an older row is shortlisted again once",
+        // Owner, Round 22: the shortlist was "keep it generous, when unsure keep it", up to 16 — right
+        // while a rating gate filtered after it, too loose once nothing did.
+        run: async () => {
+            const problems = []
+            const { readShortlist, RERANK_SYSTEM_PROMPT, SHORTLIST_VERSION } = require("../activityResolver")
+            const retrieved = Array.from({ length: 30 }, (_, index) => ({ id: `c${index}`, profession: `Career ${index}`, similarity: 1 - index / 100 }))
+
+            const strict = readShortlist({ strong: ["c3", "c1", "x-invented", "c3"], partial: ["c5", "c1"] }, retrieved)
+            if (strict.strong.join() !== "c3,c1" || strict.partial.join() !== "c5") problems.push(`strong/partial not read cleanly: ${JSON.stringify(strict)}`)
+            const many = readShortlist({ strong: retrieved.slice(0, 24).map((item) => item.id), partial: [] }, retrieved)
+            if (many.strong.length !== 24) problems.push(`strong was capped at ${many.strong.length}`)
+            const none = readShortlist({ strong: [], partial: ["c2"] }, retrieved)
+            if (none.strong.length !== 0) problems.push("a valid 'relevant to none' answer was overridden by the fallback")
+            const broken = readShortlist({ strong: ["x-invented"] }, retrieved)
+            const garbled = readShortlist({ something: true }, retrieved)
+            if (broken.strong.length !== 16 || garbled.strong.length !== 16) problems.push("a broken reply did not fall back to the meaning search's top results")
+            if (readShortlist({ keep: ["c4"] }, retrieved).strong.join() !== "c4") problems.push("the old { keep } shape no longer reads")
+            if (/keep it generous|When unsure, keep it/i.test(RERANK_SYSTEM_PROMPT) || !/"strong"/.test(RERANK_SYSTEM_PROMPT) || !/leave it\s+out/.test(RERANK_SYSTEM_PROMPT)) problems.push("the prompt is not the strict one")
+
+            // a row shortlisted the old way (it has pointsTo, no version) is shortlisted again once, and only strong careers are candidates
+            const embeddings = [{ id: "p-dance", profession: "Dancer", embedding: [1, 0, 0] }, { id: "p-act", profession: "Actor", embedding: [0.9, 0.1, 0] }]
+            let reranks = 0
+            const real = globalThis.fetch
+            globalThis.fetch = async (url, options) => {
+                const body = JSON.parse(options.body)
+                if (String(url).includes("voyageai")) return { ok: true, json: async () => ({ data: body.input.map((text, index) => ({ index, embedding: [1, 0, 0] })) }) }
+                reranks += 1
+                return { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify({ strong: ["p-dance"], partial: ["p-act"] }) }] }) }
+            }
+            try {
+                const rows = [{ _id: "old", canonicalActivity: "dancing", rubricVersion: "2.0", pointsTo: ["performing arts"], candidateProfessionIds: ["p-dance", "p-act"], embedding: [1, 0, 0], exampleRaw: [] }]
+                const cache = fakeCache(rows)
+                const resolver = createActivityResolver({
+                    ActivityFactors: cache.model,
+                    professionEmbeddings: { model: "voyage-4-large", dimensions: 3, embeddings },
+                    anchors: { schema_version: "2.0", bands: [], factors: [] },
+                    voyageApiKey: "test", anthropicApiKey: "test",
+                })
+                const [first] = await resolver.resolveActivities([{ activity: "dancing", key: "dancing" }])
+                if (first.candidateProfessionIds.join() !== "p-dance" || first.partialProfessionIds.join() !== "p-act") problems.push(`not re-shortlisted strictly: ${JSON.stringify(first)}`)
+                const saved = cache.updates.find((update) => update.$set && update.$set.shortlistVersion === SHORTLIST_VERSION)
+                if (!saved) problems.push("the re-shortlist was not saved with its version")
+                else Object.assign(rows[0], saved.$set)
+                reranks = 0
+                await resolver.resolveActivities([{ activity: "dancing", key: "dancing" }])
+                if (reranks !== 0) problems.push("a row already on the strict shortlist was shortlisted again")
             } finally {
                 globalThis.fetch = real
             }

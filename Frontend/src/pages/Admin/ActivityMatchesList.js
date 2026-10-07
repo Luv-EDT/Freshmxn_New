@@ -66,12 +66,16 @@ function StudentReadings() {
                                         {typeof step.nearScore === "number" && <> — similarity <strong>{step.nearScore.toFixed(3)}</strong> ≥ {result.threshold.toFixed(2)}</>}
                                         {step.readAs && <> → row <strong>{step.readAs}</strong></>}
                                     </p>
-                                    <p><strong>Careers this points to:</strong></p>
+                                    <p><strong>Careers this points to (strong):</strong></p>
                                     <ul className="report-small">
                                         {step.careers.length > 0
                                             ? step.careers.map((career) => <li key={career.id}>{career.name} — {career.landed}</li>)
                                             : <li>none stored (reports built before Round 19 did not keep this)</li>}
                                     </ul>
+                                    {/* Round 22: the strict shortlist's "partial" careers — considered, not matched */}
+                                    {(step.partial || []).length > 0 && (
+                                        <p className="report-small"><strong>Also considered, marked partial (not matched):</strong> {step.partial.map((career) => career.name).join(" · ")}</p>
+                                    )}
                                 </li>
                             ))}
                         </ol>

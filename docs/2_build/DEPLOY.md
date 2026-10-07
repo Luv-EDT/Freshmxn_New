@@ -5,8 +5,9 @@ step goes red, copy the error/log into the Claude session — it fixes, pushes, 
 by itself.
 
 **What gets deployed.** One free Render *web service* that runs the Express API, serves the built
-React app, and — because `RUN_WORKERS_IN_WEB=true` — also runs both BullMQ workers in the same
-process. Config lives in `render.yaml` at the repo root.
+React app, and — because `RUN_WORKERS_IN_WEB=true` — also runs the background workers in the same
+process. Their job queue is a collection in the same MongoDB database (Round 22) — there is no Redis.
+Config lives in `render.yaml` at the repo root.
 
 ---
 
@@ -16,7 +17,7 @@ process. Config lives in `render.yaml` at the repo root.
 |---|---|---|
 | What it is | **Executable configuration** — a Render *Blueprint* | **The human runbook** |
 | Who reads it | **Render**, automatically, on every deploy / Blueprint sync | You (and Claude) |
-| What it holds | the service type, plan, region, **branch**, build and start commands, health check, and the *names* of env vars (non-secret values inline, secrets as `sync: false`) | everything a machine can't do: dashboard clicks, pasting secrets, Atlas network access, Upstash, Google OAuth redirect URIs, Cloudflare DNS, Search Console, the smoke test |
+| What it holds | the service type, plan, region, **branch**, build and start commands, health check, and the *names* of env vars (non-secret values inline, secrets as `sync: false`) | everything a machine can't do: dashboard clicks, pasting secrets, Atlas network access, Google OAuth redirect URIs, Cloudflare DNS, Search Console, the smoke test |
 | Can it move? | **No** — Render only looks for it at the repo root | Yes (it lives in `docs/2_build/`) |
 
 Keep both. Render cannot follow a runbook, and the yaml cannot hold secrets or manual steps.
@@ -50,10 +51,11 @@ database is still protected by its username + password).
 3. **Database** → **Connect** → **Drivers** → copy the `mongodb+srv://…` string (with the password
    filled in). This is `DB_URI`.
 
-## Step 2 — Upstash Redis: copy the URL
+## Step 2 — (none since Round 22)
 
-1. console.upstash.com → your database → **Connect** / **Details**.
-2. Copy the URL that starts with **`rediss://`** (two s's — TLS). This is `REDIS_URL`.
+There used to be an Upstash Redis step here. The job queue now lives in MongoDB, so there is nothing to
+set up: no `REDIS_URL`. If an old service still has `REDIS_URL` set, delete it in Render → Environment;
+the Upstash database can be deleted too.
 
 ## Step 3 — Render: create the service from the blueprint
 
@@ -66,7 +68,6 @@ database is still protected by its username + password).
 | Key | Where it comes from | Required? |
 |---|---|---|
 | `DB_URI` | Step 1 | ✅ |
-| `REDIS_URL` | Step 2 (`rediss://…`) | ✅ reports never generate without it |
 | `JWT_SECRET` | Any long random string (e.g. 64 random characters). **New** one, not your local one | ✅ server refuses to start |
 | `RESEND_API_KEY` | resend.com → API Keys | ✅ **the server crashes at boot without it** |
 | `EMAIL_FROM` | The sender you use locally, e.g. `Freshmxn <onboarding@resend.dev>` | ✅ |
@@ -78,7 +79,7 @@ database is still protected by its username + password).
 | `ADMIN_EMAIL` / `ADMIN_NAME` / `ADMIN_PASSWORD` | What you want the admin login to be | for Step 6 |
 
 Already set by `render.yaml` (no action): `PAYMENT_MODE=manual`, `RUN_WORKERS_IN_WEB=true`,
-`WORKER_DRAIN_DELAY_S=60`, `WORKER_STALLED_INTERVAL_MS=120000`, `NODE_VERSION=22`. Render sets
+`NODE_VERSION=22`. Render sets
 `PORT` itself — do **not** add it.
 
 5. **Apply**. The first build takes ~5–8 minutes.
@@ -263,12 +264,17 @@ If it still fails, Render → Logs shows a line starting `Google callback failed
 
 - **Free plan sleeps** after ~15 min with no visitors; the next visit takes ~50 s. A student
   waiting on a report keeps it awake (the page checks every 5 s). Step 8 removes the sleep.
-- **Redis usage.** Idle workers make ~2.5 requests/minute each (~220k/month for both) — measured
-  with Redis MONITOR on this exact code. Check Upstash → your DB → **Usage** after a day. If it is
-  high, raise `WORKER_DRAIN_DELAY_S` to `120` in Render → Environment — no code change, and jobs are
-  still picked up instantly.
-- **Redeploys never lose a job.** Workers get ~30 s to finish; anything cut off re-runs by itself
-  within ~4 minutes.
-- **Upstash restricts `CLIENT LIST`**, so `pipeline:status` without `--probe` under-reports workers
-  (Day 4 §6). Not an error.
+- **The job queue is in MongoDB (Round 22).** Until October 2026 it was BullMQ on Upstash Redis; an
+  idle scheduled queue re-asked Redis every 10 seconds and used up the free 500k commands a month
+  before launch, after which every Submit, "Try again" and "Update my report" failed. Atlas has no
+  command quota. An idle worker asks MongoDB "anything for me?" every 10 s (`JOB_POLL_MS`); a job a
+  student starts runs at once. Finished jobs delete themselves after 7 days.
+- **Is the queue working?** Admin → **Assessment issues** shows "Job queue: working / not moving /
+  not reachable" above the list. A report that could not be queued is an issue of its own ("Report
+  could not be queued", emailed to `ADMIN_EMAIL`) with the real error. `npm run pipeline:status --
+  --probe` (with `DB_URI` set) proves the workers are alive.
+- **Redeploys never lose a job.** Workers get ~30 s to finish; anything cut off is taken over by the
+  next start within ~5 minutes (its lock runs out) and runs again.
+- **`HOUSEKEEPING_ENABLED=false`** stops the calendar jobs (follow-up scan, data refresh, scout, study
+  bot, batch collect) being registered; admin "Run now" still works.
 - **Moving to paid workers later:** see the commented section at the bottom of `render.yaml`.
