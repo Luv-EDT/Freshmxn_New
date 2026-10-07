@@ -20,11 +20,13 @@ export const whyFits = (entry) => {
     const usable = (list) => (Array.isArray(list) ? list : [])
         .filter((row) => row && row.factor && !NOT_A_STRENGTH.includes(row.slug))
 
-    const strengths = usable(entry.supportingFactors)
+    // a combined career carries both sides' factors, so the same one can come twice — named once
+    // ("reasoning, reasoning" on a combined career, Round 19)
+    const strengths = [...new Set(usable(entry.supportingFactors)
         .slice()
         .sort((left, right) => (right.held || 0) - (left.held || 0))
+        .map((row) => row.factor))]
         .slice(0, 3)
-        .map((row) => row.factor)
 
     const via = Array.isArray(entry.matchedBy) && entry.matchedBy.length > 0 && entry.matchedBy[0].activity
         ? String(entry.matchedBy[0].activity)
@@ -34,6 +36,58 @@ export const whyFits = (entry) => {
     const stretch = usable(entry.divergingFactors).map((row) => row.factor)[0] || null
 
     return { strengths, via, stretch }
+}
+
+// ── why we chose it for you (Round 19, owner: "a very crisp reason") ─────────────────────────────
+//
+// One sentence from what PUT the career in the list — the engine's own evidence, in the order it
+// weighs it (tiers.js): you named it; an activity you've kept up for years (list A) or do now (B);
+// love, achievement, confidence; and whether it fits how you work. No factor names, no numbers.
+export const whyChosen = (entry) => {
+    if (!entry) return null
+    const activity = Array.isArray(entry.matchedBy) && entry.matchedBy.length > 0 && entry.matchedBy[0].activity
+        ? String(entry.matchedBy[0].activity)
+        : null
+    const fits = entry.comfort === true
+    const fitWords = fits ? "it fits how you think and work" : "it is a stretch from how you work now, but within reach"
+
+    if (entry.namedDirectly || entry.fromAspiration) return `You named it yourself, and ${fitWords}.`
+    if (!activity) return fits ? "It reached you on your profile alone: it fits how you think and work." : null
+
+    const how = entry.list === "A" ? `Something you've kept up for years — ${activity} — leads here` : `Something you do now — ${activity} — leads here`
+    const feeling = entry.passion ? ", and you love it" : entry.achievement ? ", and you've achieved something in it" : String(entry.confidenceExp).toLowerCase() === "high" ? ", and you feel sure of it" : ""
+    return `${how}${feeling}; ${fitWords}.`
+}
+
+// ── the road from where the student stands ──────────────────────────────────────────────────────
+//
+// A COLLEGE OR WORKING STUDENT IS PAST SCHOOL AND IN (OR PAST) A DEGREE (owner, Round 19: "I am
+// already in college, and it still recommends bachelor's degrees"). Their road leaves out the school
+// steps, and their next step is the one AFTER the first degree — unless this career needs its own
+// degree from the start (restart_undergrad), which is then honestly their next step.
+//
+// `allSteps` is the career's path already levelled by the card's levelPath (0 school … 2 degree …);
+// `studentLevel` is where the journey puts the student. Returns the steps to show and the index of the
+// next one (-1 when there is none).
+const DEGREE_STAGES = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+
+export const roadFrom = (allSteps, journey, studentLevel, midStreamEntry) => {
+    const pastSchool = journey === "college" || journey === "early_professional"
+    const restart = midStreamEntry === "restart_undergrad"
+    const steps = pastSchool ? allSteps.filter((step) => step.level >= 2) : allSteps
+    const lastDegree = steps.reduce((found, step, index) => (DEGREE_STAGES.includes(step.stage) ? index : found), -1)
+
+    // The first step at or beyond where the student is — what they do next.
+    const nextIndex = studentLevel === undefined
+        ? -1
+        : pastSchool && !restart && lastDegree >= 0
+            ? (lastDegree + 1 < steps.length ? lastDegree + 1 : -1)
+            // A class 11-12 student is already IN the school step: their next step is the first after it
+            : journey === "class11_12"
+                ? steps.findIndex((step) => step.level > studentLevel)
+                : steps.findIndex((step) => step.level >= Math.min(studentLevel, 2))
+
+    return { steps, nextIndex }
 }
 
 // ── the stream map (class 9-10) ─────────────────────────────────────────────────────────────────
@@ -140,7 +194,7 @@ const midStreamLine = (detail) => {
 }
 
 const AFTER_UNDERGRAD = {
-    work_first: "After your degree, start working — a master's isn't needed.",
+    work_first: "After your degree, start working — a master's usually isn't needed.",
     masters_advantage: "A master's helps later, but you can start working first.",
     masters_required: "You'll need a master's degree to practise.",
     masters_is_the_entry: "The master's degree is the way in.",
@@ -315,3 +369,16 @@ export const abroadCareers = (ranked, details = {}, topN = 10) => (ranked || [])
     .slice(0, topN)
     .filter((entry) => details[entry.professionId] && details[entry.professionId].abroad)
     .map((entry) => ({ professionId: entry.professionId, profession: entry.profession, need: details[entry.professionId].abroad.need }))
+
+// STUDYING AND WORKING ABROAD ACROSS YOUR MATCHES (Round 19, owner): two plain lines from the top
+// ten — where studying abroad helps (data/abroad.json) and which careers travel well for work
+// (data/abroad_work.json). A line is shown only when it names something.
+export const abroadLines = (ranked, details = {}, topN = 10) => {
+    const top = (ranked || []).slice(0, topN).filter((entry) => details[entry.professionId])
+    const study = abroadCareers(ranked, details, topN).map((career) => career.profession)
+    const work = top.filter((entry) => {
+        const going = details[entry.professionId].goingAbroad
+        return going && going.portability === "travels_well"
+    }).map((entry) => entry.profession)
+    return { study, work }
+}

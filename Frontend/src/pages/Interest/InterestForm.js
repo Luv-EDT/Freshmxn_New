@@ -5,6 +5,7 @@ import { message, Modal } from "antd"
 import { saveInterest, getMySubmission } from "../../apiCall/submissionsApi"
 import { setUser } from "../../store/userSlice"
 import Navbar from "../Navbar"
+import BackToDashboard from "../BackToDashboard"
 import InterestIntro from "./InterestIntro"
 import PostCollege from "./PostCollege"
 import College from "./College"
@@ -44,6 +45,8 @@ function InterestForm() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [pendingAction, setPendingAction] = useState(null)   // a queued save or section change, see goToStep
     const sectionDraftTimer = useRef(null)                     // debounce for in-progress typing, see reportSectionDraft
+    const sectionDraft = useRef({})                            // the open section's latest typing, for "Save and go"
+    const [leaveOpen, setLeaveOpen] = useState(false)          // "← Dashboard" asks first (Round 19)
     const sectionRef = useRef(null)                            // the open section, for its form's required items
     // Round 13: where the student is and how far they have got. `reachedStep` is the furthest stage
     // they arrived at with everything before it complete; a tab beyond it, or Finish, is refused
@@ -146,6 +149,7 @@ function InterestForm() {
     const reportSectionDraft = (patch) => {
         if (!formState || !storageKey) return
 
+        sectionDraft.current = { ...sectionDraft.current, ...patch }
         clearTimeout(sectionDraftTimer.current)
         sectionDraftTimer.current = setTimeout(() => {
             writeLocalDraft({ ...formState, ...patch })
@@ -247,6 +251,14 @@ function InterestForm() {
 
     const requestSave = () => setPendingAction({ kind: "save", at: { lastStep: step, reachedStep: steps[reachedIndex].key } })
 
+    // "← Dashboard" → "Save and go" (owner, Round 19): what the open section has typed but not yet
+    // handed up is merged in first, then saved, then the student goes to their dashboard.
+    const saveAndGoHome = () => {
+        const typed = sectionDraft.current
+        setFormState((previous) => ({ ...previous, ...typed }))
+        setPendingAction({ kind: "save", then: "/dashboard", at: { lastStep: step, reachedStep: steps[reachedIndex].key } })
+    }
+
     useEffect(() => {
         if (!pendingAction || !formState) return
         runPendingAction(pendingAction)
@@ -275,7 +287,11 @@ function InterestForm() {
                 message.success("Interest form submitted successfully")
             }
 
-            if (isNavigating) {
+            sectionDraft.current = {}
+            if (action.then) {
+                setLeaveOpen(false)
+                navigate(action.then)
+            } else if (isNavigating) {
                 navigate(`/interest/${steps[action.index].key}`)
                 window.scrollTo(0, 0)
             } else {
@@ -296,6 +312,7 @@ function InterestForm() {
 
     // Handler for updating form state
     const updateFormState = (section, data) => {
+        delete sectionDraft.current[section]
         setFormState((prevState) => ({
             ...prevState,
             [section]: Array.isArray(data) ? data : { ...prevState[section], ...data },
@@ -430,6 +447,22 @@ function InterestForm() {
     return (
         <div>
             <Navbar />
+            <BackToDashboard onLeave={() => setLeaveOpen(true)} />
+            <Modal
+                open={leaveOpen}
+                title="Leave for your dashboard?"
+                onCancel={() => setLeaveOpen(false)}
+                footer={[
+                    <button key="stay" type="button" className="btn btn-ghost" onClick={() => setLeaveOpen(false)}>Stay</button>,
+                    <button key="leave" type="button" className="btn btn-ghost" onClick={() => navigate("/dashboard")}>Leave without saving</button>,
+                    <button key="save" type="button" className="btn btn-primary" onClick={saveAndGoHome} disabled={isSaving}>
+                        {isSaving ? "Saving…" : "Save and go"}
+                    </button>,
+                ]}
+            >
+                <p>Answers you haven't saved may be lost. Save them first?</p>
+                {saveError && <p><strong>{saveError}</strong></p>}
+            </Modal>
             {isSaving && <p>Saving...</p>}
             {saveError && <p><strong>{saveError}</strong></p>}
             <div ref={sectionRef}>{renderSection()}</div>

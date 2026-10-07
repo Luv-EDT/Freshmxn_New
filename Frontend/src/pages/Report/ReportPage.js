@@ -1,389 +1,43 @@
-import { useState, useEffect, useMemo } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { getMyReport, retryMyReport, updateMyReport } from "../../apiCall/reportsApi"
-import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
-import JourneyProgress from "../JourneyProgress"
+import BackToDashboard from "../BackToDashboard"
 import UpgradeToMentorship from "../UpgradeToMentorship"
-import ProfessionCard from "./ProfessionCard"
-import ReportSortMenu from "./ReportSortMenu"
+import ReportStatus from "./ReportStatus"
+import useReportData from "./useReportData"
 import { studentTags } from "./reportTags"
-import { buildList, ONLY_FILTERS } from "./reportFilters"
-import StudyAbroadCard from "./StudyAbroadCard"
-import CombinedCareers from "./CombinedCareers"
+import { tierGroupFor, listOf } from "./reportFraming"
 import DirectionModal from "../DirectionModal"
 
-// Stage 3 — the report.
+// Stage 3 — the report: A SHORT OVERVIEW SINCE ROUND 19 (owner). In the owner's order: "Your report";
+// your top three matches, with the full list one tap away on its own page (MatchesPage.js,
+// /report/matches); the combined careers; what seems to drive you; the four fundamentals; and what you
+// said you wanted. The shared data and the screens shown instead of a report live in useReportData.js
+// and ReportStatus.js; the five bands and the per-journey wording in reportFraming.js.
 //
 // THE LIST IS THE REPORT. An earlier version opened with about 1,500 words of prose and then listed
-// professions four lines at a time; a fifteen-year-old scrolled past all of it. Now the prose is
-// four short paragraphs, the list is headings, and everything the taxonomy knows about a profession
-// lives one tap away inside it. A report nobody reads is worth the same as no report.
-//
-// THREE RELEASE STATES, and they are the point rather than an edge case:
-//   release            the full picture
-//   release_with_note  findings shown, plus what is still missing and what completing it buys
-//   withhold           below 75% of the matching vector. The completion prompt INSTEAD of findings,
-//                      because a confident-looking report built on a fifth of the evidence is worse
-//                      than no report.
-//
-// ONE LIST, TWO ORDERS (owner, Round 6). DECISIONS.md §5 is explicit that fit × switching-cost makes
-// the engine structurally timid — it will never advise the hard change even when that is the true
-// answer. The worth-the-switch careers used to be a second list under their own heading; students
-// could not tell the headings apart. Now they are one tap away as a primary sort, "Best fit, ignoring
-// switching cost", which adds them to the same list with the cost shown inside each card.
-//
-// match_confidence is already stripped by reportsRouter, and every factor slug is already
-// translated there. Nothing here needs to know either exists.
-
-// ── THE SIXTEEN TIERS, MADE VISIBLE ─────────────────────────────────────────────────────────────
-//
-// `tiers.js` sorts every profession into one of sixteen buckets from three signals. Sixteen
-// headings on a screen would be noise, so they collapse into five bands — and since Round 6 the
-// bands are no longer headings in the list at all (students could not tell them apart). The RULE
-// behind each one is shown inside "How this list is ordered", because a ranking a student cannot
-// interrogate is just an opinion with a number on it.
-//
-// The three signals, and the exact tier boundaries they produce (see Backend/matching/tiers.js):
-//
-//   list      A = something you have pursued long-term points here
-//             B = something you do now points here
-//             C = neither; it reached you on profile alone
-//   comfort   does the psychometric profile clear 0.7 against what the work demands
-//             (tiers 1-11 yes, 12-16 no)
-//   evidence  passion → achievement → expressed confidence, in that order of weight.
-//             "Loved it" beats "won at it" beats "sure about it", and self-report ranks last
-//             because it is the softest of the three.
-const TIER_GROUPS = [
-    {
-        upTo: 2,
-        label: "Strongest matches",
-        why: "You love the thing that leads here, you have achieved something in it, and it fits how you think and work.",
-    },
-    {
-        upTo: 6,
-        label: "Strong matches",
-        why: "Something you do points here and it fits your profile. You said you love it.",
-    },
-    {
-        upTo: 8,
-        label: "Worth a look",
-        why: "You have achieved something that points here and it fits your profile — even though you did not mark it as a passion.",
-    },
-    {
-        upTo: 11,
-        label: "Fits how you work",
-        why: "The profile fit is there and something connects you to it, but there is no passion or achievement behind it yet.",
-    },
-    {
-        upTo: 16,
-        label: "Further from your current shape",
-        why: "Reachable, and something links you to it — but the way this work is usually done sits further from how you currently work.",
-    },
-]
-
-
-// "a, b and c" — because "spatial thinking, reasoning" reads like a truncated list rather than a
-// finished sentence, and these strings sit inside prose.
-// how many careers show before "Show the other N" (owner, Round 13; three since Round 18)
-const TOP_SHOWN = 3
-
-// the band a tier sits in, for "why it ranked there"
-const tierGroupFor = (tier) => (typeof tier === "number" ? TIER_GROUPS.find((group) => tier <= group.upTo) : null)
-
-const listOf = (items) => {
-    if (items.length === 0) return ""
-    if (items.length === 1) return items[0]
-    return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`
-}
-
-// THE FOUR JOURNEYS DO NOT GET THE SAME REPORT, and the difference is not decoration.
-//
-// "Worth the switch" is the clearest case. For a class 9-10 student nothing has been invested yet,
-// so there is nothing to switch FROM — the heading is meaningless and the framing implies they have
-// already committed to something, which is exactly the anxiety the product should not create. For
-// someone four years into a job it is the most important section on the page.
-//
-// The engine already knows this: τ is Infinity for class9_10, so the switching-cost multiplier is
-// exactly 1.0 and both lists come out identical. Showing them as two lists with different
-// explanations would be presenting the same ranking twice and implying a distinction the maths did
-// not make.
-const JOURNEY_FRAMING = {
-    class9_10: {
-        switchHeading: "Worth knowing about",
-        switchIntro: "Nothing is decided at your stage, so nothing here costs you anything to consider. These are the strongest fits full stop.",
-        // Both lists are the same ranking when nothing is sunk. Say so instead of staging a contrast.
-        switchIsDistinct: false,
-        runwayNote: "Years to qualify counts from the end of school, so it is the same for everyone your age — it is about the path, not about you being behind.",
-    },
-    class11_12: {
-        switchHeading: "Worth the switch",
-        switchIntro: "The strongest fits even if they need a different stream or an extra subject — still possible at your stage.",
-        switchIsDistinct: true,
-        runwayNote: null,
-    },
-    college: {
-        switchHeading: "Worth the switch",
-        switchIntro: "The strongest fits even if changing course would cost you time — because the safe answer is not always the right one.",
-        switchIsDistinct: true,
-        runwayNote: null,
-    },
-    early_professional: {
-        switchHeading: "Worth the switch",
-        switchIntro: "The strongest fits even if leaving your current track would cost you time. Work skills carry further between fields than qualifications do.",
-        switchIsDistinct: true,
-        runwayNote: null,
-    },
-}
-
-const framingFor = (journey) => JOURNEY_FRAMING[journey] || JOURNEY_FRAMING.college
-
+// professions four lines at a time; a fifteen-year-old scrolled past all of it. Since Round 19 there is
+// no prose at all — everything the taxonomy knows about a profession lives one tap away inside it.
 function ReportPage() {
-    const navigate = useNavigate()
     const { user } = useSelector((state) => state.user)
-    const [state, setState] = useState({ loading: true, data: null, error: "" })
-    const [details, setDetails] = useState({})        // professionId → the full student-facing record
-    const [detailsLoaded, setDetailsLoaded] = useState(false)
-    const [primary, setPrimary] = useState("best")
-    const [secondary, setSecondary] = useState(null)
-    // THE FILTERS (owner, Rounds 9 and 18), all off by default, each labelled, each saying how many it
-    // hid: leave out blue-collar careers; keep only core engineering; keep only careers where
-    // studying abroad helps.
-    const [excludeBlueCollar, setExcludeBlueCollar] = useState(false)
-    const [only, setOnly] = useState([])
-    // TOP THREE FIRST (owner, Rounds 13 and 18): the first three of whatever order is chosen, the rest
-    // one tap away. Opening the rest belongs to that order — a new sort or filter starts again at three.
-    const [showAllFor, setShowAllFor] = useState(null)
-    // Bumped after a retry so the polling effect below starts again.
-    const [reloadKey, setReloadKey] = useState(0)
-    const [retrying, setRetrying] = useState(false)
-    const [updateOpen, setUpdateOpen] = useState(false)
-    const [updating, setUpdating] = useState(false)
+    const report = useReportData()
+    const { state, ranked } = report
 
-    // Polls while the pipeline is running, and stops the moment it is not. A student who has just
-    // pressed Submit is looking at this page NOW — telling them to come back later and leaving it
-    // frozen is the difference between "it is working" and "it is broken", and they cannot tell
-    // which from a static screen.
-    useEffect(() => {
-        let cancelled = false
-        let timer = null
-
-        const load = async () => {
-            try {
-                const response = await getMyReport()
-                if (cancelled) return
-
-                const data = response.data.data
-                setState({ loading: false, data, error: "" })
-
-                // Only "generating" polls. A report built by older scoring or matching is NOT rebuilt
-                // behind the student's back (owner, Round 11) — it offers "Update my report" instead.
-                if (data.status === "generating") timer = setTimeout(load, 5000)
-            } catch (error) {
-                if (!cancelled) setState({ loading: false, data: null, error: "Could not load your report" })
-            }
-        }
-
-        load()
-
-        return () => {
-            cancelled = true
-            clearTimeout(timer)
-        }
-    }, [reloadKey])
-
-    // The pipeline gave up (status "failed", or rebuildFailed on an older report). Queue it again
-    // and go back to polling — the page shows "preparing" until the new report lands.
-    const retry = async () => {
-        setRetrying(true)
-        try {
-            const response = await retryMyReport()
-            if (response && response.data && response.data.success === false) throw new Error(response.data.message)
-            setState({ loading: false, data: { status: "generating" }, error: "" })
-            setReloadKey((key) => key + 1)
-        } catch (error) {
-            window.alert("We could not restart it just now. Please try again in a minute, or message us on WhatsApp.")
-        }
-        setRetrying(false)
-    }
-
-    // "Update my report" — only on the student's word, after "same way or something new?"
-    const startUpdate = async (direction) => {
-        setUpdating(true)
-        try {
-            const response = await updateMyReport(direction)
-            if (response && response.data && response.data.success === false) throw new Error(response.data.message)
-            setUpdateOpen(false)
-            setState({ loading: false, data: { status: "generating" }, error: "" })
-            setReloadKey((key) => key + 1)
-        } catch (error) {
-            window.alert("We could not start the update just now. Please try again in a minute, or message us on WhatsApp.")
-        }
-        setUpdating(false)
-    }
-
-    // ONE REQUEST FOR EVERY PROFESSION IN THE REPORT, fired once the ranking arrives rather than on
-    // each expand. Forty accordion rows fetching themselves individually is forty round trips on a
-    // phone connection, and the first tap would feel broken. The taxonomy is static, so this is a
-    // read of shared data, not of anything belonging to the student.
-    const ranked = state.data && state.data.ranked ? state.data.ranked : null
-    const switchList = state.data && state.data.worthTheSwitch ? state.data.worthTheSwitch : null
-
-    // ⚠ BOTH LISTS, NOT JUST THE RANKING. This fetched only `ranked` ids, and worth-the-switch cards
-    // sat on "Loading…" forever — because the whole point of that list is to surface professions
-    // that are NOT in the ranking. `alreadyRanked: false` is the common case there, so the entries
-    // most worth reading were exactly the ones with no detail to read.
-    //
-    // Still one request. The union is at most a few dozen ids and the route takes up to 60.
-    const detailIds = useMemo(() => {
-        const ids = new Set()
-        ;(ranked || []).forEach((entry) => ids.add(entry.professionId))
-        ;(switchList || []).forEach((entry) => ids.add(entry.professionId))
-        return [...ids]
-    }, [ranked, switchList])
-
-    // A stable key, so the effect does not refire on every render just because the array is new.
-    const detailKey = detailIds.join(",")
-
-    useEffect(() => {
-        if (detailIds.length === 0) return
-
-        let cancelled = false
-
-        const loadDetails = async () => {
-            try {
-                const response = await getProfessions(detailIds)
-                if (cancelled) return
-
-                const byId = {}
-                response.data.data.professions.forEach((profession) => { byId[profession.id] = profession })
-                setDetails(byId)
-                setDetailsLoaded(true)
-            } catch (error) {
-                // Answered, badly. The card must stop saying "Loading…" or it implies something is
-                // still on its way that never is.
-                setDetailsLoaded(true)
-                // The headings and the chips still render; only the expanded detail is missing, and
-                // the card says it is loading rather than claiming the profession has no detail.
-            }
-        }
-
-        loadDetails()
-        return () => { cancelled = true }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [detailKey])
+    const gate = <ReportStatus state={state} retry={report.retry} retrying={report.retrying} />
+    if (state.loading || state.error || state.data.status !== "ready" || state.data.release === "withhold") return gate
 
     const data = state.data
-
-    // THE LIST THE STUDENT SEES — see buildList in reportFilters.js. Only the filters the student
-    // turned on ever hide a career.
-    const ordered = useMemo(
-        () => buildList(ranked, switchList, primary, secondary, details, { only, excludeBlueCollar }),
-        [ranked, switchList, primary, secondary, details, only, excludeBlueCollar]
-    )
-
-    const sortKey = [primary, secondary, only.join("+"), excludeBlueCollar].join("|")
-
-    // How many the filters hid, so the page can say so — a filter that hides silently is the thing
-    // this report was rebuilt to avoid.
-    const hiddenCount = useMemo(() => {
-        if (!excludeBlueCollar && only.length === 0) return 0
-        return buildList(ranked, switchList, primary, secondary, details, {}).length - ordered.length
-    }, [excludeBlueCollar, only, ranked, switchList, primary, secondary, details, ordered])
-    const hiddenBlueCollar = excludeBlueCollar ? hiddenCount : 0
-    const toggleOnly = (key) => setOnly((current) => (current.includes(key) ? current.filter((value) => value !== key) : [...current, key]))
-
-    // The engine's top three keep their colours under every order, so "my best matches" never
-    // gets lost when a student sorts by pay.
-    const topIds = useMemo(() => (ranked || []).slice(0, 3).map((entry) => String(entry.professionId)), [ranked])
-
-    if (state.loading) return <div><Navbar />Loading your report…</div>
-    if (state.error) return <div><Navbar /><p>{state.error}</p></div>
-
-    const { status, release, aspirationSignals, filtered, journey, dominantReasons } = data
-    const framing = framingFor(journey)
-
-    if (status === "not_started") {
-        return (
-            <div>
-                <Navbar />
-                <JourneyProgress user={user} current="report" />
-                <h1>Your report</h1>
-                <p>Finish the assessment and your report will be built from it.</p>
-                <button type="button" onClick={() => navigate("/assessment/start")}>Go to the assessment</button>
-            </div>
-        )
-    }
-
-    if (status === "failed") {
-        return (
-            <div>
-                <Navbar />
-                <JourneyProgress user={user} current="report" />
-                <h1>We hit a problem preparing your report</h1>
-                <p>
-                    <strong>Your answers are safe.</strong> Something went wrong on our side while building
-                    your report. Trying again usually fixes it.
-                </p>
-                <button type="button" className="btn btn-primary tap" onClick={retry} disabled={retrying}>
-                    {retrying ? "Starting again…" : "Try again"}
-                </button>
-                <p className="report-small">
-                    If it happens again,{" "}
-                    <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">message us on WhatsApp</a>{" "}
-                    and we will sort it out.
-                </p>
-            </div>
-        )
-    }
-
-    if (status === "generating") {
-        return (
-            <div>
-                <Navbar />
-                <JourneyProgress user={user} current="report" />
-                <h1>We are preparing your report</h1>
-                <p>
-                    This usually takes about a minute. We are scoring your answers, matching them
-                    against 1,000+ careers and job roles, and writing it up.
-                </p>
-                <p>
-                    <em>This page checks for itself every few seconds — you can also close it and
-                    come back whenever you like.</em>
-                </p>
-            </div>
-        )
-    }
-
-    // Below the release threshold: say what is missing instead of showing findings that would read
-    // as more certain than they are.
-    if (release === "withhold") {
-        return (
-            <div>
-                <Navbar />
-                <JourneyProgress user={user} current="report" />
-                <h1>Not enough to go on yet</h1>
-                <p>
-                    You have finished part of the assessment, but not enough of it for us to say
-                    anything useful about which careers fit you. We would rather tell you that than
-                    give you a confident answer built on a fraction of the picture.
-                </p>
-                <button type="button" onClick={() => navigate("/assessment/start")}>
-                    Finish the assessment
-                </button>
-            </div>
-        )
-    }
-
+    const { release, aspirationSignals, filtered, dominantReasons } = data
     const myTags = studentTags(dominantReasons)
+    const top = (ranked || []).slice(0, 3)
+    const combined = Array.isArray(data.combined) ? data.combined : []
 
     return (
         <div className="report-page">
             <Navbar />
-            <JourneyProgress user={user} current="report" />
+            <BackToDashboard />
 
-            <h1>Your report</h1>
+            <h1 className="report-title">Your report</h1>
 
             {data.rebuildFailed && (
                 <div className="report-banner">
@@ -391,8 +45,8 @@ function ReportPage() {
                         <strong>We could not update your report with your latest answers.</strong> This is the
                         previous version.
                     </p>
-                    <button type="button" className="btn btn-primary btn-sm tap" onClick={retry} disabled={retrying}>
-                        {retrying ? "Starting again…" : "Try again"}
+                    <button type="button" className="btn btn-primary btn-sm tap" onClick={report.retry} disabled={report.retrying}>
+                        {report.retrying ? "Starting again…" : "Try again"}
                     </button>
                 </div>
             )}
@@ -403,19 +57,19 @@ function ReportPage() {
                         <strong>We've improved how we match careers.</strong> Your report stays exactly as it is
                         unless you choose to update it.
                     </p>
-                    <button type="button" className="btn btn-primary btn-sm tap" onClick={() => setUpdateOpen(true)}>
+                    <button type="button" className="btn btn-primary btn-sm tap" onClick={() => report.setUpdateOpen(true)}>
                         Update my report
                     </button>
                 </div>
             )}
 
             <DirectionModal
-                open={updateOpen}
+                open={report.updateOpen}
                 title="Update your report"
                 okText="Update my report"
-                busy={updating}
-                onCancel={() => setUpdateOpen(false)}
-                onConfirm={startUpdate}
+                busy={report.updating}
+                onCancel={() => report.setUpdateOpen(false)}
+                onConfirm={report.startUpdate}
             />
 
             {release === "release_with_note" && (
@@ -425,13 +79,46 @@ function ReportPage() {
                 </p>
             )}
 
-            {myTags.length > 0 && (
-                <p className="report-small">
-                    What seems to drive you: <strong>{listOf(myTags)}</strong>.
-                </p>
+            {/* 1. YOUR MATCHES — the top three here; the whole list, sort and filters on their own page */}
+            <section className="report-card">
+                <h2>Your matches</h2>
+                {top.length > 0 ? (
+                    <ol className="report-top">
+                        {top.map((entry) => <li key={entry.professionId}><strong>{entry.profession}</strong></li>)}
+                    </ol>
+                ) : (
+                    <p>None of the careers on our list is open from where you are now — see "Ruled out" below.</p>
+                )}
+                <div className="report-card-actions">
+                    <Link to="/report/matches" className="btn btn-primary btn-sm tap">
+                        See all {ranked.length} {ranked.length === 1 ? "match" : "matches"} →
+                    </Link>
+                    <Link to="/report/compare" className="btn btn-ghost btn-sm tap">Compare careers →</Link>
+                </div>
+            </section>
+
+            {/* 2. COMBINED CAREERS — the same cards, on the matches page */}
+            {combined.length > 0 && (
+                <section className="report-card">
+                    <h2>Combined careers</h2>
+                    <p className="report-small">These mix two professions, often from different sectors.</p>
+                    <p>{listOf(combined.map((career) => career.profession))}.</p>
+                    <div className="report-card-actions">
+                        <Link to="/report/matches#combined" className="btn btn-ghost btn-sm tap">See them →</Link>
+                    </div>
+                </section>
             )}
 
-            {/* THE FOUR FUNDAMENTALS (owner, Round 18) — what helps in every career, as words */}
+            {/* 3. WHAT SEEMS TO DRIVE YOU */}
+            {myTags.length > 0 && (
+                <section className="report-card">
+                    <h2>What seems to drive you</h2>
+                    <p><strong>{listOf(myTags)}</strong>.</p>
+                </section>
+            )}
+
+            {/* 4. THE FOUR FUNDAMENTALS (owner, Rounds 18 and 19) — only these four, as words. The rest
+                of the profile is on the Profile page, and the report says why. */}
             {Array.isArray(data.fundamentals) && (
                 <details className="report-details report-fundamentals">
                     <summary className="report-summary">
@@ -448,157 +135,16 @@ function ReportPage() {
                         ))}
                     </ul>
                     <p className="report-small"><em>From your own answers, not a comparison with anyone. All four grow with practice.</em></p>
-                </details>
-            )}
-
-            <hr />
-
-            <div className="report-matches-head">
-                <h2>Your matches</h2>
-                {/* Its own page (owner): the student picks 2-3 careers and sees them side by side. */}
-                <Link to="/report/compare" className="btn btn-ghost btn-sm tap">Compare careers →</Link>
-            </div>
-            {framing.runwayNote && <p><em>{framing.runwayNote}</em></p>}
-
-            <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
-
-            <ReportSortMenu
-                primary={primary}
-                onPrimary={setPrimary}
-                secondary={secondary}
-                onSecondary={setSecondary}
-                noCostHint={framing.switchIsDistinct ? framing.switchIntro : null}
-            />
-
-            {/* THE FILTERS sit in plain sight beside the sort, not inside it (Rounds 13 and 18) */}
-            <div className="report-filters">
-                <label className={`blue-collar-toggle${excludeBlueCollar ? " is-on" : ""}`}>
-                    <input
-                        type="checkbox"
-                        checked={excludeBlueCollar}
-                        onChange={(event) => setExcludeBlueCollar(event.target.checked)}
-                    />
-                    <span>
-                        Leave out blue-collar careers
-                        <span className="sort-note"> — some of the most AI-proof careers are blue-collar</span>
-                    </span>
-                </label>
-                {ONLY_FILTERS.map((option) => (
-                    <label key={option.value} className={`blue-collar-toggle${only.includes(option.value) ? " is-on" : ""}`}>
-                        <input type="checkbox" checked={only.includes(option.value)} onChange={() => toggleOnly(option.value)} />
-                        <span>{option.label}</span>
-                    </label>
-                ))}
-            </div>
-
-            {/* THE RANKING EXPLAINS ITSELF, in one place. A student who cannot see why one career
-                sits above another has been handed an opinion with a number on it. */}
-            <details className="report-details">
-                <summary className="report-summary small">
-                    <strong>How this list is ordered</strong>
-                </summary>
-                <p className="report-small">Three things decide where a career sits, in this order:</p>
-                <ol className="report-small">
-                    <li>
-                        <strong>What you have actually done.</strong> Something you have stuck with for
-                        years counts for more than something you picked up recently, and both count for
-                        more than a career that reached you on your profile alone.
-                    </li>
-                    <li>
-                        <strong>Whether it fits how you think and work.</strong> Measured from the
-                        assessment against what the work actually demands.
-                    </li>
-                    <li>
-                        <strong>How strongly you feel about it.</strong> Loving something outranks having
-                        won at it, which outranks saying you are confident about it — what you told us
-                        about yourself is the softest of the three, so it counts least.
-                    </li>
-                </ol>
-                <p className="report-small">From the top of the list to the bottom, that gives five bands:</p>
-                <ul className="report-small report-bands">
-                    {TIER_GROUPS.map((group) => (
-                        <li key={group.label}><strong>{group.label}</strong> — {group.why}</li>
-                    ))}
-                </ul>
-                {framing.switchIsDistinct && (
                     <p className="report-small">
-                        <strong>Switching cost.</strong> Inside each band, careers that would waste less of
-                        what you have already done come first. Choose <em>Best fit, ignoring switching
-                        cost</em> under "Sort your list" to see the strongest fits without that weighting.
+                        Your other qualities are on your <Link to="/profile">Profile</Link>. They aren't here on
+                        purpose: they matter once you've chosen a profession — then we work on the ones that
+                        profession needs and you don't have yet, not the other way round.
                     </p>
-                )}
-                <p className="report-small">
-                    <em>
-                        Nothing here is a verdict on what you are capable of. It is a reading of the
-                        evidence you gave us, and it moves when you give us more.
-                    </em>
-                </p>
-            </details>
-
-            <div className="match-list">
-                {(showAllFor === sortKey ? ordered : ordered.slice(0, TOP_SHOWN)).map((entry, index) => {
-                    const topRank = topIds.indexOf(String(entry.professionId)) + 1
-
-                    return (
-                        <ProfessionCard
-                            key={entry.professionId}
-                            entry={entry}
-                            detail={details[entry.professionId]}
-                            detailsLoaded={detailsLoaded}
-                            journey={journey}
-                            topRank={topRank}
-                            rank={index + 1}
-                            switchCost={primary === "noCost" ? entry.wastedYears : 0}
-                            showAi={secondary === "ai"}
-                            degreeLabel={data.degree || null}
-                            abroadPlans={data.abroadPlans || null}
-                        />
-                    )
-                })}
-            </div>
-
-            {ordered.length > TOP_SHOWN && showAllFor !== sortKey && (
-                <button type="button" className="btn btn-ghost show-rest" onClick={() => setShowAllFor(sortKey)}>
-                    Show the other {ordered.length - TOP_SHOWN} {ordered.length - TOP_SHOWN === 1 ? "career" : "careers"}
-                </button>
-            )}
-
-            {hiddenCount > 0 && (
-                <p className="report-hidden-note">
-                    {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters
-                    {hiddenBlueCollar > 0 && " — some of the most AI-proof careers are blue-collar"}.{" "}
-                    <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
-                </p>
-            )}
-            {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
-
-            {/* COMBINED CAREERS (Round 10) — beside the list, never in it */}
-            <CombinedCareers combined={data.combined} />
-
-            {/* SUPPORT FOR YOUR EXAMS (Round 10) — only for a student who told us about a difficulty,
-                and only once the owner has checked every line against its official source. */}
-            {data.support && (
-                <details className="report-details">
-                    <summary className="report-summary"><strong>Support you are entitled to</strong></summary>
-                    <ul className="support-list">
-                        {data.support.rows.map((row) => (
-                            <li key={row.id}>
-                                <strong>{row.title}.</strong> {row.text}{" "}
-                                <a href={row.url} target="_blank" rel="noreferrer">{row.source}</a>
-                            </li>
-                        ))}
-                    </ul>
-                    <p className="report-small">Rules change — confirm with the exam body when you apply.</p>
                 </details>
             )}
 
-            {/* "Your options at a glance" — the stream map, exam map and what you can move into — left the
-                report (owner, Round 18): every detail now lives inside each career. */}
-
-            {/* Round 11: offered only when a top-ten match is one where studying abroad helps */}
-            <StudyAbroadCard ranked={ranked} details={details} abroadPlans={data.abroadPlans || null} />
-
-            {/* THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
+            {/* 5. WHAT YOU SAID YOU WANTED.
+                THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —
                 but a student who is happy with their list does not have to scroll past all of it.
                 Round 18 (owner): one line for all of them, then for each: a DIRECT match (you named
@@ -754,12 +300,27 @@ function ReportPage() {
                 </details>
             )}
 
-            {/* "What this says about you" — the AI's short lines — is not shown (owner, Round 18). The
-                report is still written and stored; switching it off is in docs/4_v2. */}
+            {/* SUPPORT FOR YOUR EXAMS (Round 10) — only for a student who told us about a difficulty,
+                and only once the owner has checked every line against its official source. */}
+            {data.support && (
+                <details className="report-details">
+                    <summary className="report-summary"><strong>Support you are entitled to</strong></summary>
+                    <ul className="support-list">
+                        {data.support.rows.map((row) => (
+                            <li key={row.id}>
+                                <strong>{row.title}.</strong> {row.text}{" "}
+                                <a href={row.url} target="_blank" rel="noreferrer">{row.source}</a>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="report-small">Rules change — confirm with the exam body when you apply.</p>
+                </details>
+            )}
+
 
             {/* Named from the student's own top matches, so the offer is about the thing they have
                 just read rather than a generic upsell. Renders nothing for the full plan. */}
-            <UpgradeToMentorship user={user} professions={ranked.slice(0, 3).map((entry) => entry.profession)} />
+            <UpgradeToMentorship user={user} professions={top.map((entry) => entry.profession)} />
         </div>
     )
 }

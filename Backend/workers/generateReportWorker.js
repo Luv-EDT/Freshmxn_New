@@ -1,6 +1,6 @@
 // THE generate_report WORKER. Everything between a scored profile and a report the student can read:
 //
-//     resolve activities  →  matchProfile()  →  recommendations  →  compose prose  →  reports
+//     resolve activities  →  matchProfile()  →  recommendations  →  reports
 //
 //     node Backend/workers/generateReportWorker.js              run the worker
 //     node Backend/workers/generateReportWorker.js --once <userId>   one student, then exit
@@ -28,7 +28,11 @@ const mongoose = require("mongoose")
 const scoreProfile = require("../scoring/scoreProfile")
 const matchProfile = require("../matching/matchProfile")
 const { createActivityResolver } = require("../matching/activityResolver")
-const { composeReport, createReportClient, REPORT_VERSION } = require("./reportComposer")
+// NO AI SUMMARY SINCE ROUND 19 (owner: "remove it entirely — stop the call, not just hide it"). The
+// report is the ranking and the data behind each career; no model writes anything for it, so a report
+// costs no model call at all. reportComposer.js stays in the repo as reference, unused.
+// report@4.0.0 = "no prose": the `sections` field is stored empty.
+const REPORT_VERSION = "report@4.0.0"
 
 const Submission = require("../model/submissionsModel")
 const Profile = require("../model/profilesModel")
@@ -128,40 +132,9 @@ const runOne = async (userId) => {
         resolvedActivities,
     })
 
-    // ── the prose, FIRST ─────────────────────────────────────────────────────────────────────
-    // Composed before anything is written, so a compose that fails can never leave a new ranking
-    // live beside the old prose. Nothing below this block runs until the words exist.
     const release = (profile.completeness && profile.completeness.release) || "withhold"
-
-    // NO MODEL CALL FOR A WITHHELD REPORT. Below the release threshold the page shows the
-    // completion prompt instead of findings, so prose written here is never read by anyone — and a
-    // student who abandons after one module is exactly the student most likely to trigger this.
-    // Paying to write a report for every dropout is a cost that scales with the wrong thing.
-    //
-    // The row is still written, with the reason. That matters: it keeps one report per student
-    // rather than an absent row that looks like a failed pipeline, and the moment they finish more
-    // of the assessment a re-run replaces it with the real thing.
-    let composed
-    let composeFailed = false
-
-    if (release === "withhold") {
-        composed = { sections: { withheld: "Not enough of the assessment is complete to say anything useful yet." }, report_version: REPORT_VERSION }
-    } else {
-        try {
-            composed = await composeReport({ profile, match, user, callLlm: createReportClient() })
-        } catch (error) {
-            // A transient fault (network, rate limit) is thrown on, and the job retries. A
-            // PERMANENT one — the model broke a rule twice — will not get better by retrying, and
-            // the report stands on its data without the three lines, so the student gets it now.
-            if (!error.permanent) throw error
-            console.error(`${QUEUE_NAME} ${userId}: prose could not be written (${error.message.slice(0, 160)}) — report saved without it`)
-            await raiseIssue({ user: userId, module: "report", kind: "report_prose_failed", detail: error.message.slice(0, 300) })
-            composed = { sections: {}, report_version: REPORT_VERSION }
-            composeFailed = true
-        }
-    }
-
-    const { sections, report_version } = composed
+    const sections = {}
+    const report_version = REPORT_VERSION
     const now = new Date()
 
     await Recommendation.findOneAndUpdate(
@@ -195,6 +168,10 @@ const runOne = async (userId) => {
                     readAs: resolved.readAs || resolved.canonicalActivity,
                     rowId: resolved.rowId || null,
                     cacheHit: resolved.unrateable ? "unrateable" : resolved.cacheHit,
+                    // the trace (Round 19): the common name, the near-match cosine, the careers it points to
+                    namedAs: resolved.namedAs || null,
+                    nearScore: typeof resolved.nearScore === "number" ? resolved.nearScore : null,
+                    candidates: (resolved.candidateProfessionIds || []).slice(0, 20),
                 })),
             },
         },
@@ -217,8 +194,6 @@ const runOne = async (userId) => {
                 journey: user.journey || null,
                 release,
                 sections,
-                composeFailed,
-                model: process.env.REPORT_MODEL || "claude-sonnet-5",
                 reviewStatus: "unreviewed",
             },
         },

@@ -21,6 +21,7 @@ import InterestForm from "./pages/Interest/InterestForm.js"
 import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
 import ReportPage from "./pages/Report/ReportPage.js"
 import ComparePage from "./pages/Report/ComparePage.js"
+import MatchesPage from "./pages/Report/MatchesPage.js"
 import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
 import HowItWorks from "./pages/Public/HowItWorks.js"
@@ -122,6 +123,12 @@ function App() {
                 <Route path="/report" element={
                     <ProtectedRoute requirePaid={true}>
                         <ReportPage />
+                    </ProtectedRoute>
+                } />
+                {/* Round 19 (owner): every match on its own page; the report is the overview */}
+                <Route path="/report/matches" element={
+                    <ProtectedRoute requirePaid={true}>
+                        <MatchesPage />
                     </ProtectedRoute>
                 } />
                 <Route path="/report/compare" element={

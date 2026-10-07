@@ -131,6 +131,11 @@ const runOne = async (userId, { lastAttempt = false } = {}) => {
         )
         submission.psychometric.storyRecall.free = story.free
         console.log(`${QUEUE_NAME} ${userId} — graded story free recall (${story.meta.score})`)
+        // Round 19 (owner: "why does long-term memory still show 58%?"): a free recall that ends
+        // unmarked leaves long-term memory partial, so the admin is told why
+        if (story.free === null) {
+            await raiseIssue({ user: userId, module: "storyRecall", kind: "story_unmarked", detail: `Story answers couldn't be marked — ${story.meta.unscoreable_reason || "no reason given"}` })
+        }
     }
 
     const profile = scoreProfile(submission.psychometric)

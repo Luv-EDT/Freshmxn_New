@@ -102,7 +102,7 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 { _id: row._id },
                 {
                     $set: { matchStatus: "awaiting_choice", resolution: null, adminNote: "Re-joined the mentor plan after leaving it — waiting for a new choice" },
-                    $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", helpWanted: "", abroadHelpWaitlist: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                    $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", helpWanted: "", abroadHelpWaitlist: "", helpFocus: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
                 },
                 { returnDocument: "after" }
             )
@@ -127,6 +127,7 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 chosenIndustry: row.chosenIndustryCode && industryByCode.get(row.chosenIndustryCode) ? industryByCode.get(row.chosenIndustryCode).name : null,
                 otherRequest: row.otherRequest || null,
                 helpWanted: row.helpWanted || "",
+                helpFocus: row.helpFocus || null,
                 abroadHelpWaitlist: Boolean(row.abroadHelpWaitlist),
                 mentorOnly: isMentorOnly(req.user),
                 options,
@@ -156,6 +157,9 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
 // master's abroad or settling abroad when we offer it. Can be changed any time — it is not part of
 // the one-time choice and does not touch the 20-business-day clock.
 const HELP_MAX = 600
+// Round 19 (owner): for the chosen role — help making it a career, help pursuing it as an interest or
+// passion alongside whatever pays, or both
+const HELP_FOCUS = ["career", "passion", "both"]
 
 router.put("/saveMyHelp", authMiddleware, async (req, res) => {
     try {
@@ -168,17 +172,18 @@ router.put("/saveMyHelp", authMiddleware, async (req, res) => {
 
         const helpWanted = cleanText(req.body.helpWanted, HELP_MAX)
         const abroadHelpWaitlist = req.body.abroadHelpWaitlist === true
+        const helpFocus = HELP_FOCUS.includes(req.body.helpFocus) ? req.body.helpFocus : null
 
         const row = await MentorWaitlist.findOneAndUpdate(
             { user: req.user._id },
-            { $set: { helpWanted, abroadHelpWaitlist }, $setOnInsert: { user: req.user._id, matchStatus: "awaiting_choice" } },
+            { $set: { helpWanted, helpFocus, abroadHelpWaitlist }, $setOnInsert: { user: req.user._id, matchStatus: "awaiting_choice" } },
             { upsert: true, returnDocument: "after" }
         )
 
         return res.status(200).json({
             success: true,
             message: "Saved — your mentor will see this",
-            data: { helpWanted: row.helpWanted, abroadHelpWaitlist: row.abroadHelpWaitlist },
+            data: { helpWanted: row.helpWanted, helpFocus: row.helpFocus || null, abroadHelpWaitlist: row.abroadHelpWaitlist },
         })
 
     } catch (error) {

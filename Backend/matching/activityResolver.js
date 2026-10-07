@@ -397,9 +397,12 @@ const createActivityResolver = ({
         await ActivityFactors.updateOne({ _id: rowId }, { $push: { exampleRaw: { $each: [], $slice: -EXAMPLES_KEPT } } })
     }
 
-    const hit = (row, { key, activity, canonicalActivity }, cacheHit) => ({
+    // `trace` (Round 19) is what the admin's activity trace shows: the common name the naming step
+    // gave the wording, and for a near hit the cosine it was folded at
+    const hit = (row, { key, activity, canonicalActivity }, cacheHit, trace = {}) => ({
         key, activity, canonicalActivity, readAs: row.canonicalActivity, rowId: row._id || null,
         factors: row.factors, candidateProfessionIds: row.candidateProfessionIds || [], cacheHit,
+        namedAs: trace.namedAs || null, nearScore: typeof trace.nearScore === "number" ? trace.nearScore : null,
     })
 
     // rows come from Program 1's pList: [{ activity, key, ... }]. Each result also says what the
@@ -438,7 +441,7 @@ const createActivityResolver = ({
             const named = item.canonicalActivity === item.original ? null : await ActivityFactors.findOne({ canonicalActivity: item.canonicalActivity, rubricVersion }).lean()
             if (named) {
                 await remember(named._id, item.said, { $inc: { timesUsed: 1 } })
-                resolved.push(hit(named, { key: item.row.key, activity: item.row.activity, canonicalActivity: item.original }, "named"))
+                resolved.push(hit(named, { key: item.row.key, activity: item.row.activity, canonicalActivity: item.original }, "named", { namedAs: item.canonicalActivity }))
                 continue
             }
             left.push(item)
@@ -463,7 +466,7 @@ const createActivityResolver = ({
                     $inc: { timesUsed: 1 },
                     $push: { folds: { $each: [{ text: original, score: Math.round(near.score * 1000) / 1000, at: new Date() }], $slice: -FOLDS_KEPT } },
                 })
-                resolved.push(hit(near, { key: row.key, activity: row.activity, canonicalActivity: original }, "near"))
+                resolved.push(hit(near, { key: row.key, activity: row.activity, canonicalActivity: original }, "near", { namedAs: canonicalActivity, nearScore: Math.round(near.score * 1000) / 1000 }))
                 continue
             }
 
@@ -473,7 +476,7 @@ const createActivityResolver = ({
             if (scored.unrateable) {
                 // Kept out of the cache on purpose: "stuff" is not an activity, and storing it
                 // would return the same non-answer to every student who writes something vague.
-                resolved.push({ key: row.key, activity: row.activity, canonicalActivity: original, readAs: canonicalActivity, rowId: null, factors: {}, candidateProfessionIds: [], unrateable: true, reason: scored.reason })
+                resolved.push({ key: row.key, activity: row.activity, canonicalActivity: original, readAs: canonicalActivity, namedAs: canonicalActivity, rowId: null, factors: {}, candidateProfessionIds: [], unrateable: true, reason: scored.reason })
                 continue
             }
 
@@ -500,7 +503,7 @@ const createActivityResolver = ({
                 { upsert: true, new: true }
             )
 
-            resolved.push({ key: row.key, activity: row.activity, canonicalActivity: original, readAs: canonicalActivity, rowId: (saved && saved._id) || null, factors: scored.factors, candidateProfessionIds, cacheHit: "miss" })
+            resolved.push({ key: row.key, activity: row.activity, canonicalActivity: original, readAs: canonicalActivity, namedAs: canonicalActivity, rowId: (saved && saved._id) || null, factors: scored.factors, candidateProfessionIds, cacheHit: "miss" })
         }
 
         return resolved

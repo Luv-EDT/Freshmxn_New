@@ -99,6 +99,11 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
   (`POST /submissions/saveInterest`), so closing the tab loses nothing. College students also tell us
   their degree and subject, working people their degree and field — so the report can say "your
   B.Com already counts".
+- **"← Dashboard"** (Round 19) is always in sight on the interest form, the assessment, the report, the
+  matches page, compare and the mentor page — those pages no longer show the four-step journey bar (it
+  stays on your dashboard). On the interest form it asks first: **Save and go**, **Leave without saving** or
+  **Stay**. Inside an assessment questionnaire it offers to save first; inside a test that saves itself it
+  warns that leaving mid-test ends it.
 - **The stages open in order** (Round 13). You can always go back, but you can't jump ahead, or press
   Finish, while **any** stage you'd skip past has a required answer missing (Round 17: the form checks
   every stage in between, not just the one you're on, and a typed link can't skip either). A box names
@@ -212,24 +217,38 @@ you wait at the desk**. Instead:
      4. **careers that join two of yours** (`data/combined_careers.json`, 42 hand-checked ones such as
         Sports Journalist or Wildlife Photographer): each has two sides, and if your list or your own
         activities touch both, it is shown in its own short section;
-   - **writes your report** in plain words with Claude (`reportComposer.js`), with rules about
-     what it must never say. If the reply breaks a rule it is asked once more, then the job stops
-     instead of paying again and again;
+   - **no AI writes anything for the report** (Round 19, owner: "remove the AI summary entirely").
+     The report is the ranking plus the data behind each career, so building it costs no AI call
+     (`report@4.0.0`). `reportComposer.js` stays in the repo as reference, unused;
    - **files it** in the cabinet (`reports`, `recommendations`).
 5. **Meanwhile your report page checks every 5 seconds** (`GET /reports/getMyReport`) and shows
    "preparing" until the report is there — then shows it.
 
-On the report you see **one list of careers** — the first **three** of the order you've chosen, each
-with its **rank number** (1, 2, 3…) on the left, and a **"Show the other N careers"** button for the rest
-(choosing a new order starts again at three). Just the names, with your top 3 coloured, and a
-**Blue-collar** label on hands-on trade careers. Near the top, **"The four fundamentals"** shows the four
-qualities that help in every career — confidence, sticking with things, picking up new material, deciding
-with good information — each as a word (High / Medium / Low), what it means and why it matters.
+**The report (`/report`) is a short overview** (Round 19, owner), in this order: **"Your report"** at the
+top centre; **Your matches** — your top three, with "See all N matches" and "Compare careers"; **Combined
+careers** — the ones that mix two professions, often from different sectors; **What seems to drive you**;
+**The four fundamentals** — confidence, sticking with things, picking up new material, deciding with good
+information — each as a word (High / Medium / Low), what it means and why it matters, with a note that your
+other qualities are on your Profile *on purpose*: they matter once you've chosen a profession, and then we
+work on the ones it needs; and **What you said you wanted**.
+
+**"See all" opens `/report/matches`**, the whole list: the first **three** of the order you've chosen,
+each with its **rank number** (1, 2, 3…) on the left, and a **"Show the other N careers"** button for the
+rest (choosing a new order starts again at three). Just the names, with your top 3 coloured, and a
+**Blue-collar** label on hands-on trade careers. The combined careers are at the bottom of this page in the
+**same card** as every other career (what it is, why we chose it, why it fits, how people get there).
+Above the list, two plain lines say which of your top ten have **good prospects for studying abroad** and
+which have **good chances of working abroad** (careers that travel well) — each only when it names something.
 
 Tap a career to open it (Round 18 — everything about a career lives inside it, in one layout):
 *what it is* (with its **job roles**, the ones that suit you first, and **where the work happens**, each
-folded), *why it fits you*, **what to work on** (the qualities this work leans on where you are well below
-what it asks — names only, never a number), and **your next 12 months**. Then folded parts, each split
+folded), **why we chose it for you** (one line from what put it in your list: "Something you've kept up
+for years — long distance running — leads here, and you love it; it fits how you think and work"), *why it
+fits you* (each strength named once), **what to work on** (the qualities this work leans on where you are well below
+what it asks — names only, never a number), and **your next 12 months**. A **college or working student** is never told to start a bachelor's — their
+next step is the one after the first degree, unless the career needs its own degree from the start — and
+their road leaves out the school steps and the Class 11–12 subjects (Round 19). A master's that isn't
+required reads "**usually** not needed". Then folded parts, each split
 into the questions a student asks: **the road** (how long and the path · subjects in Class 11–12 — *per
 route* where routes differ, e.g. BCA takes any stream but B.Tech needs Physics, Chemistry and Maths · do I
 need a degree? · can I move into this from another course or job? · exams · is there a deadline? · where to
@@ -249,11 +268,11 @@ there: an NIRF rank where there is one); and whether **studying abroad** helps f
 
 **Studying and working abroad** (inside the road) says whether studying abroad helps for that career
 (`data/abroad.json`) and, if you said you might go abroad, how the career travels (`data/abroad_work.json`:
-*travels well*, *a licence first*, or *India-based*). There are no foreign links: specialist advice comes
-later — "when you reach that stage, we'll connect you with a consultant" (owner, Round 18). It never ranks
-careers and never shows foreign pay. If studying abroad helps for one of your top ten careers, a small
-**"A master's abroad"** fold lets you join a **waitlist** for that help in a future version — only if you
-tick the box agreeing to be contacted.
+*travels well*, *a licence first*, or *India-based*). There are no foreign links. Help with studying
+or working abroad comes in a future version, so this part has a **waitlist**: tick the box agreeing to be
+contacted and press "Join the waitlist" (Round 19, owner — it replaced "we'll connect you with a
+consultant", and the report-level "A master's abroad" card is gone). It never ranks careers and never
+shows foreign pay.
 
 **"What you said you wanted"** answers every career you named: one line for all ("every career you named
 is on our list unless its demand is falling and the pay is weak"), then for each a **direct match** (it is
@@ -265,14 +284,16 @@ and still counts in your matches.
 shows a banner, **"Update my report"** — it never rebuilds by itself. Updating (or resubmitting your
 assessment) asks one question: are you still heading the same way, or looking for something new?
 
-**Three filters** sit beside **"Sort your list"**: *Leave out blue-collar careers*, *Core engineering
-only* and *Studying abroad helps*. All are off until you turn them on, and the page always says how many
+**Three filters** sit beside **"Sort your list"** on the matches page: *Leave out blue-collar careers\**
+(with the note "\* Some of the most AI-proof careers are blue-collar"), *Core engineering only* and
+*Studying abroad helps*. All are off until you turn them on, and the page always says how many
 careers they hid, with one tap to show them again. "Sort your list" switches between **Best match** (our
-ranking) and **Best fit, ignoring switching cost**, and can then order by pay, demand, speed or AI exposure
+ranking) and **Best fit, ignoring switching cost** — which says what it changed: the (at most three)
+careers it adds that our ranking leaves out because of what switching would cost you, or "same careers,
+ordered by fit alone" — and can then order by pay, demand, speed or AI exposure
 (with its value shown). **"Compare careers →"** opens a page where you pick 2–3 of the careers recommended to
 you (nothing is picked for you) and see them side by side, with the same plain questions, "what to work
-on" and "worth knowing". The AI still writes three short lines about you, but since Round 18 the report
-does not show them (owner).
+on" and "worth knowing".
 
 **Your profile** shows your psychometric results in six groups — the four fundamentals, personality ("how
 you tend to react to the world"), cognitive abilities, areas you feel drawn to, uncertainty tolerance (a
@@ -280,6 +301,11 @@ position, never high or low) and ways you solve problems — each with what it m
 and "Partial · N%" where only part of it could be measured (`Backend/utils/factorGuide.js`). If you answer
 the next-day story questions **after** pressing Submit, your profile is scored again with them and your
 report rebuilt (Round 18) — before, long-term memory stayed missing and three factors said "Partial".
+Long-term memory counts 12 points: 7 from the story's short questions and 5 from what you write in your own
+words. If those written answers can't be marked (the marking call failed for good, or the answer was
+off-topic), long-term memory stays partial — e.g. 58% is 7 of 12 — and since Round 19 the admin gets an
+**Assessment issue** "Story answers couldn't be marked" with the reason, and sees it beside the student's
+activity trace.
 
 ---
 
@@ -318,6 +344,12 @@ finds changes the website until the admin approves it.
 
 ## 7. The mentor part
 
+- **Contribution and interest** (Round 19, owner) open the page: everything we help with serves one of
+  two things — **contribution** (earning, supporting your family, standing on your own feet: the base of
+  Maslow's hierarchy) and **interest**, with passion as its strongest form (what gives meaning whether or
+  not it pays: the upper tiers). So the page asks, **for the role you choose, what help do you want?** —
+  *career help* (making it my work), *interest / passion help* (pursuing it for meaning, alongside whatever
+  pays) or *both* (`helpFocus`, shown to the admin in Mentor Matches).
 - **Choosing your mentor's role** (students on a mentor plan): the job roles in each career are listed by
   how well they fit you, and "Suits you" marks the best fits (careers without distinct role types list
   their roles as one group). Under **"What do you want from your mentor?"** the page lists what the

@@ -34,6 +34,11 @@ const ITEMS_FILE = path.join(ASSESSMENT_DIR, "ipip50Items.js")
 const MODULE_ITEMS_FILE = path.join(ASSESSMENT_DIR, "moduleItems.js")
 const SART_FILE = path.join(ASSESSMENT_DIR, "sartTask.js")
 const REPORT_DIR = path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report")
+// Round 19 (owner): the report is an overview (ReportPage.js) and the full list is its own page
+// (MatchesPage.js); the shared data, status screens and framing moved to their own files. The checks
+// that read "the report page" read all of them together.
+const REPORT_PAGE_FILES = ["ReportPage.js", "MatchesPage.js", "useReportData.js", "ReportStatus.js", "reportFraming.js"]
+const readReportPage = () => REPORT_PAGE_FILES.map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
 
 // Loads the REAL sartTask.js and runs it.
 //
@@ -1882,7 +1887,7 @@ const fixtures = [
         // worth-the-switch career, ordered on raw fit, and that no order ever drops anything.
         run: () => {
             const { buildList } = loadReportFilters()
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
             const ranked = [
@@ -1989,7 +1994,7 @@ const fixtures = [
         // row. Every order shows every career.
         run: () => {
             const filters = loadReportFilters()
-            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = readReportPage()
 
             const problems = []
 
@@ -2036,7 +2041,7 @@ const fixtures = [
         // pay reorders the rows but not `rankedPosition`, so a student would count to the fourth row
         // and find something else. Stated as a rank on match strength it is true under every sort.
         run: () => {
-            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = readReportPage()
 
             const problems = []
             if (/in your list above/.test(page)) {
@@ -2231,7 +2236,7 @@ const fixtures = [
         // surface professions that are NOT in the ranking (`alreadyRanked: false` is the common
         // case). The entries most worth reading were exactly the ones with nothing to read.
         run: () => {
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
 
@@ -2275,7 +2280,7 @@ const fixtures = [
         // ones, so the explanation cannot drift from the sort it describes.
         run: () => {
             const { TIERS } = require("../../matching/tiers")
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
 
@@ -2313,7 +2318,7 @@ const fixtures = [
         // "what to do next in 12 months should be inside each profession"). The report-level roll-up
         // of the top three went; each card's own steps already named the same path step and exams.
         run: () => {
-            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = readReportPage()
             const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
             const plan = fs.readFileSync(path.join(REPORT_DIR, "reportPlan.js"), "utf8")
 
@@ -2383,7 +2388,7 @@ const fixtures = [
         // worth anything if the page stops doing its own version — two translations means the one
         // that runs is whichever the markup happens to reach first.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
             const code = source.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
 
             return /factor\.replace\(|\.factor\.replace/.test(code)
@@ -2398,7 +2403,7 @@ const fixtures = [
         // handles three of them shows a student their stated ambition and then says nothing about
         // it, which is the one thing §4D exists to prevent.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const missing = ["ranked", "blocked", "unranked", "unmatched"]
                 .filter((outcome) => !source.includes(`signal.outcome === "${outcome}"`))
@@ -2412,7 +2417,7 @@ const fixtures = [
         // §4D: "for a blocked one, which door is shut and what the nearest reachable version is".
         // A bare "not open to you" leaves a sixteen-year-old with a closed door and nowhere to go.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
             const block = source.split('signal.outcome === "blocked"')[1]
 
             if (!block) return "the blocked branch is gone"
@@ -2433,7 +2438,7 @@ const fixtures = [
         // lists are the SAME ranking. Presenting them as a contrast would stage a distinction the
         // maths did not make — and imply the student has already committed to something.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
             if (!/switchIsDistinct/.test(source)) problems.push("the journey framing is gone — every stage now gets the same report")
@@ -3409,7 +3414,7 @@ const fixtures = [
             if (/enqueue/.test(getMyReport)) problems.push("getMyReport queues a rebuild")
             if (!/updateIsAvailable\(report, recommendation\)/.test(update)) problems.push("updateMyReport does not check there is something to update")
             if (!/directionUpdate\(\{ via: "update"/.test(update)) problems.push("updateMyReport does not ask which way the student is heading")
-            const page = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const page = readReportPage()
             if (/status === "stale"/.test(page)) problems.push("the page still waits for an automatic rebuild")
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -3812,8 +3817,9 @@ const fixtures = [
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8")
             if (!/req\.body\.consent !== true/.test(router)) problems.push("the route does not refuse without consent")
             if (!/policyVersion: POLICY_VERSION/.test(router)) problems.push("the policy version is not stored with the consent")
-            const card = fs.readFileSync(path.join(REPORT_DIR, "StudyAbroadCard.js"), "utf8")
-            if (!/disabled=\{!consent/.test(card)) problems.push("the Connect button works before the box is ticked")
+            // Round 19 (owner): the report-level card went; the waitlist sits inside each career's abroad part
+            const card = fs.readFileSync(path.join(REPORT_DIR, "AbroadWaitlist.js"), "utf8")
+            if (!/disabled=\{!consent/.test(card)) problems.push("the waitlist button works before the box is ticked")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -3934,7 +3940,7 @@ const fixtures = [
             if (!layered.abroad || layered.abroad.need !== "helps" || layered.studyFacts.abroad.status !== "checked") problems.push("an approved abroad change did not reach the page")
             if (validateFactChange({ field: "abroad", proposed: { need: "helps", stage: "masters", why: "A real reason here" } }, { abroad: null }, []) !== null) problems.push("a change with no source was kept")
             // Round 13, owner: a label that says where a fact came from tells a student nothing they can use
-            const pages = ["ProfessionCard.js", "ComparePage.js", "ReportPage.js"].map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
+            const pages = ["ProfessionCard.js", "ComparePage.js", "CombinedCareers.js", ...REPORT_PAGE_FILES].map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
             const shown = ["Our estimate", "Checked against the official rules", "Based on published information", "Pay figures", "(estimate)", "our suggestion — check it yourself", "Checked {"].filter((label) => pages.includes(label))
             if (shown.length > 0) problems.push(`the report still shows provenance labels: ${shown.join(", ")}`)
             return problems.length > 0 ? problems.join("; ") : null
@@ -4673,7 +4679,7 @@ const fixtures = [
             // what reaches the screen — comments may still name what was removed
             const read = (name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
             const card = read("ProfessionCard.js")
-            const page = read("ReportPage.js")
+            const page = REPORT_PAGE_FILES.map(read).join("\n")
             const compare = read("ComparePage.js")
             const combined = read("CombinedCareers.js")
             const all = [card, page, compare, combined].join("\n")
@@ -4684,13 +4690,15 @@ const fixtures = [
             if (!/<Section title="What to work on">/.test(card) || !/What to work on/.test(compare)) problems.push("what to work on is missing")
             if (!/"Worth knowing"/.test(compare)) problems.push("compare has no Worth knowing row")
             if (/official page ↗|recognition\.url/.test(card)) problems.push("the card still links to foreign pages")
-            if (!/we'll connect you with a consultant/.test(card)) problems.push("the abroad part has no consultant note")
+            // Round 19 (owner): "we'll connect you with a consultant" became a waitlist
+            if (!/<AbroadWaitlist professionId=\{entry\.professionId\} \/>/.test(card)) problems.push("the abroad part has no waitlist")
             if (!/subjectRoutes/.test(card)) problems.push("the card does not show subjects per route")
             if (/journeyHeadline|mastersOptions/.test(page)) problems.push("a report-level overview is back")
             if (!/data\.fundamentals/.test(page)) problems.push("the fundamentals are not on the report")
             if (!/Not a career on our list/.test(page) || !/signal\.readAs/.test(page) || !/Direct match/.test(page) || !/Indirect match/.test(page)) problems.push("the aspiration copy is not the owner's")
-            const abroadCard = read("StudyAbroadCard.js")
-            if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad card is not a waitlist")
+            const abroadCard = read("AbroadWaitlist.js")
+            if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad help is not a waitlist")
+            if (fs.existsSync(path.join(REPORT_DIR, "StudyAbroadCard.js"))) problems.push("the report-level study-abroad card is back")
             if (!/kind: "waitlist"/.test(fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8"))) problems.push("the waitlist is not recorded as such")
             return problems.length > 0 ? problems.slice(0, 8).join("; ") : null
         },
@@ -4755,6 +4763,169 @@ const fixtures = [
             if (!/Job roles are listed by how well they fit you/.test(page)) problems.push("\"Suits you\" is not explained")
             if (!/dataIndex: "helpWanted"/.test(admin) || !/dataIndex: "abroadHelpWaitlist"/.test(admin)) problems.push("the admin does not see what the student asked for")
             if (/optional/i.test(page.replace(/\/\/.*$/gm, ""))) problems.push("the page says \"optional\"")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 19 — why we chose it, in one line from what put it there; strengths named once",
+        run: () => {
+            const { whyChosen, whyFits } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const problems = []
+            const said = (entry) => whyChosen(entry) || ""
+            if (!/^You named it yourself, and it fits how you think and work\.$/.test(said({ namedDirectly: true, comfort: true }))) problems.push(`named: ${said({ namedDirectly: true, comfort: true })}`)
+            if (!/kept up for years — running — leads here, and you love it; it fits/.test(said({ list: "A", passion: true, comfort: true, matchedBy: [{ activity: "running" }] }))) problems.push("a long-kept passion is not said so")
+            if (!/Something you do now — chess — leads here, and you've achieved something in it; it is a stretch/.test(said({ list: "B", achievement: true, comfort: false, matchedBy: [{ activity: "chess" }] }))) problems.push("a current achievement is not said so")
+            if (!/on your profile alone/.test(said({ list: "C", comfort: true }))) problems.push("a profile-only match does not say so")
+            if (whyChosen({ list: "C", comfort: false }) !== null) problems.push("a profile-only match that doesn't fit still gets a reason")
+            if (/\d/.test(said({ list: "A", passion: true, comfort: true, comfortScore: 0.81, matchedBy: [{ activity: "x" }] }))) problems.push("the reason carries a number")
+            // combined careers merge both sides' strengths — "reasoning, reasoning" (owner, Round 19)
+            const twice = whyFits({ supportingFactors: [{ factor: "reasoning", held: 8 }, { factor: "focus", held: 7 }, { factor: "reasoning", held: 8 }] }).strengths
+            if (twice.length !== new Set(twice).size) problems.push(`a strength is named twice: ${twice.join(", ")}`)
+            const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            if (!/<Section title="Why we chose it for you">/.test(card)) problems.push("the card has no 'Why we chose it for you'")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 19 — a college or working student is never told to start a bachelor's (unless the career needs its own) and never sees school steps",
+        run: () => {
+            const { roadFrom } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const source = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
+            const anchors = source.match(/const STAGE_ANCHORS = \{[\s\S]*?\n\}/)
+            // eslint-disable-next-line no-new-func
+            const levelPath = new Function(`${anchors[0]}\n${source.match(/export const levelPath = [\s\S]*?\n\}/)[0].replace("export const", "const")}\nreturn levelPath`)()
+            const DEGREE = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+            const problems = []
+            require("../../data/ALL-professions.json").professions.forEach((profession) => {
+                const all = levelPath(profession.path_to_entry || [])
+                ;[["college", 2], ["early_professional", 3]].forEach(([journey, level]) => {
+                    const { steps, nextIndex } = roadFrom(all, journey, level, profession.mid_stream_entry)
+                    if (steps.some((step) => step.level < 2)) problems.push(`${profession.id}: a ${journey} student is shown a school step`)
+                    const next = nextIndex >= 0 ? steps[nextIndex] : null
+                    if (next && DEGREE.includes(next.stage) && profession.mid_stream_entry !== "restart_undergrad") problems.push(`${profession.id}: a ${journey} student's next step is a first degree`)
+                })
+                const school = roadFrom(all, "class11_12", 1, profession.mid_stream_entry)
+                if (school.steps.length !== all.length) problems.push(`${profession.id}: a school student's road lost steps`)
+            })
+            if (!/subjects: !pastSchool/.test(source)) problems.push("college and working students still see the Class 11–12 subjects fold")
+            if (!/"Usually not needed/.test(source)) problems.push("the master's line still says 'not needed'")
+            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 19 — studying and working abroad across the top ten; help is a waitlist, not a report-level card",
+        run: () => {
+            const { abroadLines } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const ranked = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"].map((id) => ({ professionId: id, profession: id.toUpperCase() }))
+            const details = {
+                a: { abroad: { need: "helps" }, goingAbroad: { portability: "travels_well" } },
+                b: { abroad: null, goingAbroad: { portability: "requalify" } },
+                c: { abroad: { need: "often_needed" }, goingAbroad: { portability: "india_based" } },
+                k: { abroad: { need: "helps" }, goingAbroad: { portability: "travels_well" } },
+            }
+            const lines = abroadLines(ranked, details)
+            const problems = []
+            if (lines.study.join() !== "A,C") problems.push(`study abroad: ${lines.study.join()}`)
+            if (lines.work.join() !== "A") problems.push(`work abroad: ${lines.work.join()}`)
+            const empty = abroadLines(ranked, {})
+            if (empty.study.length + empty.work.length !== 0) problems.push("lines without data")
+            const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
+            if (!/Good prospects for studying abroad/.test(matches) || !/Good chances of working abroad/.test(matches)) problems.push("the matches page does not show the two lines")
+            if (/StudyAbroadCard/.test(readReportPage())) problems.push("the report-level study-abroad card is back")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 19 — the report is an overview in the owner's order; every match, sort and filter is on /report/matches",
+        run: () => {
+            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
+            const app = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "App.js"), "utf8")
+            const problems = []
+            if (!/path="\/report\/matches"/.test(app)) problems.push("no /report/matches route")
+            if (!/className="report-title">Your report/.test(page)) problems.push("'Your report' is not the centred title")
+            const order = ["<h2>Your matches</h2>", "<h2>Combined careers</h2>", "<h2>What seems to drive you</h2>", "<strong>The four fundamentals</strong>", "<strong>What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
+            if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push(`the overview is not in the owner's order: ${order.join(",")}`)
+            if (!/to="\/report\/matches"/.test(page)) problems.push("the overview does not open the matches page")
+            if (!/Your other qualities are on your/.test(page)) problems.push("the fundamentals do not say where the rest is, and why")
+            if (/<ReportSortMenu|buildList\(/.test(page)) problems.push("the sort or the list is still on the overview")
+            if (!/Leave out blue-collar careers\*/.test(matches) || !/\* Some of the most AI-proof careers are blue-collar\./.test(matches)) problems.push("the blue-collar filter has no asterisk and side note")
+            if (!/added that our main ranking leaves out/.test(matches) || !/Same careers, ordered by how well they fit you alone/.test(matches)) problems.push("'ignoring switching cost' does not say what it changed")
+            const combined = fs.readFileSync(path.join(REPORT_DIR, "CombinedCareers.js"), "utf8")
+            if (!/<ProfessionCard[\s\S]*?combined\s/.test(combined) || !/mix two professions/.test(combined)) problems.push("combined careers are not the same card with the note")
+            if (/composeReport\(|require\("\.\/reportComposer"\)/.test(fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8"))) problems.push("the report worker still calls the model")
+            if (!/^report@4\./.test(require("../generateReportWorker").REPORT_VERSION)) problems.push("the report version does not say 'no prose'")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 19 — '← Dashboard' on every page of the work; no journey bar inside it; a form asks before leaving",
+        run: () => {
+            const pages = path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages")
+            const read = (...parts) => fs.readFileSync(path.join(pages, ...parts), "utf8")
+            const problems = []
+            ;[["Interest", "InterestForm.js"], ["Assessment", "AssessmentShell.js"], ["Report", "ReportPage.js"], ["Report", "MatchesPage.js"], ["Report", "ComparePage.js"], ["Report", "ReportStatus.js"], ["User", "Mentorship.js"]].forEach((parts) => {
+                if (!/<BackToDashboard/.test(read(...parts))) problems.push(`${parts[1]} has no Dashboard button`)
+            })
+            ;[["Assessment", "AssessmentShell.js"], ...["ReportPage.js", "MatchesPage.js", "ReportStatus.js", "ComparePage.js"].map((name) => ["Report", name])].forEach((parts) => {
+                if (/<JourneyProgress/.test(read(...parts))) problems.push(`${parts[1]} still shows the journey bar`)
+            })
+            const form = read("Interest", "InterestForm.js")
+            if (!/onLeave=\{\(\) => setLeaveOpen\(true\)\}/.test(form) || !/Save and go/.test(form) || !/Leave without saving/.test(form)) problems.push("the interest form does not ask before leaving")
+            if (!/then: "\/dashboard"/.test(form)) problems.push("'Save and go' does not save first")
+            const shell = read("Assessment", "AssessmentShell.js")
+            if (!/onLeave=\{\(\) => setLeaveOpen\(true\)\}/.test(shell) || !/Save and go/.test(shell)) problems.push("the assessment does not ask before leaving")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 19 — mentor page: contribution and interest up front; the help wanted is career, passion or both; the box sits under its label",
+        run: async () => {
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
+            const model = require("../../model/mentorWaitlistModel")
+            const mongoose = require("mongoose")
+            const page = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "User", "Mentorship.js"), "utf8")
+            const admin = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Admin", "MentorMatchesList.js"), "utf8")
+            const problems = []
+            if (!/const HELP_FOCUS = \["career", "passion", "both"\]/.test(router) || !/HELP_FOCUS\.includes\(req\.body\.helpFocus\)/.test(router)) problems.push("helpFocus is not whitelisted")
+            const validate = (helpFocus) => new model({ user: new mongoose.Types.ObjectId(), helpFocus }).validate().then(() => null, (error) => error)
+            const bad = await validate("anything")
+            if (!bad || !bad.errors.helpFocus) problems.push("the model accepts any help focus")
+            if (await validate("both")) problems.push("the model refuses 'both'")
+            if (!/Maslow/.test(page) || !/<strong>Contribution<\/strong>/.test(page) || !/<strong>Interest<\/strong>/.test(page)) problems.push("the contribution and interest framing is missing")
+            if (!/Career help/.test(page) || !/Interest \/ passion help/.test(page) || !/For the role you choose, what help do you want\?/.test(page)) problems.push("the help choice is missing")
+            if (!/dataIndex: "helpFocus"/.test(admin)) problems.push("the admin does not see the help focus")
+            const css = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "styles", "app.css"), "utf8")
+            if (!/\.mentor-help \.mentor-help-label \{\s*display: block;/.test(css)) problems.push("the label does not sit above the box")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 19 — a story free recall that can't be marked tells the admin why; the admin trace follows each activity to where it landed",
+        run: () => {
+            const problems = []
+            const worker = fs.readFileSync(path.join(__dirname, "..", "scoreProfileWorker.js"), "utf8")
+            if (!/story\.free === null[\s\S]{0,200}kind: "story_unmarked"/.test(worker)) problems.push("an unmarked free recall raises no issue")
+            if (!/unscoreable_reason/.test(worker.split('kind: "story_unmarked"')[1] || "")) problems.push("the issue does not carry the reason")
+            const { traceReadings } = require("../../Routers/dataUpdatesRouter")
+            const trace = traceReadings(
+                [{ said: "I ran marathons", namedAs: "long distance running", cacheHit: "near", nearScore: 0.93, readAs: "running", candidates: ["spt-athlete", "spt-coach", "hlt-dietitian"] }],
+                { ranked_professions: [{ professionId: "spt-coach", rankedPosition: 4, tier: 6 }], filtered: [{ professionId: "hlt-dietitian", reason: "needs biology" }] }
+            )[0]
+            if (trace.nearScore !== 0.93 || trace.cache !== "near" || trace.namedAs !== "long distance running") problems.push(`the near hit is not traced: ${JSON.stringify(trace)}`)
+            const landed = Object.fromEntries(trace.careers.map((career) => [career.id, career.landed]))
+            if (landed["spt-coach"] !== "#4 (tier 6)") problems.push(`a ranked career does not show its place: ${landed["spt-coach"]}`)
+            if (landed["spt-athlete"] !== "not in the list") problems.push("an unranked career is not marked")
+            if (!/^ruled out — needs biology/.test(landed["hlt-dietitian"] || "")) problems.push("a ruled-out career does not say why")
+            const css = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "styles", "app.css"), "utf8")
+            if (!/hr\.story-end \{/.test(css) || !/<hr className="story-end" \/>/.test(fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "StoryRecall.js"), "utf8"))) problems.push("no space between the story and its instruction")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

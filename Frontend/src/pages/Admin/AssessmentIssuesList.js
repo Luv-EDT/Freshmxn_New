@@ -22,6 +22,7 @@ const KIND_LABELS = {
     result_disputed: "Student disputes a test score",
     student_reported: "Student reported a problem",
     left_mid_test: "Left or refreshed mid-test",
+    story_unmarked: "Story answers couldn't be marked",
 }
 
 function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {

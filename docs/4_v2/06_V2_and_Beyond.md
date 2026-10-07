@@ -70,12 +70,6 @@ and `hasData` in `Report/reportFilters.js` are fixture-covered and unused. Eithe
 - bring them back as a "refine" drawer, if students ask; or
 - delete them together with their fixtures.
 
-## The AI summary — switch it off or reuse it
-Since Round 18 the report no longer shows "What this says about you" (owner), but `generate_report` still
-asks Claude for the three lines on every report (one call each). Either stop the call (`reportComposer.js`
-and the release check that reads its sections) or use the lines somewhere the owner wants them, such as the
-mentor's brief.
-
 ## Fit for every job role
 "What to work on" and "Suits you" use the career's ratings plus the role groups that `role_spread` names
 (144 of 223 careers). Rating each job role on its own would let every role be sorted by fit, not only the

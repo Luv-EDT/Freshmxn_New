@@ -4,6 +4,7 @@ import { useSelector } from "react-redux"
 import { Modal, message } from "antd"
 import dayjs from "dayjs"
 import Navbar from "../Navbar"
+import BackToDashboard from "../BackToDashboard"
 import MentorRolloverPolicy from "../Public/MentorRolloverPolicy"
 import { getMyWaitlist, chooseProfession, saveMyHelp } from "../../apiCall/mentorWaitlistApi"
 import CareerRolePicker, { pickerComplete, pickerSummary } from "../CareerRolePicker"
@@ -29,18 +30,40 @@ const SESSION_TOPICS = [
 ]
 const HELP_MAX = 600
 
+// "For the role you choose, what help do you want?" (owner, Round 19)
+const HELP_FOCUS = [
+    { value: "career", label: "Career help", hint: "making it my work" },
+    { value: "passion", label: "Interest / passion help", hint: "pursuing it for meaning, alongside whatever pays" },
+    { value: "both", label: "Both", hint: "" },
+]
+
+// CONTRIBUTION AND INTEREST (owner, Round 19), said up front: everything we help with serves one of
+// the two, and the student says which they want for their role.
+const Framing = () => (
+    <section className="mentor-framing">
+        <p>
+            Everything we do serves one of two things. <strong>Contribution</strong> — earning, supporting your
+            family, standing on your own feet — is the base of Maslow's hierarchy: safety and security.{" "}
+            <strong>Interest</strong>, with passion as its strongest form, is what gives life meaning whether or
+            not it pays — the upper tiers: belonging, esteem, becoming yourself.
+        </p>
+        <p>We help with careers, and with how to carry something you love forward in life.</p>
+    </section>
+)
+
 // "What do you want from your mentor?" — the session list, an open box for anything specific, and a
 // tick box for help with a master's abroad or settling abroad, which a later version will offer.
 // Saved on its own, any time; it never touches the choice or the 20-business-day clock.
 function HelpWanted({ waitlist, onSaved }) {
     const [text, setText] = useState(waitlist.helpWanted || "")
     const [abroad, setAbroad] = useState(Boolean(waitlist.abroadHelpWaitlist))
+    const [focus, setFocus] = useState(waitlist.helpFocus || null)
     const [saving, setSaving] = useState(false)
-    const changed = text !== (waitlist.helpWanted || "") || abroad !== Boolean(waitlist.abroadHelpWaitlist)
+    const changed = text !== (waitlist.helpWanted || "") || abroad !== Boolean(waitlist.abroadHelpWaitlist) || focus !== (waitlist.helpFocus || null)
 
     const save = async () => {
         setSaving(true)
-        const response = await saveMyHelp({ helpWanted: text, abroadHelpWaitlist: abroad })
+        const response = await saveMyHelp({ helpWanted: text, helpFocus: focus, abroadHelpWaitlist: abroad })
         setSaving(false)
         if (!response || response.data.success === false) {
             message.error(response?.data?.message || "Could not save")
@@ -53,11 +76,20 @@ function HelpWanted({ waitlist, onSaved }) {
     return (
         <section className="mentor-help">
             <h3>What do you want from your mentor?</h3>
+            <fieldset className="mentor-focus">
+                <legend><strong>For the role you choose, what help do you want?</strong></legend>
+                {HELP_FOCUS.map((option) => (
+                    <label key={option.value} className="choice">
+                        <input type="radio" name="helpFocus" value={option.value} checked={focus === option.value} onChange={() => setFocus(option.value)} />
+                        <span><strong>{option.label}</strong>{option.hint && ` — ${option.hint}`}</span>
+                    </label>
+                ))}
+            </fieldset>
             <p>Your sessions cover:</p>
             <ul>
                 {SESSION_TOPICS.map((topic) => <li key={topic}>{topic}</li>)}
             </ul>
-            <label htmlFor="help-wanted"><strong>Anything specific you want to know?</strong></label>
+            <label htmlFor="help-wanted" className="mentor-help-label"><strong>Anything specific you want to know?</strong></label>
             <textarea
                 id="help-wanted"
                 rows={4}
@@ -66,7 +98,7 @@ function HelpWanted({ waitlist, onSaved }) {
                 onChange={(event) => setText(event.target.value)}
                 placeholder="For example: what a normal week looks like, which college choices mattered, how you got your first job"
             />
-            <p className="report-small">{text.length}/{HELP_MAX} — your mentor sees this before you meet.</p>
+            <p className="report-small mentor-help-count">{text.length}/{HELP_MAX} — your mentor sees this before you meet.</p>
             <label className="choice">
                 <input type="checkbox" checked={abroad} onChange={(event) => setAbroad(event.target.checked)} />
                 <span>
@@ -157,6 +189,7 @@ function Mentorship() {
         return (
             <div>
                 <Navbar />
+                <BackToDashboard />
                 <main className="page">
                     <h2>Mentorship</h2>
                     <p>Mentorship comes with the Discovery + Mentor and Mentor Only plans.</p>
@@ -173,6 +206,7 @@ function Mentorship() {
         return (
             <div>
                 <Navbar />
+                <BackToDashboard />
                 <main className="page" aria-busy="true">
                     <h2>🤝 Mentorship</h2>
                     <div className="skeleton skeleton-line" />
@@ -189,8 +223,10 @@ function Mentorship() {
     return (
         <div>
             <Navbar />
+            <BackToDashboard />
             <main className="page">
                 <h2>🤝 Mentorship</h2>
+                <Framing />
 
                 {waitlist && waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
                     <section>

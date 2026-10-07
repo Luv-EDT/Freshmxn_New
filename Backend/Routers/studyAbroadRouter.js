@@ -39,10 +39,15 @@ router.post("/expressInterest", authMiddleware, requireDiscovery, async (req, re
         // about any of their top matches, not only the ones where studying abroad usually helps
         const submission = await Submission.findOne({ user: req.user._id }).select("interest.backgroundInfo.abroadHope").lean()
         const hopes = Boolean(submission && submission.interest && submission.interest.backgroundInfo && submission.interest.backgroundInfo.abroadHope === "yes")
-        const chosen = top.filter((entry) => (hopes || qualifies(String(entry.professionId))) && (asked.length === 0 || asked.includes(String(entry.professionId))))
+        // Round 19: the waitlist is joined from inside one career's card, which may sit anywhere in
+        // the student's list — a named career counts if it is theirs
+        const ranked = recommendation ? recommendation.ranked_professions || [] : []
+        const chosen = asked.length > 0
+            ? ranked.filter((entry) => asked.includes(String(entry.professionId)))
+            : top.filter((entry) => hopes || qualifies(String(entry.professionId)))
 
         if (chosen.length === 0) {
-            return res.status(400).json({ success: false, message: "None of your top matches usually needs study abroad" })
+            return res.status(400).json({ success: false, message: "That career isn't one of your matches" })
         }
 
         const lead = await StudyAbroadLead.findOneAndUpdate(

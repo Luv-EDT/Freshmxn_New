@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
-import { message } from "antd"
+import { message, Modal } from "antd"
 import { savePsychometric, submitPsychometric, getMySubmission, getStoryState } from "../../apiCall/submissionsApi"
 import { setUser } from "../../store/userSlice"
 import Navbar from "../Navbar"
-import JourneyProgress from "../JourneyProgress"
+import BackToDashboard from "../BackToDashboard"
 import AssessmentIntro from "./AssessmentIntro"
 import Ipip50 from "./Ipip50"
 import Perspective from "./Perspective"
@@ -59,6 +59,7 @@ function AssessmentShell() {
     const { user } = useSelector((state) => state.user)
 
     const [psychometric, setPsychometric] = useState(null)   // null until loaded
+    const [leaveOpen, setLeaveOpen] = useState(false)        // "← Dashboard" asked first (Round 19)
     const [storyState, setStoryState] = useState(null)       // the live clock, fetched from the server
     const [stamps, setStamps] = useState({ lastSavedAt: null, psychometricSubmittedAt: null })
     const [dirtySinceSubmit, setDirtySinceSubmit] = useState(false)
@@ -237,6 +238,16 @@ function AssessmentShell() {
         }
     }
 
+    // "← Dashboard" FROM INSIDE A SECTION (owner, Round 19): ask first. A questionnaire offers to save
+    // and go; a test that saves itself warns that leaving mid-way ends it.
+    const handleSaveAndGoHome = async () => {
+        const saved = await saveModule()
+        if (saved) {
+            setLeaveOpen(false)
+            navigate("/dashboard")
+        }
+    }
+
     // A RESUBMIT asks "same way, or something new?" first (Round 11, DirectionModal); the first
     // submit asks nothing.
     const [directionOpen, setDirectionOpen] = useState(false)
@@ -291,7 +302,7 @@ function AssessmentShell() {
         return (
             <div>
                 <Navbar />
-                <JourneyProgress user={user} current="assessment" />
+                <BackToDashboard />
                 <AssessmentIntro
                     modules={visibleModules(psychometric)}
                     completed={done}
@@ -336,6 +347,28 @@ function AssessmentShell() {
     return (
         <div>
             <Navbar />
+            <BackToDashboard onLeave={() => setLeaveOpen(true)} />
+            <Modal
+                open={leaveOpen}
+                title="Leave for your dashboard?"
+                onCancel={() => setLeaveOpen(false)}
+                footer={SELF_SAVING.includes(moduleKey) ? [
+                    <button key="stay" type="button" className="btn btn-ghost" onClick={() => setLeaveOpen(false)}>Stay</button>,
+                    <button key="leave" type="button" className="btn btn-primary" onClick={() => navigate("/dashboard")}>Leave</button>,
+                ] : [
+                    <button key="stay" type="button" className="btn btn-ghost" onClick={() => setLeaveOpen(false)}>Stay</button>,
+                    <button key="leave" type="button" className="btn btn-ghost" onClick={() => navigate("/dashboard")}>Leave without saving</button>,
+                    <button key="save" type="button" className="btn btn-primary" onClick={handleSaveAndGoHome} disabled={isSaving}>
+                        {isSaving ? "Saving…" : "Save and go"}
+                    </button>,
+                ]}
+            >
+                <p>
+                    {SELF_SAVING.includes(moduleKey)
+                        ? "What you've finished here is already saved. If a test is running, leaving now ends it — it can't be shown again."
+                        : "Answers on this page that you haven't saved may be lost. Save them first?"}
+                </p>
+            </Modal>
             <p>
                 <button type="button" onClick={() => navigate("/assessment/start")}>
                     ← All sections

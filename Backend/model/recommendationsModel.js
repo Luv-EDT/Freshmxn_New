@@ -109,6 +109,10 @@ const recommendationSchema = new mongoose.Schema(
                 readAs: String,
                 rowId: { type: mongoose.Schema.Types.ObjectId, default: null },
                 cacheHit: String,      // exact | named | near | miss | unrateable
+                // Round 19, the admin's activity trace
+                namedAs: { type: String, default: null },     // the common string the naming step gave it
+                nearScore: { type: Number, default: null },   // cosine to the reused row, on a near hit
+                candidates: { type: [String], default: [] },  // the careers this row points to
             }],
             default: [],
         },
