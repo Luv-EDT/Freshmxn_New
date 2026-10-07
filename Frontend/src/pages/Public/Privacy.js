@@ -193,7 +193,6 @@ const SECTIONS = [
                             <tr><td>Anthropic</td><td>AI that grades written answers, reads uploaded test-result screenshots and drafts your report</td></tr>
                             <tr><td>Voyage AI</td><td>Text matching between your answers and careers</td></tr>
                             <tr><td>MongoDB Atlas</td><td>Our database</td></tr>
-                            <tr><td>Upstash</td><td>The job queue that runs scoring and report generation</td></tr>
                             <tr><td>Render</td><td>Hosting for the website and servers</td></tr>
                             <tr><td>Cloudflare</td><td>Domain name (DNS) services</td></tr>
                             <tr><td>Resend</td><td>Sending service emails</td></tr>

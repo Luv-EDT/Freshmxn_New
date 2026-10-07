@@ -84,11 +84,22 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
         const order = { open: 0, retake_granted: 1, resolved: 2, dismissed: 3 }
         issues.sort((left, right) => (order[left.status] ?? 9) - (order[right.status] ?? 9))
 
+        // THE JOB QUEUE'S HEALTH (Round 22), shown above the issues: a report job due for minutes that
+        // nothing has picked up means the workers are not running
+        let queues = null
+        try {
+            const { jobQueue } = require("../workers/jobQueue")
+            queues = await jobQueue().health(["score_profile", "generate_report", "housekeeping"])
+        } catch (error) {
+            queues = { error: error.message }
+        }
+
         return res.status(200).json({
             success: true,
             message: "Assessment issues fetched successfully",
             data: {
                 openCount: issues.filter((issue) => issue.status === "open").length,
+                queues,
                 issues: issues.map((issue) => ({ ...issue, moduleName: MODULE_NAMES[issue.module] || issue.module, retakeable: RETAKEABLE.includes(issue.module) })),
             },
         })
@@ -126,9 +137,8 @@ router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
         }
 
         if (issue.module === "report") {
-            const { enqueueScoreProfile } = require("../workers/scoreProfileWorker")
-            const { withTimeout } = require("../workers/queueHelpers")
-            await withTimeout(enqueueScoreProfile(student._id), "queueing the report")
+            const { queueReport } = require("../workers/queueHelpers")
+            await queueReport(student._id, "queueing the report")
             await User.updateOne({ _id: student._id }, { reportFailedAt: null })
         } else {
             if (!RETAKEABLE.includes(issue.module)) {

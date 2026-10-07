@@ -18,7 +18,7 @@ Imagine a school that helps you find the right career:
 | **The reception desk** — where you walk in, fill forms and read notices | the **website** you see | `Frontend/` (React) |
 | **The office** — checks who you are, takes your forms, files them | the **server** | `Backend/server.js` + `Backend/Routers/` (Express) |
 | **The filing cabinet** — where every form and result is kept | the **database** | MongoDB Atlas |
-| **The in-tray** — a tray where "jobs to do" wait their turn | the **job queue** | Redis on Upstash (BullMQ) |
+| **The in-tray** — a tray where "jobs to do" wait their turn | the **job queue** | a `jobs` drawer in the same MongoDB filing cabinet (`workers/jobQueue.js`, since Round 22) |
 | **The back-room team** — teachers who mark your tests later, so you don't wait at the desk | the **workers** | `Backend/workers/` |
 | **The expert helpers the school calls** | outside services | Claude (AI), Voyage (word-matching), Resend (email), Google (sign-in), Razorpay (payments) |
 
@@ -34,7 +34,7 @@ Imagine a school that helps you find the right career:
                                                    ▼
                                             ┌──────────────┐    ┌──────────────────────────┐
                                             │  IN-TRAY      │ ─▶ │  WORKERS (back room)      │
-                                            │  (Redis)      │    │  mark tests, write report │
+                                            │  (MongoDB)    │    │  mark tests, write report │
                                             └──────────────┘    └──────────────────────────┘
 ```
 
@@ -171,8 +171,15 @@ you wait at the desk**. Instead:
 
 1. **You press Submit.** The website sends `POST /submissions/submitPsychometric`.
 2. **The office drops a job in the in-tray** called `score_profile` and immediately tells you
-   "your report is being prepared". *(The job's name is your student id, so pressing Submit twice
-   doesn't create two jobs.)*
+   "your report is being prepared". *(The job carries your student id, and while one of yours is
+   waiting or running a second is not added — so pressing Submit twice doesn't create two jobs. Once
+   it is finished, the next Submit makes a new one.)* The in-tray is a drawer in the same database
+   (Round 22). It used to be Redis on Upstash, until the free plan's 500,000 commands a month ran out
+   before launch — an idle worker with a calendar job waiting was asking Redis "anything for me?" every
+   10 seconds — and every Submit, "Try again" and "Update my report" failed. MongoDB has no such limit;
+   a worker checks the drawer every 10 seconds, and a job you start is picked up at once. If a job
+   can't be put in the tray, the admin gets an **Assessment issue** ("Report could not be queued") and
+   an email with the reason.
 3. **A back-room worker picks it up** (`workers/scoreProfileWorker.js`) and:
    - **marks your written answers** by asking Claude, with a strict marking scheme
      (`gradeOpenItems.js`, rubrics in `docs/5_finalized/algorithms/llm_scoring_prompts.md`). The
@@ -193,8 +200,12 @@ you wait at the desk**. Instead:
      to**: 2–4 areas of work, so "helping servant" → "helping others", pointing to social work, public
      service, NGO and philanthropy, care work. Voyage turns the name and each area into numbers
      (embeddings) and compares them with the 223 careers by meaning; the nearest are pooled, and
-     Claude keeps the ones the activity is genuinely relevant to. That shortlist is saved, so each
-     activity is worked out only once. **Activities are not rated any more**: they used to be scored
+     Claude **sorts them strictly** (Round 22, owner): **strong** — doing this activity builds a core
+     skill the career is built on (dancing → Dancer & Choreographer, Fitness Trainer) — or **partial** —
+     it helps, but it isn't what the work is about (dancing → Actor). Only strong careers join your
+     list, as many as there are; "when unsure, leave it out". Partial ones are kept for the admin's
+     trace, so a "missing" career can be checked. That shortlist is saved, so each activity is worked
+     out only once; an activity saved before Round 22 is sorted again the first time a report uses it. **Activities are not rated any more**: they used to be scored
      on the 27 qualities and had to match each career's ratings at 0.80, which kept Dancer &
      Choreographer out of a dancer's list (a hobby's "what it demands, mostly 0" against a career's
      full job profile). Now every career an activity points to joins your list, and **your own
@@ -336,7 +347,8 @@ activity trace.
 |---|---|
 | Claude or Voyage is briefly down | the worker waits and tries again (5 attempts, longer gaps each time) |
 | Every attempt fails | the student sees **"We hit a problem preparing your report — your answers are safe"** and a **Try again** button (`POST /reports/retryMyReport`) — never an endless spinner |
-| The server restarts in the middle of a job | the job is found "stuck" and put back in the tray automatically |
+| The server restarts in the middle of a job | the job's hold runs out (5 minutes) and the next worker takes it over; one cut off more than 3 times is counted as failed |
+| A job can't be put in the tray at all | the student sees the server's own reason; the admin gets an Assessment issue "Report could not be queued" with the error, and the Assessment issues tab shows "Job queue: working / not moving / not reachable" |
 | You submit again while your report is being made | the newer answers win: when the first job finishes it sees the newer submit and builds again |
 | A test broke on your device | the admin's **Assessment issues** list shows it (with an email for serious ones) and the admin can allow one retake |
 | Nobody has visited for 15 minutes | on the free plan the server **falls asleep**; the next visitor waits about 50 seconds while it wakes. A job waiting in the tray is picked up as soon as it wakes. A free "pinger" (UptimeRobot) can keep it awake |
@@ -347,7 +359,9 @@ activity trace.
 ## 6b. Jobs that run on a calendar
 
 A third back-room helper (`workers/housekeepingWorker.js`) does jobs nobody clicks for. Nothing it
-finds changes the website until the admin approves it.
+finds changes the website until the admin approves it. Each calendar job waits in the same `jobs` drawer
+with its due time (India time); when it is done, the next one is put in. One that fell due while the free
+server was asleep runs as soon as it wakes (Round 22 — before that the calendar lived in Redis).
 
 | When | Job | What it does |
 |---|---|---|
@@ -436,8 +450,7 @@ finds changes the website until the admin approves it.
 | Service | What it does for us |
 |---|---|
 | **Render** | runs the server, the website and both workers — all in one free "web service" (`render.yaml`) |
-| **MongoDB Atlas** | the filing cabinet (database) |
-| **Upstash** | the in-tray (Redis) |
+| **MongoDB Atlas** | the filing cabinet (database) — and, since Round 22, the in-tray too |
 | **Cloudflare** | the address book that sends `www.freshmxn.com` to Render (DNS) |
 | **Resend** | sends emails |
 | **Google** | "Sign in with Google" |

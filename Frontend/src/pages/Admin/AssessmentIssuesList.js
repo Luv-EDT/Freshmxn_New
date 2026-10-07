@@ -23,10 +23,26 @@ const KIND_LABELS = {
     student_reported: "Student reported a problem",
     left_mid_test: "Left or refreshed mid-test",
     story_unmarked: "Story answers couldn't be marked",
+    queue_unreachable: "Report could not be queued",
+}
+
+// THE JOB QUEUE IN ONE LINE (Round 22). A job due for over a minute that nothing has picked up means
+// the workers are not running; anything failed this week is counted, and its reason is in the
+// "Report failed" rows below.
+const queueLine = (queues) => {
+    if (!queues) return null
+    if (queues.error) return `Job queue: not reachable — ${queues.error}`
+    const stuck = queues.filter((row) => row.waiting > 0 && row.oldestWaitingSeconds > 60)
+    const failed = queues.reduce((sum, row) => sum + row.failed, 0)
+    const state = stuck.length > 0
+        ? `not moving — ${stuck.map((row) => `${row.queue}: ${row.waiting} waiting, oldest ${Math.round(row.oldestWaitingSeconds / 60)} min`).join("; ")}`
+        : "working"
+    return `Job queue: ${state} · ${queues.reduce((sum, row) => sum + row.active, 0)} running · ${failed} failed this week`
 }
 
 function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
     const [issues, setIssues] = useState([])
+    const [queues, setQueues] = useState(null)
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("open")   // open | retake_granted | dismissed | all
 
@@ -35,6 +51,7 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
             setLoading(true)
             const response = await getAllIssuesForAdmin()
             setIssues(response.data.data.issues)
+            setQueues(response.data.data.queues || null)
             if (onOpenCount) onOpenCount(response.data.data.openCount)
         } catch (error) {
             message.error("Failed to fetch assessment issues")
@@ -100,6 +117,7 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
 
     return (
         <div>
+            {queues && <p><strong>{queueLine(queues)}</strong></p>}
             <Segmented options={["open", "retake_granted", "dismissed", "all"]} value={statusFilter} onChange={setStatusFilter} />{" "}
             <Button onClick={fetchIssues}>Refresh</Button>
 

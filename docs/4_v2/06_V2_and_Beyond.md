@@ -173,7 +173,7 @@ V1 runs in `manual` payment mode. Razorpay is built and dormant behind `PAYMENT_
 
 ## Auth — richer flows
 - Magic-link login.
-- Redis-backed rate limiting, needed only once there is more than one server instance.
+- A shared store for rate limiting (MongoDB, now that there is no Redis), needed only once there is more than one server instance.
 
 ## ⚠ DPDP under-18 behavioural tracking
 There is still **no events collection, no counters and no `dwell_ms`** anywhere — which is the safe

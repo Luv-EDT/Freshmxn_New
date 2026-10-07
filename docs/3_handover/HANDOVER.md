@@ -26,8 +26,8 @@ job role, get a mentor; no assessment).
 | **Code** | `main` (Rounds 9–11 merged 3 Oct 2026; Round 12 and Round 13 merged after it). The cloud work happens on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@2.1.0` since Round 21: activities point to careers by name + "points to" areas, no 0.80 gate; one-sided fit, 16 tiers ordered by fit, "fits you" at 0.85, switching cost shown as a group, degree that already counts, best role group, combined careers) · report (`report@4.0.0` — no AI prose since Round 19; a short overview plus every match on `/report/matches`, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 25 (scoring) / 63 (matching) / 186 (workers) — all offline, all green |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@2.2.0` since Round 22: activities point to careers by name + "points to" areas, a strict strong/partial AI shortlist, no 0.80 gate; one-sided fit, 16 tiers ordered by fit, "fits you" at 0.85, switching cost shown as a group, degree that already counts, best role group, combined careers) · report (`report@4.0.0` — no AI prose since Round 19; a short overview plus every match on `/report/matches`, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
+| **Tests** | fixtures 25 (scoring) / 64 (matching) / 190 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -39,13 +39,13 @@ report page, which polls every 5 s. Both workers run inside the web process on t
 
 # Part 2 — Stack, deploy and how to run
 
-**Stack:** React 18 (CRA) + antd 6 + Redux Toolkit · Express 5 + Mongoose 9 · BullMQ 6.3 on Upstash
-Redis · MongoDB Atlas · Resend (email) · Google OAuth · Razorpay · Anthropic (grading, screenshot
+**Stack:** React 18 (CRA) + antd 6 + Redux Toolkit · Express 5 + Mongoose 9 · a job queue in
+MongoDB (`workers/jobQueue.js`, Round 22 — no Redis) · MongoDB Atlas · Resend (email) · Google OAuth · Razorpay · Anthropic (grading, screenshot
 reading, report prose) · Voyage (embeddings). House style: `docs/2_build/CODING_STYLE.md`
 (router → model, no controllers, `{ success, message, data }`, double quotes, no semicolons, 4 spaces).
 
 **Deploy:** `render.yaml` (read by Render) + `docs/2_build/DEPLOY.md` (the human runbook: env vars,
-Atlas, Upstash, Google OAuth, Cloudflare DNS, Search Console, switching the branch to `main`).
+Atlas, Google OAuth, Cloudflare DNS, Search Console, switching the branch to `main`).
 
 **Run locally**
 ```
@@ -74,7 +74,8 @@ repo** (a committed suite is in V2).
 To test the UI locally: `npm run dev` + `npm start`, or `Frontend/scripts/shoot.js` for screenshots.
 
 **Every worker, and what the admin does about it** (Round 12). All run inside the one web service
-(`RUN_WORKERS_IN_WEB=true`). Calendar jobs use India time and live in Redis, so a redeploy keeps them.
+(`RUN_WORKERS_IN_WEB=true`). Calendar jobs use India time and wait in the `jobs` collection with their
+due time (Round 22 — Redis before), so a redeploy keeps them and one missed while asleep runs on wake.
 
 | Worker / job | When | What it does | What the admin does |
 |---|---|---|---|
@@ -150,6 +151,8 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Subjects per route** (`Backend/data/subject_routes.json`, Round 18) | Eight "any stream" careers with a stream-gated route (B.Tech, MBBS, B.Pharm) now say the subjects per route. `reviewed_by_owner: false` — read it once |
 | **Matching 2.0.0 — two judgement numbers** (Round 20) | "Fits how you think and work" is now **0.85** (one-sided fit; uncertainty tolerance and firmness two-sided) and the "Would cost you 2+ years to switch" group starts at **2 years** (`SWITCH_COST_GROUP_YEARS`, page and engine checked equal by a fixture). Both were chosen from sample profiles, not real students — read real reports after the first ~100 students and retune. Every existing student sees **"Update my report"** (major version) |
 | **Activities no longer rated** (Round 21) | Every career an activity points to joins the student's list; the 0.80 gate is gone. Rows cached before Round 21 get their "points to" areas once, on first use (one naming call + one shortlist call each). Read a few students' traces in Activity matches after the first week: if lists feel too long or loosely related, the shortlist prompt (`RERANK_SYSTEM_PROMPT`) is the place to tighten, not a new gate |
+| **The strict shortlist** (Round 22) | Only careers the AI marks **strong** are matched (no cap); **partial** ones show in the Activity matches trace as "Also considered, marked partial (not matched)". Every cached activity is shortlisted again once, on first use (one shortlist call each, plus a naming call for pre-Round-21 rows). After a week, read a few traces: a career that should be there but sits under "partial" means the prompt is too strict — tell Claude which, with the activity |
+| **Job queue moved to MongoDB** (Round 22) | Upstash's free 500k commands/month ran out before launch (an idle scheduled BullMQ queue polled every 10 s), so every Submit, Try again and Update failed. **After this deploy:** remove `REDIS_URL` from Render → Environment (unused), open the report and press **Try again**, then delete the Upstash database. Admin → Assessment issues now shows "Job queue: working / not moving / not reachable" and a "Report could not be queued" issue (emailed) if it ever fails again |
 | **Long-term memory stuck at "Partial"** (Round 19) | 58% = 7 of 12 points: the story's short questions were scored, the free recall had no mark. After the deploy, a recall that can't be marked raises **"Story answers couldn't be marked — reason"** in Assessment issues, and Activity matches shows the story's marking beside the trace. Check your own account there |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
@@ -2130,3 +2133,36 @@ The zeros failed nearly every broad career even when the meaning was exact.
 topped up). Changed for the owner's change: the two FLOOR fixtures → "no gate" and "matchScore follows
 the shortlist"; "an unrateable activity contributes nothing" now uses the naming call's flag; the cache
 fixtures check shortlists instead of ratings. Workers: the trace fixture checks `pointsTo`.
+
+### Round 22 — the job queue moves to MongoDB; a strict AI shortlist (2026-10-07)
+**The owner's report would not update** ("We could not restart it just now"). Upstash showed **496K / 500k
+commands this month — free tier limit reached**, so every enqueue failed: Submit marked the report failed
+(with no issue logged), and "Try again" and "Update my report" hit the same wall. The cause was ours: the
+housekeeping queue's `upsertJobScheduler` always keeps the next calendar run as a delayed job, and while
+one exists BullMQ 6.3.8's `getBlockTimeout` caps an idle worker's wait at 10 s instead of `drainDelay` —
+~8,600 loops a day, roughly 500–780k commands a month from that one worker. The Round 0 idle measurement
+(Part 5, Day 5) was made before there were schedules. Upstash's free plan allows one database, so it
+could not simply be replaced. **Owner decision: drop Redis and keep the queue in MongoDB; no stopgap.**
+
+| Item | What shipped |
+|---|---|
+| **The queue** | `Backend/workers/jobQueue.js` + `model/jobsModel.js`: enqueue (one waiting/active job per student — `activeKey`, a plain unique index; "<key>#<id>" once done, so a finished job never blocks a resubmit), workers that claim with one atomic update, renew a 5-minute lock while running, retry with a doubling pause, take over a job whose lock ran out (a restart) and give up after 3 such takeovers, and emit BullMQ's `completed`/`failed` with the same job shape — so the workers' own logic, the give-up handlers and `lastAttempt` did not change. A job queued in this process starts at once (a direct nudge); the 10 s poll (`JOB_POLL_MS`) is for retries, calendar jobs and other processes. Finished rows expire after 7 days (TTL index) |
+| **The calendar** | One waiting row per schedule with its due time, read from the same five-field patterns in IST by a small pure `nextRun` (no cron library); the next is queued when one finishes; one that fell due while the server slept runs on wake. Registering never blocks the other workers. `batch_collect` stays hourly — it now costs nothing when no batch waits (plan said 6-hourly; unnecessary without Redis) |
+| **Never silent** | Every place a student's action queues a report (Submit, Try again, Update, a late story recall, the admin's re-queue) goes through `queueReport`, which raises a notified `queue_unreachable` issue with the real error. The Assessment issues tab shows "Job queue: working / not moving / not reachable · N running · N failed this week" (from `getAllForAdmin`, no new route). The report page shows the server's own message instead of a generic alert |
+| **Removed** | `bullmq`, `ioredis`, `REDIS_URL` (render.yaml, DEPLOY.md), the ioredis DNS workaround, `idleTimings`, `addOnce`, `WORKER_DRAIN_DELAY_S`/`WORKER_STALLED_INTERVAL_MS`, and Upstash from the Privacy processor list. `tools/pipelineStatus.js` reads the `jobs` collection (`--probe` still proves the workers are alive) |
+| **Strict shortlist** | `RERANK_SYSTEM_PROMPT` now asks for `{ strong, partial }`: strong = the activity builds a core skill the career is built on; partial = it helps but isn't central; "when unsure, leave it out"; **no cap** (owner). Only strong ids are candidates; partial ones are stored (`partialProfessionIds`) and shown in the trace. A valid empty answer is respected; only a broken reply falls back to the meaning search's top 16 (`FALLBACK_KEEP`). Cached rows without `shortlistVersion: "strict-1"` are shortlisted again once on first use. `RERANK_KEEP` removed |
+| **Version** | `matching@2.2.0` — students see "Update my report" |
+
+**Fixtures:** workers 186 → 190, matching 63 → 64. Changed for the owner's change: "ioredis is installed"
+and "no job id contains a colon" became **"the queue needs no Redis"**; the POINTS TO stub answers in the
+strong/partial shape. New: four JOB QUEUE fixtures (one job per student / a finished one never blocks;
+doubling retries and BullMQ-shaped `failed` events; a restarted job taken over, one restarted too often
+given up; the IST calendar, an overdue run, the next run queued) on an in-memory stand-in
+(`workers/fixtures/fakeJobModel.js`), a `queue_unreachable` source check, **STRICT SHORTLIST**, and the
+trace fixture checks the partial careers.
+**Checked locally with Redis switched off** (FerretDB, `RUN_WORKERS_IN_WEB=true`, scratch `r22.js`, 15/15):
+the unique index refuses a second waiting job; a failed report → Try again → `score_profile` →
+`generate_report` → a ready report; Update → a rebuilt report, then "already up to date"; the five
+calendar rows wait in the database; an orphaned active job is taken over; the admin queue line, admin
+only. FerretDB cannot build the TTL index (Atlas can — the email-verification and password-reset models
+already use TTL). Browser re-runs: r20 40/40, r19 60/60, uiFlow 65/65; build: the 8 known warning files.

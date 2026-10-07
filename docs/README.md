@@ -9,7 +9,7 @@ Every project document, and when to read it. Numbers give the reading order.
 | | 00_Research_Summary_FROZEN.md | The frozen Part-1 research the assessment is built on. Never edited |
 | **2_build/** | 01_Build_PRD.md | The *how*: architecture, schemas, routes, integrations, the build order |
 | | CODING_STYLE.md | House style every file follows (router → model, `{ success, message, data }`, no semicolons, 4 spaces) |
-| | DEPLOY.md | The deploy runbook: Render, Atlas, Upstash, Google OAuth, Cloudflare DNS, moving the site to `main`; also why `render.yaml` (repo root) and this file are separate |
+| | DEPLOY.md | The deploy runbook: Render, Atlas, Google OAuth, Cloudflare DNS, moving the site to `main`; also why `render.yaml` (repo root) and this file are separate |
 | | Report_Output_Brainstorm.md | What `ALL-professions.json` holds and how a richer, journey-shaped report could use it — discussion, with open questions for the owner |
 | **3_handover/** | HANDOVER.md | **The single handover**: where things stand, how to run and test, open items and owner gates, decisions that must not drift, then the full day-by-day record (Day 1 → Day 5 and its rounds, through Round 10) |
 | **4_v2/** | 06_V2_and_Beyond.md | **Future scope only** — what is not built yet, why, and what triggers it (soon / V2 / V3), plus the ideas decided against. Done work is recorded in HANDOVER, not here |

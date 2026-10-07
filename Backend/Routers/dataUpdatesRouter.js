@@ -638,6 +638,9 @@ const traceReadings = (readings, recommendation) => {
                 landed: entry ? `#${entry.rankedPosition} (tier ${entry.tier})` : ruledOut ? `ruled out — ${ruledOut.reason}` : "not in the list",
             }
         }),
+        // Round 22: what the strict shortlist also considered but marked partial — never matched, so a
+        // career that is "missing" can be checked here
+        partial: (reading.partial || []).map((id) => ({ id, name: professionNames.get(id) || id })),
     }))
 }
 

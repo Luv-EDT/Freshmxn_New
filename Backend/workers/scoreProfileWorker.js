@@ -22,8 +22,7 @@ const path = require("path")
 // cannot.
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
-const { Queue, Worker } = require("bullmq")
-const { addOnce, attachConnectionLogging, withDnsWorkaround, idleTimings } = require("./queueHelpers")
+const { jobQueue } = require("./jobQueue")
 const { raiseIssue } = require("../utils/assessmentIssues")
 const mongoose = require("mongoose")
 
@@ -35,41 +34,17 @@ const User = require("../model/userModel")
 
 const QUEUE_NAME = "score_profile"
 
-// BullMQ needs the connection options rather than a client, and maxRetriesPerRequest must be null
-// or it aborts the blocking reads a worker lives on.
-//
-// BUILT LAZILY, and that matters: a router that imports enqueueScoreProfile must not fail to load
-// on a machine with no Redis configured. The error belongs at the moment someone tries to queue a
-// job, where it says something useful, not at require() time, where it takes the whole server down
-// for a feature that may not be in use yet.
-const connectionOptions = () => {
-    const url = process.env.REDIS_URL
-    if (!url) throw new Error("REDIS_URL is not set — the score_profile queue cannot be reached")
-    return withDnsWorkaround({ url, maxRetriesPerRequest: null })
-}
-
-let queue = null
-
-const scoreProfileQueue = () => {
-    if (!queue) queue = new Queue(QUEUE_NAME, { connection: connectionOptions() })
-    return queue
-}
-
-// Called from the request path: enqueue and return. `addOnce` keys the job on the student's id so
-// a double-tap on Submit produces one job — while still letting a genuine resubmit re-run. See
-// queueHelpers.js; the naive version silently swallowed every resubmit for 24 hours.
-//
-// The id uses a HYPHEN, not a colon: BullMQ reserves ":" for its own Redis key namespacing and
-// rejects a custom id containing one.
-const enqueueScoreProfile = async (userId) => addOnce(scoreProfileQueue(), QUEUE_NAME, userId, {
+// Called from the request path: enqueue and return. Keyed on the student's id, so a double-tap on
+// Submit produces one job — while a job that has finished never blocks a genuine resubmit. See
+// jobQueue.js; the old Redis version once silently swallowed every resubmit for 24 hours.
+const enqueueScoreProfile = async (userId) => jobQueue().enqueue(QUEUE_NAME, QUEUE_NAME, { userId: String(userId) }, {
+    key: String(userId),
     attempts: 5,
-    backoff: { type: "exponential", delay: 5000 },
-    removeOnComplete: { age: 86400, count: 1000 },
-    removeOnFail: { age: 604800 },
+    backoffMs: 5000,
 })
 
 // `lastAttempt` decides what a failed grading CALL means (gradeOpenItems.js, isTransient): before
-// the last attempt it throws so BullMQ retries just the failed items; on the last attempt the null
+// the last attempt it throws so the queue retries just the failed items; on the last attempt the null
 // is stored and the student gets a profile with that one factor dropped rather than no report.
 const runOne = async (userId, { lastAttempt = false } = {}) => {
     const submission = await Submission.findOne({ user: userId })
@@ -195,7 +170,7 @@ const rerunIfResubmitted = async (userId) => {
 const start = async () => {
     require("../config/MongoDBCon")
 
-    const worker = new Worker(QUEUE_NAME, async (job) => {
+    const worker = jobQueue().createWorker(QUEUE_NAME, async (job) => {
         const lastAttempt = job.attemptsMade + 1 >= (job.opts.attempts || 1)
         const profile = await runOne(job.data.userId, { lastAttempt })
 
@@ -211,11 +186,7 @@ const start = async () => {
             scoring_version: profile.scoring_version,
             completeness: profile.completeness,
         }
-    }, { connection: connectionOptions(), concurrency: 4, ...idleTimings() })
-
-    // Summarises ioredis's reconnect churn instead of letting it bury the job output. See
-    // queueHelpers.js — a successful job once vanished inside forty ENOTFOUND stack traces.
-    attachConnectionLogging(worker, QUEUE_NAME)
+    }, { concurrency: 4 })
 
     worker.on("completed", async (job, result) => {
         console.log(`${QUEUE_NAME} ${job.id} — scored ${result.scoring_version}, matching completeness ${result.completeness && result.completeness.matching}`)
@@ -271,4 +242,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { QUEUE_NAME, scoreProfileQueue, enqueueScoreProfile, runOne, start, rerunIfResubmitted }
+module.exports = { QUEUE_NAME, enqueueScoreProfile, runOne, start, rerunIfResubmitted }
