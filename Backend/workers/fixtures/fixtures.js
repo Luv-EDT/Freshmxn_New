@@ -1879,44 +1879,45 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT PAGE — one list: ignoring switching cost surfaces every worth-the-switch career",
-        // REPLACES "sort and filter govern worth-the-switch too" (owner, Round 6). The page no longer
-        // has a separate switch list or any filter: it is ONE list with two primary orders. What
-        // DECISIONS.md §5 needs is that the hard change the cost-weighting hides is never lost — so
-        // this pins that "Best fit, ignoring switching cost" contains every ranked career AND every
-        // worth-the-switch career, ordered on raw fit, and that no order ever drops anything.
+        name: "REPORT PAGE — the list in tier groups: Best match moves 2+ years of switching cost to a last group, least affected first; ignoring the cost keeps every career in its tier",
+        // REPLACES "one list: ignoring switching cost surfaces every worth-the-switch career" (owner,
+        // Round 20). There are no worth-the-switch extras any more. The guard DECISIONS §5 asks for —
+        // the hard change is never hidden — now lives in the grouping: a costly career is MOVED to a
+        // last group in Best match, never removed, and sits in its own tier when the cost is ignored.
         run: () => {
-            const { buildList } = loadReportFilters()
+            const { groupList, buildList, SWITCH_COST_GROUP_YEARS, SECONDARY_SORTS } = loadReportFilters()
+            const { SWITCH_COST_GROUP_YEARS: engineYears } = require("../../matching/constants")
             const source = readReportPage()
-
             const problems = []
+            if (SWITCH_COST_GROUP_YEARS !== engineYears) problems.push(`the page groups at ${SWITCH_COST_GROUP_YEARS} years, the engine at ${engineYears}`)
+
             const ranked = [
-                { professionId: "a", tier: 1, comfortScore: 0.71, rankedPosition: 1, display: { yearsToQualify: 6, aiExposure: { band: "low", raw: 20 } } },
-                { professionId: "b", tier: 2, comfortScore: 0.93, rankedPosition: 2, display: { yearsToQualify: 3, aiExposure: { band: "low", raw: 20 } } },
-                { professionId: "c", tier: 5, comfortScore: 0.80, rankedPosition: 3, display: { yearsToQualify: 3, aiExposure: { band: "medium", raw: 50 } } },
-            ]
-            const switchList = [
-                { professionId: "b", comfortScore: 0.93, wastedYears: 0, yearsToQualify: 3, alreadyRanked: true },
-                { professionId: "x", comfortScore: 0.97, wastedYears: 2, yearsToQualify: 5, alreadyRanked: false },
-                { professionId: "y", comfortScore: null, wastedYears: 1, yearsToQualify: 4, alreadyRanked: false },
+                { professionId: "a", tier: 1, comfortScore: 0.95, wastedYears: 0 },
+                { professionId: "b", tier: 1, comfortScore: 0.9, wastedYears: 3 },
+                { professionId: "c", tier: 5, comfortScore: 0.92, wastedYears: 2 },
+                { professionId: "d", tier: 5, comfortScore: 0.88, wastedYears: 1 },
+                { professionId: "e", tier: 11, comfortScore: 0.86, wastedYears: 0 },
             ]
             const ids = (list) => list.map((entry) => entry.professionId).join(",")
+            const shape = (groups) => groups.map((group) => `${group.costly ? "costly" : group.tier}:${ids(group.entries)}`).join(" | ")
 
-            if (ids(buildList(ranked, switchList, "best", null)) !== "a,b,c") problems.push("Best match is not the engine's ranking")
+            const best = groupList(ranked, "best", null)
+            if (shape(best) !== "1:a | 5:d | 11:e | costly:c,b") problems.push(`Best match groups wrong: ${shape(best)}`)
+            const noCost = groupList(ranked, "noCost", null)
+            if (shape(noCost) !== "1:a,b | 5:c,d | 11:e") problems.push(`ignoring the cost should keep every career in its tier: ${shape(noCost)}`)
+            ;[best, noCost].forEach((groups) => {
+                if (ids(groups.flatMap((group) => group.entries)).split(",").sort().join() !== "a,b,c,d,e") problems.push("a grouping lost or doubled a career")
+            })
+            if (ids(buildList(ranked, "best", null)) !== "a,d,e,c,b") problems.push("the flat list is not the groups in order")
 
-            const noCost = buildList(ranked, switchList, "noCost", null)
-            if (ids(noCost) !== "x,b,c,a,y") problems.push(`ignoring switching cost should order on raw fit with nulls last, got ${ids(noCost)}`)
-            if (!noCost.every((entry) => entry.display && "yearsToQualify" in entry.display)) problems.push("switch entries reach the card without display fields")
+            // the switching cost as a sub-sort, inside each group, ties keeping the primary order
+            if (!SECONDARY_SORTS.some((option) => option.value === "switchCost" && option.label === "Least switching cost")) problems.push("no 'Least switching cost' sub-sort")
+            if (shape(groupList(ranked, "noCost", "switchCost")) !== "1:a,b | 5:d,c | 11:e") problems.push(`the switch-cost sort does not order inside each group: ${shape(groupList(ranked, "noCost", "switchCost"))}`)
 
-            // A secondary sort is a permutation, and a tie keeps the PRIMARY order.
-            const thenQuick = buildList(ranked, switchList, "noCost", "fastest")
-            if (ids(thenQuick).split(",").sort().join(",") !== ids(noCost).split(",").sort().join(",")) problems.push("a secondary sort changed which careers are shown")
-            if (ids(thenQuick) !== "b,c,y,x,a") problems.push(`secondary ties should keep the primary order, got ${ids(thenQuick)}`)
-
-            // The page must actually use it, and offer the no-cost order only where it differs.
-            if (!/buildList\(ranked, switchList, primary, secondary/.test(source)) problems.push("the page does not build its list with buildList")
+            // the page uses it, and offers the no-cost order only where it differs
+            if (!/groupList\(ranked, primary, secondary, details/.test(source)) problems.push("the page does not build its groups with groupList")
             if (!/framing\.switchIsDistinct \? framing\.switchIntro : null/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
-
+            if (!/tierNameFor\(group\.tier\)/.test(source) || !/Would cost you \{SWITCH_COST_GROUP_YEARS\}\+ years to switch/.test(source)) problems.push("the open list has no tier headings or no last group")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -2016,20 +2017,20 @@ const fixtures = [
             const ranked = [{ professionId: "a" }, { professionId: "b" }, { professionId: "c" }]
             const details = { a: { blueCollar: true }, b: { coreEngineering: true }, c: {} }
             const ids = (list) => list.map((entry) => entry.professionId).join(",")
-            if (ids(buildList(ranked, [], "best", null, details, {})) !== "a,b,c") problems.push("with no options set the list is not the full ranking")
-            if (ids(buildList(ranked, [], "best", null, details, { excludeBlueCollar: true })) !== "b,c") problems.push("the blue-collar filter removed the wrong careers")
-            if (ids(buildList(ranked, [], "best", null, details, { only: ["coreEngineering"] })) !== "b") problems.push("core engineering only kept the wrong careers")
+            if (ids(buildList(ranked, "best", null, details, {})) !== "a,b,c") problems.push("with no options set the list is not the full ranking")
+            if (ids(buildList(ranked, "best", null, details, { excludeBlueCollar: true })) !== "b,c") problems.push("the blue-collar filter removed the wrong careers")
+            if (ids(buildList(ranked, "best", null, details, { only: ["coreEngineering"] })) !== "b") problems.push("core engineering only kept the wrong careers")
             const abroadDetails = { a: { studyAbroadHelps: true, coreEngineering: true }, b: { studyAbroadHelps: true }, c: { coreEngineering: true } }
-            if (ids(buildList(ranked, [], "best", null, abroadDetails, { only: ["studyAbroadHelps"] })) !== "a,b") problems.push("studying abroad helps kept the wrong careers")
-            if (ids(buildList(ranked, [], "best", null, abroadDetails, { only: ["studyAbroadHelps", "coreEngineering"] })) !== "a") problems.push("two filters do not both apply")
+            if (ids(buildList(ranked, "best", null, abroadDetails, { only: ["studyAbroadHelps"] })) !== "a,b") problems.push("studying abroad helps kept the wrong careers")
+            if (ids(buildList(ranked, "best", null, abroadDetails, { only: ["studyAbroadHelps", "coreEngineering"] })) !== "a") problems.push("two filters do not both apply")
             // Round 13 (owner), three since Round 18: the top of the CHOSEN order shows first and the rest
-            // is one tap away — a fold, not a filter: "Show the other N" opens the same ordered list in full
-            const listBlock = page.split('<div className="match-list">')[1] || ""
-            if (!/^\s*\{\(showAllFor === sortKey \? ordered : ordered\.slice\(0, TOP_SHOWN\)\)\.map\(/.test(listBlock)) problems.push("the rendered list is not the chosen order (top three, then all)")
+            // is one tap away — a fold, not a filter. Round 20: opened, it is the same entries in groups.
+            if (!/ordered\.slice\(0, TOP_SHOWN\)\.map\(\(entry\) => card\(entry\)\)/.test(page) || !/showAllFor !== sortKey \?/.test(page)) problems.push("the rendered list is not the chosen order (top three, then all)")
+            if (!/const ordered = useMemo\(\(\) => groups\.flatMap\(\(group\) => group\.entries\), \[groups\]\)/.test(page)) problems.push("the open list is not the same entries as the top three")
             if (!/Show the other \{ordered\.length - TOP_SHOWN\}/.test(page)) problems.push("the rest of the list has no 'Show the other N' button")
             if (!/const TOP_SHOWN = 3/.test(page)) problems.push("the list does not open on three")
             if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at three")
-            if (!/rank=\{index \+ 1\}/.test(listBlock)) problems.push("the cards are not numbered in the order shown")
+            if (!/rank=\{ordered\.indexOf\(entry\) \+ 1\}/.test(page)) problems.push("the cards are not numbered in the order shown")
 
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2184,13 +2185,19 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT — worth_the_switch no longer leaks raw factor slugs",
+        // Round 20 (owner): the worth-the-switch list is gone, so this now pins that the lists the
+        // report DOES send — the ranking and the combined careers — both go through the cleaner.
+        name: "REPORT — every career list the report sends goes through stripInternal (no raw factor slugs)",
         run: () => {
             const source = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "reportsRouter.js"), "utf8")
-            const line = source.split("\n").find((row) => /worthTheSwitch:/.test(row))
-
-            if (!line) return "worthTheSwitch is no longer returned"
-            return /stripInternal/.test(line) ? null : "worth_the_switch still bypasses stripInternal, so its factors reach the page as engine slugs"
+            const problems = []
+            ;["ranked:", "combined:"].forEach((key) => {
+                const line = source.split("\n").find((row) => row.trim().startsWith(key) && /recommendation/.test(row))
+                if (!line) problems.push(`${key} is no longer returned`)
+                else if (!/stripInternal/.test(line)) problems.push(`${key} bypasses stripInternal`)
+            })
+            if (/worthTheSwitch:/.test(source)) problems.push("worthTheSwitch is still sent")
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },
@@ -2230,28 +2237,18 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT PAGE — the detail fetch covers worth-the-switch, not just the ranking",
-        // THIS SHIPPED AND THE OWNER HIT IT. The fetch asked only for `ranked` ids, so every
-        // worth-the-switch card sat on "Loading…" forever — and that list exists precisely to
-        // surface professions that are NOT in the ranking (`alreadyRanked: false` is the common
-        // case). The entries most worth reading were exactly the ones with nothing to read.
+        name: "REPORT PAGE — the detail fetch covers every career in the ranking, and the card can stop waiting",
+        // Round 20 (owner): the worth-the-switch list this also covered is gone. The original bug —
+        // cards sitting on "Loading…" forever — still must not come back.
         run: () => {
-            const source = readReportPage()
-
+            const source = fs.readFileSync(path.join(REPORT_DIR, "useReportData.js"), "utf8")
             const problems = []
-
             const block = (source.split("const detailIds = useMemo(")[1] || "").split("}, [")[0]
-            if (!block) return "the detail-id set is gone — the fetch no longer builds a union"
-
+            if (!block) return "the detail-id set is gone"
             if (!/ranked/.test(block)) problems.push("the ranking is not included in the detail fetch")
-            if (!/switchList|worthTheSwitch/.test(block)) problems.push("worth-the-switch is not included in the detail fetch — those cards will never load")
-
-            // And the card must be able to stop waiting.
+            if (/switchList|worthTheSwitch/.test(source)) problems.push("the page still reads a worth-the-switch list")
             const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
-            if (!/detailsLoaded/.test(card)) {
-                problems.push("the card cannot tell 'still fetching' from 'fetched and absent', so a missing record shows Loading forever")
-            }
-
+            if (!/detailsLoaded/.test(card)) problems.push("the card cannot tell 'still fetching' from 'fetched and absent'")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -2274,40 +2271,22 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "TIERS — the ranking explains itself, and the explanation matches the engine",
-        // A ranking a student cannot interrogate is an opinion with a number on it. The page groups
-        // 16 tiers into 5 headings; this asserts the boundaries it uses are the engine's actual
-        // ones, so the explanation cannot drift from the sort it describes.
+        name: "TIERS — every one of the sixteen tiers has its own plain heading, and the 'stretch' ones are exactly the engine's not-a-fit tiers",
+        // REPLACES the five-band check (owner, Round 20): the open list now shows the engine's tiers
+        // themselves as headings, so the names must line up with tiers.js one for one.
         run: () => {
             const { TIERS } = require("../../matching/tiers")
+            const { TIER_NAMES } = loadEsModule(path.join(REPORT_DIR, "reportFraming.js"))
             const source = readReportPage()
-
             const problems = []
-
             if (!/How this list is ordered/.test(source)) problems.push("the ordering is no longer explained anywhere on the page")
-            // The per-profession "why it is here" line (tierReason) was removed on the owner's
-            // instruction (06_Day5_Handover, Round 5): cards show the name only, and the reason lives
-            // at group level — each group heading states its rule (the `why:` check below).
-
-            // The five group boundaries must line up with real transitions in the engine's table.
-            const boundaries = [...source.matchAll(/upTo:\s*(\d+)/g)].map((match) => Number(match[1]))
-            if (boundaries.length !== 5) problems.push(`expected 5 tier groups, found ${boundaries.length}`)
-            if (boundaries[boundaries.length - 1] !== TIERS.length) {
-                problems.push(`the last group ends at ${boundaries[boundaries.length - 1]} but the engine has ${TIERS.length} tiers`)
-            }
-
-            // The comfort boundary is the biggest claim the page makes — tiers 1-11 fit, 12-16 do
-            // not. If the engine's table moves, the heading "Further from your current shape" would
-            // start describing the wrong professions.
-            const lastComfort = TIERS.filter((rule) => rule.comfort).slice(-1)[0]
-            if (!boundaries.includes(lastComfort.tier)) {
-                problems.push(`the engine's comfort boundary is tier ${lastComfort.tier}, which is not a group boundary on the page`)
-            }
-
-            // Every group must state its rule, not just its name.
-            const whys = [...source.matchAll(/why:\s*"/g)].length
-            if (whys !== 5) problems.push(`${whys} of 5 groups explain themselves`)
-
+            if (TIER_NAMES.length !== TIERS.length) problems.push(`${TIER_NAMES.length} names for ${TIERS.length} tiers`)
+            TIERS.forEach((rule) => {
+                const row = TIER_NAMES.find((name) => name.tier === rule.tier)
+                if (!row || !row.name) return problems.push(`tier ${rule.tier} has no name`)
+                if (rule.comfort === row.name.startsWith("A stretch")) problems.push(`tier ${rule.tier} "${row.name}" says the wrong thing about fit`)
+            })
+            if (new Set(TIER_NAMES.map((row) => row.name)).size !== TIER_NAMES.length) problems.push("two tiers share a heading")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -4012,7 +3991,8 @@ const fixtures = [
                 if (qualities.length !== rated || qualities.filter((quality) => quality.main).length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities of ${rated}, ${qualities.filter((quality) => quality.main).length} main`)
                 qualities.forEach((quality) => {
                     if (quality.label !== FACTOR_LABELS[quality.factor]) problems.push(`${profession.id}: "${quality.label}" is not the shared label`)
-                    if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
+                    // Round 20 (owner): firmness is a position too, worded like uncertainty tolerance
+                    if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan", "holds firmly to a view", "open to changing a view"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
                 })
                 const text = JSON.stringify(sheet)
                 if (/preferredCurrency|residenceCitizenship|match_confidence|data_quality|admin_review|review_status|"weights"/.test(text)) problems.push(`${profession.id}: an admin-only field reached the sheet`)
@@ -4614,7 +4594,9 @@ const fixtures = [
             all.filter((slug) => !grouped.includes(slug)).forEach((slug) => problems.push(`${slug} is in no group`))
             grouped.filter((slug, index) => grouped.indexOf(slug) !== index).forEach((slug) => problems.push(`${slug} is in two groups`))
             grouped.filter((slug) => !FACTOR_GUIDE[slug] || !FACTOR_GUIDE[slug].name || !FACTOR_GUIDE[slug].meaning).forEach((slug) => problems.push(`${slug} has no name or meaning`))
-            if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,uncertainty,solving") problems.push("the groups are not in the owner's order")
+            // Round 20 (owner): firmness joins uncertainty tolerance in "Two traits that make you different"
+            if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,positions,solving") problems.push("the groups are not in the owner's order")
+            if ((GUIDE_GROUPS.find((group) => group.key === "positions") || {}).factors.join() !== "uncertainty_tolerance,firmness") problems.push("firmness and uncertainty tolerance are not grouped together")
             if (GUIDE_GROUPS.some((group) => !group.meaning)) problems.push("a group has no meaning line")
 
             const raw = Object.fromEntries(all.map((slug, index) => [slug, (index * 37) % 11]))
@@ -4630,6 +4612,8 @@ const fixtures = [
             if (!confidence || !["High", "Medium", "Low"].includes(confidence.level)) problems.push("confidence is not shown as a word level")
             const uncertainty = factors.find((factor) => factor.slug === "uncertainty_tolerance")
             if (!uncertainty || uncertainty.level !== undefined || !uncertainty.position) problems.push("uncertainty tolerance is not a position")
+            const firmness = factors.find((factor) => factor.slug === "firmness")
+            if (!firmness || firmness.level !== undefined || !firmness.position) problems.push("firmness is not a position")
             if (factors.some((factor) => factor.partialPct !== 50)) problems.push("Partial · N% is missing")
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -4746,7 +4730,8 @@ const fixtures = [
             const read = (file) => fs.readFileSync(path.join(__dirname, "../../..", file), "utf8")
             const router = read("Backend/Routers/mentorWaitlistRouter.js")
             const model = read("Backend/model/mentorWaitlistModel.js")
-            const page = read("Frontend/src/pages/User/Mentorship.js")
+            // Round 20 (owner): the inputs moved to their own page — read the mentor pages together
+            const page = ["Mentorship.js", "MentorshipChoose.js", "mentorshipParts.js"].map((name) => read(`Frontend/src/pages/User/${name}`)).join("\n")
             const admin = read("Frontend/src/pages/Admin/MentorMatchesList.js")
             const save = (router.split('router.put("/saveMyHelp"')[1] || "").split("router.")[0]
             if (!save) problems.push("there is no saveMyHelp route")
@@ -4840,7 +4825,10 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 19 — the report is an overview in the owner's order; every match, sort and filter is on /report/matches",
+        // Round 20 (owner): combined careers became a button in the Your matches card, the four
+        // fundamentals became five, the headings share one medium size, and "ignoring switching cost"
+        // no longer adds careers (so there is no "added" note)
+        name: "ROUND 19/20 — the report is an overview in the owner's order; every match, sort and filter is on /report/matches",
         run: () => {
             const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
             const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
@@ -4848,13 +4836,16 @@ const fixtures = [
             const problems = []
             if (!/path="\/report\/matches"/.test(app)) problems.push("no /report/matches route")
             if (!/className="report-title">Your report/.test(page)) problems.push("'Your report' is not the centred title")
-            const order = ["<h2>Your matches</h2>", "<h2>Combined careers</h2>", "<h2>What seems to drive you</h2>", "<strong>The four fundamentals</strong>", "<strong>What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
+            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">What seems to drive you</h2>", ">The five fundamentals</strong>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
             if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push(`the overview is not in the owner's order: ${order.join(",")}`)
             if (!/to="\/report\/matches"/.test(page)) problems.push("the overview does not open the matches page")
-            if (!/Your other qualities are on your/.test(page)) problems.push("the fundamentals do not say where the rest is, and why")
+            if (!/The rest of your qualities<\/strong> — <Link to="\/profile">/.test(page) || !/They aren't\s+here on purpose/.test(page)) problems.push("the fifth fundamental does not point to the Profile, and say why")
+            if (/<h2>Combined careers<\/h2>/.test(page)) problems.push("combined careers are still a card of their own")
+            const medium = ["What seems to drive you", "The five fundamentals", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
+            if (medium.length > 0) problems.push(`not in the shared medium heading: ${medium.join(", ")}`)
             if (/<ReportSortMenu|buildList\(/.test(page)) problems.push("the sort or the list is still on the overview")
             if (!/Leave out blue-collar careers\*/.test(matches) || !/\* Some of the most AI-proof careers are blue-collar\./.test(matches)) problems.push("the blue-collar filter has no asterisk and side note")
-            if (!/added that our main ranking leaves out/.test(matches) || !/Same careers, ordered by how well they fit you alone/.test(matches)) problems.push("'ignoring switching cost' does not say what it changed")
+            if (/added that our main ranking leaves out/.test(matches) || !/nothing is moved for what\s+switching would cost you/.test(matches)) problems.push("'ignoring switching cost' does not say what it does")
             const combined = fs.readFileSync(path.join(REPORT_DIR, "CombinedCareers.js"), "utf8")
             if (!/<ProfessionCard[\s\S]*?combined\s/.test(combined) || !/mix two professions/.test(combined)) problems.push("combined careers are not the same card with the note")
             if (/composeReport\(|require\("\.\/reportComposer"\)/.test(fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8"))) problems.push("the report worker still calls the model")
@@ -4890,7 +4881,7 @@ const fixtures = [
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
             const model = require("../../model/mentorWaitlistModel")
             const mongoose = require("mongoose")
-            const page = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "User", "Mentorship.js"), "utf8")
+            const page = ["Mentorship.js", "MentorshipChoose.js", "mentorshipParts.js"].map((name) => fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "User", name), "utf8")).join("\n")
             const admin = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Admin", "MentorMatchesList.js"), "utf8")
             const problems = []
             if (!/const HELP_FOCUS = \["career", "passion", "both"\]/.test(router) || !/HELP_FOCUS\.includes\(req\.body\.helpFocus\)/.test(router)) problems.push("helpFocus is not whitelisted")
@@ -4926,6 +4917,31 @@ const fixtures = [
             if (!/^ruled out — needs biology/.test(landed["hlt-dietitian"] || "")) problems.push("a ruled-out career does not say why")
             const css = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "styles", "app.css"), "utf8")
             if (!/hr\.story-end \{/.test(css) || !/<hr className="story-end" \/>/.test(fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "StoryRecall.js"), "utf8"))) problems.push("no space between the story and its instruction")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 20 — the mentor page says where things stand first and ends with How it works; every input is on /mentorship/choose",
+        run: () => {
+            const read = (name) => fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "User", name), "utf8")
+            const main = read("Mentorship.js")
+            const choose = read("MentorshipChoose.js")
+            const app = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "App.js"), "utf8")
+            const problems = []
+            if (!/path="\/mentorship\/choose"/.test(app)) problems.push("no /mentorship/choose route")
+            if (/<textarea|type="radio"|CareerRolePicker|<HelpWanted/.test(main)) problems.push("an input is still on /mentorship")
+            if (!/<HelpWanted/.test(choose) || !/CareerRolePicker/.test(choose) || !/name="jobRole"/.test(choose)) problems.push("the inputs are not on /mentorship/choose")
+            const standing = main.indexOf("We're finding your mentor")
+            const how = main.indexOf("<h3>How it works</h3>")
+            if (standing < 0 || how < 0 || standing > how) problems.push("the status does not come first, or How it works is missing")
+            ;["<Framing />", "Who your mentor will be", "The sessions", "<MentorRolloverPolicy"].forEach((part) => {
+                if (main.indexOf(part) < how) problems.push(`${part} is not inside How it works at the end`)
+            })
+            if (!/Need to change your choice\?/.test(main)) problems.push("the WhatsApp line for changing a choice is gone")
+            if (!/You chose <strong>\{chosenText\}/.test(choose)) problems.push("a sent choice is not shown on the choose page")
+            const nav = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Navbar.js"), "utf8")
+            if (!/>Dashboard<\/NavLink>/.test(nav) || /to="\/mentorship"/.test(nav)) problems.push("the menu bar should say Dashboard and carry no Mentorship link")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

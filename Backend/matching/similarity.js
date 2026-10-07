@@ -1,9 +1,17 @@
 // The one weighted-match calculation. Program 2 uses it to compare an ACTIVITY against a
-// profession and Program 3 to compare a STUDENT against one — the same arithmetic both times,
-// deliberately, so a 0.82 means the same thing wherever it appears.
+// profession and Program 3 to compare a STUDENT against one.
 //
-//     similarity(f) = 1 − |profession[f] − subject[f]| / 10
+//     similarity(f) = 1 − gap_f / 10
 //     match         = Σ(weight_f · similarity_f) / Σ(weight_f)
+//
+// THE GAP DEPENDS ON WHAT IS BEING COMPARED (owner, Round 20).
+//   · A STUDENT against a profession (`oneSided: true`): having MORE of a quality than the work asks
+//     is a full fit — only a shortfall counts, gap = max(0, demand − held). The exceptions are the
+//     factors in TWO_SIDED_FACTORS (uncertainty tolerance and firmness): a career can rightly want
+//     either end of them, so a gap either way counts, |demand − held|.
+//   · An ACTIVITY against a profession (Program 2): two-sided throughout. That compares the nature
+//     of two things — an intense physical activity rated high on bodily skill is not "like" a desk
+//     career just because the desk career asks for less.
 //
 // A NULL IS AN ABSENCE, NEVER A ZERO. A factor the subject has no score for is dropped and the
 // remaining weights renormalise. Substituting a middle value would invent a 5.0 the student never
@@ -11,7 +19,7 @@
 // absence costs is recorded as match_confidence rather than hidden.
 
 const scoreProfile = require("../scoring/scoreProfile")
-const { MINOR_GROUP_WEIGHT } = require("./constants")
+const { MINOR_GROUP_WEIGHT, TWO_SIDED_FACTORS } = require("./constants")
 
 const { MATCHING_FACTORS, MINOR_FACTORS, UNIVERSAL_FACTORS } = scoreProfile
 
@@ -30,7 +38,7 @@ const round4 = (value) => Math.round(value * 10000) / 10000
 
 // professionFactors / professionWeights come from baseline_rating.json; subjectVector is either an
 // activity's rubric-scored factors or the student's own.
-const weightedMatch = (professionFactors, professionWeights, subjectVector) => {
+const weightedMatch = (professionFactors, professionWeights, subjectVector, { oneSided = false } = {}) => {
     let weightedSimilarity = 0
     let usedWeight = 0
     let missingWeight = 0
@@ -48,7 +56,8 @@ const weightedMatch = (professionFactors, professionWeights, subjectVector) => {
             return
         }
 
-        const similarity = 1 - Math.abs(demand - held) / 10
+        const gap = oneSided && !TWO_SIDED_FACTORS.includes(slug) ? Math.max(0, demand - held) : Math.abs(demand - held)
+        const similarity = 1 - gap / 10
 
         perFactor[slug] = { demand, held, similarity: round4(similarity), weight: round4(weight) }
         weightedSimilarity += weight * similarity

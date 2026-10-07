@@ -114,6 +114,8 @@ const cleanSignal = (signal) => ({
 // ONLY — never the gap, the weight or either score. A factor not measured is never listed (missing is
 // not low), and uncertainty tolerance is a position, so it is never something to "work on".
 const BASELINE = new Map(require("../data/baseline_rating.json").ratings.map((row) => [row.id, row]))
+// Positions, not levels (owner, Rounds 10 and 20): never something to "work on"
+const POSITION_FACTORS = ["uncertainty_tolerance", "firmness"]
 const WORK_ON_WEIGHT = 0.3
 const WORK_ON_GAP = 1.5
 const WORK_ON_SHOWN = 4
@@ -122,7 +124,7 @@ const workOnFor = (professionId, raw = {}) => {
     const rating = BASELINE.get(professionId)
     if (!rating) return []
     return Object.entries(rating.weights || {})
-        .filter(([slug, weight]) => weight >= WORK_ON_WEIGHT && slug !== "uncertainty_tolerance" && FACTOR_GUIDE[slug])
+        .filter(([slug, weight]) => weight >= WORK_ON_WEIGHT && !POSITION_FACTORS.includes(slug) && FACTOR_GUIDE[slug])
         .filter(([slug]) => typeof raw[slug] === "number" && typeof rating.factors[slug] === "number")
         .map(([slug, weight]) => ({ slug, weight, gap: rating.factors[slug] - raw[slug] }))
         .filter((row) => row.gap > WORK_ON_GAP)
@@ -239,12 +241,6 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 sections: report.sections,
                 ranked: recommendation ? recommendation.ranked_professions.map((entry) => withWorkOn(stripInternal(entry))) : [],
                 combined: recommendation ? (recommendation.combined_careers || []).map(stripInternal) : [],
-                // ROUTED THROUGH THE SAME CLEANER, which it was not before. worth_the_switch
-                // carries `supportingFactors` exactly like the ranking does, and it was the one
-                // array that skipped this — so its factors reached the page as raw engine slugs
-                // (`propensity_to_go_deep`) while the ranking beside it showed proper labels. A
-                // latent bug until the redesign gave this list its own card.
-                worthTheSwitch: recommendation ? (recommendation.worth_the_switch || []).map((entry) => withWorkOn(stripInternal(entry))) : [],
                 filtered: recommendation ? recommendation.filtered : [],
                 aspirationSignals: recommendation
                     ? (recommendation.aspiration_signals || []).map((signal) => ({ ...cleanSignal(signal), readAs: readAsFor(signal, recommendation.activity_readings) }))
@@ -298,6 +294,15 @@ const levelFor = (score) => {
     return "Low"
 }
 
+// Firmness is a position too since Round 20 (owner): some careers want a firm view, some want
+// someone open to changing it, so neither end is better.
+const firmnessPosition = (score) => {
+    if (typeof score !== "number" || Number.isNaN(score)) return null
+    if (score >= HIGH_FROM) return "holds firmly to a view you've thought through"
+    if (score >= MEDIUM_FROM) return "somewhere in between"
+    return "open to changing your view"
+}
+
 const uncertaintyPosition = (score) => {
     if (typeof score !== "number" || Number.isNaN(score)) return null
     if (score >= HIGH_FROM) return "comfortable not knowing"
@@ -323,7 +328,9 @@ const scoreGroupsFor = (raw = {}, coverage = {}) => GUIDE_GROUPS.map((group) => 
         name: FACTOR_GUIDE[slug].name,
         meaning: FACTOR_GUIDE[slug].meaning,
         // null → "not measured yet" on the page
-        ...(slug === "uncertainty_tolerance" ? { position: uncertaintyPosition(raw[slug]) } : { level: levelFor(raw[slug]) }),
+        ...(slug === "uncertainty_tolerance" ? { position: uncertaintyPosition(raw[slug]) }
+            : slug === "firmness" ? { position: firmnessPosition(raw[slug]) }
+                : { level: levelFor(raw[slug]) }),
         partialPct: coveragePctOf(coverage[slug], raw[slug]),
     })),
 }))

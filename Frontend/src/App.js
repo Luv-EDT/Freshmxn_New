@@ -15,6 +15,7 @@ import ParentConsent from "./pages/User/ParentConsent"
 import FollowUpPage from "./pages/Public/FollowUpPage"
 import Profile from "./pages/User/Profile.js"
 import Mentorship from "./pages/User/Mentorship.js"
+import MentorshipChoose from "./pages/User/MentorshipChoose.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
 import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
 import InterestForm from "./pages/Interest/InterestForm.js"
@@ -100,6 +101,12 @@ function App() {
                 <Route path="/mentorship" element={
                     <ProtectedRoute>
                         <Mentorship />
+                    </ProtectedRoute>
+                } />
+                {/* Round 20 (owner): everything the student fills in for their mentor, on its own page */}
+                <Route path="/mentorship/choose" element={
+                    <ProtectedRoute>
+                        <MentorshipChoose />
                     </ProtectedRoute>
                 } />
 

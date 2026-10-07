@@ -2,8 +2,9 @@ import { Link, NavLink } from "react-router-dom"
 import { useSelector } from "react-redux"
 import logo from "../assets/brand/logo.png"
 
-// The logged-in app header. The logo always leads to the company landing page; "Home" is the
-// student's own dashboard.
+// The logged-in app header. The logo always leads to the company landing page; "Dashboard" is the
+// student's own dashboard (owner, Round 20: named for what it is, and the only page link — the
+// interest form, assessment, report and mentorship are all reached from the dashboard).
 function Navbar() {
     const { user } = useSelector((state) => state.user)
 
@@ -17,18 +18,16 @@ function Navbar() {
                 {user && user.role === "admin" && <NavLink to="/admin" className={navClass}>Admin</NavLink>}
                 {user && user.role !== "admin" && (
                     <>
-                        <NavLink to="/dashboard" className={navClass}>Home</NavLink>
+                        <NavLink to="/dashboard" className={navClass}>Dashboard</NavLink>
                         {/* the interest form is reached from the dashboard's journey, not from here */}
                         {!user.paid && <NavLink to="/paywall" className={navClass}>Get Access</NavLink>}
-                        {/* Mentorship comes with Discovery + Mentor and Mentor Only, so the waitlist page only exists for them */}
-                        {user.paid && (user.currentTier === 2 || user.currentTier === 3) && <NavLink to="/mentorship" className={navClass}>Mentorship</NavLink>}
                     </>
                 )}
 
                 <span className="nav-spacer" />
 
                 {/* LOG OUT LIVES ON THE PROFILE PAGE, NOT HERE. It was in both places, and a nav bar is
-                    the wrong one: it sits next to Home and Interest Form on every screen, including
+                    the wrong one: it sits next to Dashboard on every screen, including
                     mid-assessment, where the most destructive action available is one mis-tap from the
                     thing beside it. Profile.js already has it, behind the same confirm, next to the
                     account it belongs to. */}

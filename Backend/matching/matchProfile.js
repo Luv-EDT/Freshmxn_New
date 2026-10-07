@@ -26,7 +26,7 @@ const scoreProfile = require("../scoring/scoreProfile")
 const { runProgramOne } = require("./program1")
 const { runProgramTwo } = require("./program2")
 const { runProgramThree } = require("./program3")
-const { sortIntoTiers, worthTheSwitch, applySort } = require("./tiers")
+const { sortIntoTiers, applySort } = require("./tiers")
 const { buildAspirationSignals } = require("./aspirationSignal")
 const { readJourney } = require("./journey")
 const { findCombined } = require("./combined")
@@ -41,7 +41,11 @@ const constants = require("./constants")
 // 1.3.0 (Round 17): every new activity wording is NAMED before it is matched ("Cricketer", a long
 // sentence and Hinglish all become "playing cricket"), so the same answers can reach different
 // careers. Students see "Update my report"; nothing rebuilds by itself.
-const MATCHING_VERSION = "matching@1.3.0"
+// 2.0.0 (Round 20, owner): a student's fit is ONE-SIDED — more of a quality than the work asks is a
+// full fit (uncertainty tolerance and firmness stay two-sided); "fits how you think" is 0.85, not 0.7;
+// careers are ordered by fit inside a tier (the switching cost no longer reorders them); the
+// worth-the-switch extras are gone. Students see "Update my report"; nothing rebuilds by itself.
+const MATCHING_VERSION = "matching@2.0.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")
@@ -71,7 +75,6 @@ const matchProfile = ({ profile, interest, user, professions, baseline, resolved
     })
 
     const ranked = sortIntoTiers(programThree.ranked)
-    const rankedIds = new Set(ranked.map((entry) => entry.professionId))
 
     const tierCounts = {}
     ranked.forEach((entry) => { tierCounts[entry.tier] = (tierCounts[entry.tier] || 0) + 1 })
@@ -112,10 +115,6 @@ const matchProfile = ({ profile, interest, user, professions, baseline, resolved
 
         // "Reachable from here" — cost-weighted, tier-sorted.
         ranked: applySort(ranked, sort || "default"),
-
-        // "Worth the switch" — top 3 by raw fit, cost shown but not applied. §5 insists both lists
-        // are always shown, because fit × cost alone will never advise the hard change.
-        worthTheSwitch: worthTheSwitch(programThree.universe, rankedIds),
 
         // Careers that join two of the student's areas (combined.js) — beside the ranking, never in it.
         combined: findCombined({ ranked, universe: programThree.universe, data: combinedCareers }),

@@ -1,5 +1,5 @@
-// The report's shared framing (Round 19): the five bands, the per-journey wording and two small
-// helpers, used by the report overview (ReportPage.js) and the matches page (MatchesPage.js).
+// The report's shared framing (Round 19): the sixteen tier names (Round 20), the per-journey wording and
+// small helpers, used by the report overview (ReportPage.js) and the matches page (MatchesPage.js).
 //
 // Stage 3 — the report.
 //
@@ -24,51 +24,44 @@
 // match_confidence is already stripped by reportsRouter, and every factor slug is already
 // translated there. Nothing here needs to know either exists.
 
-// ── THE SIXTEEN TIERS, MADE VISIBLE ─────────────────────────────────────────────────────────────
+// ── THE SIXTEEN TIERS, MADE VISIBLE (owner, Round 20) ───────────────────────────────────────────
 //
-// `tiers.js` sorts every profession into one of sixteen buckets from three signals. Sixteen
-// headings on a screen would be noise, so they collapse into five bands — and since Round 6 the
-// bands are no longer headings in the list at all (students could not tell them apart). The RULE
-// behind each one is shown inside "How this list is ordered", because a ranking a student cannot
-// interrogate is just an opinion with a number on it.
+// `tiers.js` sorts every profession into one of sixteen tiers from three signals, and since Round 20
+// the matches page shows them as headed groups when the list is opened — only the tiers that have
+// careers in them. Until then five bands stood in for them; students could not see why a career sat
+// where it did. A ranking a student cannot interrogate is just an opinion with a number on it.
 //
-// The three signals, and the exact tier boundaries they produce (see Backend/matching/tiers.js):
+// The three signals (see Backend/matching/tiers.js):
 //
 //   list      A = something you have pursued long-term points here
 //             B = something you do now points here
 //             C = neither; it reached you on profile alone
-//   comfort   does the psychometric profile clear 0.7 against what the work demands
-//             (tiers 1-11 yes, 12-16 no)
+//   comfort   does the profile fit what the work demands (tiers 1-11 yes, 12-16 "a stretch")
 //   evidence  passion → achievement → expressed confidence, in that order of weight.
-//             "Loved it" beats "won at it" beats "sure about it", and self-report ranks last
-//             because it is the softest of the three.
-export const TIER_GROUPS = [
-    {
-        upTo: 2,
-        label: "Strongest matches",
-        why: "You love the thing that leads here, you have achieved something in it, and it fits how you think and work.",
-    },
-    {
-        upTo: 6,
-        label: "Strong matches",
-        why: "Something you do points here and it fits your profile. You said you love it.",
-    },
-    {
-        upTo: 8,
-        label: "Worth a look",
-        why: "You have achieved something that points here and it fits your profile — even though you did not mark it as a passion.",
-    },
-    {
-        upTo: 11,
-        label: "Fits how you work",
-        why: "The profile fit is there and something connects you to it, but there is no passion or achievement behind it yet.",
-    },
-    {
-        upTo: 16,
-        label: "Further from your current shape",
-        why: "Reachable, and something links you to it — but the way this work is usually done sits further from how you currently work.",
-    },
+export const TIER_NAMES = [
+    { tier: 1, name: "Long-time passions you've achieved in" },
+    { tier: 2, name: "Current passions you've achieved in" },
+    { tier: 3, name: "Long-time passions you feel sure about" },
+    { tier: 4, name: "Current passions you feel sure about" },
+    { tier: 5, name: "Long-time passions" },
+    { tier: 6, name: "Current passions" },
+    { tier: 7, name: "Long-time activities you've achieved in" },
+    { tier: 8, name: "Current activities you've achieved in" },
+    { tier: 9, name: "Linked to something you've kept up for years" },
+    { tier: 10, name: "Linked to something you do now" },
+    { tier: 11, name: "Fits your profile" },
+    { tier: 12, name: "A stretch — a long-time passion or achievement" },
+    { tier: 13, name: "A stretch — a current passion or achievement" },
+    { tier: 14, name: "A stretch — linked to a long-time activity" },
+    { tier: 15, name: "A stretch — linked to something you do now" },
+    { tier: 16, name: "A stretch — reached on your profile alone" },
 ]
+
+// the heading a tier is shown under, and the words "why it ranked there" uses
+export const tierNameFor = (tier) => {
+    const found = TIER_NAMES.find((row) => row.tier === tier)
+    return found ? found.name : null
+}
 
 
 // "a, b and c" — because "spatial thinking, reasoning" reads like a truncated list rather than a
@@ -76,8 +69,6 @@ export const TIER_GROUPS = [
 // how many careers show before "Show the other N" (owner, Round 13; three since Round 18)
 export const TOP_SHOWN = 3
 
-// the band a tier sits in, for "why it ranked there"
-export const tierGroupFor = (tier) => (typeof tier === "number" ? TIER_GROUPS.find((group) => tier <= group.upTo) : null)
 
 export const listOf = (items) => {
     if (items.length === 0) return ""

@@ -1,187 +1,25 @@
-import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { Modal, message } from "antd"
-import dayjs from "dayjs"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
 import MentorRolloverPolicy from "../Public/MentorRolloverPolicy"
-import { getMyWaitlist, chooseProfession, saveMyHelp } from "../../apiCall/mentorWaitlistApi"
-import CareerRolePicker, { pickerComplete, pickerSummary } from "../CareerRolePicker"
 import { hasMentor } from "../plans"
+import { formatDate, Framing, useMentorWaitlist, HelpLine } from "./mentorshipParts"
 
-// The mentor waitlist, after payment (mentor_waitlist_page.md). Discovery + Mentor students choose
-// from their own matches; Mentor Only students (Round 12) have no report, so they choose from all
-// our careers, or describe one we don't list. For Discovery + Mentor:
-//   1. complete Step 1 → 2. choose ONE JOB ROLE inside one of YOUR OWN MATCHES and send it →
-//   3. we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE (not of payment).
-// The choice is sent once: it starts the clock and our search. Changing it goes through WhatsApp,
-// and an admin resets it (Admin → Mentor Matches).
-
-const formatDate = (date) => (date ? dayjs(date).format("D MMM YYYY") : "")
-
-// WHAT THE SESSIONS COVER (owner, Round 18) — so a student knows what to ask for
-const SESSION_TOPICS = [
-    "What the work is like day to day",
-    "The drawbacks and the perks",
-    "The real picture — and your mentor's own story",
-    "How to get in, and the skills you'll need",
-    "Your questions, answered",
-]
-const HELP_MAX = 600
-
-// "For the role you choose, what help do you want?" (owner, Round 19)
-const HELP_FOCUS = [
-    { value: "career", label: "Career help", hint: "making it my work" },
-    { value: "passion", label: "Interest / passion help", hint: "pursuing it for meaning, alongside whatever pays" },
-    { value: "both", label: "Both", hint: "" },
-]
-
-// CONTRIBUTION AND INTEREST (owner, Round 19), said up front: everything we help with serves one of
-// the two, and the student says which they want for their role.
-const Framing = () => (
-    <section className="mentor-framing">
-        <p>
-            Everything we do serves one of two things. <strong>Contribution</strong> — earning, supporting your
-            family, standing on your own feet — is the base of Maslow's hierarchy: safety and security.{" "}
-            <strong>Interest</strong>, with passion as its strongest form, is what gives life meaning whether or
-            not it pays — the upper tiers: belonging, esteem, becoming yourself.
-        </p>
-        <p>We help with careers, and with how to carry something you love forward in life.</p>
-    </section>
-)
-
-// "What do you want from your mentor?" — the session list, an open box for anything specific, and a
-// tick box for help with a master's abroad or settling abroad, which a later version will offer.
-// Saved on its own, any time; it never touches the choice or the 20-business-day clock.
-function HelpWanted({ waitlist, onSaved }) {
-    const [text, setText] = useState(waitlist.helpWanted || "")
-    const [abroad, setAbroad] = useState(Boolean(waitlist.abroadHelpWaitlist))
-    const [focus, setFocus] = useState(waitlist.helpFocus || null)
-    const [saving, setSaving] = useState(false)
-    const changed = text !== (waitlist.helpWanted || "") || abroad !== Boolean(waitlist.abroadHelpWaitlist) || focus !== (waitlist.helpFocus || null)
-
-    const save = async () => {
-        setSaving(true)
-        const response = await saveMyHelp({ helpWanted: text, helpFocus: focus, abroadHelpWaitlist: abroad })
-        setSaving(false)
-        if (!response || response.data.success === false) {
-            message.error(response?.data?.message || "Could not save")
-            return
-        }
-        message.success(response.data.message)
-        onSaved(response.data.data)
-    }
-
-    return (
-        <section className="mentor-help">
-            <h3>What do you want from your mentor?</h3>
-            <fieldset className="mentor-focus">
-                <legend><strong>For the role you choose, what help do you want?</strong></legend>
-                {HELP_FOCUS.map((option) => (
-                    <label key={option.value} className="choice">
-                        <input type="radio" name="helpFocus" value={option.value} checked={focus === option.value} onChange={() => setFocus(option.value)} />
-                        <span><strong>{option.label}</strong>{option.hint && ` — ${option.hint}`}</span>
-                    </label>
-                ))}
-            </fieldset>
-            <p>Your sessions cover:</p>
-            <ul>
-                {SESSION_TOPICS.map((topic) => <li key={topic}>{topic}</li>)}
-            </ul>
-            <label htmlFor="help-wanted" className="mentor-help-label"><strong>Anything specific you want to know?</strong></label>
-            <textarea
-                id="help-wanted"
-                rows={4}
-                maxLength={HELP_MAX}
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                placeholder="For example: what a normal week looks like, which college choices mattered, how you got your first job"
-            />
-            <p className="report-small mentor-help-count">{text.length}/{HELP_MAX} — your mentor sees this before you meet.</p>
-            <label className="choice">
-                <input type="checkbox" checked={abroad} onChange={(event) => setAbroad(event.target.checked)} />
-                <span>
-                    <strong>Help with a master's abroad or settling abroad?</strong> In a future version we'll help
-                    you with this. Tick to join that waitlist.
-                </span>
-            </label>
-            <p>
-                <button type="button" className="btn btn-primary" disabled={!changed || saving} onClick={save}>
-                    {saving ? "Saving…" : "Save"}
-                </button>
-            </p>
-        </section>
-    )
-}
-
+// The mentor waitlist, after payment (mentor_waitlist_page.md). Since Round 20 (owner) this page says
+// WHERE THINGS STAND first — choose your mentor's job role, we're finding your mentor, or your mentor
+// is confirmed — and ends with HOW IT WORKS (contribution and interest, who your mentor will be, how
+// the sessions run, the 20-business-day policy). Everything the student fills in lives on
+// /mentorship/choose (MentorshipChoose.js).
+//
+// For Discovery + Mentor: 1. complete Step 1 → 2. choose ONE JOB ROLE inside one of YOUR OWN MATCHES
+// → 3. we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE (not of payment). The choice is sent
+// once; changing it goes through WhatsApp, and an admin resets it (Admin → Mentor Matches).
 function Mentorship() {
     const navigate = useNavigate()
     const { user } = useSelector((state) => state.user)
-    const [waitlist, setWaitlist] = useState(null)
-    // the careers and their job roles, built on the server from the student's own ranking
-    const [options, setOptions] = useState([])
-    const [selected, setSelected] = useState(null)   // { professionId, profession, jobRole }
-    const [loading, setLoading] = useState(true)
-
     const isTier2 = hasMentor(user)   // Discovery + Mentor or Mentor Only — the name is kept from before
-    const [ownChoice, setOwnChoice] = useState({})   // Mentor Only: the picker's value
-
-    useEffect(() => {
-        if (!isTier2) {
-            setLoading(false)
-            return
-        }
-
-        const load = async () => {
-            try {
-                const waitlistResponse = await getMyWaitlist()
-                const place = waitlistResponse?.data?.data || null
-                setWaitlist(place)
-                setOptions((place && place.options) || [])
-            } finally {
-                setLoading(false)
-            }
-        }
-        load()
-    }, [isTier2])
-
-    const sendChoice = async () => {
-        const payload = waitlist && waitlist.mentorOnly
-            ? (typeof ownChoice.other === "string"
-                ? { other: ownChoice.other, industryCode: ownChoice.industryCode || null }
-                : { professionId: ownChoice.professionId, jobRole: ownChoice.jobRole, jobRoleOther: ownChoice.jobRoleOther, industryCode: ownChoice.industryCode || null })
-            : { professionId: selected.professionId, jobRole: selected.jobRole }
-        const response = await chooseProfession(payload)
-
-        if (!response || response.data.success === false) {
-            message.error(response?.data?.message || "Could not send your choice")
-            return
-        }
-
-        message.success(response.data.message)
-        setWaitlist((prev) => ({ ...prev, ...response.data.data }))
-    }
-
-    const confirmChoice = () => {
-        const mentorOnly = waitlist && waitlist.mentorOnly
-        if (mentorOnly ? !pickerComplete(ownChoice) : !selected) return
-
-        Modal.confirm({
-            title: mentorOnly ? `Send "${pickerSummary(ownChoice)}" as your choice?` : `Send "${selected.jobRole}" (${selected.profession}) as your choice?`,
-            content: "This starts your 20-business-day mentor match. You can't change it here afterwards — if you need to, message us on WhatsApp.",
-            okText: "Send my choice",
-            cancelText: "Not yet",
-            onOk: sendChoice,
-        })
-    }
-
-    // Round 13 (owner): help is one tap away on every state of this page
-    const help = (
-        <p className="help-line">
-            Need help? <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">WhatsApp us</a>
-        </p>
-    )
+    const { waitlist, loading } = useMentorWaitlist(isTier2)
 
     if (!user) return null
 
@@ -193,7 +31,7 @@ function Mentorship() {
                 <main className="page">
                     <h2>Mentorship</h2>
                     <p>Mentorship comes with the Discovery + Mentor and Mentor Only plans.</p>
-                    {help}
+                    <HelpLine />
                     <button type="button" className="tap" onClick={() => navigate("/paywall")}>See plans</button>
                 </main>
             </div>
@@ -212,7 +50,7 @@ function Mentorship() {
                     <div className="skeleton skeleton-line" />
                     <div className="skeleton skeleton-block" />
                     <div className="skeleton skeleton-line short" />
-                    {help}
+                    <HelpLine />
                 </main>
             </div>
         )
@@ -226,80 +64,16 @@ function Mentorship() {
             <BackToDashboard />
             <main className="page">
                 <h2>🤝 Mentorship</h2>
-                <Framing />
 
-                {waitlist && waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
+                {/* 1. WHERE THINGS STAND */}
+                {waitlist && waitlist.matchStatus === "awaiting_choice" && (
                     <section>
                         <h3>Choose the job role you'd like a mentor in</h3>
                         <p>
-                            Find the career you're interested in and pick the <strong>one job role</strong> you'd like to
-                            move toward. If it isn't in our list, tell us in your own words. We'll confirm your mentor and
-                            schedule your two sessions within <strong>20 business days</strong> of your choice.
+                            Pick the <strong>one job role</strong> you'd like to move toward. We'll confirm your mentor
+                            within <strong>20 business days</strong> of your choice.
                         </p>
-                        <CareerRolePicker value={ownChoice} onChange={setOwnChoice} allowAnyCareer />
-                        <p>
-                            {pickerComplete(ownChoice) ? <>Your choice: <strong>{pickerSummary(ownChoice)}</strong>{" "}</> : ""}
-                            <button type="button" className="btn btn-primary" disabled={!pickerComplete(ownChoice)} onClick={confirmChoice}>
-                                Send my choice
-                            </button>
-                        </p>
-                    </section>
-                )}
-
-                {waitlist && !waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
-                    <section>
-                        <h3>Choose the job role you'd like a mentor in</h3>
-                        <p>
-                            Open a career from your matches and pick the <strong>one job role</strong> you'd genuinely like to
-                            move toward — we'll look for a mentor who does that work. We'll confirm your mentor and schedule
-                            your two sessions within <strong>20 business days</strong> of your choice.
-                        </p>
-
-                        {options.length === 0 ? (
-                            <p>
-                                Finish your assessment first — your matches appear here once your report is ready.{" "}
-                                <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Go to my journey</button>
-                            </p>
-                        ) : (
-                            <>
-                                {/* Round 18 (owner): why "Suits you" appears on some roles and not others */}
-                                <p className="report-small">
-                                    Job roles are listed by how well they fit you. "Suits you" marks the best fits; careers
-                                    without distinct role types list their roles as one group.
-                                </p>
-                                <div className="role-picker">
-                                    {options.map((option) => (
-                                        <details key={option.professionId} className="role-picker-career">
-                                            <summary>
-                                                <span>#{option.rank} {option.profession}</span>
-                                                {selected && selected.professionId === option.professionId && <span className="role-picker-chosen">✓ {selected.jobRole}</span>}
-                                            </summary>
-                                            <div className="role-picker-roles" role="radiogroup" aria-label={`Job roles in ${option.profession}`}>
-                                                {option.jobRoles.map((role) => (
-                                                    <label key={role} className="choice">
-                                                        <input
-                                                            type="radio"
-                                                            name="jobRole"
-                                                            value={`${option.professionId}::${role}`}
-                                                            checked={Boolean(selected && selected.professionId === option.professionId && selected.jobRole === role)}
-                                                            onChange={() => setSelected({ professionId: option.professionId, profession: option.profession, jobRole: role })}
-                                                        />
-                                                        <span>{role}</span>
-                                                        {option.suitsYou.includes(role) && <span className="role-picker-suits">Suits you</span>}
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </details>
-                                    ))}
-                                </div>
-                                <p>
-                                    {selected ? <>Your choice: <strong>{selected.jobRole}</strong> ({selected.profession}){" "}</> : "Pick one job role. "}
-                                    <button type="button" className="btn btn-primary" disabled={!selected} onClick={confirmChoice}>
-                                        Send my choice
-                                    </button>
-                                </p>
-                            </>
-                        )}
+                        <p><Link to="/mentorship/choose" className="btn btn-primary tap">Choose your mentor's job role →</Link></p>
                     </section>
                 )}
 
@@ -345,41 +119,47 @@ function Mentorship() {
                     </section>
                 )}
 
-                {waitlist && (
-                    <HelpWanted waitlist={waitlist} onSaved={(saved) => setWaitlist((prev) => ({ ...prev, ...saved }))} />
+                {/* 2. WHAT YOU'VE TOLD US — all the inputs are on their own page */}
+                {waitlist && waitlist.matchStatus !== "awaiting_choice" && (
+                    <p><Link to="/mentorship/choose" className="btn btn-ghost btn-sm tap">Your answers for your mentor →</Link></p>
                 )}
 
-                {help}
+                <HelpLine />
 
-                {/* once matched, the policy and the explainer have done their job (owner, Round 13) */}
-                {!matched && (
-                <>
-                <MentorRolloverPolicy mentorOnly={Boolean(waitlist && waitlist.mentorOnly)} />
+                {/* 3. HOW IT WORKS — everything else, at the end (owner, Round 20). Once matched, the policy
+                    and the explainer have done their job and only the framing stays (owner, Round 13). */}
+                <section className="mentor-how">
+                    <h3>How it works</h3>
+                    <Framing />
+                    {!matched && (
+                        <>
+                            <h4>Who your mentor will be</h4>
+                            <p>
+                                Your mentor will be a <strong>mid-level professional</strong> — and that's a deliberate
+                                choice, not a compromise. We don't pair you with industry veterans or highly qualified
+                                outliers, because the further someone is from where you're standing, the harder it is to
+                                relate to them.
+                            </p>
+                            <p>
+                                We want someone whose own start is still near enough in time to be useful to you — an
+                                older-sibling kind of relationship rather than a lecture. They will be competent; that
+                                part is a given. What we're really after is relatability, and above all a good
+                                mentor–mentee relationship.
+                            </p>
 
-                <h3>Who your mentor will be</h3>
-                <p>
-                    Your mentor will be a <strong>mid-level professional</strong> — and that's a deliberate
-                    choice, not a compromise. We don't pair you with industry veterans or highly qualified
-                    outliers, because the further someone is from where you're standing, the harder it is to
-                    relate to them.
-                </p>
-                <p>
-                    We want someone whose own start is still near enough in time to be useful to you — an
-                    older-sibling kind of relationship rather than a lecture. They will be competent; that
-                    part is a given. What we're really after is relatability, and above all a good
-                    mentor–mentee relationship.
-                </p>
+                            <h4>The sessions</h4>
+                            <p>
+                                We connect the two of you here and you have a couple of sessions together. After that you
+                                can book further sessions whenever you want more clarity. In the best case, they simply
+                                become your mentor for the long run.
+                            </p>
 
-                <h3>How it works</h3>
-                <p>
-                    We connect the two of you here and you have a couple of sessions together. After that you
-                    can book further sessions whenever you want more clarity. In the best case, they simply
-                    become your mentor for the long run.
-                </p>
-                </>
-                )}
+                            <MentorRolloverPolicy mentorOnly={Boolean(waitlist && waitlist.mentorOnly)} />
+                        </>
+                    )}
+                </section>
 
-                <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Back to home</button>
+                <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Back to dashboard</button>
             </main>
         </div>
     )

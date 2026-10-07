@@ -150,7 +150,6 @@ const runOne = async (userId) => {
                 baseline_version: baseline.schema_version || null,
                 matching_version: match.matching_version,
                 ranked_professions: match.ranked,
-                worth_the_switch: match.worthTheSwitch,
                 combined_careers: match.combined || [],
                 filtered: match.filtered,
                 aspiration_signals: match.aspirationSignals,

@@ -68,7 +68,7 @@ const GUIDE_GROUPS = [
         key: "cognitive",
         title: "Cognitive abilities",
         meaning: "How you take in, hold and work with information.",
-        factors: ["reasoning", "short_term_memory", "long_term_memory", "processing_speed", "focus", "firmness"],
+        factors: ["reasoning", "short_term_memory", "long_term_memory", "processing_speed", "focus"],
     },
     {
         // mostly SELF-REPORT — what a student feels drawn to, not a measured ability (mi.js)
@@ -82,10 +82,11 @@ const GUIDE_GROUPS = [
         ],
     },
     {
-        key: "uncertainty",
-        title: "Uncertainty tolerance",
-        meaning: "How you like to work when the outcome isn't known. Neither end is better.",
-        factors: ["uncertainty_tolerance"],
+        // Round 20 (owner): two positions together — careers want different amounts of each
+        key: "positions",
+        title: "Two traits that make you different",
+        meaning: "Each can be high or low, and different careers want different amounts. Neither end is better — nothing here is bad.",
+        factors: ["uncertainty_tolerance", "firmness"],
     },
     {
         key: "solving",

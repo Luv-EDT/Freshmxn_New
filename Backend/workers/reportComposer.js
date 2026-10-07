@@ -194,12 +194,7 @@ const buildPayload = ({ profile, match, user }) => ({
         degreeDependency: entry.display.degreeDependency,
     })),
 
-    worthTheSwitch: match.worthTheSwitch.map((entry) => ({
-        profession: entry.profession,
-        yearsToQualify: entry.yearsToQualify,
-        wastedYears: entry.wastedYears,
-        alreadyRanked: entry.alreadyRanked,
-    })),
+    // worthTheSwitch: gone since Round 20 — the composer is unused (no AI summary since Round 19)
 
     ruledOut: match.filtered,
     aspirations: match.aspirationSignals,
