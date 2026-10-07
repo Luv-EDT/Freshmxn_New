@@ -26,13 +26,13 @@ job role, get a mentor; no assessment).
 | **Code** | `main` (Rounds 9–11 merged 3 Oct 2026; Round 12 and Round 13 merged after it). The cloud work happens on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@3.0.0`, one sortable list, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 25 (scoring) / 60 (matching) / 178 (workers) — all offline, all green |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@4.0.0` — no AI prose since Round 19; a short overview plus every match on `/report/matches`, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
+| **Tests** | fixtures 25 (scoring) / 60 (matching) / 185 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
-the profile) → `generate_report` job (match 223 careers, write the report with Claude) → the report
-page, which polls every 5 s. Both workers run inside the web process on the free plan. Details:
+the profile) → `generate_report` job (match 223 careers and file the report — no AI writing since Round 19) → the
+report page, which polls every 5 s. Both workers run inside the web process on the free plan. Details:
 `docs/HOW_FRESHMXN_WORKS.md`.
 
 ---
@@ -60,7 +60,7 @@ cd Backend && npm run seed:admin                  # once — the admin account
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 178/178 — offline, no DB, no API key
+node Backend/workers/fixtures/runFixtures.js     # 185/185 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -121,7 +121,6 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | Item | Notes |
 |---|---|
 | DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice (Privacy now has the sensitive-answers section, email-verified parental consent and the study-abroad partner on opt-in, policy `v1.2`). Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
-| Report prompt `report@3.0.0` (`Backend/workers/reportComposer.js`) | Three short lines; approve against a live run before real students |
 | Human review of the 223 baseline ratings (`baseline_rating.json`) | All still `unreviewed`. They drive matching |
 | **Disability support facts** (`Backend/data/disability_support.json`) | `verified_by_owner: false` — the report's support section stays hidden until the owner checks each row against its official source and sets it to true (Round 10) |
 | **Combined careers** (`Backend/data/combined_careers.json`, 42 careers, 54 side groups) | Owner approved the list (Appendix C); re-check the side groups once — they decide when a combined career appears |
@@ -149,7 +148,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Reports that crashed** (Round 18) | Any student whose story-recall free answer had no grade got "score_profile: (flags[key] \|\| []).concat is not a function" and **no report** (e.g. 6aad069b61181cfa69c61605). Fixed. After the deploy, open **Assessment issues**, and for each "report failed" row the student presses **Try again** on their report (or you re-queue it). The admin email now names the student |
 | **The 438 rewritten career notes** (Round 18) | Every note was rewritten in plain words (`nuances[i].student` in ALL-professions.json); 13 that only explain how the data was built are hidden. Read a sample; mentors also see and review them on their sheet. Edit by hand in the file, run the fixtures, commit |
 | **Subjects per route** (`Backend/data/subject_routes.json`, Round 18) | Eight "any stream" careers with a stream-gated route (B.Tech, MBBS, B.Pharm) now say the subjects per route. `reviewed_by_owner: false` — read it once |
-| **"What this says about you" is off** (Round 18) | The AI still writes its three lines into every report (a model call per report); the page no longer shows them. Switching the call off is in V2 |
+| **Long-term memory stuck at "Partial"** (Round 19) | 58% = 7 of 12 points: the story's short questions were scored, the free recall had no mark. After the deploy, a recall that can't be marked raises **"Story answers couldn't be marked — reason"** in Assessment issues, and Activity matches shows the story's marking beside the trace. Check your own account there |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
 **Owner to know (Round 10):**
@@ -2029,3 +2028,49 @@ card at 360 and 1280, both filters, compare, aspirations, mentorship, the sent f
 for an older account, voice after Add); uiFlow 65/65; Round 17 42/42; Round 14 14/14. r13k's report checks
 ("Your options at a glance", the readiness line) describe what the owner removed — superseded by r18.
 Build: the 8 known warning files.
+
+### Round 19 — the owner rebuilt their report: an overview and a matches page, the card for college students, no AI summary, a Dashboard button, the mentor page (2026-10-07)
+Owner's answers: only the four fundamentals on the report, with a line on why the rest is on the Profile;
+"Your matches" on its own page.
+
+| Item | What shipped |
+|---|---|
+| **Activity trace** | Admin → Activity matches → a student's email shows, per activity: what they wrote → the common name → the cache step (exact wording / exact name / near match with its similarity, e.g. 0.93 ≥ 0.90 / new rating) → the careers it points to → where each landed in their report (#rank, ruled out and why, or not in the list); the story's marking beside it. `activity_readings` now stores `namedAs`, `nearScore`, `candidates` |
+| **Report overview** (`/report`) | "Your report" centred; Your matches (top three, "See all N matches", Compare); Combined careers (with "these mix two professions, often from different sectors"); What seems to drive you; the four fundamentals (+ "your other qualities are on your Profile … they matter once you've chosen a profession"); What you said you wanted; Ruled out; Support; the upgrade card. `ReportPage.js` + `useReportData.js` (data, polling, retry, update) + `ReportStatus.js` (the screens shown instead of a report) + `reportFraming.js` (bands, journey wording) |
+| **Your matches** (`/report/matches`, `MatchesPage.js`) | The list, sort, filters, "How this list is ordered", the heading clear of the line above. "Leave out blue-collar careers\*" with "\* Some of the most AI-proof careers are blue-collar." "Best fit, ignoring switching cost" now says what it added (at most 3, `WORTH_THE_SWITCH_COUNT`). Two lines from the top ten: good prospects for **studying abroad** (abroad.json) and good chances of **working abroad** (travels well, abroad_work.json) |
+| **Combined careers** | The same `ProfessionCard` (`combined` prop): what it is + the note, why we chose it (the two sides), why it fits (strengths once — "reasoning, reasoning" fixed), how people get there |
+| **The card** | **"Why we chose it for you"** — one line from what put it there (`reportPlan.whyChosen`). College and working students: the road leaves out school steps and the Class 11–12 subjects; the next step is the one after the first degree unless the career needs a restart (`reportPlan.roadFrom`). Master's: "**Usually** not needed". The abroad part's consultant note is a **waitlist** (`AbroadWaitlist.js`); the report-level `StudyAbroadCard` is gone |
+| **AI summary** | **Off.** `generate_report` no longer calls the model; `report@4.0.0` stores empty `sections`. The report-prompt gate is closed; `reportComposer.js` stays as reference |
+| **"← Dashboard"** | On the interest form, assessment, report, matches, compare and mentorship; no journey bar on the assessment or report (Home keeps it). Interest form: Save and go / Leave without saving / Stay. Assessment: a questionnaire offers to save first; a self-saving test warns that leaving mid-test ends it |
+| **Mentor page** | Contribution (Maslow's base) vs interest/passion (the upper tiers), up front. "For the role you choose, what help do you want?" — career / interest-passion / both (`helpFocus`, whitelisted; admin column "Help with"). The text box under its label, full width to 560 px, the count below |
+| **Story** | Space between the story's end and "Read it again…". An unmarked free recall raises `story_unmarked` with the reason |
+
+**Plain words (owner's questions):**
+- **The activity flow:** 1) exact wording already seen? 2) one batched Claude call names each new wording as
+  a short common string ("long distance running"); 3) exact name already seen? 4) Voyage embedding compared
+  with cached rows — cosine ≥ 0.90 (and not split by the admin) reuses that row, score recorded; 5) otherwise
+  rated fresh (3 passes), candidates retrieved and reranked, saved as a new row. Your own trace appears after
+  "Update my report".
+- **Subjects per route** live in `Backend/data/subject_routes.json` (reviewed file), not ALL-professions.json;
+  the path text there already names both routes (Round 10).
+- **Aspirations read as activities:** yes, every aspiration that isn't a career on our list.
+- **Consistency:** same answers → same result. It changes only for a new wording (its first AI call), a
+  near match that didn't exist before (the cache grew), an admin-approved data change, or a scoring/matching
+  version change — and then only after "Update my report".
+- **Athlete:** bodily intelligence is measured (MI_B1–B5), but Athlete asks for the top on several factors
+  (bodily 10, confidence 10, conscientiousness 9, focus 9, speed 9), so it sits in the lower bands unless those
+  are high, and only appears if an activity points there. The trace shows whether "long distance running" did.
+- **Best fit, ignoring switching cost:** works; it adds at most three careers, and now says so.
+
+**Fixtures:** workers 178 → 185 (new: ROUND 19 ×7 — why we chose it and strengths once; college roads over
+every career; abroad lines; the overview's order and the matches page (+ AI summary off); Dashboard
+placement; help focus; the unmarked-recall issue and the admin trace). Changed because the owner changed the
+product: the report-page checks now read `ReportPage.js`, `MatchesPage.js`, `useReportData.js`,
+`ReportStatus.js` and `reportFraming.js` together (the list moved); the study-abroad checks read
+`AbroadWaitlist.js` (the report card is gone; the consultant note became a waitlist).
+
+**Cloud checks:** Round 19 60/60 (overview order and centring, matches page, the heading gap, filters' note,
+abroad lines, ignoring-cost note, the college card, combined card, the #combined link, mentor framing, help
+focus, box alignment, Dashboard on the interest form and assessment, the admin trace); Round 18 60/60 (its
+report checks follow the list to `/report/matches`; a college student no longer sees the subjects fold —
+owner change); uiFlow 65/65; Round 17 42/42; Round 14 14/14. Build: the 8 known warning files.

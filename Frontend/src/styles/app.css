@@ -2532,6 +2532,7 @@ button.pc-toggle .pc-name {
 }
 
 .mentor-focus legend {
+    padding: 0;
     margin-bottom: 6px;
 }
 
