@@ -683,10 +683,13 @@ const fixtures = [
             })
 
             // The lookup must not find the 1.0 row. Proven by the call reaching the network stage
-            // and failing there, rather than returning the stale rating.
+            // and failing there, rather than returning the stale rating. Since Round 23 a failed
+            // network stage no longer throws: the activity comes back marked unresolved, with why.
             return withNoNetwork(() => resolver.resolveActivities([{ activity: "playing cricket", key: "playing cricket" }]))
-                .then(() => "resolved from the cache despite a rubric version mismatch")
-                .catch((error) => (error.message.includes("network") ? null : `failed for the wrong reason: ${error.message}`))
+                .then(([result]) => {
+                    if (result && result.cacheHit === "exact") return "resolved from the cache despite a rubric version mismatch"
+                    return result && result.unresolved && /network/.test(result.reason) ? null : `unexpected: ${JSON.stringify(result)}`
+                })
         },
         expect: null,
     },
@@ -1142,6 +1145,97 @@ const fixtures = [
                 reranks = 0
                 await resolver.resolveActivities([{ activity: "dancing", key: "dancing" }])
                 if (reranks !== 0) problems.push("a row already on the strict shortlist was shortlisted again")
+            } finally {
+                globalThis.fetch = real
+            }
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ONE VOYAGE CALL (Round 23) — new wordings, their areas and every cached row due for its re-check share one embedding call and one naming call",
+        // Voyage without a payment method allows 3 requests a minute. Round 22 re-checked each cached
+        // row with a call of its own, so one report fired many in seconds, hit 429, and lost every activity.
+        run: async () => {
+            const embeddings = [{ id: "p-dance", profession: "Dancer", embedding: [1, 0, 0] }, { id: "p-fit", profession: "Fitness Trainer", embedding: [0, 1, 0] }]
+            const calls = { voyage: 0, name: 0, shortlist: 0 }
+            const real = globalThis.fetch
+            globalThis.fetch = async (url, options) => {
+                const body = JSON.parse(options.body)
+                if (String(url).includes("voyageai")) {
+                    calls.voyage += 1
+                    return { ok: true, json: async () => ({ data: body.input.map((text, index) => ({ index, embedding: [0, 0, 1] })) }) }
+                }
+                const system = body.system[0].text
+                const reply = (object) => ({ ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify(object) }] }) })
+                if (system.startsWith("You name the activity")) {
+                    calls.name += 1
+                    return reply({ items: JSON.parse(body.messages[0].content).map((text) => ({ name: text, pointsTo: ["movement"], notAnActivity: false })) })
+                }
+                calls.shortlist += 1
+                return reply({ strong: ["p-dance"], partial: [] })
+            }
+            try {
+                // four cached rows due for the re-check: two with areas, two from before Round 21 without
+                const rows = ["dancing", "running", "swimming", "yoga"].map((name, index) => ({ _id: `r${index}`, canonicalActivity: name, rubricVersion: "2.0", candidateProfessionIds: ["p-fit"], embedding: [1, 0, 0], exampleRaw: [], ...(index < 2 ? { pointsTo: ["fitness"] } : {}) }))
+                const cache = fakeCache(rows)
+                const resolver = createActivityResolver({
+                    ActivityFactors: cache.model,
+                    professionEmbeddings: { model: "voyage-4-large", dimensions: 3, embeddings },
+                    anchors: { schema_version: "2.0", bands: [], factors: [] },
+                    voyageApiKey: "test", anthropicApiKey: "test",
+                })
+                const out = await resolver.resolveActivities([
+                    ...rows.map((row) => ({ activity: row.canonicalActivity, key: row.canonicalActivity })),
+                    { activity: "painting", key: "painting" }, { activity: "singing", key: "singing" }, { activity: "chess", key: "chess" },
+                ])
+                const problems = []
+                if (calls.voyage !== 1) problems.push(`${calls.voyage} Voyage calls for one report`)
+                if (calls.name !== 1) problems.push(`${calls.name} naming calls for one report`)
+                if (out.length !== 7 || out.some((entry) => entry.unresolved)) problems.push(`not every activity was read: ${JSON.stringify(out.map((entry) => [entry.key, entry.unresolved || false]))}`)
+                if (out.filter((entry) => entry.cacheHit === "exact").some((entry) => entry.candidateProfessionIds.join() !== "p-dance")) problems.push("a cached row was not re-checked")
+                return problems.length > 0 ? problems.join("; ") : null
+            } finally {
+                globalThis.fetch = real
+            }
+        },
+        expect: null,
+    },
+    {
+        name: "BUSY IS NOT BROKEN (Round 23) — a 429 waits (retry-after first) and tries again; a bad request does not; when Voyage stays busy nothing already read is lost",
+        run: async () => {
+            const { embedQuery } = require("../activityResolver")
+            const problems = []
+            const real = globalThis.fetch
+            const respond = (status, retryAfter) => ({ ok: status === 200, status, headers: { get: (name) => (name === "retry-after" ? retryAfter : null) }, text: async () => "busy", json: async () => ({ data: [{ index: 0, embedding: [1, 2, 3] }] }) })
+            try {
+                // 429, then 200: one wait, of the server's retry-after
+                const waits = []
+                let calls = 0
+                globalThis.fetch = async () => { calls += 1; return calls === 1 ? respond(429, "2") : respond(200) }
+                const vectors = await embedQuery(["dancing"], { apiKey: "t", model: "m", dimensions: 3, wait: async (ms) => { waits.push(ms) } })
+                if (vectors[0].join() !== "1,2,3" || calls !== 2 || waits.join() !== "2000") problems.push(`429 then 200: ${JSON.stringify({ calls, waits })}`)
+
+                // a 400 is not retried
+                calls = 0
+                globalThis.fetch = async () => { calls += 1; return respond(400) }
+                await embedQuery(["x"], { apiKey: "t", model: "m", dimensions: 3, wait: async () => {} }).catch(() => null)
+                if (calls !== 1) problems.push(`a bad request was tried ${calls} times`)
+
+                // Voyage busy for good: the cached activity keeps its shortlist, the new ones say why they were not read
+                globalThis.fetch = async (url) => (String(url).includes("voyageai") ? respond(429) : { ok: true, json: async () => ({ stop_reason: "end_turn", content: [{ type: "text", text: JSON.stringify({ items: [{ name: "painting", pointsTo: [], notAnActivity: false }] }) }] }) })
+                const cache = fakeCache([{ _id: "c1", canonicalActivity: "cricket", rubricVersion: "2.0", candidateProfessionIds: ["tst-alpha"], pointsTo: [], shortlistVersion: "strict-1", embedding: [1, 0, 0], exampleRaw: [] }])
+                const resolver = createActivityResolver({
+                    ActivityFactors: cache.model,
+                    professionEmbeddings: { model: "voyage-4-large", dimensions: 3, embeddings: [] },
+                    anchors: { schema_version: "2.0", bands: [], factors: [] },
+                    voyageApiKey: "test", anthropicApiKey: "test", embedWait: async () => {},
+                })
+                const out = await resolver.resolveActivities([{ activity: "cricket", key: "cricket" }, { activity: "painting", key: "painting" }])
+                const cricket = out.find((entry) => entry.key === "cricket")
+                const painting = out.find((entry) => entry.key === "painting")
+                if (!cricket || cricket.candidateProfessionIds.join() !== "tst-alpha") problems.push("an activity already read was lost when Voyage stayed busy")
+                if (!painting || !painting.unresolved || !/429/.test(painting.reason)) problems.push(`a new activity was not marked unread: ${JSON.stringify(painting)}`)
             } finally {
                 globalThis.fetch = real
             }

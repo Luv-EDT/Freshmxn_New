@@ -788,6 +788,22 @@ const fixtures = [
         expect: null,
     },
     {
+        name: "ROUND 23 — a report is never written while an activity could not be read; the job retries and the give-up path keeps the old report",
+        // Voyage's free rate limit once failed the activity step and the report was written from named
+        // aspirations alone: 0 careers, nothing logged for the admin.
+        run: () => {
+            const worker = fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8")
+            const problems = []
+            const guard = worker.indexOf("resolved.unresolved")
+            const write = worker.indexOf("await Recommendation.findOneAndUpdate(")
+            if (guard === -1 || write === -1 || guard > write) problems.push("unread activities are not checked before the report is written")
+            if (!/could not be read[^\n]*will retry/.test(worker)) problems.push("the job does not fail (and retry) on unread activities")
+            if (/matching on named aspirations only`\)\n\s*}\n/.test(worker.split("resolver.resolveActivities(rows)")[1].split("const unread")[0]) && !/if \(process\.env\.VOYAGE_API_KEY\) throw/.test(worker)) problems.push("a resolver failure is still swallowed")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
         name: "WORKERS — both queues are named what their callers enqueue to",
         // scoreProfileWorker enqueues into generateReportWorker's queue by requiring it. If either
         // name drifted, jobs would be written to a queue nobody is listening on and simply vanish

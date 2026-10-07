@@ -96,15 +96,26 @@ const runOne = async (userId) => {
         .filter((row) => row && String(row.activity || "").trim() !== "")
         .map((row) => ({ activity: row.activity, key: String(row.activity).trim().replace(/\s+/g, " ").toLowerCase() }))
 
-    // A resolver failure must not cost the student their whole report. Matching degrades to the
-    // directly-named aspirations plus the "worth the switch" list, which is thin but honest —
-    // and far better than a 500 after they have finished a forty-minute assessment.
+    // A REPORT IS NEVER BUILT ON ACTIVITIES WE COULD NOT READ (Round 23). Voyage's free rate limit (3
+    // requests a minute without a payment method) once failed the whole step, and the report was written
+    // from named aspirations alone — 0 careers for a student who named none, and no sign of why. Now an
+    // activity that could not be read (after the resolver's own retries) fails the job BEFORE anything is
+    // written: the queue tries again after its pauses, and on the last attempt the give-up handler below
+    // keeps the student's previous report ("Try again") and tells the admin why. Only with no Voyage key
+    // at all (a local machine) does it carry on without them.
     let resolvedActivities = []
 
     try {
         resolvedActivities = await resolver.resolveActivities(rows)
     } catch (error) {
-        console.error(`${QUEUE_NAME} ${userId}: activity resolution failed (${error.message.slice(0, 160)}) — matching on named aspirations only`)
+        if (process.env.VOYAGE_API_KEY) throw new Error(`activities could not be read (${error.message.slice(0, 200)}) — will retry`)
+        console.error(`${QUEUE_NAME} ${userId}: activity resolution failed (${error.message.slice(0, 160)}) — no VOYAGE_API_KEY, matching on named aspirations only`)
+    }
+
+    const unread = resolvedActivities.filter((resolved) => resolved.unresolved)
+    if (unread.length > 0) {
+        if (process.env.VOYAGE_API_KEY) throw new Error(`${unread.length} ${unread.length === 1 ? "activity" : "activities"} could not be read (${unread[0].reason}) — will retry`)
+        resolvedActivities = resolvedActivities.filter((resolved) => !resolved.unresolved)
     }
 
     // ── the pure half ────────────────────────────────────────────────────────────────────────

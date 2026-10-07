@@ -50,7 +50,10 @@ const constants = require("./constants")
 // shortlist) is a candidate, and the student's own profile decides fit and tier.
 // 2.2.0 (Round 22, owner): the AI shortlist is strict — it marks each career strong or partial and
 // only strong ones become candidates (no cap); cached activities are shortlisted again once.
-const MATCHING_VERSION = "matching@2.2.0"
+// 2.2.1 (Round 23): the same matching, read reliably — one Voyage call per report, retried when busy,
+// and a report is never written while an activity is unread. Bumped so a report built while Voyage was
+// refusing (0 careers) offers "Update my report".
+const MATCHING_VERSION = "matching@2.2.1"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")

@@ -27,8 +27,9 @@
 // "document"; a student's activity is a "query". Getting it backwards degrades similarity
 // silently rather than erroring, which is the worst failure mode available.
 
-const VOYAGE_ENDPOINT = "https://api.voyageai.com/v1/embeddings"
-const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
+// the overrides exist only so an end-to-end test can point both at a local stand-in; never set in production
+const VOYAGE_ENDPOINT = process.env.VOYAGE_ENDPOINT || "https://api.voyageai.com/v1/embeddings"
+const ANTHROPIC_ENDPOINT = process.env.ANTHROPIC_ENDPOINT || "https://api.anthropic.com/v1/messages"
 const { recordUsage } = require("../utils/aiUsage")
 
 // Two activities closer than this are treated as the same activity and share one rating.
@@ -121,14 +122,36 @@ const topProfessionsByVector = (vector, embeddings, limit) => (
 
 // ── the clients ──────────────────────────────────────────────────────────────────────────────────
 
-const embedQuery = async (texts, { apiKey, model, dimensions }) => {
-    const response = await fetch(VOYAGE_ENDPOINT, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ input: texts, model, input_type: "query", output_dimension: dimensions }),
-    })
+// BUSY IS NOT BROKEN (Round 23). Without a payment method on file Voyage allows 3 requests a minute, and
+// a 429 used to throw at once and cost a student every activity in their report. A 429, a 5xx or a
+// dropped connection now waits — the server's retry-after, otherwise 21 s, 42 s, 63 s, enough to clear a
+// 3-a-minute window — and tries again. Anything else (a bad key, a bad request) fails at once.
+const EMBED_RETRIES = 3
+const EMBED_WAIT_MS = 21000
 
-    if (!response.ok) throw new Error(`Voyage HTTP ${response.status} — ${(await response.text()).slice(0, 300)}`)
+const embedQuery = async (texts, { apiKey, model, dimensions, retries = EMBED_RETRIES, wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms)) }) => {
+    let response = null
+    for (let attempt = 0; ; attempt += 1) {
+        let failure = null
+        let retryable = true
+        try {
+            response = await fetch(VOYAGE_ENDPOINT, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ input: texts, model, input_type: "query", output_dimension: dimensions }),
+            })
+            if (response.ok) break
+            failure = new Error(`Voyage HTTP ${response.status} — ${(await response.text()).slice(0, 300)}`)
+            retryable = response.status === 429 || response.status >= 500
+        } catch (error) {
+            failure = error
+            retryable = error instanceof TypeError   // fetch's own "the connection dropped"
+        }
+        if (!retryable || attempt >= retries) throw failure
+        const header = response && !response.ok && response.headers && typeof response.headers.get === "function" ? Number(response.headers.get("retry-after")) : NaN
+        await wait(Number.isFinite(header) && header > 0 ? header * 1000 : EMBED_WAIT_MS * (attempt + 1))
+        response = null
+    }
 
     const payload = await response.json()
 
@@ -256,6 +279,7 @@ const createActivityResolver = ({
     anthropicApiKey = process.env.ANTHROPIC_API_KEY,
     embeddingModel = process.env.Embedding_Model || "voyage-4-large",
     ratingModel = process.env.RATING_MODEL || "claude-sonnet-5",
+    embedWait,       // the pause between Voyage retries — injected by the fixtures so they do not sleep
 }) => {
     const dimensions = professionEmbeddings.dimensions
     const rubricVersion = anchors.schema_version
@@ -363,20 +387,20 @@ const createActivityResolver = ({
     }
 
     // A ROW CACHED BEFORE THE STRICT SHORTLIST (Round 22) — or before Round 21, with no `pointsTo` — is
-    // brought up to date the first time a student's report uses it: named again for its areas if it has
-    // none, its areas searched, and the strict shortlist run on the merged pool. Every later student
-    // reuses the result. Without a key it is used as it is.
-    const topUp = async (row) => {
-        if (row.shortlistVersion === SHORTLIST_VERSION || !row.embedding || !anthropicApiKey) return row
+    // brought up to date the first time a student's report uses it: its areas searched and the strict
+    // shortlist run on the merged pool, then saved, so every later student reuses the result. Without a
+    // key it is used as it is. Since Round 23 its areas are embedded in the report's ONE Voyage call
+    // (resolveActivities), never in a call of its own; if anything fails it keeps its old shortlist.
+    const needsRecheck = (row) => row.shortlistVersion !== SHORTLIST_VERSION && Boolean(row.embedding) && Boolean(anthropicApiKey)
+
+    const recheck = async (row, pointsTo, areaEmbeddings) => {
         try {
-            const pointsTo = Array.isArray(row.pointsTo) ? row.pointsTo : (await nameActivities([row.canonicalActivity]))[0].pointsTo
-            const areaEmbeddings = pointsTo.length > 0 ? await embedQuery(pointsTo, { apiKey: voyageApiKey, model: embeddingModel, dimensions }) : []
             const { strong, partial } = await shortlistFor(row.canonicalActivity, row.embedding, pointsTo, areaEmbeddings)
             const fresh = { pointsTo, candidateProfessionIds: strong, partialProfessionIds: partial, shortlistVersion: SHORTLIST_VERSION }
             await ActivityFactors.updateOne({ _id: row._id }, { $set: fresh })
             return { ...row, ...fresh }
         } catch (error) {
-            console.warn(`activityResolver: could not top up "${row.canonicalActivity}" (${error.message.slice(0, 120)}) — using its old shortlist`)
+            console.warn(`activityResolver: could not re-check "${row.canonicalActivity}" (${error.message.slice(0, 120)}) — using its old shortlist`)
             return row
         }
     }
@@ -398,9 +422,16 @@ const createActivityResolver = ({
     // rows come from Program 1's pList: [{ activity, key, ... }]. Each result also says what the
     // activity was read as and which cache row served it, for the admin's "How we read their
     // activities" (Round 17).
+    //
+    // AT MOST ONE NAMING CALL AND ONE VOYAGE CALL PER REPORT (Round 23): every new wording, its areas, and
+    // every cached row due for its re-check go in the same two batches. And nothing already resolved is
+    // ever thrown away: an activity that could not be read (Voyage or Claude still failing after their
+    // retries) comes back `{ unresolved: true, reason }`, and the worker decides what to do about it.
     const resolveActivities = async (rows) => {
         const resolved = []
         const pending = []
+        const due = []      // cached rows due for the re-check: { row, pointsTo, finish(row) }
+        const unresolved = (row, original, reason, extra = {}) => ({ key: row.key, activity: row.activity, canonicalActivity: original, readAs: extra.readAs || null, namedAs: extra.namedAs || null, rowId: null, candidateProfessionIds: [], partialProfessionIds: [], pointsTo: extra.pointsTo || [], unresolved: true, reason })
 
         // 1. a wording seen before — as a row's name or as one of its students' wordings — costs nothing
         for (const row of rows) {
@@ -409,21 +440,25 @@ const createActivityResolver = ({
 
             const found = await ActivityFactors.findOne({ canonicalActivity, rubricVersion }).lean()
                 || await ActivityFactors.findOne({ exampleRaw: canonicalActivity, rubricVersion }).lean()
-            const cached = found ? await topUp(found) : null
 
-            if (cached) {
-                await ActivityFactors.updateOne({ _id: cached._id }, { $inc: { timesUsed: 1 } })
-                resolved.push(hit(cached, { key: row.key, activity: row.activity, canonicalActivity }, "exact"))
+            if (found) {
+                await ActivityFactors.updateOne({ _id: found._id }, { $inc: { timesUsed: 1 } })
+                const finish = (cached) => hit(cached, { key: row.key, activity: row.activity, canonicalActivity }, "exact")
+                if (needsRecheck(found)) due.push({ row: found, pointsTo: Array.isArray(found.pointsTo) ? found.pointsTo : null, finish })
+                else resolved.push(finish(found))
                 continue
             }
 
             pending.push({ row, original: canonicalActivity })
         }
 
-        if (pending.length === 0) return resolved
+        // 2. name the activity — every new wording, and every row due for a re-check that has no areas yet — in one call
+        const unnamed = due.filter((item) => item.pointsTo === null)
+        const names = pending.length + unnamed.length > 0
+            ? await nameActivities([...pending.map((item) => item.original), ...unnamed.map((item) => item.row.canonicalActivity)])
+            : []
+        unnamed.forEach((item, index) => { item.pointsTo = names[pending.length + index].pointsTo })
 
-        // 2. name the activity, all new wordings in one call
-        const names = await nameActivities(pending.map((item) => item.original))
         const left = []
         for (let index = 0; index < pending.length; index += 1) {
             const item = pending[index]
@@ -438,35 +473,56 @@ const createActivityResolver = ({
                 continue
             }
 
-            const foundNamed = item.canonicalActivity === item.original ? null : await ActivityFactors.findOne({ canonicalActivity: item.canonicalActivity, rubricVersion }).lean()
-            const named = foundNamed ? await topUp(foundNamed) : null
+            const named = item.canonicalActivity === item.original ? null : await ActivityFactors.findOne({ canonicalActivity: item.canonicalActivity, rubricVersion }).lean()
             if (named) {
                 await remember(named._id, item.said, { $inc: { timesUsed: 1 } })
-                resolved.push(hit(named, { key: item.row.key, activity: item.row.activity, canonicalActivity: item.original }, "named", { namedAs: item.canonicalActivity }))
+                const finish = (cached) => hit(cached, { key: item.row.key, activity: item.row.activity, canonicalActivity: item.original }, "named", { namedAs: item.canonicalActivity })
+                // the same name, so this wording's areas are the row's areas
+                if (needsRecheck(named)) due.push({ row: named, pointsTo: Array.isArray(named.pointsTo) ? named.pointsTo : item.pointsTo, finish })
+                else resolved.push(finish(named))
                 continue
             }
             left.push(item)
         }
 
-        if (left.length === 0) return resolved
-
-        // 3. the meaning, for what the name alone did not place — the names and every area in one batch
-        const texts = left.flatMap((item) => [item.canonicalActivity, ...item.pointsTo])
-        const vectors = await embedQuery(texts, { apiKey: voyageApiKey, model: embeddingModel, dimensions })
+        // 3. ONE VOYAGE CALL: the new names, their areas, and the areas of every row due for a re-check
+        const texts = [...left.flatMap((item) => [item.canonicalActivity, ...item.pointsTo]), ...due.flatMap((item) => item.pointsTo)]
+        let vectors = []
+        let embedFailure = null
+        if (texts.length > 0) {
+            try {
+                vectors = await embedQuery(texts, { apiKey: voyageApiKey, model: embeddingModel, dimensions, ...(embedWait ? { wait: embedWait } : {}) })
+            } catch (error) {
+                embedFailure = error
+                console.warn(`activityResolver: could not embed (${error.message.slice(0, 160)})`)
+            }
+        }
         let at = 0
         left.forEach((item) => {
             item.embedding = vectors[at]
             item.areaEmbeddings = vectors.slice(at + 1, at + 1 + item.pointsTo.length)
             at += 1 + item.pointsTo.length
         })
+        for (const item of due) {
+            const areaEmbeddings = vectors.slice(at, at + item.pointsTo.length)
+            at += item.pointsTo.length
+            // no vectors (Voyage failed) → keep the old shortlist rather than re-check on half the evidence
+            const cached = embedFailure && item.pointsTo.length > 0 ? item.row : await recheck(item.row, item.pointsTo, areaEmbeddings)
+            resolved.push(item.finish(cached))
+        }
+
+        if (embedFailure) {
+            left.forEach((item) => resolved.push(unresolved(item.row, item.original, `could not be read: ${embedFailure.message.slice(0, 200)}`, { namedAs: item.canonicalActivity, pointsTo: item.pointsTo })))
+            return resolved
+        }
 
         for (let index = 0; index < left.length; index += 1) {
             const { row, canonicalActivity, original, said, pointsTo, embedding, areaEmbeddings } = left[index]
 
             const foundNear = await findNearCachedEntry(embedding, said)
-            const near = foundNear ? { ...(await topUp(foundNear)), score: foundNear.score } : null
-
-            if (near) {
+            if (foundNear) {
+                // a near hit due for its re-check uses this wording's areas, already embedded above
+                const near = { ...(needsRecheck(foundNear) ? await recheck(foundNear, pointsTo, areaEmbeddings) : foundNear), score: foundNear.score }
                 await remember(near._id, said, {
                     $inc: { timesUsed: 1 },
                     $push: { folds: { $each: [{ text: original, score: Math.round(near.score * 1000) / 1000, at: new Date() }], $slice: -FOLDS_KEPT } },
@@ -476,7 +532,14 @@ const createActivityResolver = ({
             }
 
             // 4. where it points: meaning search on the name and its areas, then the strict AI shortlist
-            const { strong: candidateProfessionIds, partial: partialProfessionIds } = await shortlistFor(canonicalActivity, embedding, pointsTo, areaEmbeddings)
+            let shortlist
+            try {
+                shortlist = await shortlistFor(canonicalActivity, embedding, pointsTo, areaEmbeddings)
+            } catch (error) {
+                resolved.push(unresolved(row, original, `could not be shortlisted: ${error.message.slice(0, 200)}`, { namedAs: canonicalActivity, pointsTo }))
+                continue
+            }
+            const { strong: candidateProfessionIds, partial: partialProfessionIds } = shortlist
 
             const saved = await ActivityFactors.findOneAndUpdate(
                 { canonicalActivity },
@@ -495,7 +558,7 @@ const createActivityResolver = ({
                     $addToSet: { exampleRaw: { $each: said } },
                     $inc: { timesUsed: 1 },
                 },
-                { upsert: true, new: true }
+                { upsert: true, returnDocument: "after" }
             )
 
             resolved.push({ key: row.key, activity: row.activity, canonicalActivity: original, readAs: canonicalActivity, namedAs: canonicalActivity, rowId: (saved && saved._id) || null, candidateProfessionIds, partialProfessionIds, pointsTo, cacheHit: "miss" })
@@ -513,6 +576,8 @@ module.exports = {
     cosine,
     topProfessionsByVector,
     embedQuery,    // also used by the weekly careers scout (housekeeping/careerScout.js)
+    EMBED_RETRIES,
+    EMBED_WAIT_MS,
     needsTranslation,
     NAME_PROMPT,
     EXAMPLES_KEPT,

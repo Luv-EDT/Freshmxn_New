@@ -345,7 +345,7 @@ activity trace.
 
 | What happens | What the app does |
 |---|---|
-| Claude or Voyage is briefly down | the worker waits and tries again (5 attempts, longer gaps each time) |
+| Claude or Voyage is briefly down or busy | the worker waits and tries again (a busy Voyage reply is retried within the job, then the whole job up to 5 times, longer gaps each time). A report is never written while an activity could not be read — until then the student keeps their previous report (Round 23); if it still fails, "Try again" and an admin issue saying why |
 | Every attempt fails | the student sees **"We hit a problem preparing your report — your answers are safe"** and a **Try again** button (`POST /reports/retryMyReport`) — never an endless spinner |
 | The server restarts in the middle of a job | the job's hold runs out (5 minutes) and the next worker takes it over; one cut off more than 3 times is counted as failed |
 | A job can't be put in the tray at all | the student sees the server's own reason; the admin gets an Assessment issue "Report could not be queued" with the error, and the Assessment issues tab shows "Job queue: working / not moving / not reachable" |
