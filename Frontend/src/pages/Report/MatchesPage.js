@@ -7,23 +7,23 @@ import ReportSortMenu from "./ReportSortMenu"
 import CombinedCareers from "./CombinedCareers"
 import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
-import { buildList, ONLY_FILTERS } from "./reportFilters"
+import { groupList, ONLY_FILTERS, SWITCH_COST_GROUP_YEARS } from "./reportFilters"
 import { abroadLines } from "./reportPlan"
-import { TIER_GROUPS, TOP_SHOWN, framingFor, listOf } from "./reportFraming"
+import { TOP_SHOWN, tierNameFor, framingFor, listOf } from "./reportFraming"
 
 // "YOUR MATCHES" — the whole list on its own page (owner, Round 19, /report/matches). The report
 // itself is a short overview with the top three; this page holds every match with the sort, the
 // filters, how the list is ordered, the studying- and working-abroad lines and the combined careers.
 //
-// ONE LIST, TWO ORDERS (owner, Round 6). "Best fit, ignoring switching cost" adds the worth-the-switch
-// careers to the same list with the cost shown inside each card — and since Round 19 the page says
-// how many it added, because the engine only ever adds three.
+// ONE LIST, TWO ORDERS (owner, Round 20). The top three show first; opening the rest shows the tiers
+// as headed groups. "Best match" puts careers that would cost 2+ years to switch in a last group of
+// their own, least affected first; "Best fit, ignoring switching cost" leaves them in their tiers.
 //
 // match_confidence is already stripped by reportsRouter, and every factor slug is already
 // translated there. Nothing here needs to know either exists.
 function MatchesPage() {
     const report = useReportData()
-    const { state, ranked, switchList, details, detailsLoaded } = report
+    const { state, ranked, details, detailsLoaded } = report
     const { hash } = useLocation()
     const [primary, setPrimary] = useState("best")
     const [secondary, setSecondary] = useState(null)
@@ -36,12 +36,14 @@ function MatchesPage() {
     // one tap away. Opening the rest belongs to that order — a new sort or filter starts again at three.
     const [showAllFor, setShowAllFor] = useState(null)
 
-    // THE LIST THE STUDENT SEES — see buildList in reportFilters.js. Only the filters the student
-    // turned on ever hide a career.
-    const ordered = useMemo(
-        () => buildList(ranked, switchList, primary, secondary, details, { only, excludeBlueCollar }),
-        [ranked, switchList, primary, secondary, details, only, excludeBlueCollar]
+    // THE LIST THE STUDENT SEES — see groupList in reportFilters.js. Only the filters the student
+    // turned on ever hide a career. `ordered` is the same entries, flat, so rank numbers run on
+    // across the groups.
+    const groups = useMemo(
+        () => groupList(ranked, primary, secondary, details, { only, excludeBlueCollar }),
+        [ranked, primary, secondary, details, only, excludeBlueCollar]
     )
+    const ordered = useMemo(() => groups.flatMap((group) => group.entries), [groups])
 
     const sortKey = [primary, secondary, only.join("+"), excludeBlueCollar].join("|")
 
@@ -49,20 +51,14 @@ function MatchesPage() {
     // this report was rebuilt to avoid.
     const hiddenCount = useMemo(() => {
         if (!excludeBlueCollar && only.length === 0) return 0
-        return buildList(ranked, switchList, primary, secondary, details, {}).length - ordered.length
-    }, [excludeBlueCollar, only, ranked, switchList, primary, secondary, details, ordered])
+        return (ranked || []).length - ordered.length
+    }, [excludeBlueCollar, only, ranked, ordered])
     const toggleOnly = (key) => setOnly((current) => (current.includes(key) ? current.filter((value) => value !== key) : [...current, key]))
 
     // The engine's top three keep their colours under every order, so "my best matches" never
     // gets lost when a student sorts by pay.
     const topIds = useMemo(() => (ranked || []).slice(0, 3).map((entry) => String(entry.professionId)), [ranked])
 
-    // WHAT "BEST FIT, IGNORING SWITCHING COST" CHANGED (owner, Round 19: "is it working?") — the
-    // worth-the-switch careers the main ranking left out because of what switching would cost
-    const addedBySwitch = useMemo(() => {
-        const rankedIds = new Set((ranked || []).map((entry) => String(entry.professionId)))
-        return (switchList || []).filter((entry) => !rankedIds.has(String(entry.professionId))).length
-    }, [ranked, switchList])
 
     const abroad = useMemo(() => abroadLines(ranked, details), [ranked, details])
 
@@ -73,6 +69,23 @@ function MatchesPage() {
         const target = document.getElementById(hash.slice(1))
         if (target) target.scrollIntoView()
     }, [ready, hash])
+
+    // one card, numbered by its place in the whole list (the numbers run on across the groups)
+    const card = (entry) => (
+        <ProfessionCard
+            key={entry.professionId}
+            entry={entry}
+            detail={details[entry.professionId]}
+            detailsLoaded={detailsLoaded}
+            journey={state.data && state.data.journey}
+            topRank={topIds.indexOf(String(entry.professionId)) + 1}
+            rank={ordered.indexOf(entry) + 1}
+            switchCost={entry.wastedYears || 0}
+            showAi={secondary === "ai"}
+            degreeLabel={(state.data && state.data.degree) || null}
+            abroadPlans={(state.data && state.data.abroadPlans) || null}
+        />
+    )
 
     const gate = <ReportStatus state={state} retry={report.retry} retrying={report.retrying} />
     if (state.loading || state.error || !ready || state.data.release === "withhold") return gate
@@ -119,9 +132,8 @@ function MatchesPage() {
 
             {primary === "noCost" && (
                 <p className="report-small report-switch-note">
-                    {addedBySwitch > 0
-                        ? `${addedBySwitch} ${addedBySwitch === 1 ? "career" : "careers"} added that our main ranking leaves out because of what switching would cost you — the cost is inside each card.`
-                        : "Same careers, ordered by how well they fit you alone."}
+                    Every career stays in its group, ordered by how well it fits you — nothing is moved for what
+                    switching would cost you. The years it would cost are still inside each card.
                 </p>
             )}
 
@@ -167,17 +179,20 @@ function MatchesPage() {
                         about yourself is the softest of the three, so it counts least.
                     </li>
                 </ol>
-                <p className="report-small">From the top of the list to the bottom, that gives five bands:</p>
-                <ul className="report-small report-bands">
-                    {TIER_GROUPS.map((group) => (
-                        <li key={group.label}><strong>{group.label}</strong> — {group.why}</li>
-                    ))}
-                </ul>
+                <p className="report-small">
+                    Together these make up to sixteen groups, from "Long-time passions you've achieved in" down to
+                    "A stretch — reached on your profile alone". Open the full list to see yours under their
+                    headings; inside each group, the careers that fit you best come first. A career counts as a
+                    fit when your profile meets or goes beyond what the work asks: having more of a quality than the
+                    work needs doesn't count against you — except comfort with uncertainty and how firmly you
+                    hold a view, where careers can want either end.
+                </p>
                 {framing.switchIsDistinct && (
                     <p className="report-small">
-                        <strong>Switching cost.</strong> Inside each band, careers that would waste less of
-                        what you have already done come first. Choose <em>Best fit, ignoring switching
-                        cost</em> under "Sort your list" to see the strongest fits without that weighting.
+                        <strong>Switching cost.</strong> Under <em>Best match</em>, careers that would leave {SWITCH_COST_GROUP_YEARS} or
+                        more years of what you've already done behind go to a last group of their own, the least
+                        affected first. Choose <em>Best fit, ignoring switching cost</em> under "Sort your list" to keep
+                        them in their groups, or sort by <em>Least switching cost</em>.
                     </p>
                 )}
                 <p className="report-small">
@@ -188,27 +203,27 @@ function MatchesPage() {
                 </p>
             </details>
 
-            <div className="match-list">
-                {(showAllFor === sortKey ? ordered : ordered.slice(0, TOP_SHOWN)).map((entry, index) => {
-                    const topRank = topIds.indexOf(String(entry.professionId)) + 1
-
-                    return (
-                        <ProfessionCard
-                            key={entry.professionId}
-                            entry={entry}
-                            detail={details[entry.professionId]}
-                            detailsLoaded={detailsLoaded}
-                            journey={journey}
-                            topRank={topRank}
-                            rank={index + 1}
-                            switchCost={primary === "noCost" ? entry.wastedYears : 0}
-                            showAi={secondary === "ai"}
-                            degreeLabel={data.degree || null}
-                            abroadPlans={data.abroadPlans || null}
-                        />
-                    )
-                })}
-            </div>
+            {/* COLLAPSED: the top three of the chosen order. OPEN: every group under its heading. */}
+            {showAllFor !== sortKey ? (
+                <div className="match-list">
+                    {ordered.slice(0, TOP_SHOWN).map((entry) => card(entry))}
+                </div>
+            ) : (
+                groups.map((group) => (group.costly ? (
+                    <details key={group.key} className="report-details match-group is-costly">
+                        <summary className="report-summary">
+                            <strong>Would cost you {SWITCH_COST_GROUP_YEARS}+ years to switch</strong> — {group.entries.length} {group.entries.length === 1 ? "career" : "careers"}
+                        </summary>
+                        <p className="report-small">The least affected first. Each card says how many years of what you've done would be left behind.</p>
+                        <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
+                    </details>
+                ) : (
+                    <section key={group.key} className="match-group">
+                        <h3 className="match-group-title">{tierNameFor(group.tier) || "Your other matches"}</h3>
+                        <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
+                    </section>
+                )))
+            )}
 
             {ordered.length > TOP_SHOWN && showAllFor !== sortKey && (
                 <button type="button" className="btn btn-ghost show-rest" onClick={() => setShowAllFor(sortKey)}>

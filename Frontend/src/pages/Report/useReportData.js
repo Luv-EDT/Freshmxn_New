@@ -82,20 +82,14 @@ function useReportData() {
     // phone connection, and the first tap would feel broken. The taxonomy is static, so this is a
     // read of shared data, not of anything belonging to the student.
     const ranked = state.data && state.data.ranked ? state.data.ranked : null
-    const switchList = state.data && state.data.worthTheSwitch ? state.data.worthTheSwitch : null
 
-    // ⚠ BOTH LISTS, NOT JUST THE RANKING. This fetched only `ranked` ids, and worth-the-switch cards
-    // sat on "Loading…" forever — because the whole point of that list is to surface professions
-    // that are NOT in the ranking. `alreadyRanked: false` is the common case there, so the entries
-    // most worth reading were exactly the ones with no detail to read.
-    //
-    // Still one request. The union is at most a few dozen ids and the route takes up to 60.
+    // Every career in the ranking, in one request (the route takes up to 60). The worth-the-switch
+    // list it once also covered went in Round 20.
     const detailIds = useMemo(() => {
         const ids = new Set()
         ;(ranked || []).forEach((entry) => ids.add(entry.professionId))
-        ;(switchList || []).forEach((entry) => ids.add(entry.professionId))
         return [...ids]
-    }, [ranked, switchList])
+    }, [ranked])
 
     // A stable key, so the effect does not refire on every render just because the array is new.
     const detailKey = detailIds.join(",")
@@ -127,7 +121,7 @@ function useReportData() {
     }, [detailKey])
 
     return {
-        state, ranked, switchList, details, detailsLoaded,
+        state, ranked, details, detailsLoaded,
         retry, retrying, updateOpen, setUpdateOpen, updating, startUpdate,
     }
 }

@@ -193,6 +193,8 @@ export const SORTS = [
     { value: "fastest", label: "Quickest to qualify" },
     { value: "pay", label: "Highest mid-career pay" },
     { value: "demand", label: "Most in demand" },
+    // Round 20 (owner): the switching cost as a sort of its own, under either main order
+    { value: "switchCost", label: "Least switching cost" },
 ]
 
 const DEMAND_ORDER = { high: 0, moderate: 1, low: 2, declining: 3 }
@@ -230,6 +232,7 @@ export const sortRanked = (ranked, sort, details = {}) => {
             (DEMAND_ORDER[facts(left.entry).demand] ?? 9) - (DEMAND_ORDER[facts(right.entry).demand] ?? 9)
             || left.position - right.position
         ),
+        switchCost: (left, right) => (left.entry.wastedYears ?? 0) - (right.entry.wastedYears ?? 0) || left.position - right.position,
     }
 
     if (!by[sort]) return ranked
@@ -240,52 +243,31 @@ export const sortRanked = (ranked, sort, details = {}) => {
 // Kept as its own export because a pipeline fixture drives it against the engine's comparator.
 export const sortByAiExposure = (ranked) => sortRanked(ranked, "ai")
 
-// ── ONE LIST (owner, Round 6) ─────────────────────────────────────────────────────────────────────
+// ── THE LIST, IN GROUPS (owner, Round 20) ────────────────────────────────────────────────────────
 //
-// The page used to show the ranking and a separate "Worth the switch" list, with filters on top.
-// Students could not tell the headings apart and the controls took over the screen, so the owner
-// made it ONE list with two primary orders and an optional secondary sort — no filters.
+// The engine sorts every career into one of sixteen tiers and, inside a tier, by fit (matching
+// 2.0.0). The page shows the top three, and when the student opens the rest, the tiers as headed
+// groups — only the tiers that have careers in them.
 //
-//   best     the engine's ranking: sixteen tiers, then fit × switching cost inside each tier
-//   noCost   the strongest fits IGNORING switching cost — the ranking plus every worth-the-switch
-//            career it did not already contain, ordered on raw fit (comfortScore). This is how the
-//            DECISIONS §5 guard stays one tap away: the hard change the cost-weighting hides is
-//            never removed, only moved into its own order.
+//   best     "Best match": careers that would leave SWITCH_COST_GROUP_YEARS or more of what the
+//            student has done behind move out of their tier into one last group, least affected
+//            first. Nothing is removed — it is moved, and the card still says how many years.
+//   noCost   "Best fit, ignoring switching cost": every career stays in its tier. Nothing is added
+//            from outside the list (the old worth-the-switch extras went in Round 20).
 //
-// The secondary sort reuses sortRanked's comparators, but its tiebreak is the position in the
-// PRIMARY order, so equal rows keep the order the student chose. Nothing is ever removed.
+// A secondary sort reorders WITHIN each group; its tiebreak is the position in the primary order,
+// so equal rows keep it. The filters the student turns on hide careers; nothing else does.
+// Must equal Backend/matching/constants.js SWITCH_COST_GROUP_YEARS (a fixture checks).
+export const SWITCH_COST_GROUP_YEARS = 2
+
 export const PRIMARY_SORTS = [
-    { value: "best", label: "Best match", hint: "Our ranking: what you have done, how well it fits you, and what changing course would cost you now." },
+    { value: "best", label: "Best match", hint: "Our ranking: what you have done and how well it fits you. Careers that would cost you 2 or more years to switch to come last, in a group of their own." },
     { value: "noCost", label: "Best fit, ignoring switching cost", hint: null },
 ]
-
 export const SECONDARY_SORTS = SORTS.filter((option) => option.value !== "best")
 
-// A worth-the-switch entry carries seven keys; the card and the sorts read `display`.
-const asListEntry = (entry) => (entry.display ? entry : { ...entry, display: { yearsToQualify: entry.yearsToQualify } })
-
-const byRawFit = (left, right) => (
-    (right.comfortScore ?? -1) - (left.comfortScore ?? -1)
-    || String(left.professionId).localeCompare(String(right.professionId))
-)
-
-export const buildList = (ranked, switchList, primary, secondary, details = {}, options = {}) => {
-    const base = ranked || []
-    let list
-
-    if (primary === "noCost") {
-        const seen = new Set(base.map((entry) => String(entry.professionId)))
-        const extras = (switchList || []).filter((entry) => !seen.has(String(entry.professionId)))
-        list = [...base, ...extras].map(asListEntry).sort(byRawFit)
-    } else {
-        list = base.map(asListEntry)
-    }
-
-    if (secondary) {
-        // Decorated copies: the position is the PRIMARY order, so a secondary tie keeps it.
-        const positioned = list.map((entry, index) => ({ ...entry, rankedPosition: index + 1 }))
-        list = sortRanked(positioned, secondary, details)
-    }
+export const groupList = (ranked, primary, secondary, details = {}, options = {}) => {
+    let list = (ranked || []).map((entry, index) => ({ ...entry, rankedPosition: index + 1 }))
 
     // FILTERS THE STUDENT TURNS ON (owner, Round 18 — "Show first" used to move these up; now they
     // keep only these): "Core engineering only" (filter_rules.json's core_engineering_track, computed
@@ -303,8 +285,28 @@ export const buildList = (ranked, switchList, primary, secondary, details = {}, 
         list = list.filter((entry) => !(details[entry.professionId] || {}).blueCollar)
     }
 
-    return list
+    const costly = primary === "best" ? list.filter((entry) => (entry.wastedYears || 0) >= SWITCH_COST_GROUP_YEARS) : []
+    const kept = list.filter((entry) => !costly.includes(entry))
+
+    const groups = []
+    kept.forEach((entry) => {
+        const key = `tier-${entry.tier ?? "other"}`
+        const group = groups.find((existing) => existing.key === key)
+        if (group) group.entries.push(entry)
+        else groups.push({ key, tier: entry.tier ?? null, costly: false, entries: [entry] })
+    })
+    if (costly.length > 0) {
+        const leastFirst = [...costly].sort((left, right) => left.wastedYears - right.wastedYears || left.rankedPosition - right.rankedPosition)
+        groups.push({ key: "costly", tier: null, costly: true, entries: leastFirst.map((entry, index) => ({ ...entry, rankedPosition: index + 1 })) })
+    }
+
+    return groups.map((group) => ({ ...group, entries: secondary ? sortRanked(group.entries, secondary, details) : group.entries }))
 }
+
+// The same list, flat — for the top three, the counts and the compare page
+export const buildList = (ranked, primary, secondary, details = {}, options = {}) => (
+    groupList(ranked, primary, secondary, details, options).flatMap((group) => group.entries)
+)
 
 // The filters a student can turn on (owner, Round 18). Each hides careers, so each is labelled,
 // off by default, and the page says how many it hid.

@@ -6,13 +6,13 @@ import UpgradeToMentorship from "../UpgradeToMentorship"
 import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
 import { studentTags } from "./reportTags"
-import { tierGroupFor, listOf } from "./reportFraming"
+import { tierNameFor, listOf } from "./reportFraming"
 import DirectionModal from "../DirectionModal"
 
 // Stage 3 — the report: A SHORT OVERVIEW SINCE ROUND 19 (owner). In the owner's order: "Your report";
-// your top three matches, with the full list one tap away on its own page (MatchesPage.js,
-// /report/matches); the combined careers; what seems to drive you; the four fundamentals; and what you
-// said you wanted. The shared data and the screens shown instead of a report live in useReportData.js
+// your top three matches, with the full list, the combined careers and compare one tap away (Round 20:
+// three buttons in the one card); what seems to drive you; the five fundamentals; and what you said
+// you wanted — those three under one medium heading size, Your matches only slightly larger. The shared data and the screens shown instead of a report live in useReportData.js
 // and ReportStatus.js; the five bands and the per-journey wording in reportFraming.js.
 //
 // THE LIST IS THE REPORT. An earlier version opened with about 1,500 words of prose and then listed
@@ -81,7 +81,7 @@ function ReportPage() {
 
             {/* 1. YOUR MATCHES — the top three here; the whole list, sort and filters on their own page */}
             <section className="report-card">
-                <h2>Your matches</h2>
+                <h2 className="report-heading-lg">Your matches</h2>
                 {top.length > 0 ? (
                     <ol className="report-top">
                         {top.map((entry) => <li key={entry.professionId}><strong>{entry.profession}</strong></li>)}
@@ -93,36 +93,30 @@ function ReportPage() {
                     <Link to="/report/matches" className="btn btn-primary btn-sm tap">
                         See all {ranked.length} {ranked.length === 1 ? "match" : "matches"} →
                     </Link>
+                    {/* the careers that mix two professions, on the matches page (owner, Round 20: a button here, not a card) */}
+                    {combined.length > 0 && (
+                        <Link to="/report/matches#combined" className="btn btn-ghost btn-sm tap">
+                            Combined careers ({combined.length}) →
+                        </Link>
+                    )}
                     <Link to="/report/compare" className="btn btn-ghost btn-sm tap">Compare careers →</Link>
                 </div>
             </section>
 
-            {/* 2. COMBINED CAREERS — the same cards, on the matches page */}
-            {combined.length > 0 && (
-                <section className="report-card">
-                    <h2>Combined careers</h2>
-                    <p className="report-small">These mix two professions, often from different sectors.</p>
-                    <p>{listOf(combined.map((career) => career.profession))}.</p>
-                    <div className="report-card-actions">
-                        <Link to="/report/matches#combined" className="btn btn-ghost btn-sm tap">See them →</Link>
-                    </div>
-                </section>
-            )}
-
-            {/* 3. WHAT SEEMS TO DRIVE YOU */}
+            {/* 2. WHAT SEEMS TO DRIVE YOU */}
             {myTags.length > 0 && (
                 <section className="report-card">
-                    <h2>What seems to drive you</h2>
+                    <h2 className="report-heading-md">What seems to drive you</h2>
                     <p><strong>{listOf(myTags)}</strong>.</p>
                 </section>
             )}
 
-            {/* 4. THE FOUR FUNDAMENTALS (owner, Rounds 18 and 19) — only these four, as words. The rest
-                of the profile is on the Profile page, and the report says why. */}
+            {/* 3. THE FIVE FUNDAMENTALS (owner, Rounds 18-20) — four qualities that help in every career,
+                as words, and a fifth: the rest of your qualities, which live on the Profile, and why. */}
             {Array.isArray(data.fundamentals) && (
                 <details className="report-details report-fundamentals">
                     <summary className="report-summary">
-                        <strong>The four fundamentals</strong> — what helps in every career
+                        <strong className="report-heading-md">The five fundamentals</strong> — what helps in every career
                     </summary>
                     <ul className="fundamentals-list">
                         {data.fundamentals.map((item) => (
@@ -133,17 +127,21 @@ function ReportPage() {
                                 <span className="report-small">{item.meaning}. {item.why}</span>
                             </li>
                         ))}
+                        <li key="the-rest">
+                            <strong>The rest of your qualities</strong> — <Link to="/profile">see them on your Profile</Link>
+                            <br />
+                            <span className="report-small">
+                                Your personality, abilities, the areas you're drawn to and how you work. They aren't
+                                here on purpose: they matter once you've chosen a profession — then we work on the
+                                ones that profession needs and you don't have yet, not the other way round.
+                            </span>
+                        </li>
                     </ul>
-                    <p className="report-small"><em>From your own answers, not a comparison with anyone. All four grow with practice.</em></p>
-                    <p className="report-small">
-                        Your other qualities are on your <Link to="/profile">Profile</Link>. They aren't here on
-                        purpose: they matter once you've chosen a profession — then we work on the ones that
-                        profession needs and you don't have yet, not the other way round.
-                    </p>
+                    <p className="report-small"><em>From your own answers, not a comparison with anyone. All of them grow with practice.</em></p>
                 </details>
             )}
 
-            {/* 5. WHAT YOU SAID YOU WANTED.
+            {/* 4. WHAT YOU SAID YOU WANTED.
                 THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
                 stated wish is still answered in full — including the ones that did not work out —
                 but a student who is happy with their list does not have to scroll past all of it.
@@ -153,7 +151,7 @@ function ReportPage() {
             {aspirationSignals.length > 0 && (
                 <details className="report-details">
                     <summary className="report-summary">
-                        <strong>What you said you wanted</strong> — what happened to {aspirationSignals.length === 1 ? "it" : "all of them"}
+                        <strong className="report-heading-md">What you said you wanted</strong> — what happened to {aspirationSignals.length === 1 ? "it" : "all of them"}
                     </summary>
 
                     <p>
@@ -184,9 +182,9 @@ function ReportPage() {
                                         You named it, and it came <strong>{signal.rankedPosition === 1 ? "top" : `#${signal.rankedPosition}`}</strong> of
                                         your matches on strength of fit.
                                     </p>
-                                    {tierGroupFor(signal.tier) && (
+                                    {tierNameFor(signal.tier) && (
                                         <p>
-                                            <strong>Why there:</strong> it is in "{tierGroupFor(signal.tier).label}" — {tierGroupFor(signal.tier).why.charAt(0).toLowerCase()}{tierGroupFor(signal.tier).why.slice(1)}
+                                            <strong>Why there:</strong> it is in "{tierNameFor(signal.tier)}"{signal.tier > 11 ? " — your profile is a stretch from how this work is usually done" : ""}.
                                         </p>
                                     )}
                                     {signal.supportingFactors.length > 0 && (
