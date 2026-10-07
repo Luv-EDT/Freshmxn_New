@@ -124,7 +124,8 @@ function StoryRecall({ onDone }) {
                 <div style={{ fontSize: "18px", lineHeight: 1.7, whiteSpace: "pre-line", maxWidth: "640px" }}>
                     {state.text}
                 </div>
-                <hr />
+                {/* clear space between the story's end and the instruction (owner, Round 19) */}
+                <hr className="story-end" />
                 <p>Read it again before the hour is up — that is the single best thing you can do.</p>
                 <button type="button" onClick={() => onDone()}>Back to the assessment</button>
             </div>

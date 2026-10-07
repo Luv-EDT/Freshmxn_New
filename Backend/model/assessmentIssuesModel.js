@@ -23,7 +23,8 @@ const assessmentIssueSchema = new mongoose.Schema(
             required: true,
             // sart_invalid | digit_span_unfinished | word_recall_unfinished | reasoning_timeouts | grading_failed | report_failed |
             // report_prose_failed | result_disputed | student_reported |
-            // left_mid_test (Round 17: a one-attempt test whose page was left or refreshed mid-way)
+            // left_mid_test (Round 17: a one-attempt test whose page was left or refreshed mid-way) |
+            // story_unmarked (Round 19: the story's free recall could not be marked, with the reason)
         },
         detail: {
             type: String,

@@ -2503,9 +2503,47 @@ button.pc-toggle .pc-name {
 }
 
 /* Mentorship → "What do you want from your mentor?" (Round 18) */
+/* the label above the box, the box full width (to 560px), the count under it — Round 19 screenshot */
+.mentor-help .mentor-help-label {
+    display: block;
+    margin: var(--space-3) 0 6px;
+    text-align: left;
+}
+
 .mentor-help textarea {
+    display: block;
+    box-sizing: border-box;
     width: 100%;
     max-width: 560px;
+    margin: 0;
+}
+
+.mentor-help .mentor-help-count {
+    margin-top: 4px;
+}
+
+.mentor-focus {
+    border: 0;
+    padding: 0;
+    margin: 0 0 var(--space-3);
+    display: grid;
+    gap: 6px;
+    max-width: 560px;
+}
+
+.mentor-focus legend {
+    margin-bottom: 6px;
+}
+
+.mentor-framing {
+    background: var(--teal-tint);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.mentor-framing p:last-child {
+    margin-bottom: 0;
 }
 
 /* Admin → Activity matches: the per-activity trace (Round 19) */
@@ -2606,4 +2644,9 @@ button.pc-toggle .pc-name {
 /* the combined careers' cards, the same as the matches */
 .combined-careers .match-list {
     margin-top: var(--space-3);
+}
+
+/* the story's last line and the instruction under it never touch (owner, Round 19) */
+hr.story-end {
+    margin: var(--space-5) 0 var(--space-4);
 }

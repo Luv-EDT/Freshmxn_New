@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { whyFits, whyChosen, cardSteps, entryRoute } from "./reportPlan"
+import { whyFits, whyChosen, cardSteps, entryRoute, roadFrom } from "./reportPlan"
 import AbroadWaitlist from "./AbroadWaitlist"
 
 // One profession in the report: a heading until it is opened, then everything the taxonomy knows.
@@ -160,7 +160,6 @@ const PORTABILITY_WORDS = {
 }
 
 // the path stages that ARE the first degree — a college or working student has reached or passed them
-const DEGREE_STAGES = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
 
 // `combined` (Round 19): a combined career — two professions from different sectors in one — opens
 // in this same card, with the parts it has: what it is, why we chose it, why it fits, how people get there.
@@ -178,24 +177,9 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
     const studentLevel = JOURNEY_LEVEL[journey]
     const allSteps = detail ? levelPath(detail.pathToEntry || []) : []
 
-    // A COLLEGE OR WORKING STUDENT IS PAST SCHOOL AND IN (OR PAST) A DEGREE (owner, Round 19: "I am
-    // already in college, and it still recommends bachelor's degrees"). Their road leaves out the school
-    // steps, and their next step is the one AFTER the first degree — unless this career needs its own
-    // degree from the start (restart_undergrad), which is then honestly their next step.
+    // the road from where this student stands, and their next step on it (reportPlan.roadFrom)
     const pastSchool = journey === "college" || journey === "early_professional"
-    const restart = Boolean(detail && detail.midStreamEntry === "restart_undergrad")
-    const steps = pastSchool ? allSteps.filter((step) => step.level >= 2) : allSteps
-    const lastDegree = steps.reduce((found, step, index) => (DEGREE_STAGES.includes(step.stage) ? index : found), -1)
-
-    // The first step at or beyond where the student is — what they do next.
-    const nextIndex = studentLevel === undefined
-        ? -1
-        : pastSchool && !restart && lastDegree >= 0
-            ? (lastDegree + 1 < steps.length ? lastDegree + 1 : -1)
-            // A class 11-12 student is already IN the school step: their next step is the first after it
-            : journey === "class11_12"
-                ? steps.findIndex((step) => step.level > studentLevel)
-                : steps.findIndex((step) => step.level >= Math.min(studentLevel, 2))
+    const { steps, nextIndex } = roadFrom(allSteps, journey, studentLevel, detail && detail.midStreamEntry)
 
     const fit = whyFits(entry)
     const chosen = whyChosen(entry)

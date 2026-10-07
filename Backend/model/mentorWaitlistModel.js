@@ -42,6 +42,11 @@ const mentorWaitlistSchema = new mongoose.Schema(
         helpWanted: {
             type: String, // Round 18: "Anything specific you want to know?" in the student's words (≤600), for the mentor
         },
+        helpFocus: {
+            type: String, // Round 19: help with the chosen role as a career, as an interest/passion, or both
+            enum: ["career", "passion", "both", null],
+            default: null,
+        },
         abroadHelpWaitlist: {
             type: Boolean, // Round 18: wants help with a master's abroad / settling abroad when we offer it (a later version)
             default: false,

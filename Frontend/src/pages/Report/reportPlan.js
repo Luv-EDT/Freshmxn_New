@@ -59,6 +59,37 @@ export const whyChosen = (entry) => {
     return `${how}${feeling}; ${fitWords}.`
 }
 
+// ── the road from where the student stands ──────────────────────────────────────────────────────
+//
+// A COLLEGE OR WORKING STUDENT IS PAST SCHOOL AND IN (OR PAST) A DEGREE (owner, Round 19: "I am
+// already in college, and it still recommends bachelor's degrees"). Their road leaves out the school
+// steps, and their next step is the one AFTER the first degree — unless this career needs its own
+// degree from the start (restart_undergrad), which is then honestly their next step.
+//
+// `allSteps` is the career's path already levelled by the card's levelPath (0 school … 2 degree …);
+// `studentLevel` is where the journey puts the student. Returns the steps to show and the index of the
+// next one (-1 when there is none).
+const DEGREE_STAGES = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+
+export const roadFrom = (allSteps, journey, studentLevel, midStreamEntry) => {
+    const pastSchool = journey === "college" || journey === "early_professional"
+    const restart = midStreamEntry === "restart_undergrad"
+    const steps = pastSchool ? allSteps.filter((step) => step.level >= 2) : allSteps
+    const lastDegree = steps.reduce((found, step, index) => (DEGREE_STAGES.includes(step.stage) ? index : found), -1)
+
+    // The first step at or beyond where the student is — what they do next.
+    const nextIndex = studentLevel === undefined
+        ? -1
+        : pastSchool && !restart && lastDegree >= 0
+            ? (lastDegree + 1 < steps.length ? lastDegree + 1 : -1)
+            // A class 11-12 student is already IN the school step: their next step is the first after it
+            : journey === "class11_12"
+                ? steps.findIndex((step) => step.level > studentLevel)
+                : steps.findIndex((step) => step.level >= Math.min(studentLevel, 2))
+
+    return { steps, nextIndex }
+}
+
 // ── the stream map (class 9-10) ─────────────────────────────────────────────────────────────────
 //
 // class12_prerequisite only ever names physics, chemistry, maths and biology (checked across all
