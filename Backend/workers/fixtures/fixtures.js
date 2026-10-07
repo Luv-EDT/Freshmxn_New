@@ -4886,7 +4886,7 @@ const fixtures = [
     },
     {
         name: "ROUND 19 — mentor page: contribution and interest up front; the help wanted is career, passion or both; the box sits under its label",
-        run: () => {
+        run: async () => {
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
             const model = require("../../model/mentorWaitlistModel")
             const mongoose = require("mongoose")
@@ -4894,9 +4894,10 @@ const fixtures = [
             const admin = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Admin", "MentorMatchesList.js"), "utf8")
             const problems = []
             if (!/const HELP_FOCUS = \["career", "passion", "both"\]/.test(router) || !/HELP_FOCUS\.includes\(req\.body\.helpFocus\)/.test(router)) problems.push("helpFocus is not whitelisted")
-            const bad = new model({ user: new mongoose.Types.ObjectId(), helpFocus: "anything" }).validateSync()
+            const validate = (helpFocus) => new model({ user: new mongoose.Types.ObjectId(), helpFocus }).validate().then(() => null, (error) => error)
+            const bad = await validate("anything")
             if (!bad || !bad.errors.helpFocus) problems.push("the model accepts any help focus")
-            if (new model({ user: new mongoose.Types.ObjectId(), helpFocus: "both" }).validateSync()) problems.push("the model refuses 'both'")
+            if (await validate("both")) problems.push("the model refuses 'both'")
             if (!/Maslow/.test(page) || !/<strong>Contribution<\/strong>/.test(page) || !/<strong>Interest<\/strong>/.test(page)) problems.push("the contribution and interest framing is missing")
             if (!/Career help/.test(page) || !/Interest \/ passion help/.test(page) || !/For the role you choose, what help do you want\?/.test(page)) problems.push("the help choice is missing")
             if (!/dataIndex: "helpFocus"/.test(admin)) problems.push("the admin does not see the help focus")
