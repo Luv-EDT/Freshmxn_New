@@ -207,10 +207,17 @@ you wait at the desk**. Instead:
      **ongoing** in Current interests reach this step;
    - **matches you against 223 Indian careers** (`Backend/matching/`), in three steps:
      1. what you've done → which careers it points to;
-     2. how well each career fits how you think and work;
+     2. how well each career fits how you think and work. For each of your qualities we compare
+        what you have with what the work asks: **having more than the work asks counts as a full
+        fit; only falling short counts against you** (Round 20, owner). Two qualities are
+        different — how comfortable you are not knowing the outcome, and how firmly you hold a
+        view — because a career can want either end of them, so a gap either way counts. A career
+        "fits how you think and work" from **0.85** up (it was 0.7, which nearly every career
+        cleared);
      3. **16 tiers**: careers you love *and* have achieved something in *and* that fit you come
-        first; within a tier, careers that waste less of what you've already done come first
-        (this is the **switching cost**). If your degree already counts for a career
+        first; within a tier, the careers that fit you best come first. The **switching cost**
+        (years of what you've already done that a career would leave behind) no longer reorders
+        anything — the report uses it to group (below). If your degree already counts for a career
         (`data/degree_families.json`), it isn't counted as wasted. A career with very different
         roles inside it (a game developer can build VR worlds or write game logic) is also checked
         role by role, and the report names **the roles that suit you best**;
@@ -225,16 +232,22 @@ you wait at the desk**. Instead:
    "preparing" until the report is there — then shows it.
 
 **The report (`/report`) is a short overview** (Round 19, owner), in this order: **"Your report"** at the
-top centre; **Your matches** — your top three, with "See all N matches" and "Compare careers"; **Combined
-careers** — the ones that mix two professions, often from different sectors; **What seems to drive you**;
-**The four fundamentals** — confidence, sticking with things, picking up new material, deciding with good
-information — each as a word (High / Medium / Low), what it means and why it matters, with a note that your
-other qualities are on your Profile *on purpose*: they matter once you've chosen a profession, and then we
-work on the ones it needs; and **What you said you wanted**.
+top centre; **Your matches** — your top three, with three buttons: "See all N matches", "Combined careers
+(N)" (careers that mix two professions, often from different sectors) and "Compare careers"; **What seems
+to drive you**; **The five fundamentals** — confidence, sticking with things, picking up new material and
+deciding with good information, each as a word (High / Medium / Low) with what it means and why it
+matters, and a fifth: **the rest of your qualities**, with a link to your Profile and why they aren't here
+(they matter once you've chosen a profession, and then we work on the ones it needs); and **What you said
+you wanted**. The last three share one medium heading size; Your matches is only slightly larger (Round 20).
 
 **"See all" opens `/report/matches`**, the whole list: the first **three** of the order you've chosen,
 each with its **rank number** (1, 2, 3…) on the left, and a **"Show the other N careers"** button for the
-rest (choosing a new order starts again at three). Just the names, with your top 3 coloured, and a
+rest (choosing a new order starts again at three). Opened, the list is shown **under its tier headings**
+— "Long-time passions you've achieved in", "Current passions", "Fits your profile", "A stretch — …" — only
+the ones you have, numbers running on across them (Round 20). Under **Best match**, careers that would leave
+**2 or more years** of what you've done behind move into a last fold, "Would cost you 2+ years to switch",
+the least affected first; **Best fit, ignoring switching cost** leaves them in their tiers. Nothing is ever
+added from outside your list. Just the names, with your top 3 coloured, and a
 **Blue-collar** label on hands-on trade careers. The combined careers are at the bottom of this page in the
 **same card** as every other career (what it is, why we chose it, why it fits, how people get there).
 Above the list, two plain lines say which of your top ten have **good prospects for studying abroad** and
@@ -288,16 +301,16 @@ assessment) asks one question: are you still heading the same way, or looking fo
 (with the note "\* Some of the most AI-proof careers are blue-collar"), *Core engineering only* and
 *Studying abroad helps*. All are off until you turn them on, and the page always says how many
 careers they hid, with one tap to show them again. "Sort your list" switches between **Best match** (our
-ranking) and **Best fit, ignoring switching cost** — which says what it changed: the (at most three)
-careers it adds that our ranking leaves out because of what switching would cost you, or "same careers,
-ordered by fit alone" — and can then order by pay, demand, speed or AI exposure
-(with its value shown). **"Compare careers →"** opens a page where you pick 2–3 of the careers recommended to
+ranking) and **Best fit, ignoring switching cost** (every career stays in its tier), and can then order
+each group by pay, demand, speed, AI exposure (with its value shown) or **least switching cost** (Round 20). **"Compare careers →"** opens a page where you pick 2–3 of the careers recommended to
 you (nothing is picked for you) and see them side by side, with the same plain questions, "what to work
 on" and "worth knowing".
 
 **Your profile** shows your psychometric results in six groups — the four fundamentals, personality ("how
-you tend to react to the world"), cognitive abilities, areas you feel drawn to, uncertainty tolerance (a
-position, never high or low) and ways you solve problems — each with what it means, every factor as a word
+you tend to react to the world"), cognitive abilities, areas you feel drawn to, **two traits that make you
+different** (comfort with not knowing the outcome, and how firmly you hold a view you've thought through —
+each a position, never high or low, because careers want different amounts of each; Round 20) and ways you
+solve problems — each with what it means, every factor as a word
 and "Partial · N%" where only part of it could be measured (`Backend/utils/factorGuide.js`). If you answer
 the next-day story questions **after** pressing Submit, your profile is scored again with them and your
 report rebuilt (Round 18) — before, long-term memory stayed missing and three factors said "Partial".
@@ -344,7 +357,14 @@ finds changes the website until the admin approves it.
 
 ## 7. The mentor part
 
-- **Contribution and interest** (Round 19, owner) open the page: everything we help with serves one of
+- **Two pages** (Round 20, owner). `/mentorship` says where you stand first — "Choose the job role you'd
+  like a mentor in", or "We're finding your mentor — you chose Founder (…) on 7 Oct; we'll confirm your
+  mentor via WhatsApp by 4 Nov … Need to change your choice? Message us on WhatsApp" — then ends with **How
+  it works**: the contribution-and-interest paragraph, who your mentor will be, the sessions and the
+  20-business-day policy. **Everything you fill in** — the job role, the help you want, what you want to
+  know, the abroad tick — is on `/mentorship/choose`; a choice already sent shows there read-only. The
+  menu bar has just **Dashboard** (it was "Home"); mentorship is reached from the dashboard.
+- **Contribution and interest** (Round 19, owner) open the "How it works" part: everything we help with serves one of
   two things — **contribution** (earning, supporting your family, standing on your own feet: the base of
   Maslow's hierarchy) and **interest**, with passion as its strongest form (what gives meaning whether or
   not it pays: the upper tiers). So the page asks, **for the role you choose, what help do you want?** —

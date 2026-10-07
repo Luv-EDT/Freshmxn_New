@@ -26,8 +26,8 @@ job role, get a mentor; no assessment).
 | **Code** | `main` (Rounds 9–11 merged 3 Oct 2026; Round 12 and Round 13 merged after it). The cloud work happens on `claude/peaceful-bohr-rkxau6` |
 | **Payments** | `PAYMENT_MODE=manual` — access is granted by the admin; Razorpay is built but off until KYC |
 | **Prices** | from the server (`GET /payments/getPricing`, `Backend/utils/plans.js`): Career Discovery ₹2,499 · Discovery + Mentor ₹5,499 · Mentor Only ₹2,999 · adding a mentor ₹3,000 · adding Discovery to Mentor Only ₹2,500. Students see "plan" and these names; "Tier 1/2/3" stays in code and admin |
-| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@1.2.0`: 16 tiers, switching cost, degree that already counts, best role group, combined careers) · report (`report@4.0.0` — no AI prose since Round 19; a short overview plus every match on `/report/matches`, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
-| **Tests** | fixtures 25 (scoring) / 60 (matching) / 185 (workers) — all offline, all green |
+| **Built** | public site (landing, how it works, success stories, mentors, about, terms, privacy) · auth (email + Google) · paywall · parent consent by emailed code · interest form (cards, Round 10) · assessment (about 81 minutes, a card deck) with SART, digit span, story recall, our own word-memory test and the in-house reasoning puzzles (a clock on each, a second set for retakes) · disability asked once in the interest form, the tests it affects set aside ("not measured", never low) · voice typing in English or Hindi · scoring (`profile@1.4.0`) · matching (`matching@2.0.0` since Round 20: one-sided fit, 16 tiers ordered by fit, "fits you" at 0.85, switching cost shown as a group, degree that already counts, best role group, combined careers) · report (`report@4.0.0` — no AI prose since Round 19; a short overview plus every match on `/report/matches`, next 12 months inside each career, compare page, "Going abroad" for students who hope to) · profile · mentor tier · 6/12-month follow-up · monthly data refresh + weekly careers scout + monthly study bot (all admin-approved) · exam calendar, where to study, master's options, study abroad (Round 11) · mentor job-role picker · AI usage log · admin dashboard incl. assessment issues and retakes · **Round 12:** three plans incl. Mentor Only · sources behind every master's and study-abroad line · mentors review our data for their profession · half-price batch research + a one-time model comparison · last year's closing ranks (official only) |
+| **Tests** | fixtures 25 (scoring) / 62 (matching) / 186 (workers) — all offline, all green |
 | **Not yet** | real students. The owner gates in Part 3 block that, not the build |
 
 **The pipeline in one line:** Submit → `score_profile` job (grade written answers with Claude, score
@@ -59,8 +59,8 @@ cd Backend && npm run seed:admin                  # once — the admin account
 **Test**
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
-node Backend/matching/fixtures/runFixtures.js    # 60/60
-node Backend/workers/fixtures/runFixtures.js     # 185/185 — offline, no DB, no API key
+node Backend/matching/fixtures/runFixtures.js    # 62/62
+node Backend/workers/fixtures/runFixtures.js     # 186/186 — offline, no DB, no API key
 cd Frontend && CI=false npm run build            # 8 known warnings (Interest/*, RequestRefundForm, VerifyEmail)
 ```
 The fixtures read some frontend sources and two docs **as text** (the rubrics in
@@ -148,6 +148,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | **Reports that crashed** (Round 18) | Any student whose story-recall free answer had no grade got "score_profile: (flags[key] \|\| []).concat is not a function" and **no report** (e.g. 6aad069b61181cfa69c61605). Fixed. After the deploy, open **Assessment issues**, and for each "report failed" row the student presses **Try again** on their report (or you re-queue it). The admin email now names the student |
 | **The 438 rewritten career notes** (Round 18) | Every note was rewritten in plain words (`nuances[i].student` in ALL-professions.json); 13 that only explain how the data was built are hidden. Read a sample; mentors also see and review them on their sheet. Edit by hand in the file, run the fixtures, commit |
 | **Subjects per route** (`Backend/data/subject_routes.json`, Round 18) | Eight "any stream" careers with a stream-gated route (B.Tech, MBBS, B.Pharm) now say the subjects per route. `reviewed_by_owner: false` — read it once |
+| **Matching 2.0.0 — two judgement numbers** (Round 20) | "Fits how you think and work" is now **0.85** (one-sided fit; uncertainty tolerance and firmness two-sided) and the "Would cost you 2+ years to switch" group starts at **2 years** (`SWITCH_COST_GROUP_YEARS`, page and engine checked equal by a fixture). Both were chosen from sample profiles, not real students — read real reports after the first ~100 students and retune. Every existing student sees **"Update my report"** (major version) |
 | **Long-term memory stuck at "Partial"** (Round 19) | 58% = 7 of 12 points: the story's short questions were scored, the free recall had no mark. After the deploy, a recall that can't be marked raises **"Story answers couldn't be marked — reason"** in Assessment issues, and Activity matches shows the story's marking beside the trace. Check your own account there |
 | **Emerging-career drafts** (Round 11) | An approved scout title is drafted the way the 223 were (DECISIONS.md). Accept only after reading the draft; accepted drafts reach the site only through Export patch → `tools/applyDataPatch.js` → a commit |
 
@@ -2074,3 +2075,35 @@ abroad lines, ignoring-cost note, the college card, combined card, the #combined
 focus, box alignment, Dashboard on the interest form and assessment, the admin trace); Round 18 60/60 (its
 report checks follow the list to `/report/matches`; a college student no longer sees the subjects fold —
 owner change); uiFlow 65/65; Round 17 42/42; Round 14 14/14. Build: the 8 known warning files.
+
+### Round 20 — the fit maths, the list in tiers, the overview, the mentor page split (2026-10-07)
+The owner asked how "best fit" and "ignoring switching cost" were worked out. Measured on sample profiles
+(scratch `fitcount.js` / `fitcount2.js`): fit was two-sided (being above what the work asks counted like
+being below), scores bunched between ~0.65 and ~0.92 so the 0.7 "fits you" line was cleared by 167–223 of
+223 careers, and "ignoring switching cost" also dropped the tiers and only added the top 3 by raw fit.
+
+| Item | What shipped |
+|---|---|
+| **Fit** (`matching@2.0.0`) | A student's fit is **one-sided**: more than the work asks is a full fit; only a shortfall counts (`weightedMatch(..., { oneSided: true })` in Program 3). **Uncertainty tolerance and firmness stay two-sided** (`TWO_SIDED_FACTORS`): careers can want either end. Activity → career matching (Program 2) stays two-sided — it compares the nature of two things |
+| **"Fits how you think"** | `COMFORT_THRESHOLD` 0.7 → **0.85** |
+| **Tiers** | Inside a tier, ordered by **fit**; the switching cost no longer reorders. `worthTheSwitch` removed from the engine, the worker and the API |
+| **Matches list** | Collapsed: top three. Opened: the **16 tiers as plain headings** (`TIER_NAMES`), only those present, numbers running on. **Best match** moves careers leaving **2+ years** behind into a last fold, least affected first; **ignoring switching cost** keeps them in their tiers. New sub-sort **Least switching cost** (inside each group). `groupList` in `reportFilters.js` |
+| **Overview** | "Combined careers (N)" is a button beside "See all" and "Compare"; **The five fundamentals** (the four + "the rest of your qualities" → Profile); the three lower headings one medium size, Your matches slightly larger |
+| **Mentor page** | `/mentorship`: status first (the owner's "We're finding your mentor…" wording), then **How it works** (framing, who your mentor will be, the sessions, the policy). **All inputs on `/mentorship/choose`** (role picker, help focus, anything specific, abroad tick); a sent choice shown read-only. The role picker still lists the roles that suit the student first ("Suits you", from `role_spread`) |
+| **Firmness** | A **position** like uncertainty tolerance: two-sided in matching, never a "strength" or "something to work on", worded as a position on the Profile and mentor sheet. Profile group **"Two traits that make you different"** (uncertainty tolerance + firmness) |
+| **Menu bar** | "Home" → **Dashboard**; Mentorship link removed (reached from the dashboard) |
+
+**Fixtures** — matching 60 → 62 (one-sided; two-sided positions; tier order by fit; no second list); workers
+185 → 186 (ROUND 20 mentor split). Changed because the owner changed the product: the matching second-list
+and role-group fixtures; REPORT "worth_the_switch leaks slugs" (now: every list the report sends is
+cleaned); REPORT PAGE one list → the list in tier groups (+ page/engine 2-year check, switch-cost sort);
+the filters fixture (new `buildList` signature, grouped rendering); the detail fetch (ranking only); TIERS
+(16 names instead of 5 bands); ROUND 19 overview (combined button, five fundamentals, medium headings);
+MENTORSHIP and ROUND 19 mentor checks (read the three mentor files); PROFILE GROUPS (the positions group,
+firmness as a position); MENTOR REVIEW (firmness worded as a position).
+
+**Cloud checks:** Round 20 40/40 (menu bar, overview buttons and heading sizes, five fundamentals, collapsed
+top three, tier headings, the 2+ years group least-first, running numbers, ignoring-cost tiers, the
+switch-cost sort, mentorship status-first and How it works, the choose page, the Profile positions group, no
+sideways scroll at 360); Round 19 60/60, Round 18 60/60, uiFlow 65/65 (their mentor and overview
+expectations follow the owner's changes), Round 17 42/42, Round 14 14/14. Build: the 8 known warning files.
