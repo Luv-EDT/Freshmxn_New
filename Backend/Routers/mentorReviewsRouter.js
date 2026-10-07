@@ -49,7 +49,11 @@ const NOTE_MAX = 600
 // tolerance is a position, not a level (house rule), so it gets its own three words.
 const levelOf = (value) => (value >= 6.67 ? "High" : value >= 3.33 ? "Medium" : "Low")
 const UNCERTAINTY_POSITION = { High: "comfortable not knowing", Medium: "somewhere in between", Low: "prefers a clear plan" }
-const describeLevel = (slug, value) => (slug === "uncertainty_tolerance" ? UNCERTAINTY_POSITION[levelOf(value)] : levelOf(value))
+// firmness is a position too since Round 20 (owner): a career can want a firm view or an open one
+const FIRMNESS_POSITION = { High: "holds firmly to a view", Medium: "somewhere in between", Low: "open to changing a view" }
+const describeLevel = (slug, value) => (slug === "uncertainty_tolerance" ? UNCERTAINTY_POSITION[levelOf(value)]
+    : slug === "firmness" ? FIRMNESS_POSITION[levelOf(value)]
+        : levelOf(value))
 
 // Every quality the career is rated on (Round 13, owner: all of them, not only the top eight), in
 // order of how much it matters for this work. The first QUALITY_COUNT are `main` — shown open on the

@@ -114,6 +114,8 @@ const cleanSignal = (signal) => ({
 // ONLY — never the gap, the weight or either score. A factor not measured is never listed (missing is
 // not low), and uncertainty tolerance is a position, so it is never something to "work on".
 const BASELINE = new Map(require("../data/baseline_rating.json").ratings.map((row) => [row.id, row]))
+// Positions, not levels (owner, Rounds 10 and 20): never something to "work on"
+const POSITION_FACTORS = ["uncertainty_tolerance", "firmness"]
 const WORK_ON_WEIGHT = 0.3
 const WORK_ON_GAP = 1.5
 const WORK_ON_SHOWN = 4
@@ -122,7 +124,7 @@ const workOnFor = (professionId, raw = {}) => {
     const rating = BASELINE.get(professionId)
     if (!rating) return []
     return Object.entries(rating.weights || {})
-        .filter(([slug, weight]) => weight >= WORK_ON_WEIGHT && slug !== "uncertainty_tolerance" && FACTOR_GUIDE[slug])
+        .filter(([slug, weight]) => weight >= WORK_ON_WEIGHT && !POSITION_FACTORS.includes(slug) && FACTOR_GUIDE[slug])
         .filter(([slug]) => typeof raw[slug] === "number" && typeof rating.factors[slug] === "number")
         .map(([slug, weight]) => ({ slug, weight, gap: rating.factors[slug] - raw[slug] }))
         .filter((row) => row.gap > WORK_ON_GAP)
@@ -292,6 +294,15 @@ const levelFor = (score) => {
     return "Low"
 }
 
+// Firmness is a position too since Round 20 (owner): some careers want a firm view, some want
+// someone open to changing it, so neither end is better.
+const firmnessPosition = (score) => {
+    if (typeof score !== "number" || Number.isNaN(score)) return null
+    if (score >= HIGH_FROM) return "holds firmly to a view you've thought through"
+    if (score >= MEDIUM_FROM) return "somewhere in between"
+    return "open to changing your view"
+}
+
 const uncertaintyPosition = (score) => {
     if (typeof score !== "number" || Number.isNaN(score)) return null
     if (score >= HIGH_FROM) return "comfortable not knowing"
@@ -317,7 +328,9 @@ const scoreGroupsFor = (raw = {}, coverage = {}) => GUIDE_GROUPS.map((group) => 
         name: FACTOR_GUIDE[slug].name,
         meaning: FACTOR_GUIDE[slug].meaning,
         // null → "not measured yet" on the page
-        ...(slug === "uncertainty_tolerance" ? { position: uncertaintyPosition(raw[slug]) } : { level: levelFor(raw[slug]) }),
+        ...(slug === "uncertainty_tolerance" ? { position: uncertaintyPosition(raw[slug]) }
+            : slug === "firmness" ? { position: firmnessPosition(raw[slug]) }
+                : { level: levelFor(raw[slug]) }),
         partialPct: coveragePctOf(coverage[slug], raw[slug]),
     })),
 }))

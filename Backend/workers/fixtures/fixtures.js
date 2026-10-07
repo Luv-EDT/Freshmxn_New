@@ -3991,7 +3991,8 @@ const fixtures = [
                 if (qualities.length !== rated || qualities.filter((quality) => quality.main).length !== 8) problems.push(`${profession.id}: ${qualities.length} qualities of ${rated}, ${qualities.filter((quality) => quality.main).length} main`)
                 qualities.forEach((quality) => {
                     if (quality.label !== FACTOR_LABELS[quality.factor]) problems.push(`${profession.id}: "${quality.label}" is not the shared label`)
-                    if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
+                    // Round 20 (owner): firmness is a position too, worded like uncertainty tolerance
+                    if (!["High", "Medium", "Low", "comfortable not knowing", "somewhere in between", "prefers a clear plan", "holds firmly to a view", "open to changing a view"].includes(quality.level)) problems.push(`${profession.id}: level "${quality.level}"`)
                 })
                 const text = JSON.stringify(sheet)
                 if (/preferredCurrency|residenceCitizenship|match_confidence|data_quality|admin_review|review_status|"weights"/.test(text)) problems.push(`${profession.id}: an admin-only field reached the sheet`)
@@ -4593,7 +4594,9 @@ const fixtures = [
             all.filter((slug) => !grouped.includes(slug)).forEach((slug) => problems.push(`${slug} is in no group`))
             grouped.filter((slug, index) => grouped.indexOf(slug) !== index).forEach((slug) => problems.push(`${slug} is in two groups`))
             grouped.filter((slug) => !FACTOR_GUIDE[slug] || !FACTOR_GUIDE[slug].name || !FACTOR_GUIDE[slug].meaning).forEach((slug) => problems.push(`${slug} has no name or meaning`))
-            if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,uncertainty,solving") problems.push("the groups are not in the owner's order")
+            // Round 20 (owner): firmness joins uncertainty tolerance in "Two traits that make you different"
+            if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,positions,solving") problems.push("the groups are not in the owner's order")
+            if ((GUIDE_GROUPS.find((group) => group.key === "positions") || {}).factors.join() !== "uncertainty_tolerance,firmness") problems.push("firmness and uncertainty tolerance are not grouped together")
             if (GUIDE_GROUPS.some((group) => !group.meaning)) problems.push("a group has no meaning line")
 
             const raw = Object.fromEntries(all.map((slug, index) => [slug, (index * 37) % 11]))
@@ -4609,6 +4612,8 @@ const fixtures = [
             if (!confidence || !["High", "Medium", "Low"].includes(confidence.level)) problems.push("confidence is not shown as a word level")
             const uncertainty = factors.find((factor) => factor.slug === "uncertainty_tolerance")
             if (!uncertainty || uncertainty.level !== undefined || !uncertainty.position) problems.push("uncertainty tolerance is not a position")
+            const firmness = factors.find((factor) => factor.slug === "firmness")
+            if (!firmness || firmness.level !== undefined || !firmness.position) problems.push("firmness is not a position")
             if (factors.some((factor) => factor.partialPct !== 50)) problems.push("Partial · N% is missing")
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -4725,7 +4730,8 @@ const fixtures = [
             const read = (file) => fs.readFileSync(path.join(__dirname, "../../..", file), "utf8")
             const router = read("Backend/Routers/mentorWaitlistRouter.js")
             const model = read("Backend/model/mentorWaitlistModel.js")
-            const page = read("Frontend/src/pages/User/Mentorship.js")
+            // Round 20 (owner): the inputs moved to their own page — read the mentor pages together
+            const page = ["Mentorship.js", "MentorshipChoose.js", "mentorshipParts.js"].map((name) => read(`Frontend/src/pages/User/${name}`)).join("\n")
             const admin = read("Frontend/src/pages/Admin/MentorMatchesList.js")
             const save = (router.split('router.put("/saveMyHelp"')[1] || "").split("router.")[0]
             if (!save) problems.push("there is no saveMyHelp route")
@@ -4875,7 +4881,7 @@ const fixtures = [
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
             const model = require("../../model/mentorWaitlistModel")
             const mongoose = require("mongoose")
-            const page = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "User", "Mentorship.js"), "utf8")
+            const page = ["Mentorship.js", "MentorshipChoose.js", "mentorshipParts.js"].map((name) => fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "User", name), "utf8")).join("\n")
             const admin = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Admin", "MentorMatchesList.js"), "utf8")
             const problems = []
             if (!/const HELP_FOCUS = \["career", "passion", "both"\]/.test(router) || !/HELP_FOCUS\.includes\(req\.body\.helpFocus\)/.test(router)) problems.push("helpFocus is not whitelisted")
@@ -4911,6 +4917,31 @@ const fixtures = [
             if (!/^ruled out — needs biology/.test(landed["hlt-dietitian"] || "")) problems.push("a ruled-out career does not say why")
             const css = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "styles", "app.css"), "utf8")
             if (!/hr\.story-end \{/.test(css) || !/<hr className="story-end" \/>/.test(fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Assessment", "StoryRecall.js"), "utf8"))) problems.push("no space between the story and its instruction")
+            return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 20 — the mentor page says where things stand first and ends with How it works; every input is on /mentorship/choose",
+        run: () => {
+            const read = (name) => fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "User", name), "utf8")
+            const main = read("Mentorship.js")
+            const choose = read("MentorshipChoose.js")
+            const app = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "App.js"), "utf8")
+            const problems = []
+            if (!/path="\/mentorship\/choose"/.test(app)) problems.push("no /mentorship/choose route")
+            if (/<textarea|type="radio"|CareerRolePicker|<HelpWanted/.test(main)) problems.push("an input is still on /mentorship")
+            if (!/<HelpWanted/.test(choose) || !/CareerRolePicker/.test(choose) || !/name="jobRole"/.test(choose)) problems.push("the inputs are not on /mentorship/choose")
+            const standing = main.indexOf("We're finding your mentor")
+            const how = main.indexOf("<h3>How it works</h3>")
+            if (standing < 0 || how < 0 || standing > how) problems.push("the status does not come first, or How it works is missing")
+            ;["<Framing />", "Who your mentor will be", "The sessions", "<MentorRolloverPolicy"].forEach((part) => {
+                if (main.indexOf(part) < how) problems.push(`${part} is not inside How it works at the end`)
+            })
+            if (!/Need to change your choice\?/.test(main)) problems.push("the WhatsApp line for changing a choice is gone")
+            if (!/You chose <strong>\{chosenText\}/.test(choose)) problems.push("a sent choice is not shown on the choose page")
+            const nav = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Navbar.js"), "utf8")
+            if (!/>Dashboard<\/NavLink>/.test(nav) || /to="\/mentorship"/.test(nav)) problems.push("the menu bar should say Dashboard and carry no Mentorship link")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,

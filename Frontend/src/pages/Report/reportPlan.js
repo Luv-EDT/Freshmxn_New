@@ -12,9 +12,9 @@
 // ── why it fits you ─────────────────────────────────────────────────────────────────────────────
 //
 // Supporting factors arrive already labelled by reportsRouter (`factor` is the plain label, `slug`
-// the engine key). Two are never named as a strength: confidence is never a score, and uncertainty
-// tolerance is a position, not a level (house rules).
-const NOT_A_STRENGTH = ["confidence", "uncertainty_tolerance"]
+// the engine key). Three are never named as a strength: confidence is never a score, and uncertainty
+// tolerance and firmness are positions, not levels (house rules; firmness since Round 20).
+const NOT_A_STRENGTH = ["confidence", "uncertainty_tolerance", "firmness"]
 
 export const whyFits = (entry) => {
     const usable = (list) => (Array.isArray(list) ? list : [])
