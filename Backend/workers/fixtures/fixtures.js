@@ -2184,13 +2184,19 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "REPORT — worth_the_switch no longer leaks raw factor slugs",
+        // Round 20 (owner): the worth-the-switch list is gone, so this now pins that the lists the
+        // report DOES send — the ranking and the combined careers — both go through the cleaner.
+        name: "REPORT — every career list the report sends goes through stripInternal (no raw factor slugs)",
         run: () => {
             const source = fs.readFileSync(path.join(__dirname, "..", "..", "Routers", "reportsRouter.js"), "utf8")
-            const line = source.split("\n").find((row) => /worthTheSwitch:/.test(row))
-
-            if (!line) return "worthTheSwitch is no longer returned"
-            return /stripInternal/.test(line) ? null : "worth_the_switch still bypasses stripInternal, so its factors reach the page as engine slugs"
+            const problems = []
+            ;["ranked:", "combined:"].forEach((key) => {
+                const line = source.split("\n").find((row) => row.trim().startsWith(key) && /recommendation/.test(row))
+                if (!line) problems.push(`${key} is no longer returned`)
+                else if (!/stripInternal/.test(line)) problems.push(`${key} bypasses stripInternal`)
+            })
+            if (/worthTheSwitch:/.test(source)) problems.push("worthTheSwitch is still sent")
+            return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
     },

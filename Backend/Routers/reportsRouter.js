@@ -239,12 +239,6 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 sections: report.sections,
                 ranked: recommendation ? recommendation.ranked_professions.map((entry) => withWorkOn(stripInternal(entry))) : [],
                 combined: recommendation ? (recommendation.combined_careers || []).map(stripInternal) : [],
-                // ROUTED THROUGH THE SAME CLEANER, which it was not before. worth_the_switch
-                // carries `supportingFactors` exactly like the ranking does, and it was the one
-                // array that skipped this — so its factors reached the page as raw engine slugs
-                // (`propensity_to_go_deep`) while the ranking beside it showed proper labels. A
-                // latent bug until the redesign gave this list its own card.
-                worthTheSwitch: recommendation ? (recommendation.worth_the_switch || []).map((entry) => withWorkOn(stripInternal(entry))) : [],
                 filtered: recommendation ? recommendation.filtered : [],
                 aspirationSignals: recommendation
                     ? (recommendation.aspiration_signals || []).map((signal) => ({ ...cleanSignal(signal), readAs: readAsFor(signal, recommendation.activity_readings) }))

@@ -23,7 +23,6 @@
 // higher. That is a decision, not a side-effect: a profession someone named when asked is weaker
 // evidence than one they have pursued.
 
-const { WORTH_THE_SWITCH_COUNT } = require("./constants")
 
 const TIERS = [
     { tier: 1, list: "A", comfort: true, test: (entry) => entry.passion && entry.achievement },
@@ -49,22 +48,19 @@ const tierFor = (entry) => {
     return match ? match.tier : null
 }
 
-// WITHIN A TIER, order by the §5 score — fit × exp(−waste/τ) — then by the activity match, then by
-// comfort, then by id.
+// WITHIN A TIER, order by FIT (owner, Round 20), then by the activity match, then by id.
 //
-// This is a change from the plan, which put matchScore first. The tier already encodes the
-// activity evidence: which of A, B and C a profession is in IS Program 2's result. Leading on
-// matchScore inside a tier therefore re-reads the same signal, and it leaves the switching cost
-// nowhere to act, because the exponential never changes a tier. Ordering on score is the only
-// arrangement where a college student in year 3 actually sees the cheap switches first. For school
-// students the multiplier is 1.0 throughout, so this orders on comfort, and nothing moves.
+// Until Round 20 the switching cost ordered careers inside each tier (fit × exp(−waste/τ)). The owner
+// moved it out: the tiers and the fit inside them are the ranking, and the cost is shown by the
+// report instead — "Best match" moves careers that would leave SWITCH_COST_GROUP_YEARS or more behind
+// into a last group, least affected first; "ignoring switching cost" leaves them where they are.
+// `score` (fit × cost) is still computed and stored for that grouping and the switch-cost sort.
 //
 // The final tie-break on id is not cosmetic: without it two equal entries can swap places between
 // runs and the output stops being reproducible.
 const compareWithinTier = (left, right) => (
-    (right.score || 0) - (left.score || 0)
+    (right.comfortScore || 0) - (left.comfortScore || 0)
     || (right.matchScore || 0) - (left.matchScore || 0)
-    || (right.comfortScore || 0) - (left.comfortScore || 0)
     || left.professionId.localeCompare(right.professionId)
 )
 
@@ -75,27 +71,6 @@ const sortIntoTiers = (entries) => {
 
     return placed.map((entry, index) => ({ ...entry, rankedPosition: index + 1 }))
 }
-
-// THE GUARD AGAINST CONSERVATISM (§5). fit × cost makes the engine structurally timid: it will
-// never tell anyone to make the hard change, even when that is the true answer. So a second list
-// is always produced, ranked on RAW FIT with the cost shown but not applied — and drawn from every
-// profession, including ones no activity reached, because the whole point is to surface what the
-// cost-weighting hides.
-const worthTheSwitch = (universe, rankedIds) => (
-    [...universe]
-        .filter((entry) => entry.comfortScore !== null)
-        .sort((left, right) => right.comfortScore - left.comfortScore || left.professionId.localeCompare(right.professionId))
-        .slice(0, WORTH_THE_SWITCH_COUNT)
-        .map((entry) => ({
-            professionId: entry.professionId,
-            profession: entry.profession,
-            comfortScore: entry.comfortScore,
-            wastedYears: entry.wastedYears,
-            yearsToQualify: entry.display.yearsToQualify,
-            alreadyRanked: rankedIds.has(entry.professionId),
-            supportingFactors: entry.supportingFactors,
-        }))
-)
 
 // ai_exposure IS A USER-CONTROLLED SORT, NEVER A MATCHING INPUT. It reorders and never removes —
 // the fixtures assert that the set before and after is identical. Two documents make it a capped
@@ -121,4 +96,4 @@ const applySort = (ranked, sortKey) => {
     return [...ranked].sort(comparator)
 }
 
-module.exports = { TIERS, tierFor, sortIntoTiers, worthTheSwitch, applySort, compareWithinTier, SORTS }
+module.exports = { TIERS, tierFor, sortIntoTiers, applySort, compareWithinTier, SORTS }

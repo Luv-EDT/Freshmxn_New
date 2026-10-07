@@ -152,6 +152,26 @@ const fixtures = [
         ),
         expect: { score: 1, match_confidence: 0.5, usedWeight: 1, missingWeight: 1 },
     },
+    // ── Round 20 (owner): a student's fit is one-sided ───────────────────────────────────────────
+    {
+        name: "ONE-SIDED — a student with MORE than the work asks fits fully; a shortfall still counts",
+        run: () => {
+            const weights = weightsOn({ openness: 1, logical_intelligence: 1 })
+            const above = weightedMatch({ openness: 4, logical_intelligence: 4 }, weights, { openness: 10, logical_intelligence: 10 }, { oneSided: true })
+            const below = weightedMatch({ openness: 10, logical_intelligence: 10 }, weights, { openness: 4, logical_intelligence: 4 }, { oneSided: true })
+            const activity = weightedMatch({ openness: 4, logical_intelligence: 4 }, weights, { openness: 10, logical_intelligence: 10 })
+            return { above: above.score, below: below.score, activityStaysTwoSided: activity.score }
+        },
+        expect: { above: 1, below: 0.4, activityStaysTwoSided: 0.4 },
+    },
+    {
+        name: "ONE-SIDED — uncertainty tolerance and firmness stay two-sided: either end can be wanted",
+        run: () => {
+            const weights = weightsOn({ uncertainty_tolerance: 1, firmness: 1 })
+            return { score: weightedMatch({ uncertainty_tolerance: 2, firmness: 2 }, weights, { uncertainty_tolerance: 8, firmness: 8 }, { oneSided: true }).score }
+        },
+        expect: { score: 0.4 },
+    },
     {
         name: "nothing comparable scores null, not zero",
         run: () => weightedMatch({ openness: 8 }, weightsOn({ openness: 1 }), { openness: null }),
@@ -509,35 +529,35 @@ const fixtures = [
         },
     },
 
-    // ── the second list ─────────────────────────────────────────────────────────────────────────
+    // ── Round 20 (owner): no second list; the cost no longer reorders a tier ────────────────────
+    // REPLACES "worthTheSwitch ranks on raw fit…" and "…still gets the second list". The owner
+    // removed the worth-the-switch extras: "Best fit, ignoring switching cost" is now the same tiers
+    // without the report moving costly careers to the end, so nothing is added from outside the list.
     {
-        name: "worthTheSwitch ranks on raw fit and ignores the cost multiplier",
+        name: "no worth-the-switch list any more; an empty ranking stays empty and visible",
+        run: () => matchProfile(baseInput({ resolvedActivities: [] })),
+        assert: (result) => {
+            if ("worthTheSwitch" in result) return "worthTheSwitch is still produced"
+            if (result.ranked.length !== 0) return `expected an empty ranking, got ${result.ranked.length}`
+            return null
+        },
+    },
+    {
+        name: "inside a tier careers are ordered by fit — the switching cost never reorders them",
         run: () => matchProfile(baseInput({ user: buildUser("early_professional", { experienceYears: 10 }) })),
         assert: (result) => {
-            if (result.worthTheSwitch.length === 0) return "the second list is empty"
-            const top = result.worthTheSwitch[0]
-            if (top.professionId !== "tst-alpha" && top.professionId !== "tst-gamma" && top.professionId !== "tst-delta") {
-                return `expected a perfect-fit profession at the top, got ${top.professionId}`
+            for (let index = 1; index < result.ranked.length; index += 1) {
+                const before = result.ranked[index - 1]
+                const after = result.ranked[index]
+                if (before.tier === after.tier && (after.comfortScore || 0) > (before.comfortScore || 0)) {
+                    return `${after.professionId} fits better than ${before.professionId} but sits below it in tier ${after.tier}`
+                }
             }
-            if (typeof top.wastedYears !== "number") return "the cost must be shown even though it is not applied"
-            if (typeof top.yearsToQualify !== "number") return "the runway must be shown beside every result"
+            if (!result.ranked.every((entry) => typeof entry.wastedYears === "number")) return "the cost must still be computed for the report to group by"
             return null
         },
     },
 
-    {
-        name: "a student whose activities resolved to nothing still gets the second list",
-        // The ranked list is activity-anchored by design, so no resolved activity means no ranked
-        // professions. That must not mean an empty report: worthTheSwitch is drawn from raw fit
-        // across every profession, so it survives, and the empty ranking is visible rather than
-        // disguised as a thin one.
-        run: () => matchProfile(baseInput({ resolvedActivities: [] })),
-        assert: (result) => {
-            if (result.ranked.length !== 0) return `expected an empty ranking, got ${result.ranked.length}`
-            if (result.worthTheSwitch.length === 0) return "the second list should still be produced"
-            return null
-        },
-    },
     {
         name: "an unrateable activity contributes nothing rather than matching everything",
         // activityResolver returns {} for text it cannot rate — "stuff", "things I like". An empty
@@ -804,19 +824,21 @@ const fixtures = [
         run: () => {
             const { runProgramThree } = require("../program3")
             const rating = { id: "rg-x", factors: { openness: 5, conscientiousness: 5 }, weights: { openness: 1, conscientiousness: 1 } }
-            const wide = { id: "rg-x", profession: "Wide", mid_stream_entry: "open", role_spread: { spread: "wide", deviating_roles: [{ roles: ["Role A"], higher: ["openness"], lower: [], why: "needs more openness" }] } }
+            // Round 20: fit is one-sided, so a role group helps by asking for LESS of something the
+            // student is short on (more of what they already exceed changes nothing)
+            const wide = { id: "rg-x", profession: "Wide", mid_stream_entry: "open", role_spread: { spread: "wide", deviating_roles: [{ roles: ["Role A"], higher: [], lower: ["conscientiousness"], why: "needs less structure" }] } }
             const narrow = { ...wide, role_spread: { spread: "narrow", deviating_roles: [] } }
             const run = (profession, vector) => runProgramThree({
                 candidates: [{ professionId: "rg-x" }], studentVector: vector, professions: [profession],
                 baselineById: { "rg-x": rating }, journey: { stage: "class9_10", stream: [] },
             }).ranked[0]
-            const open = run(wide, { openness: 7, conscientiousness: 5 })
-            const plain = run(narrow, { openness: 7, conscientiousness: 5 })
-            const away = run(wide, { openness: 3, conscientiousness: 5 })
+            const open = run(wide, { openness: 5, conscientiousness: 3 })
+            const plain = run(narrow, { openness: 5, conscientiousness: 3 })
+            const away = run(wide, { openness: 3, conscientiousness: 7 })
             if (!open.bestRoles || open.bestRoles.roles[0] !== "Role A") return "the matching role group was not named"
             if (!(open.comfortScore > plain.comfortScore)) return "the role group should lift the fit above the whole career's"
             if (plain.bestRoles !== null) return "a narrow career has no role groups"
-            if (away.bestRoles !== null || away.comfortScore !== run(narrow, { openness: 3, conscientiousness: 5 }).comfortScore) return "a group that fits worse must change nothing"
+            if (away.bestRoles !== null || away.comfortScore !== run(narrow, { openness: 3, conscientiousness: 7 }).comfortScore) return "a group that fits worse must change nothing"
             return null
         },
         expect: null,

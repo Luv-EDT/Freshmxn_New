@@ -77,7 +77,7 @@ const bestRoleGroup = (profession, rating, studentVector, base) => {
         ;(group.higher || []).forEach((slug) => { if (typeof factors[slug] === "number") factors[slug] = clamp10(factors[slug] + ROLE_SHIFT) })
         ;(group.lower || []).forEach((slug) => { if (typeof factors[slug] === "number") factors[slug] = clamp10(factors[slug] - ROLE_SHIFT) })
 
-        const fit = weightedMatch(factors, rating.weights, studentVector)
+        const fit = weightedMatch(factors, rating.weights, studentVector, { oneSided: true })
         if (fit.score === null) return
         if (!best || fit.score > best.fit.score) best = { fit, group }
     })
@@ -87,7 +87,7 @@ const bestRoleGroup = (profession, rating, studentVector, base) => {
 }
 
 const scoreOne = ({ profession, rating, studentVector, journey, candidate }) => {
-    const whole = weightedMatch(rating.factors, rating.weights, studentVector)
+    const whole = weightedMatch(rating.factors, rating.weights, studentVector, { oneSided: true })
     const role = bestRoleGroup(profession, rating, studentVector, whole)
     const comfort = role ? role.fit : whole
     const cost = journeyMultiplier(profession, journey)
