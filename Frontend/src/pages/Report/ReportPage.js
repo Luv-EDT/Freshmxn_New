@@ -6,7 +6,8 @@ import UpgradeToMentorship from "../UpgradeToMentorship"
 import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
 import { studentTags } from "./reportTags"
-import { tierNameFor, listOf } from "./reportFraming"
+import { tierNameFor, buildFirstFor, framingFor, listOf, BUILD_FIRST_TITLE } from "./reportFraming"
+import { SWITCH_COST_GROUP_YEARS } from "./reportFilters"
 import DirectionModal from "../DirectionModal"
 
 // Stage 3 — the report: A SHORT OVERVIEW SINCE ROUND 19 (owner). In the owner's order: "Your report";
@@ -103,6 +104,52 @@ function ReportPage() {
                 </div>
             </section>
 
+            {/* HOW YOUR LIST IS ORDERED (owner, Round 24: here, like the fundamentals, not on the matches
+                page). THE RANKING EXPLAINS ITSELF, in one place — a student who cannot see why one career
+                sits above another has been handed an opinion with a number on it. */}
+            <details className="report-details report-ordering">
+                <summary className="report-summary">
+                    <strong className="report-heading-md">How your list is ordered</strong> — why each career sits where it does
+                </summary>
+                <p className="report-small">Three things decide where a career sits, in this order:</p>
+                <ol className="report-small">
+                    <li>
+                        <strong>What you have actually done.</strong> Something you've kept up for years counts for
+                        more than something you do now.
+                    </li>
+                    <li>
+                        <strong>How strongly you feel about it.</strong> <em>Proven</em> (you've achieved at it) comes
+                        first, then <em>confident</em> (you said you're sure), then <em>passion</em> (you love it), then
+                        simply an <em>interest</em>.
+                    </li>
+                    <li>
+                        <strong>Whether it fits how you think and work</strong>, measured from your assessment against
+                        what the work asks. Careers that fit you now come first; the ones under <em>{BUILD_FIRST_TITLE}</em> link
+                        to what you do but ask for more than your profile shows today.
+                    </li>
+                </ol>
+                <p className="report-small">
+                    Open your full list to see each group by name — "Proven long-time passion" down to "Other
+                    interests". Inside a group, the careers that fit you best come first. Having more of a quality than
+                    a career asks never counts against you — except comfort with uncertainty and how firmly you hold a
+                    view, where careers can want either end.
+                </p>
+                {framingFor(data.journey).switchIsDistinct && (
+                    <p className="report-small">
+                        <strong>Switching cost.</strong> Under <em>Best match</em>, careers that would leave {SWITCH_COST_GROUP_YEARS} or
+                        more years of what you've already done behind go to a last group of their own, the least affected
+                        first. On your list, choose <em>Best fit, ignoring switching cost</em> to keep them in their groups,
+                        or sort by <em>Least switching cost</em>.
+                    </p>
+                )}
+                <p className="report-small">
+                    <em>
+                        Nothing here is a verdict on what you are capable of. It is a reading of the evidence you gave
+                        us, and it moves when you give us more.
+                    </em>
+                </p>
+            </details>
+
             {/* 2. WHAT SEEMS TO DRIVE YOU */}
             {myTags.length > 0 && (
                 <section className="report-card">
@@ -184,7 +231,7 @@ function ReportPage() {
                                     </p>
                                     {tierNameFor(signal.tier) && (
                                         <p>
-                                            <strong>Why there:</strong> it is in "{tierNameFor(signal.tier)}"{signal.tier > 11 ? " — your profile is a stretch from how this work is usually done" : ""}.
+                                            <strong>Why there:</strong> it is in "{tierNameFor(signal.tier)}"{buildFirstFor(signal.tier) ? ` — ${BUILD_FIRST_TITLE.toLowerCase()}: the work asks for more than your profile shows today` : ""}.
                                         </p>
                                     )}
                                     {signal.supportingFactors.length > 0 && (

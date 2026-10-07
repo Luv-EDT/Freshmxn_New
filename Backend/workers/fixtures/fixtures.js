@@ -2410,7 +2410,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "TIERS — every one of the sixteen tiers has its own plain heading, and the 'stretch' ones are exactly the engine's not-a-fit tiers",
+        name: "TIERS — every one of the sixteen tiers has a crisp label (at most four words), and 'Build skills first' marks exactly the engine's not-a-fit tiers",
         // REPLACES the five-band check (owner, Round 20): the open list now shows the engine's tiers
         // themselves as headings, so the names must line up with tiers.js one for one.
         run: () => {
@@ -2418,14 +2418,23 @@ const fixtures = [
             const { TIER_NAMES } = loadEsModule(path.join(REPORT_DIR, "reportFraming.js"))
             const source = readReportPage()
             const problems = []
-            if (!/How this list is ordered/.test(source)) problems.push("the ordering is no longer explained anywhere on the page")
+            // OWNER CHANGE (Round 24): the explanation moved to the overview ("How your list is ordered"),
+            // the labels became two or three words, and "A stretch …" became one "Build skills first" band
+            if (!/How your list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8"))) problems.push("the ordering is not explained on the overview")
+            if (/How (this|your) list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8"))) problems.push("the ordering is still explained on the matches page")
             if (TIER_NAMES.length !== TIERS.length) problems.push(`${TIER_NAMES.length} names for ${TIERS.length} tiers`)
             TIERS.forEach((rule) => {
                 const row = TIER_NAMES.find((name) => name.tier === rule.tier)
                 if (!row || !row.name) return problems.push(`tier ${rule.tier} has no name`)
-                if (rule.comfort === row.name.startsWith("A stretch")) problems.push(`tier ${rule.tier} "${row.name}" says the wrong thing about fit`)
+                if (rule.comfort === row.buildFirst) problems.push(`tier ${rule.tier} "${row.name}" says the wrong thing about fit`)
+                if (row.name.split(/\s+/).length > 4 || /stretch/i.test(row.name)) problems.push(`tier ${rule.tier} "${row.name}" is not a crisp label`)
             })
-            if (new Set(TIER_NAMES.map((row) => row.name)).size !== TIER_NAMES.length) problems.push("two tiers share a heading")
+            // a label may repeat across the two bands (they tell 11 and 16 apart), never within one
+            ;[false, true].forEach((band) => {
+                const names = TIER_NAMES.filter((row) => row.buildFirst === band).map((row) => row.name)
+                if (new Set(names).size !== names.length) problems.push("two tiers in one band share a heading")
+            })
+            if (!/BUILD_FIRST_TITLE/.test(source)) problems.push("the 'Build skills first' band is not shown")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -4958,6 +4967,8 @@ const fixtures = [
             if (empty.study.length + empty.work.length !== 0) problems.push("lines without data")
             const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
             if (!/Good prospects for studying abroad/.test(matches) || !/Good chances of working abroad/.test(matches)) problems.push("the matches page does not show the two lines")
+            // Round 24 (owner): at the bottom of the page, after the combined careers
+            if (matches.indexOf("Good prospects for studying abroad") < matches.indexOf("<CombinedCareers")) problems.push("the abroad lines are not at the bottom of the matches page")
             if (/StudyAbroadCard/.test(readReportPage())) problems.push("the report-level study-abroad card is back")
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -4983,7 +4994,10 @@ const fixtures = [
             const medium = ["What seems to drive you", "The five fundamentals", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
             if (medium.length > 0) problems.push(`not in the shared medium heading: ${medium.join(", ")}`)
             if (/<ReportSortMenu|buildList\(/.test(page)) problems.push("the sort or the list is still on the overview")
-            if (!/Leave out blue-collar careers\*/.test(matches) || !/\* Some of the most AI-proof careers are blue-collar\./.test(matches)) problems.push("the blue-collar filter has no asterisk and side note")
+            // Round 24 (owner): the filters fold away behind "Filter your list", like the sort
+            const filterMenu = fs.readFileSync(path.join(REPORT_DIR, "ReportFilterMenu.js"), "utf8")
+            if (!/Leave out blue-collar careers\*/.test(filterMenu) || !/\* Some of the most AI-proof careers are blue-collar\./.test(filterMenu)) problems.push("the blue-collar filter has no asterisk and side note")
+            if (!/<ReportFilterMenu/.test(matches) || !/Filter your list/.test(filterMenu)) problems.push("the filters are not folded behind one button")
             if (/added that our main ranking leaves out/.test(matches) || !/nothing is moved for what\s+switching would cost you/.test(matches)) problems.push("'ignoring switching cost' does not say what it does")
             const combined = fs.readFileSync(path.join(REPORT_DIR, "CombinedCareers.js"), "utf8")
             if (!/<ProfessionCard[\s\S]*?combined\s/.test(combined) || !/mix two professions/.test(combined)) problems.push("combined careers are not the same card with the note")
