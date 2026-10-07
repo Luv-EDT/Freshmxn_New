@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom"
 import { getMyReport } from "../../apiCall/reportsApi"
 import { getProfessions } from "../../apiCall/professionsApi"
 import Navbar from "../Navbar"
+import BackToDashboard from "../BackToDashboard"
 import { whyFits, entryRoute } from "./reportPlan"
 import { aiExposureText } from "./ProfessionCard"
 
@@ -101,6 +102,7 @@ function ComparePage() {
     return (
         <div className="report-page">
             <Navbar />
+            <BackToDashboard />
             <main className="compare-page">
                 <p><Link to="/report">← Back to your report</Link></p>
                 <h1>Compare careers</h1>

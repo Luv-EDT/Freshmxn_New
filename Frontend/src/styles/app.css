@@ -2515,3 +2515,95 @@ button.pc-toggle .pc-name {
     border-bottom: 1px solid var(--line);
 }
 .activity-trace p { margin: 2px 0; }
+
+/* ── Round 19: the report overview, the matches page, the Dashboard button ───────────────────── */
+
+/* "← Dashboard" sits under the header on every page of the work (owner, Round 19) */
+.back-to-dashboard {
+    box-sizing: border-box;
+    width: calc(100% - 32px);
+    max-width: 1100px;
+    margin: var(--space-2) auto 0;
+}
+
+.report-page > .app-header ~ .back-to-dashboard {
+    max-width: 808px;
+}
+
+/* "Your report", top centre */
+.report-page h1.report-title {
+    text-align: center;
+}
+
+/* the overview's sections are cards in the report column */
+.report-page > .app-header ~ section.report-card {
+    box-sizing: border-box;
+    width: calc(100% - 32px);
+    max-width: 808px;
+    margin: var(--space-4) auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+}
+
+.report-card h2 {
+    margin: 0 0 var(--space-2);
+}
+
+.report-card p {
+    margin: 0 0 var(--space-2);
+}
+
+.report-top {
+    margin: 0 0 var(--space-3);
+    padding-left: 1.4em;
+}
+
+.report-top li {
+    margin: 4px 0;
+}
+
+.report-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* the heading on the matches page sits clear of the line above it (owner, Round 19) */
+.report-page .report-matches-head {
+    margin-top: var(--space-3);
+}
+
+.report-page .report-matches-head h1 {
+    margin: 0;
+}
+
+.report-back {
+    margin: var(--space-3) auto 0;
+}
+
+.report-abroad {
+    background: var(--teal-tint);
+    border-radius: var(--radius);
+    padding: var(--space-2) var(--space-4);
+    margin: var(--space-3) auto;
+}
+
+.report-abroad p {
+    margin: 4px 0;
+}
+
+.report-page .report-filter-note {
+    margin-top: 4px;
+}
+
+.report-page .report-switch-note {
+    border-left: 4px solid var(--teal);
+    padding-left: var(--space-3);
+}
+
+/* the combined careers' cards, the same as the matches */
+.combined-careers .match-list {
+    margin-top: var(--space-3);
+}

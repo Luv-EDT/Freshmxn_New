@@ -20,11 +20,13 @@ export const whyFits = (entry) => {
     const usable = (list) => (Array.isArray(list) ? list : [])
         .filter((row) => row && row.factor && !NOT_A_STRENGTH.includes(row.slug))
 
-    const strengths = usable(entry.supportingFactors)
+    // a combined career carries both sides' factors, so the same one can come twice — named once
+    // ("reasoning, reasoning" on a combined career, Round 19)
+    const strengths = [...new Set(usable(entry.supportingFactors)
         .slice()
         .sort((left, right) => (right.held || 0) - (left.held || 0))
+        .map((row) => row.factor))]
         .slice(0, 3)
-        .map((row) => row.factor)
 
     const via = Array.isArray(entry.matchedBy) && entry.matchedBy.length > 0 && entry.matchedBy[0].activity
         ? String(entry.matchedBy[0].activity)
@@ -34,6 +36,27 @@ export const whyFits = (entry) => {
     const stretch = usable(entry.divergingFactors).map((row) => row.factor)[0] || null
 
     return { strengths, via, stretch }
+}
+
+// ── why we chose it for you (Round 19, owner: "a very crisp reason") ─────────────────────────────
+//
+// One sentence from what PUT the career in the list — the engine's own evidence, in the order it
+// weighs it (tiers.js): you named it; an activity you've kept up for years (list A) or do now (B);
+// love, achievement, confidence; and whether it fits how you work. No factor names, no numbers.
+export const whyChosen = (entry) => {
+    if (!entry) return null
+    const activity = Array.isArray(entry.matchedBy) && entry.matchedBy.length > 0 && entry.matchedBy[0].activity
+        ? String(entry.matchedBy[0].activity)
+        : null
+    const fits = entry.comfort === true
+    const fitWords = fits ? "it fits how you think and work" : "it is a stretch from how you work now, but within reach"
+
+    if (entry.namedDirectly || entry.fromAspiration) return `You named it yourself, and ${fitWords}.`
+    if (!activity) return fits ? "It reached you on your profile alone: it fits how you think and work." : null
+
+    const how = entry.list === "A" ? `Something you've kept up for years — ${activity} — leads here` : `Something you do now — ${activity} — leads here`
+    const feeling = entry.passion ? ", and you love it" : entry.achievement ? ", and you've achieved something in it" : String(entry.confidenceExp).toLowerCase() === "high" ? ", and you feel sure of it" : ""
+    return `${how}${feeling}; ${fitWords}.`
 }
 
 // ── the stream map (class 9-10) ─────────────────────────────────────────────────────────────────
@@ -140,7 +163,7 @@ const midStreamLine = (detail) => {
 }
 
 const AFTER_UNDERGRAD = {
-    work_first: "After your degree, start working — a master's isn't needed.",
+    work_first: "After your degree, start working — a master's usually isn't needed.",
     masters_advantage: "A master's helps later, but you can start working first.",
     masters_required: "You'll need a master's degree to practise.",
     masters_is_the_entry: "The master's degree is the way in.",
@@ -315,3 +338,16 @@ export const abroadCareers = (ranked, details = {}, topN = 10) => (ranked || [])
     .slice(0, topN)
     .filter((entry) => details[entry.professionId] && details[entry.professionId].abroad)
     .map((entry) => ({ professionId: entry.professionId, profession: entry.profession, need: details[entry.professionId].abroad.need }))
+
+// STUDYING AND WORKING ABROAD ACROSS YOUR MATCHES (Round 19, owner): two plain lines from the top
+// ten — where studying abroad helps (data/abroad.json) and which careers travel well for work
+// (data/abroad_work.json). A line is shown only when it names something.
+export const abroadLines = (ranked, details = {}, topN = 10) => {
+    const top = (ranked || []).slice(0, topN).filter((entry) => details[entry.professionId])
+    const study = abroadCareers(ranked, details, topN).map((career) => career.profession)
+    const work = top.filter((entry) => {
+        const going = details[entry.professionId].goingAbroad
+        return going && going.portability === "travels_well"
+    }).map((entry) => entry.profession)
+    return { study, work }
+}

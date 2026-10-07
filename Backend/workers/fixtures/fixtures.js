@@ -34,6 +34,11 @@ const ITEMS_FILE = path.join(ASSESSMENT_DIR, "ipip50Items.js")
 const MODULE_ITEMS_FILE = path.join(ASSESSMENT_DIR, "moduleItems.js")
 const SART_FILE = path.join(ASSESSMENT_DIR, "sartTask.js")
 const REPORT_DIR = path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report")
+// Round 19 (owner): the report is an overview (ReportPage.js) and the full list is its own page
+// (MatchesPage.js); the shared data, status screens and framing moved to their own files. The checks
+// that read "the report page" read all of them together.
+const REPORT_PAGE_FILES = ["ReportPage.js", "MatchesPage.js", "useReportData.js", "ReportStatus.js", "reportFraming.js"]
+const readReportPage = () => REPORT_PAGE_FILES.map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
 
 // Loads the REAL sartTask.js and runs it.
 //
@@ -1882,7 +1887,7 @@ const fixtures = [
         // worth-the-switch career, ordered on raw fit, and that no order ever drops anything.
         run: () => {
             const { buildList } = loadReportFilters()
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
             const ranked = [
@@ -1989,7 +1994,7 @@ const fixtures = [
         // row. Every order shows every career.
         run: () => {
             const filters = loadReportFilters()
-            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = readReportPage()
 
             const problems = []
 
@@ -2036,7 +2041,7 @@ const fixtures = [
         // pay reorders the rows but not `rankedPosition`, so a student would count to the fourth row
         // and find something else. Stated as a rank on match strength it is true under every sort.
         run: () => {
-            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = readReportPage()
 
             const problems = []
             if (/in your list above/.test(page)) {
@@ -2231,7 +2236,7 @@ const fixtures = [
         // surface professions that are NOT in the ranking (`alreadyRanked: false` is the common
         // case). The entries most worth reading were exactly the ones with nothing to read.
         run: () => {
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
 
@@ -2275,7 +2280,7 @@ const fixtures = [
         // ones, so the explanation cannot drift from the sort it describes.
         run: () => {
             const { TIERS } = require("../../matching/tiers")
-            const source = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
 
@@ -2313,7 +2318,7 @@ const fixtures = [
         // "what to do next in 12 months should be inside each profession"). The report-level roll-up
         // of the top three went; each card's own steps already named the same path step and exams.
         run: () => {
-            const page = fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8")
+            const page = readReportPage()
             const card = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
             const plan = fs.readFileSync(path.join(REPORT_DIR, "reportPlan.js"), "utf8")
 
@@ -2383,7 +2388,7 @@ const fixtures = [
         // worth anything if the page stops doing its own version — two translations means the one
         // that runs is whichever the markup happens to reach first.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
             const code = source.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
 
             return /factor\.replace\(|\.factor\.replace/.test(code)
@@ -2398,7 +2403,7 @@ const fixtures = [
         // handles three of them shows a student their stated ambition and then says nothing about
         // it, which is the one thing §4D exists to prevent.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const missing = ["ranked", "blocked", "unranked", "unmatched"]
                 .filter((outcome) => !source.includes(`signal.outcome === "${outcome}"`))
@@ -2412,7 +2417,7 @@ const fixtures = [
         // §4D: "for a blocked one, which door is shut and what the nearest reachable version is".
         // A bare "not open to you" leaves a sixteen-year-old with a closed door and nowhere to go.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
             const block = source.split('signal.outcome === "blocked"')[1]
 
             if (!block) return "the blocked branch is gone"
@@ -2433,7 +2438,7 @@ const fixtures = [
         // lists are the SAME ranking. Presenting them as a contrast would stage a distinction the
         // maths did not make — and imply the student has already committed to something.
         run: () => {
-            const source = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const source = readReportPage()
 
             const problems = []
             if (!/switchIsDistinct/.test(source)) problems.push("the journey framing is gone — every stage now gets the same report")
@@ -3409,7 +3414,7 @@ const fixtures = [
             if (/enqueue/.test(getMyReport)) problems.push("getMyReport queues a rebuild")
             if (!/updateIsAvailable\(report, recommendation\)/.test(update)) problems.push("updateMyReport does not check there is something to update")
             if (!/directionUpdate\(\{ via: "update"/.test(update)) problems.push("updateMyReport does not ask which way the student is heading")
-            const page = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Report", "ReportPage.js"), "utf8")
+            const page = readReportPage()
             if (/status === "stale"/.test(page)) problems.push("the page still waits for an automatic rebuild")
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -3812,8 +3817,9 @@ const fixtures = [
             const router = fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8")
             if (!/req\.body\.consent !== true/.test(router)) problems.push("the route does not refuse without consent")
             if (!/policyVersion: POLICY_VERSION/.test(router)) problems.push("the policy version is not stored with the consent")
-            const card = fs.readFileSync(path.join(REPORT_DIR, "StudyAbroadCard.js"), "utf8")
-            if (!/disabled=\{!consent/.test(card)) problems.push("the Connect button works before the box is ticked")
+            // Round 19 (owner): the report-level card went; the waitlist sits inside each career's abroad part
+            const card = fs.readFileSync(path.join(REPORT_DIR, "AbroadWaitlist.js"), "utf8")
+            if (!/disabled=\{!consent/.test(card)) problems.push("the waitlist button works before the box is ticked")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -3934,7 +3940,7 @@ const fixtures = [
             if (!layered.abroad || layered.abroad.need !== "helps" || layered.studyFacts.abroad.status !== "checked") problems.push("an approved abroad change did not reach the page")
             if (validateFactChange({ field: "abroad", proposed: { need: "helps", stage: "masters", why: "A real reason here" } }, { abroad: null }, []) !== null) problems.push("a change with no source was kept")
             // Round 13, owner: a label that says where a fact came from tells a student nothing they can use
-            const pages = ["ProfessionCard.js", "ComparePage.js", "ReportPage.js"].map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
+            const pages = ["ProfessionCard.js", "ComparePage.js", "CombinedCareers.js", ...REPORT_PAGE_FILES].map((name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8")).join("\n")
             const shown = ["Our estimate", "Checked against the official rules", "Based on published information", "Pay figures", "(estimate)", "our suggestion — check it yourself", "Checked {"].filter((label) => pages.includes(label))
             if (shown.length > 0) problems.push(`the report still shows provenance labels: ${shown.join(", ")}`)
             return problems.length > 0 ? problems.join("; ") : null
@@ -4673,7 +4679,7 @@ const fixtures = [
             // what reaches the screen — comments may still name what was removed
             const read = (name) => fs.readFileSync(path.join(REPORT_DIR, name), "utf8").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "")
             const card = read("ProfessionCard.js")
-            const page = read("ReportPage.js")
+            const page = REPORT_PAGE_FILES.map(read).join("\n")
             const compare = read("ComparePage.js")
             const combined = read("CombinedCareers.js")
             const all = [card, page, compare, combined].join("\n")
@@ -4684,13 +4690,15 @@ const fixtures = [
             if (!/<Section title="What to work on">/.test(card) || !/What to work on/.test(compare)) problems.push("what to work on is missing")
             if (!/"Worth knowing"/.test(compare)) problems.push("compare has no Worth knowing row")
             if (/official page ↗|recognition\.url/.test(card)) problems.push("the card still links to foreign pages")
-            if (!/we'll connect you with a consultant/.test(card)) problems.push("the abroad part has no consultant note")
+            // Round 19 (owner): "we'll connect you with a consultant" became a waitlist
+            if (!/<AbroadWaitlist professionId=\{entry\.professionId\} \/>/.test(card)) problems.push("the abroad part has no waitlist")
             if (!/subjectRoutes/.test(card)) problems.push("the card does not show subjects per route")
             if (/journeyHeadline|mastersOptions/.test(page)) problems.push("a report-level overview is back")
             if (!/data\.fundamentals/.test(page)) problems.push("the fundamentals are not on the report")
             if (!/Not a career on our list/.test(page) || !/signal\.readAs/.test(page) || !/Direct match/.test(page) || !/Indirect match/.test(page)) problems.push("the aspiration copy is not the owner's")
-            const abroadCard = read("StudyAbroadCard.js")
-            if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad card is not a waitlist")
+            const abroadCard = read("AbroadWaitlist.js")
+            if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad help is not a waitlist")
+            if (fs.existsSync(path.join(REPORT_DIR, "StudyAbroadCard.js"))) problems.push("the report-level study-abroad card is back")
             if (!/kind: "waitlist"/.test(fs.readFileSync(path.join(__dirname, "../../Routers/studyAbroadRouter.js"), "utf8"))) problems.push("the waitlist is not recorded as such")
             return problems.length > 0 ? problems.slice(0, 8).join("; ") : null
         },
