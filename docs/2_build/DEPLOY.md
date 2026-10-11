@@ -206,6 +206,24 @@ The site is now open to search engines (the preview `noindex` tag was removed on
    addresses (every old path now opens the new landing page).
 5. Expect the results to change over a few days to two weeks — Google's timing, not ours.
 
+## Cloudflare Turnstile — the sign-up spam check (Round 25)
+
+Built and **off until these two keys exist**. Nothing else changes when they are missing.
+
+1. **dash.cloudflare.com** → left menu **Turnstile** → **Add widget**.
+2. Widget name `Freshmxn sign-up` · Hostnames `freshmxn.com` and `www.freshmxn.com` · Widget mode
+   **Managed** → **Create**.
+3. Copy the two keys it shows into **Render → the service → Environment**:
+   - **Site key** → `REACT_APP_TURNSTILE_SITE_KEY` (public; it is built into the page)
+   - **Secret key** → `TURNSTILE_SECRET_KEY` (secret)
+4. **Render → Manual Deploy → Deploy latest commit.** A rebuild is needed because the site key is
+   baked into the frontend at build time.
+5. Check: open `https://www.freshmxn.com/register` in a private window — a small Cloudflare box sits
+   above "Create account" (usually it just ticks itself) — and register a test account.
+
+The DNS records are not touched (keep them grey-cloud, MX/TXT as they are). To switch the check off,
+delete both keys and redeploy.
+
 ## Custom domain — www.freshmxn.com (original plan — superseded by the Cloudflare section above)
 
 ### Phase A — now: `beta.freshmxn.com` (your current site is untouched)

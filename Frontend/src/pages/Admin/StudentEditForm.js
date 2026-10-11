@@ -1,15 +1,20 @@
-import { useEffect } from "react"
-import { Form, Input, InputNumber, Modal, Select, Popconfirm, message } from "antd"
+import { useEffect, useState } from "react"
+import { Form, Input, InputNumber, Modal, Popconfirm, message } from "antd"
 import { updateStudentForAdmin } from "../../apiCall/userApi"
-import { JOURNEY_OPTIONS } from "../journeyOptions"
+import StageFields, { detailForForm } from "../StageFields"
 
 // One editor, used from the Students, Access Requests and Refund Requests tabs alike. It always
 // writes the USER document, which is the single copy all three tables display — so a corrected
 // name can never show as "Ram" on one tab and "Rama" on another.
-// Contact details only: paid, tier, role and every amount stay server-owned and change only
+// Contact details and the stage: paid, tier, role and every amount stay server-owned and change only
 // through Grant / Refund / Downgrade, so an edit can't contradict the payment trail.
+// Round 25 (owner): the stage's DETAILS are editable here too (degree, Class-12 year, current
+// profession…) with the same fields the student sees — the server keeps only what belongs to the
+// stage, and a change offers the student "Update my report".
 function StudentEditForm({ visible, onClose, student, onSaved }) {
     const [form] = Form.useForm()
+    const [journey, setJourney] = useState("")
+    const [detail, setDetail] = useState(detailForForm(null))
 
     useEffect(() => {
         if (visible && student) {
@@ -17,8 +22,9 @@ function StudentEditForm({ visible, onClose, student, onSaved }) {
                 name: student.name,
                 phone: student.phone,
                 age: student.age,
-                journey: student.journey,
             })
+            setJourney(student.journey || "")
+            setDetail(detailForForm(student.journeyDetail))
         }
     }, [visible, student, form])
 
@@ -30,8 +36,8 @@ function StudentEditForm({ visible, onClose, student, onSaved }) {
                 name: values.name,
                 phone: values.phone || "",
                 age: values.age,
-                journey: values.journey,
-                journeyDetail: student.journeyDetail,   // untouched here — the student owns their own stage detail
+                journey: journey,
+                journeyDetail: detail,
             }
 
             const response = await updateStudentForAdmin(student._id, payload)
@@ -85,10 +91,10 @@ function StudentEditForm({ visible, onClose, student, onSaved }) {
                 <Form.Item name="age" label="Age">
                     <InputNumber min={8} max={100} />
                 </Form.Item>
-                <Form.Item name="journey" label="Stage">
-                    <Select options={JOURNEY_OPTIONS} />
-                </Form.Item>
             </Form>
+            <div className="admin-stage-fields">
+                <StageFields journey={journey} setJourney={setJourney} detail={detail} setDetail={setDetail} />
+            </div>
         </Modal>
     )
 }

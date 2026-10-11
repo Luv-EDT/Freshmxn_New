@@ -39,7 +39,7 @@ const degreeOptions = require("../data/degree_options.json")
 const professionById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
 const ratingById = new Map(baseline.ratings.map((rating) => [rating.id, rating]))
 
-const SECTIONS = ["what_it_is", "path", "exams", "where_to_study", "abroad", "working_abroad", "degrees", "masters", "pay", "demand", "ai", "nuances"]
+const SECTIONS = ["what_it_is", "path", "exams", "where_to_study", "abroad", "working_abroad", "degrees", "related", "masters", "pay", "demand", "ai", "nuances"]
 const VERDICTS = ["right", "change"]
 const DIRECTIONS = ["right", "higher", "lower"]
 const QUALITY_COUNT = 8
@@ -97,6 +97,16 @@ const degreesFor = (professionId) => {
     return degrees.length > 0 || anyBachelors ? { degrees, anyBachelors } : null
 }
 
+// Round 25 (owner): the careers whose work experience counts as carrying over into this one — a
+// working student moving between them is charged no switching years for their work. Drafted from
+// the data, read by hand; mentors are the people who know (related_careers.json).
+const relatedCareers = require("../data/related_careers.json").careers
+const CAREER_NAMES = new Map(taxonomy.professions.map((row) => [row.id, row.profession]))
+const relatedFor = (professionId) => {
+    const names = (relatedCareers[professionId] || []).map((id) => CAREER_NAMES.get(id)).filter(Boolean)
+    return { careers: names }
+}
+
 // What the mentor is shown: the student-facing record, plus the institution list even before the
 // owner has reviewed it (a mentor is the kind of reader that review is waiting for), and the
 // study-abroad answer even when it is "not needed" (they may disagree).
@@ -128,6 +138,7 @@ const buildSheet = (profession, overrides, studyOverrides) => {
             abroad: abroadRow ? { need: abroadRow.need, stage: abroadRow.stage || null, why: abroadRow.why || null } : null,
             working_abroad: workingAbroadFor(profession.id, studyOverrides.licences),
             degrees: degreesFor(profession.id),
+            related: relatedFor(profession.id),
             masters: { afterUndergrad: facing.afterUndergrad || null },
             pay: facing.economics
                 ? { costOfEntryLakh: facing.economics.costOfEntryLakh, earlyEarningsLpa: facing.economics.earlyEarningsLpa, midCareerLpa: facing.economics.midCareerLpa }
@@ -440,3 +451,4 @@ module.exports.opinionsOf = opinionsOf
 module.exports.topicsOf = topicsOf
 module.exports.workingAbroadFor = workingAbroadFor
 module.exports.degreesFor = degreesFor
+module.exports.relatedFor = relatedFor

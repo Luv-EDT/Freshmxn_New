@@ -84,7 +84,13 @@ export function ReportProblem({ moduleKey }) {
 
     return (
         <details className="report-problem">
-            <summary>Something went wrong with this test?</summary>
+            <summary><span aria-hidden="true">⚠</span> Something went wrong with this test?</summary>
+            {/* owner, Round 25: a retest is for technical glitches only — never to improve a score */}
+            <p className="report-problem-rule">
+                Ask for a retest <strong>only</strong> if something technical went wrong (the page froze, closed or
+                wouldn't load). Retests to improve a score aren't allowed — a second attempt measures practice, not
+                you, and makes your results less true.
+            </p>
             <label htmlFor={`problem-${moduleKey}`}>What happened? (the screen froze, the page closed, it would not load…)</label>
             <textarea
                 id={`problem-${moduleKey}`}

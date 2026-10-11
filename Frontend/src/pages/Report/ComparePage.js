@@ -48,7 +48,8 @@ const ROWS = [
     ["Demand", (entry, detail) => (detail.demand ? DEMAND[detail.demand.india] || detail.demand.india : "—")],
     ["AI exposure", (entry, detail) => aiExposureText(detail) || (detail.aiExposure ? AI[detail.aiExposure.band] || detail.aiExposure.band : "—")],
     ["Can I start my own business or freelance?", (entry, detail) => (detail.selfEmployment ? SELF[detail.selfEmployment.likelihood] || "—" : "—")],
-    ["Years of what you've done left behind", (entry) => (entry.wastedYears > 0 ? `About ${entry.wastedYears}` : "None")],
+    ["Years left behind", (entry) => (entry.wastedYears > 0 ? `About ${entry.wastedYears}` : "None")],
+    ["Time to get there from now", (entry) => (typeof entry.yearsToGetThere === "number" ? (entry.yearsToGetThere === 0 ? "You can start now" : `About ${entry.yearsToGetThere}`) : "—")],
     ["Licence", (entry, detail) => detail.licensingBody || "None"],
     ["Worth knowing", (entry, detail) => ((detail.nuances || []).length > 0 ? (
         <ul className="compare-notes">{detail.nuances.slice(0, 3).map((nuance, index) => <li key={index}>{nuance.statement}</li>)}</ul>

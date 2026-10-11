@@ -1409,12 +1409,28 @@ button.link-button:hover:not(:disabled) {
     font-size: 0.9rem;
 }
 
+/* owner, Round 25: highlighted — an amber chip, so a student who hits a glitch finds it */
 .report-problem summary {
-    color: var(--navy-soft);
+    color: var(--navy);
+    font-weight: 700;
     cursor: pointer;
     min-height: 44px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    gap: 8px;
+    background: var(--amber-tint);
+    border: 1px solid var(--amber);
+    border-radius: 999px;
+    padding: 6px 16px;
+}
+
+.report-problem-rule {
+    background: var(--amber-tint);
+    border-left: 4px solid var(--amber);
+    padding: var(--space-3);
+    border-radius: 8px;
+    margin: var(--space-2) 0;
+    max-width: 560px;
 }
 
 .report-problem label {
@@ -2699,4 +2715,59 @@ hr.story-end {
 
 .report-page .filter-menu .sort-panel .report-filters {
     flex-direction: column;
+}
+
+/* ── round 25: "How else can we help?" ─────────────────────────────────────────────────────────── */
+
+.career-help {
+    margin: var(--space-5) 0;
+    max-width: 640px;
+}
+
+.career-help fieldset {
+    border: 0;
+    padding: 0;
+    margin: var(--space-3) 0;
+    display: grid;
+    gap: 6px;
+}
+
+.career-help-career {
+    display: grid;
+    gap: 6px;
+    max-width: 480px;
+    margin: var(--space-3) 0;
+}
+
+.career-help textarea {
+    width: 100%;
+    max-width: 560px;
+}
+
+/* ── round 25: sign-up shields, the profile's edit ──────────────────────────────────────────────── */
+
+/* the box only bots fill: off-screen, not display:none (some bots skip hidden fields) */
+.hp-field {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.turnstile-box {
+    margin: var(--space-3) 0;
+}
+
+.account-edit {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 560px;
+}
+
+.email-pending {
+    background: var(--cream);
+    border-left: 4px solid var(--teal);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm, 8px);
 }

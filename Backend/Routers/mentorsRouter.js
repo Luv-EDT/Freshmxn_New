@@ -7,6 +7,9 @@ const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const mentorAuthMiddleware = require("../middlewares/mentorAuthMiddleware")
 
+const { registerRateLimiter } = require("./userRouter")
+const { checkName } = require("../utils/nameRules")
+
 const router = express.Router()
 
 // Mentors are users with role "mentor" (PRD §C.1: separate login page, same auth stack). They log in
@@ -104,14 +107,21 @@ const cleanOnboarding = (body) => {
 // Register A Mentor
 // ========================
 
-router.post("/register", async (req, res) => {
+// Round 25 (spam sign-ups): the same shields as a student sign-up — 5 an hour per IP, a hidden box
+// only bots fill, and a name that has to look like one
+router.post("/register", registerRateLimiter, async (req, res) => {
     try {
         const { name, email, password } = req.body
 
-        if (!name || !name.trim()) {
+        if (typeof req.body.website === "string" && req.body.website.trim() !== "") {
+            return res.status(201).json({ success: true, message: "Registered Successfully" })
+        }
+
+        const nameError = checkName(name)
+        if (nameError) {
             return res.status(400).json({
                 success: false,
-                message: "Please enter your name"
+                message: nameError
             })
         }
 

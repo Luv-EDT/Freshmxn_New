@@ -21,11 +21,11 @@ function PublicNav() {
                 <div className="nav-links">
                     <Link to="/how-it-works" className="nav-link">How it works</Link>
                     <Link to="/success-stories" className="nav-link">Success stories</Link>
-                    <Link to="/mentor-waitlist" className="nav-link">Mentors</Link>
                     <Link to="/about" className="nav-link">About us</Link>
-                    {/* for working professionals (owner, Round 12) — only to visitors; a logged-in student is not the audience */}
-                    {!isLoggedIn && <Link to="/mentor/register" className="nav-link">Become a mentor</Link>}
+                    <Link to="/mentor-waitlist" className="nav-link">Mentorship program</Link>
                     {!isLoggedIn && <Link to="/login" className="nav-link">Log in</Link>}
+                    {/* for working professionals (owner, Rounds 12 and 25) — only to visitors, in its own colour */}
+                    {!isLoggedIn && <Link to="/mentor/register" className="nav-mentor">Are you a professional? Mentor with us</Link>}
                 </div>
                 <div className="nav-cta">
                     {isLoggedIn && (
@@ -43,7 +43,7 @@ function PublicNav() {
                     {isLoggedIn
                         ? <Link to="/dashboard" className="btn btn-primary btn-sm tap">My dashboard</Link>
                         : (
-                            <Link to="/register" className="btn btn-primary btn-sm tap">
+                            <Link to="/programs" className="btn btn-primary btn-sm tap">
                                 <span className="label-long">Let's figure out your career</span>
                                 <span className="label-short">Get started</span>
                             </Link>

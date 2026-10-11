@@ -1,11 +1,13 @@
 {
  "schema_version": "degree_options@1.0.0",
  "note": "The degree choices on Register / Complete Profile (Round 10). Frontend/src/pages/journeyOptions.js carries the same list; a fixture keeps them identical.",
+ "years_note": "Round 25: the typical length of each degree, for a working student's switching cost (the whole degree counts when a career needs a new one). LLB is the 3-year route; BPEd and hotel management the 3-year degree. Owner gate: review these lengths.",
  "families": [
   {
    "id": "btech",
    "label": "B.Tech / B.E.",
    "bachelor": true,
+   "years": 4,
    "subjects": [
     {
      "id": "cse_it",
@@ -89,12 +91,14 @@
    "id": "bca",
    "label": "BCA",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "bsc",
    "label": "B.Sc",
    "bachelor": true,
+   "years": 3,
    "subjects": [
     {
      "id": "computer_science",
@@ -138,18 +142,21 @@
    "id": "bcom",
    "label": "B.Com",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "bba",
    "label": "BBA / BMS",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "ba",
    "label": "BA",
    "bachelor": true,
+   "years": 3,
    "subjects": [
     {
      "id": "economics",
@@ -181,84 +188,98 @@
    "id": "bsw",
    "label": "BSW (Social Work)",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "medical",
    "label": "MBBS / BDS / BAMS / BHMS / B.V.Sc",
    "bachelor": true,
+   "years": 5.5,
    "subjects": []
   },
   {
    "id": "nursing_allied",
    "label": "B.Sc Nursing / BPT / BOT / allied health",
    "bachelor": true,
+   "years": 4,
    "subjects": []
   },
   {
    "id": "bpharm",
    "label": "B.Pharm",
    "bachelor": true,
+   "years": 4,
    "subjects": []
   },
   {
    "id": "bdes_bfa",
    "label": "B.Des / BFA / Animation",
    "bachelor": true,
+   "years": 4,
    "subjects": []
   },
   {
    "id": "barch_bplan",
    "label": "B.Arch / B.Plan",
    "bachelor": true,
+   "years": 5,
    "subjects": []
   },
   {
    "id": "llb",
    "label": "LLB (3-year or integrated)",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "bed",
    "label": "B.Ed / D.El.Ed",
    "bachelor": true,
+   "years": 2,
    "subjects": []
   },
   {
    "id": "bped",
    "label": "BPEd / Sports Science",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "hotel",
    "label": "Hotel Management / Tourism",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "diploma",
    "label": "Polytechnic diploma",
    "bachelor": false,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "iti",
    "label": "ITI trade",
    "bachelor": false,
+   "years": 2,
    "subjects": []
   },
   {
    "id": "other",
    "label": "Another bachelor's degree",
    "bachelor": true,
+   "years": 3,
    "subjects": []
   },
   {
    "id": "none",
    "label": "No degree",
    "bachelor": false,
+   "years": 0,
    "subjects": []
   }
  ]

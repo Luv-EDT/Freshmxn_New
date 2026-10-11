@@ -63,8 +63,11 @@ const WASTE_WEIGHTS = {
 // What stops a twenty-year veteran being penalised into oblivion.
 const EMPLOYMENT_WASTE_CAP = 3
 
-// Years of class 11-12 a post-school student would have to redo for a stream they did not take.
-const CLASS_12_REDO_YEARS = 2
+// A Class 12 subject a post-school student did not take is added through open schooling (NIOS):
+// register Jan–Apr, sit the Oct–Nov public exam, result about 45–50 days later — roughly one year,
+// often less with on-demand exams. Owner, Round 25: counted as one year (it was two — a full redo
+// of class 11-12 — before NMC allowed an additional subject from a recognised board, 2023).
+const OPEN_SCHOOL_SUBJECT_YEARS = 1
 
 // τ — how much a year costs you *now*. Infinity for pre-10 makes the multiplier exactly 1.0:
 // school students have waste 0 for everything, so the exponential is inert for the primary
@@ -112,7 +115,7 @@ module.exports = {
     MAX_DOMINANT_REASONS,
     WASTE_WEIGHTS,
     EMPLOYMENT_WASTE_CAP,
-    CLASS_12_REDO_YEARS,
+    OPEN_SCHOOL_SUBJECT_YEARS,
     TAU,
     WORKING_YEARS_BEFORE_SHORT_TAU,
     SWITCH_COST_GROUP_YEARS,

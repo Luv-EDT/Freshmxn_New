@@ -93,6 +93,25 @@ export async function resendVerification() {
     }
 }
 
+// Round 25: change the account's email — the new address must be confirmed from its own inbox
+export async function changeEmail(newEmail) {
+    try {
+        const response = await axiosInstance.put("/user/changeEmail", { newEmail })
+        return response
+    } catch (error) {
+        return error.response
+    }
+}
+
+export async function cancelEmailChange() {
+    try {
+        const response = await axiosInstance.put("/user/cancelEmailChange", {})
+        return response
+    } catch (error) {
+        return error.response
+    }
+}
+
 export async function getAllUsersForAdmin() {
     const response = await axiosInstance.get("/user/getAllForAdmin")
     return response

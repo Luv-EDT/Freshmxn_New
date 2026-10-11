@@ -1,0 +1,1767 @@
+{
+ "schema_version": "related_careers@1.0.0",
+ "note": "Round 25 (owner): careers whose work experience carries over into each other, so a working student's years in one cost no switching years in the other. Matching reads this committed file only.",
+ "rule": "Drafted from the career embeddings (one-liner + job roles): two careers are related when closeness >= 0.75, or closeness >= 0.70 AND the same professional sector AND a shared skill council (industrial_sectors, ignoring EXT-*). Then read by hand: the pairs in `removed` were taken out, each with its reason.",
+ "review": {
+  "reviewed_by_owner": false,
+  "drafted_on": "2026-10-11"
+ },
+ "removed": [
+  {
+   "a": "eng-civil-engineer",
+   "b": "eng-marine-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-civil-engineer",
+   "b": "eng-petroleum-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-civil-engineer",
+   "b": "eng-chemical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-civil-engineer",
+   "b": "eng-electrical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-civil-engineer",
+   "b": "eng-mechanical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-civil-engineer",
+   "b": "eng-metallurgical-materials-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-civil-engineer",
+   "b": "eng-fire-safety-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-mechanical-engineer",
+   "b": "eng-biomedical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-mechanical-engineer",
+   "b": "eng-chemical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-mechanical-engineer",
+   "b": "eng-nuclear-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-mechanical-engineer",
+   "b": "eng-petroleum-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-mechanical-engineer",
+   "b": "eng-electrical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-electrical-engineer",
+   "b": "eng-chemical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-electrical-engineer",
+   "b": "eng-petroleum-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-electrical-engineer",
+   "b": "eng-mining-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-electrical-engineer",
+   "b": "eng-marine-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-chemical-engineer",
+   "b": "eng-biomedical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-chemical-engineer",
+   "b": "eng-marine-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-chemical-engineer",
+   "b": "eng-precision-manufacturing-technician",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-chemical-engineer",
+   "b": "eng-mining-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-aerospace-engineer",
+   "b": "eng-marine-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-aerospace-engineer",
+   "b": "eng-nuclear-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-aerospace-engineer",
+   "b": "eng-chip-design-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-mining-engineer",
+   "b": "eng-marine-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-metallurgical-materials-engineer",
+   "b": "eng-textile-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-metallurgical-materials-engineer",
+   "b": "eng-robotics-automation-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-metallurgical-materials-engineer",
+   "b": "eng-biomedical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-metallurgical-materials-engineer",
+   "b": "eng-fire-safety-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-metallurgical-materials-engineer",
+   "b": "eng-marine-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-marine-engineer",
+   "b": "eng-petroleum-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-marine-engineer",
+   "b": "eng-aircraft-maintenance-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-marine-engineer",
+   "b": "eng-nuclear-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-marine-engineer",
+   "b": "eng-biomedical-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-robotics-automation-engineer",
+   "b": "eng-fire-safety-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-robotics-automation-engineer",
+   "b": "eng-nuclear-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-biomedical-engineer",
+   "b": "eng-nuclear-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-fire-safety-engineer",
+   "b": "eng-nuclear-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "env-environmental-engineer",
+   "b": "eng-nuclear-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "env-environmental-engineer",
+   "b": "agr-agricultural-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-precision-manufacturing-technician",
+   "b": "eng-textile-engineer",
+   "note": "different engineering disciplines — the day-to-day work and tools differ"
+  },
+  {
+   "a": "eng-aerospace-engineer",
+   "b": "sci-space-scientist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-aerospace-engineer",
+   "b": "eng-commercial-pilot",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-aerospace-engineer",
+   "b": "eng-air-traffic-controller",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-aerospace-engineer",
+   "b": "eng-drone-pilot",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-welder",
+   "b": "eng-mining-engineer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-welder",
+   "b": "eng-petroleum-engineer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-welder",
+   "b": "eng-civil-engineer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-welder",
+   "b": "eng-robotics-automation-engineer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-biomedical-engineer",
+   "b": "hlt-radiology-technologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-biomedical-engineer",
+   "b": "sci-biotechnologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-drone-pilot",
+   "b": "agr-agricultural-engineer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-textile-engineer",
+   "b": "des-fashion-designer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-architect",
+   "b": "eng-mason-construction-technician",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-architect",
+   "b": "eng-industrial-product-designer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-cad-draughtsman",
+   "b": "eng-carpenter-furniture-maker",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-cad-draughtsman",
+   "b": "eng-mason-construction-technician",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-commercial-pilot",
+   "b": "hos-cabin-crew",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-commercial-pilot",
+   "b": "eng-aircraft-maintenance-engineer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-commercial-pilot",
+   "b": "eng-merchant-navy-deck-officer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "eng-aircraft-maintenance-engineer",
+   "b": "eng-air-traffic-controller",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-chemist",
+   "b": "sci-geologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-chemist",
+   "b": "sci-physicist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-biologist",
+   "b": "sci-statistician",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-biologist",
+   "b": "sci-atmospheric-ocean-scientist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-biologist",
+   "b": "hlt-medical-lab-technologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-biologist",
+   "b": "sci-biotechnologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-research-psychologist",
+   "b": "sci-computer-science-researcher",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-research-psychologist",
+   "b": "sci-mathematician",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-atmospheric-ocean-scientist",
+   "b": "sci-space-scientist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "sci-forensic-scientist",
+   "b": "sci-bioinformatics-scientist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-pharmacist",
+   "b": "hlt-medical-lab-technologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-pharmacist",
+   "b": "hlt-dietitian",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-occupational-therapist",
+   "b": "soc-social-worker",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-occupational-therapist",
+   "b": "hlt-dietitian",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-medical-lab-technologist",
+   "b": "hlt-ot-anaesthesia-technologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-medical-lab-technologist",
+   "b": "hlt-dialysis-technologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-emergency-medical-technician",
+   "b": "hlt-dialysis-technologist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "mgt-sales-professional",
+   "b": "mgt-hr-professional",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "fin-banking-professional",
+   "b": "fin-economist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "fin-investment-wealth-manager",
+   "b": "fin-economist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "des-ux-designer",
+   "b": "swc-software-developer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "des-graphic-designer",
+   "b": "des-fashion-designer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "des-fashion-designer",
+   "b": "des-handloom-weaver",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "des-jeweller",
+   "b": "des-footwear-designer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "med-sound-designer",
+   "b": "med-voice-artist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "med-sound-designer",
+   "b": "med-production-designer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "prf-musician",
+   "b": "prf-dancer",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "prf-musician",
+   "b": "prf-actor",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "spt-esports",
+   "b": "spt-athlete",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "spt-esports",
+   "b": "spt-coach",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "spt-esports",
+   "b": "spt-official",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "env-environmental-engineer",
+   "b": "env-sanitation-worker",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "agr-agricultural-engineer",
+   "b": "agr-fisheries",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "agr-agricultural-engineer",
+   "b": "agr-dairy-livestock",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "agr-food-technologist",
+   "b": "agr-fisheries",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "agr-food-technologist",
+   "b": "agr-horticulture",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "agr-dairy-livestock",
+   "b": "agr-fisheries",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "agr-horticulture",
+   "b": "agr-fisheries",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "agr-agronomist",
+   "b": "agr-fisheries",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hos-chef",
+   "b": "hos-cabin-crew",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "pcw-beautician",
+   "b": "pcw-tattoo-artist",
+   "note": "related field, but the daily work is different — the experience doesn't carry over"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-veterinary-doctor",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-dentist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-ayurveda-doctor",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-homeopathy-doctor",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-physiotherapist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-occupational-therapist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-dietitian",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-medical-lab-technologist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-doctor",
+   "b": "hlt-radiology-technologist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-nurse",
+   "b": "hlt-veterinary-doctor",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-nurse",
+   "b": "hlt-occupational-therapist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-nurse",
+   "b": "hlt-physiotherapist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-nurse",
+   "b": "hlt-dietitian",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-nurse",
+   "b": "hlt-medical-lab-technologist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-veterinary-doctor",
+   "b": "hlt-dentist",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-veterinary-doctor",
+   "b": "hlt-ayurveda-doctor",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  },
+  {
+   "a": "hlt-veterinary-doctor",
+   "b": "hlt-homeopathy-doctor",
+   "note": "a separate licensed profession with its own training — clinical experience doesn't transfer"
+  }
+ ],
+ "careers": {
+  "swc-software-developer": [
+   "swc-embedded-iot-developer",
+   "swc-game-developer",
+   "swc-cloud-devops-engineer",
+   "swc-software-tester",
+   "swc-website-store-builder",
+   "swc-enterprise-software-consultant",
+   "swc-cybersecurity-specialist",
+   "swc-ai-ml-engineer",
+   "swc-it-business-systems-analyst",
+   "swc-data-engineer",
+   "swc-vfx-graphics-developer"
+  ],
+  "swc-website-store-builder": [
+   "swc-software-developer"
+  ],
+  "swc-game-developer": [
+   "des-game-designer",
+   "swc-software-developer",
+   "swc-vfx-graphics-developer",
+   "swc-embedded-iot-developer"
+  ],
+  "swc-ai-ml-engineer": [
+   "swc-data-engineer",
+   "swc-software-developer",
+   "swc-cloud-devops-engineer"
+  ],
+  "swc-data-analyst": [
+   "swc-data-engineer",
+   "sci-statistician",
+   "fin-financial-analyst",
+   "swc-it-business-systems-analyst"
+  ],
+  "swc-data-engineer": [
+   "swc-data-analyst",
+   "swc-ai-ml-engineer",
+   "swc-cloud-devops-engineer",
+   "swc-it-business-systems-analyst",
+   "swc-software-developer"
+  ],
+  "swc-cybersecurity-specialist": [
+   "swc-cloud-devops-engineer",
+   "swc-software-developer",
+   "swc-software-tester",
+   "swc-it-support-network-technician",
+   "swc-it-business-systems-analyst"
+  ],
+  "swc-cloud-devops-engineer": [
+   "swc-software-developer",
+   "swc-cybersecurity-specialist",
+   "swc-data-engineer",
+   "swc-it-support-network-technician",
+   "swc-embedded-iot-developer",
+   "swc-ai-ml-engineer"
+  ],
+  "swc-software-tester": [
+   "swc-software-developer",
+   "swc-cybersecurity-specialist",
+   "swc-embedded-iot-developer"
+  ],
+  "swc-it-support-network-technician": [
+   "swc-cybersecurity-specialist",
+   "swc-cloud-devops-engineer"
+  ],
+  "swc-embedded-iot-developer": [
+   "swc-software-developer",
+   "swc-game-developer",
+   "swc-software-tester",
+   "swc-cloud-devops-engineer"
+  ],
+  "swc-enterprise-software-consultant": [
+   "swc-it-business-systems-analyst",
+   "swc-software-developer"
+  ],
+  "swc-it-business-systems-analyst": [
+   "swc-data-analyst",
+   "swc-enterprise-software-consultant",
+   "swc-software-developer",
+   "swc-data-engineer",
+   "swc-cybersecurity-specialist"
+  ],
+  "swc-vfx-graphics-developer": [
+   "des-animator-vfx",
+   "swc-game-developer",
+   "swc-software-developer"
+  ],
+  "eng-civil-engineer": [
+   "eng-architect",
+   "eng-mining-engineer",
+   "env-environmental-engineer",
+   "eng-land-surveyor",
+   "eng-mason-construction-technician",
+   "eng-cad-draughtsman",
+   "eng-urban-planner"
+  ],
+  "eng-mechanical-engineer": [
+   "eng-metallurgical-materials-engineer",
+   "eng-robotics-automation-engineer",
+   "eng-automobile-mechanic",
+   "eng-industrial-product-designer",
+   "eng-aerospace-engineer",
+   "eng-marine-engineer",
+   "eng-aircraft-maintenance-engineer",
+   "eng-cad-draughtsman",
+   "eng-fitter-machinist"
+  ],
+  "eng-electrical-engineer": [
+   "eng-electrician",
+   "eng-electronics-communication-engineer",
+   "eng-nuclear-engineer",
+   "eng-robotics-automation-engineer"
+  ],
+  "eng-electronics-communication-engineer": [
+   "eng-chip-design-engineer",
+   "eng-electrical-engineer",
+   "eng-robotics-automation-engineer",
+   "eng-biomedical-engineer",
+   "eng-aerospace-engineer"
+  ],
+  "eng-chip-design-engineer": [
+   "eng-electronics-communication-engineer",
+   "eng-precision-manufacturing-technician",
+   "eng-robotics-automation-engineer"
+  ],
+  "eng-chemical-engineer": [
+   "sci-chemist",
+   "eng-metallurgical-materials-engineer",
+   "eng-textile-engineer",
+   "sci-biotechnologist",
+   "eng-nuclear-engineer",
+   "sci-materials-scientist",
+   "env-environmental-engineer",
+   "eng-petroleum-engineer",
+   "eng-fire-safety-engineer"
+  ],
+  "eng-aerospace-engineer": [
+   "eng-aircraft-maintenance-engineer",
+   "eng-mechanical-engineer",
+   "eng-robotics-automation-engineer",
+   "eng-metallurgical-materials-engineer",
+   "eng-electronics-communication-engineer"
+  ],
+  "eng-mining-engineer": [
+   "eng-petroleum-engineer",
+   "sci-geologist",
+   "eng-civil-engineer",
+   "eng-metallurgical-materials-engineer",
+   "eng-fire-safety-engineer",
+   "eng-heavy-equipment-operator",
+   "eng-land-surveyor"
+  ],
+  "eng-metallurgical-materials-engineer": [
+   "sci-materials-scientist",
+   "eng-welder",
+   "eng-chemical-engineer",
+   "eng-mechanical-engineer",
+   "eng-mining-engineer",
+   "eng-nuclear-engineer",
+   "eng-aerospace-engineer"
+  ],
+  "eng-marine-engineer": [
+   "eng-merchant-navy-deck-officer",
+   "eng-mechanical-engineer",
+   "eng-welder"
+  ],
+  "eng-petroleum-engineer": [
+   "eng-mining-engineer",
+   "sci-geologist",
+   "eng-chemical-engineer",
+   "eng-fire-safety-engineer"
+  ],
+  "eng-robotics-automation-engineer": [
+   "eng-mechanical-engineer",
+   "eng-aerospace-engineer",
+   "eng-biomedical-engineer",
+   "eng-electrical-engineer",
+   "eng-chip-design-engineer",
+   "eng-electronics-communication-engineer",
+   "eng-precision-manufacturing-technician"
+  ],
+  "eng-architect": [
+   "eng-cad-draughtsman",
+   "eng-civil-engineer",
+   "eng-urban-planner",
+   "des-interior-designer",
+   "eng-land-surveyor"
+  ],
+  "eng-commercial-pilot": [
+   "eng-drone-pilot",
+   "eng-air-traffic-controller"
+  ],
+  "eng-aircraft-maintenance-engineer": [
+   "eng-aerospace-engineer",
+   "eng-mechanical-engineer"
+  ],
+  "eng-electrician": [
+   "eng-electrical-engineer",
+   "eng-automobile-mechanic",
+   "eng-welder",
+   "eng-hvac-refrigeration-technician",
+   "eng-plumber"
+  ],
+  "eng-welder": [
+   "eng-metallurgical-materials-engineer",
+   "eng-mason-construction-technician",
+   "eng-plumber",
+   "eng-fitter-machinist",
+   "eng-heavy-equipment-operator",
+   "eng-electrician",
+   "eng-carpenter-furniture-maker",
+   "eng-marine-engineer"
+  ],
+  "eng-fitter-machinist": [
+   "eng-welder",
+   "eng-carpenter-furniture-maker",
+   "eng-precision-manufacturing-technician",
+   "eng-mechanical-engineer",
+   "eng-cad-draughtsman"
+  ],
+  "eng-plumber": [
+   "eng-mason-construction-technician",
+   "eng-welder",
+   "eng-electrician",
+   "eng-hvac-refrigeration-technician"
+  ],
+  "eng-carpenter-furniture-maker": [
+   "eng-mason-construction-technician",
+   "eng-fitter-machinist",
+   "eng-welder"
+  ],
+  "eng-mason-construction-technician": [
+   "eng-plumber",
+   "eng-welder",
+   "eng-carpenter-furniture-maker",
+   "eng-civil-engineer",
+   "eng-heavy-equipment-operator",
+   "eng-land-surveyor"
+  ],
+  "eng-hvac-refrigeration-technician": [
+   "eng-electrician",
+   "eng-automobile-mechanic",
+   "eng-plumber"
+  ],
+  "eng-automobile-mechanic": [
+   "eng-mechanical-engineer",
+   "eng-electrician",
+   "eng-hvac-refrigeration-technician"
+  ],
+  "eng-heavy-equipment-operator": [
+   "eng-welder",
+   "eng-mason-construction-technician",
+   "eng-mining-engineer"
+  ],
+  "eng-land-surveyor": [
+   "env-gis-analyst",
+   "eng-drone-pilot",
+   "eng-civil-engineer",
+   "eng-cad-draughtsman",
+   "eng-architect",
+   "eng-mason-construction-technician",
+   "eng-urban-planner",
+   "eng-mining-engineer"
+  ],
+  "eng-cad-draughtsman": [
+   "eng-architect",
+   "eng-land-surveyor",
+   "eng-civil-engineer",
+   "eng-mechanical-engineer",
+   "eng-industrial-product-designer",
+   "eng-fitter-machinist"
+  ],
+  "eng-textile-engineer": [
+   "des-apparel-production",
+   "eng-chemical-engineer",
+   "des-handloom-weaver"
+  ],
+  "eng-biomedical-engineer": [
+   "eng-robotics-automation-engineer",
+   "eng-electronics-communication-engineer",
+   "eng-precision-manufacturing-technician"
+  ],
+  "eng-fire-safety-engineer": [
+   "env-environmental-engineer",
+   "eng-chemical-engineer",
+   "eng-mining-engineer",
+   "eng-petroleum-engineer"
+  ],
+  "eng-drone-pilot": [
+   "eng-commercial-pilot",
+   "eng-land-surveyor",
+   "env-gis-analyst"
+  ],
+  "eng-precision-manufacturing-technician": [
+   "eng-fitter-machinist",
+   "eng-chip-design-engineer",
+   "eng-robotics-automation-engineer",
+   "eng-biomedical-engineer"
+  ],
+  "eng-nuclear-engineer": [
+   "eng-chemical-engineer",
+   "eng-electrical-engineer",
+   "eng-metallurgical-materials-engineer"
+  ],
+  "eng-urban-planner": [
+   "eng-architect",
+   "eng-land-surveyor",
+   "eng-civil-engineer"
+  ],
+  "eng-air-traffic-controller": [
+   "eng-commercial-pilot"
+  ],
+  "eng-railway-operations": [],
+  "eng-merchant-navy-deck-officer": [
+   "eng-marine-engineer"
+  ],
+  "eng-industrial-product-designer": [
+   "eng-mechanical-engineer",
+   "des-ux-designer",
+   "eng-cad-draughtsman"
+  ],
+  "sci-physicist": [
+   "sci-space-scientist",
+   "sci-materials-scientist",
+   "sci-atmospheric-ocean-scientist"
+  ],
+  "sci-chemist": [
+   "sci-drug-discovery-scientist",
+   "eng-chemical-engineer",
+   "sci-materials-scientist",
+   "sci-biologist",
+   "sci-laboratory-technician",
+   "sci-biotechnologist",
+   "sci-forensic-scientist",
+   "sci-microbiologist"
+  ],
+  "sci-biologist": [
+   "sci-microbiologist",
+   "sci-bioinformatics-scientist",
+   "sci-drug-discovery-scientist",
+   "sci-chemist",
+   "sci-forensic-scientist",
+   "sci-laboratory-technician"
+  ],
+  "sci-microbiologist": [
+   "sci-biologist",
+   "sci-biotechnologist",
+   "agr-food-technologist",
+   "hlt-medical-lab-technologist",
+   "sci-drug-discovery-scientist",
+   "sci-laboratory-technician",
+   "sci-bioinformatics-scientist",
+   "sci-chemist",
+   "sci-forensic-scientist",
+   "sci-clinical-research-associate",
+   "sci-quality-control-analyst"
+  ],
+  "sci-biotechnologist": [
+   "sci-microbiologist",
+   "sci-bioinformatics-scientist",
+   "sci-drug-discovery-scientist",
+   "eng-chemical-engineer",
+   "sci-chemist",
+   "hlt-medical-lab-technologist",
+   "sci-laboratory-technician",
+   "sci-clinical-research-associate",
+   "sci-forensic-scientist"
+  ],
+  "sci-bioinformatics-scientist": [
+   "sci-biotechnologist",
+   "sci-biologist",
+   "sci-statistician",
+   "sci-microbiologist",
+   "sci-drug-discovery-scientist",
+   "sci-computer-science-researcher"
+  ],
+  "sci-geologist": [
+   "eng-mining-engineer",
+   "eng-petroleum-engineer",
+   "sci-atmospheric-ocean-scientist"
+  ],
+  "sci-atmospheric-ocean-scientist": [
+   "env-environmental-scientist",
+   "sci-physicist",
+   "sci-geologist"
+  ],
+  "sci-space-scientist": [
+   "sci-physicist"
+  ],
+  "sci-materials-scientist": [
+   "eng-metallurgical-materials-engineer",
+   "sci-chemist",
+   "eng-chemical-engineer",
+   "sci-physicist"
+  ],
+  "sci-statistician": [
+   "swc-data-analyst",
+   "fin-actuary",
+   "sci-mathematician",
+   "hlt-public-health-professional",
+   "fin-economist",
+   "sci-bioinformatics-scientist",
+   "sci-research-psychologist"
+  ],
+  "sci-research-psychologist": [
+   "soc-clinical-psychologist",
+   "sci-statistician"
+  ],
+  "sci-forensic-scientist": [
+   "sci-chemist",
+   "hlt-medical-lab-technologist",
+   "sci-laboratory-technician",
+   "sci-microbiologist",
+   "sci-biologist",
+   "sci-drug-discovery-scientist",
+   "sci-biotechnologist"
+  ],
+  "sci-clinical-research-associate": [
+   "sci-drug-discovery-scientist",
+   "hlt-pharmacist",
+   "sci-laboratory-technician",
+   "sci-quality-control-analyst",
+   "sci-biotechnologist",
+   "sci-microbiologist"
+  ],
+  "sci-drug-discovery-scientist": [
+   "sci-chemist",
+   "sci-clinical-research-associate",
+   "sci-biotechnologist",
+   "hlt-pharmacist",
+   "sci-biologist",
+   "sci-microbiologist",
+   "sci-laboratory-technician",
+   "sci-forensic-scientist",
+   "sci-quality-control-analyst",
+   "sci-bioinformatics-scientist"
+  ],
+  "sci-laboratory-technician": [
+   "hlt-medical-lab-technologist",
+   "sci-quality-control-analyst",
+   "sci-chemist",
+   "sci-microbiologist",
+   "sci-drug-discovery-scientist",
+   "sci-forensic-scientist",
+   "sci-clinical-research-associate",
+   "sci-biotechnologist",
+   "sci-biologist"
+  ],
+  "sci-quality-control-analyst": [
+   "sci-laboratory-technician",
+   "agr-food-technologist",
+   "sci-clinical-research-associate",
+   "sci-drug-discovery-scientist",
+   "sci-microbiologist"
+  ],
+  "sci-computer-science-researcher": [
+   "sci-mathematician",
+   "sci-bioinformatics-scientist"
+  ],
+  "sci-mathematician": [
+   "fin-actuary",
+   "sci-statistician",
+   "sci-computer-science-researcher"
+  ],
+  "hlt-doctor": [
+   "hlt-nurse",
+   "hlt-emergency-medical-technician",
+   "hlt-public-health-professional"
+  ],
+  "hlt-dentist": [],
+  "hlt-ayurveda-doctor": [
+   "hlt-homeopathy-doctor"
+  ],
+  "hlt-homeopathy-doctor": [
+   "hlt-ayurveda-doctor"
+  ],
+  "hlt-veterinary-doctor": [
+   "agr-dairy-livestock",
+   "env-forest-officer"
+  ],
+  "hlt-nurse": [
+   "hlt-doctor",
+   "hlt-home-care-attendant",
+   "hlt-general-duty-assistant",
+   "hlt-emergency-medical-technician",
+   "hlt-ot-anaesthesia-technologist",
+   "hlt-dialysis-technologist",
+   "hlt-public-health-professional"
+  ],
+  "hlt-pharmacist": [
+   "sci-drug-discovery-scientist",
+   "sci-clinical-research-associate"
+  ],
+  "hlt-physiotherapist": [
+   "hlt-occupational-therapist",
+   "hlt-audiologist-speech-therapist"
+  ],
+  "hlt-optometrist": [
+   "hlt-audiologist-speech-therapist"
+  ],
+  "hlt-audiologist-speech-therapist": [
+   "hlt-occupational-therapist",
+   "hlt-physiotherapist",
+   "hlt-optometrist"
+  ],
+  "hlt-occupational-therapist": [
+   "hlt-physiotherapist",
+   "hlt-audiologist-speech-therapist",
+   "soc-disability-inclusion",
+   "hlt-home-care-attendant"
+  ],
+  "hlt-dietitian": [
+   "hlt-public-health-professional"
+  ],
+  "hlt-medical-lab-technologist": [
+   "sci-laboratory-technician",
+   "hlt-radiology-technologist",
+   "sci-microbiologist",
+   "sci-biotechnologist",
+   "sci-forensic-scientist"
+  ],
+  "hlt-radiology-technologist": [
+   "hlt-medical-lab-technologist",
+   "hlt-ot-anaesthesia-technologist",
+   "hlt-dialysis-technologist"
+  ],
+  "hlt-ot-anaesthesia-technologist": [
+   "hlt-dialysis-technologist",
+   "hlt-radiology-technologist",
+   "hlt-nurse",
+   "hlt-emergency-medical-technician",
+   "hlt-general-duty-assistant"
+  ],
+  "hlt-dialysis-technologist": [
+   "hlt-ot-anaesthesia-technologist",
+   "hlt-nurse",
+   "hlt-radiology-technologist"
+  ],
+  "hlt-emergency-medical-technician": [
+   "law-firefighter",
+   "hlt-nurse",
+   "hlt-doctor",
+   "hlt-ot-anaesthesia-technologist"
+  ],
+  "hlt-public-health-professional": [
+   "sci-statistician",
+   "hlt-dietitian",
+   "hlt-nurse",
+   "hlt-doctor"
+  ],
+  "hlt-home-care-attendant": [
+   "hlt-general-duty-assistant",
+   "hlt-nurse",
+   "hlt-occupational-therapist"
+  ],
+  "hlt-general-duty-assistant": [
+   "hlt-home-care-attendant",
+   "hlt-nurse",
+   "hlt-ot-anaesthesia-technologist"
+  ],
+  "mgt-marketing-specialist": [
+   "des-advertising-creative",
+   "mgt-market-research-analyst",
+   "mgt-sales-professional"
+  ],
+  "mgt-sales-professional": [
+   "mgt-marketing-specialist"
+  ],
+  "mgt-hr-professional": [
+   "edu-corporate-trainer"
+  ],
+  "mgt-operations-manager": [
+   "mgt-supply-chain-manager",
+   "mgt-management-consultant"
+  ],
+  "mgt-supply-chain-manager": [
+   "mgt-logistics-warehouse-operator",
+   "mgt-operations-manager",
+   "mgt-retail-store-operations"
+  ],
+  "mgt-logistics-warehouse-operator": [
+   "mgt-supply-chain-manager",
+   "mgt-retail-store-operations"
+  ],
+  "mgt-retail-store-operations": [
+   "mgt-logistics-warehouse-operator",
+   "mgt-supply-chain-manager"
+  ],
+  "mgt-product-manager": [
+   "mgt-project-manager",
+   "mgt-management-consultant"
+  ],
+  "mgt-project-manager": [
+   "mgt-product-manager"
+  ],
+  "mgt-management-consultant": [
+   "mgt-product-manager",
+   "mgt-operations-manager"
+  ],
+  "mgt-market-research-analyst": [
+   "mgt-marketing-specialist"
+  ],
+  "mgt-entrepreneur": [],
+  "mgt-commercial-driver": [],
+  "fin-chartered-accountant": [
+   "fin-accounts-executive",
+   "fin-financial-analyst"
+  ],
+  "fin-accounts-executive": [
+   "fin-chartered-accountant"
+  ],
+  "fin-financial-analyst": [
+   "fin-investment-wealth-manager",
+   "fin-chartered-accountant",
+   "fin-actuary",
+   "swc-data-analyst",
+   "fin-banking-professional",
+   "fin-economist",
+   "fin-insurance-professional"
+  ],
+  "fin-banking-professional": [
+   "fin-investment-wealth-manager",
+   "fin-financial-analyst"
+  ],
+  "fin-insurance-professional": [
+   "fin-actuary",
+   "fin-financial-analyst"
+  ],
+  "fin-investment-wealth-manager": [
+   "fin-financial-analyst",
+   "fin-banking-professional",
+   "fin-actuary"
+  ],
+  "fin-actuary": [
+   "fin-insurance-professional",
+   "sci-mathematician",
+   "sci-statistician",
+   "fin-financial-analyst",
+   "fin-economist",
+   "fin-investment-wealth-manager"
+  ],
+  "fin-economist": [
+   "law-public-policy-professional",
+   "sci-statistician",
+   "fin-financial-analyst",
+   "fin-actuary"
+  ],
+  "law-lawyer": [
+   "law-patent-agent",
+   "law-paralegal",
+   "law-company-secretary",
+   "law-public-policy-professional"
+  ],
+  "law-company-secretary": [
+   "law-paralegal",
+   "law-lawyer"
+  ],
+  "law-civil-services-officer": [
+   "law-police-officer",
+   "law-public-policy-professional"
+  ],
+  "law-police-officer": [
+   "law-civil-services-officer",
+   "law-armed-forces-officer"
+  ],
+  "law-armed-forces-officer": [
+   "law-police-officer"
+  ],
+  "law-judicial-services-officer": [],
+  "law-public-policy-professional": [
+   "law-political-electoral",
+   "fin-economist",
+   "law-civil-services-officer",
+   "law-lawyer"
+  ],
+  "law-paralegal": [
+   "law-company-secretary",
+   "law-lawyer",
+   "law-patent-agent"
+  ],
+  "law-firefighter": [
+   "hlt-emergency-medical-technician"
+  ],
+  "law-patent-agent": [
+   "law-lawyer",
+   "law-paralegal"
+  ],
+  "law-political-electoral": [
+   "law-public-policy-professional"
+  ],
+  "des-graphic-designer": [
+   "des-advertising-creative",
+   "des-ux-designer",
+   "des-illustrator",
+   "des-animator-vfx"
+  ],
+  "des-ux-designer": [
+   "des-graphic-designer",
+   "eng-industrial-product-designer",
+   "des-game-designer"
+  ],
+  "des-animator-vfx": [
+   "swc-vfx-graphics-developer",
+   "des-illustrator",
+   "des-game-designer",
+   "des-fine-artist",
+   "des-graphic-designer"
+  ],
+  "des-illustrator": [
+   "des-animator-vfx",
+   "des-fine-artist",
+   "des-graphic-designer"
+  ],
+  "des-game-designer": [
+   "swc-game-developer",
+   "des-animator-vfx",
+   "des-ux-designer"
+  ],
+  "des-interior-designer": [
+   "eng-architect"
+  ],
+  "des-fashion-designer": [
+   "des-apparel-production",
+   "des-tailor",
+   "des-footwear-designer"
+  ],
+  "des-apparel-production": [
+   "des-fashion-designer",
+   "eng-textile-engineer",
+   "des-tailor",
+   "des-footwear-designer",
+   "des-handloom-weaver"
+  ],
+  "des-tailor": [
+   "des-apparel-production",
+   "des-handloom-weaver",
+   "des-fashion-designer",
+   "des-footwear-designer",
+   "des-handicraft-artisan"
+  ],
+  "des-handloom-weaver": [
+   "des-tailor",
+   "des-handicraft-artisan",
+   "eng-textile-engineer",
+   "des-apparel-production"
+  ],
+  "des-handicraft-artisan": [
+   "des-fine-artist",
+   "des-handloom-weaver",
+   "des-jeweller",
+   "des-tailor"
+  ],
+  "des-jeweller": [
+   "des-handicraft-artisan"
+  ],
+  "des-advertising-creative": [
+   "mgt-marketing-specialist",
+   "des-graphic-designer",
+   "med-content-writer"
+  ],
+  "des-fine-artist": [
+   "des-handicraft-artisan",
+   "des-illustrator",
+   "des-animator-vfx"
+  ],
+  "des-footwear-designer": [
+   "des-fashion-designer",
+   "des-apparel-production",
+   "des-tailor"
+  ],
+  "med-journalist": [
+   "med-photographer",
+   "med-pr-communications",
+   "med-content-writer",
+   "med-voice-artist",
+   "med-content-creator",
+   "med-filmmaker"
+  ],
+  "med-content-writer": [
+   "des-advertising-creative",
+   "med-content-creator",
+   "med-journalist",
+   "med-pr-communications"
+  ],
+  "med-filmmaker": [
+   "med-film-editor",
+   "med-cinematographer",
+   "med-production-designer",
+   "prf-theatre-practitioner",
+   "prf-actor",
+   "med-sound-designer",
+   "med-production-crew",
+   "med-photographer",
+   "med-content-creator",
+   "med-journalist"
+  ],
+  "med-cinematographer": [
+   "med-filmmaker",
+   "med-production-crew",
+   "med-photographer",
+   "med-film-editor",
+   "med-production-designer",
+   "med-sound-designer"
+  ],
+  "med-film-editor": [
+   "med-filmmaker",
+   "med-cinematographer",
+   "med-sound-designer",
+   "med-photographer",
+   "med-production-crew",
+   "med-production-designer"
+  ],
+  "med-sound-designer": [
+   "prf-music-producer",
+   "med-film-editor",
+   "med-filmmaker",
+   "med-cinematographer",
+   "med-production-crew"
+  ],
+  "med-photographer": [
+   "med-cinematographer",
+   "med-journalist",
+   "med-filmmaker",
+   "med-film-editor",
+   "med-content-creator"
+  ],
+  "med-production-designer": [
+   "med-filmmaker",
+   "med-production-crew",
+   "med-cinematographer",
+   "med-film-editor"
+  ],
+  "med-content-creator": [
+   "med-content-writer",
+   "med-filmmaker",
+   "med-photographer",
+   "med-voice-artist",
+   "med-journalist"
+  ],
+  "med-voice-artist": [
+   "med-journalist",
+   "med-content-creator"
+  ],
+  "med-pr-communications": [
+   "med-journalist",
+   "med-content-writer"
+  ],
+  "med-production-crew": [
+   "prf-live-sound",
+   "med-cinematographer",
+   "med-filmmaker",
+   "med-production-designer",
+   "med-film-editor",
+   "med-sound-designer"
+  ],
+  "prf-musician": [
+   "prf-folk-performer",
+   "prf-instrument-maker",
+   "prf-music-producer",
+   "prf-dj"
+  ],
+  "prf-music-producer": [
+   "med-sound-designer",
+   "prf-musician",
+   "prf-dj"
+  ],
+  "prf-dancer": [
+   "prf-actor",
+   "prf-folk-performer",
+   "prf-theatre-practitioner"
+  ],
+  "prf-actor": [
+   "prf-theatre-practitioner",
+   "prf-dancer",
+   "med-filmmaker",
+   "prf-folk-performer"
+  ],
+  "prf-dj": [
+   "prf-live-sound",
+   "prf-musician",
+   "prf-music-producer"
+  ],
+  "prf-folk-performer": [
+   "prf-musician",
+   "prf-dancer",
+   "prf-actor",
+   "prf-instrument-maker"
+  ],
+  "prf-live-sound": [
+   "med-production-crew",
+   "prf-dj"
+  ],
+  "prf-instrument-maker": [
+   "prf-musician",
+   "prf-folk-performer"
+  ],
+  "prf-theatre-practitioner": [
+   "med-filmmaker",
+   "prf-actor",
+   "prf-dancer"
+  ],
+  "prf-model": [],
+  "spt-athlete": [
+   "spt-coach",
+   "spt-sports-scientist"
+  ],
+  "spt-coach": [
+   "spt-sports-scientist",
+   "spt-facility-turf",
+   "spt-fitness-trainer",
+   "spt-athlete",
+   "spt-official",
+   "spt-adventure-instructor"
+  ],
+  "spt-fitness-trainer": [
+   "spt-coach",
+   "spt-adventure-instructor"
+  ],
+  "spt-official": [
+   "spt-coach",
+   "spt-facility-turf"
+  ],
+  "spt-adventure-instructor": [
+   "spt-fitness-trainer",
+   "spt-coach"
+  ],
+  "spt-esports": [],
+  "spt-sports-scientist": [
+   "spt-coach",
+   "spt-athlete"
+  ],
+  "spt-facility-turf": [
+   "spt-coach",
+   "spt-official"
+  ],
+  "edu-school-teacher": [],
+  "edu-special-educator": [
+   "soc-disability-inclusion",
+   "edu-early-childhood"
+  ],
+  "edu-college-teacher": [],
+  "edu-coaching-faculty": [],
+  "edu-early-childhood": [
+   "edu-special-educator"
+  ],
+  "edu-vocational-trainer": [
+   "edu-corporate-trainer"
+  ],
+  "edu-corporate-trainer": [
+   "edu-vocational-trainer",
+   "edu-instructional-designer",
+   "mgt-hr-professional"
+  ],
+  "edu-instructional-designer": [
+   "edu-corporate-trainer"
+  ],
+  "edu-librarian": [
+   "hum-museum-archive"
+  ],
+  "edu-career-counsellor": [
+   "soc-counsellor"
+  ],
+  "soc-clinical-psychologist": [
+   "soc-counsellor",
+   "sci-research-psychologist",
+   "soc-social-worker"
+  ],
+  "soc-counsellor": [
+   "soc-clinical-psychologist",
+   "soc-social-worker",
+   "edu-career-counsellor"
+  ],
+  "soc-social-worker": [
+   "soc-child-protection",
+   "soc-counsellor",
+   "soc-disability-inclusion",
+   "soc-clinical-psychologist"
+  ],
+  "soc-development-professional": [
+   "soc-community-worker",
+   "soc-me-analyst"
+  ],
+  "soc-me-analyst": [
+   "soc-development-professional"
+  ],
+  "soc-community-worker": [
+   "soc-development-professional"
+  ],
+  "soc-disability-inclusion": [
+   "edu-special-educator",
+   "hlt-occupational-therapist",
+   "soc-social-worker"
+  ],
+  "soc-child-protection": [
+   "soc-social-worker"
+  ],
+  "env-environmental-engineer": [
+   "env-environmental-scientist",
+   "eng-fire-safety-engineer",
+   "eng-civil-engineer",
+   "eng-chemical-engineer",
+   "env-sustainability-esg"
+  ],
+  "env-environmental-scientist": [
+   "env-environmental-engineer",
+   "env-sustainability-esg",
+   "sci-atmospheric-ocean-scientist"
+  ],
+  "env-gis-analyst": [
+   "eng-land-surveyor",
+   "eng-drone-pilot"
+  ],
+  "env-forest-officer": [
+   "hlt-veterinary-doctor"
+  ],
+  "env-sustainability-esg": [
+   "env-environmental-scientist",
+   "env-renewable-energy",
+   "env-environmental-engineer"
+  ],
+  "env-renewable-energy": [
+   "env-sustainability-esg"
+  ],
+  "env-sanitation-worker": [],
+  "env-disaster-resilience": [],
+  "agr-farmer": [
+   "agr-horticulture",
+   "agr-extension-agribusiness",
+   "agr-agronomist",
+   "agr-agricultural-engineer",
+   "agr-dairy-livestock"
+  ],
+  "agr-agronomist": [
+   "agr-horticulture",
+   "agr-agricultural-engineer",
+   "agr-extension-agribusiness",
+   "agr-food-technologist",
+   "agr-dairy-livestock",
+   "agr-farmer"
+  ],
+  "agr-agricultural-engineer": [
+   "agr-agronomist",
+   "agr-extension-agribusiness",
+   "agr-horticulture",
+   "agr-food-technologist",
+   "agr-farmer"
+  ],
+  "agr-food-technologist": [
+   "sci-microbiologist",
+   "agr-agronomist",
+   "sci-quality-control-analyst",
+   "agr-dairy-livestock",
+   "agr-agricultural-engineer",
+   "agr-extension-agribusiness"
+  ],
+  "agr-dairy-livestock": [
+   "hlt-veterinary-doctor",
+   "agr-extension-agribusiness",
+   "agr-agronomist",
+   "agr-food-technologist",
+   "agr-horticulture",
+   "agr-farmer"
+  ],
+  "agr-horticulture": [
+   "agr-agronomist",
+   "agr-agricultural-engineer",
+   "agr-extension-agribusiness",
+   "agr-farmer",
+   "agr-dairy-livestock"
+  ],
+  "agr-fisheries": [
+   "agr-extension-agribusiness"
+  ],
+  "agr-extension-agribusiness": [
+   "agr-agronomist",
+   "agr-dairy-livestock",
+   "agr-agricultural-engineer",
+   "agr-horticulture",
+   "agr-fisheries",
+   "agr-farmer",
+   "agr-food-technologist"
+  ],
+  "hos-chef": [
+   "hos-fb-service"
+  ],
+  "hos-fb-service": [
+   "hos-hotel-manager",
+   "hos-chef",
+   "hos-cabin-crew",
+   "hos-housekeeping"
+  ],
+  "hos-housekeeping": [
+   "hos-hotel-manager",
+   "hos-fb-service"
+  ],
+  "hos-hotel-manager": [
+   "hos-fb-service",
+   "hos-housekeeping",
+   "hos-travel-tourism",
+   "hos-event-manager"
+  ],
+  "hos-travel-tourism": [
+   "hos-hotel-manager",
+   "hos-event-manager"
+  ],
+  "hos-event-manager": [
+   "hos-hotel-manager",
+   "hos-travel-tourism"
+  ],
+  "hos-cabin-crew": [
+   "hos-fb-service"
+  ],
+  "hum-archaeologist": [
+   "hum-historian",
+   "hum-museum-archive"
+  ],
+  "hum-anthropologist": [],
+  "hum-historian": [
+   "hum-archaeologist",
+   "hum-museum-archive",
+   "hum-heritage-management"
+  ],
+  "hum-museum-archive": [
+   "edu-librarian",
+   "hum-heritage-management",
+   "hum-historian",
+   "hum-conservator",
+   "hum-archaeologist"
+  ],
+  "hum-conservator": [
+   "hum-museum-archive",
+   "hum-heritage-management"
+  ],
+  "hum-religious-professional": [],
+  "hum-classical-language": [],
+  "hum-heritage-management": [
+   "hum-museum-archive",
+   "hum-historian",
+   "hum-conservator"
+  ],
+  "hum-funeral-mortuary": [],
+  "pcw-yoga-instructor": [
+   "pcw-spa-therapist"
+  ],
+  "pcw-beautician": [
+   "pcw-hair-stylist",
+   "pcw-makeup-artist",
+   "pcw-spa-therapist"
+  ],
+  "pcw-hair-stylist": [
+   "pcw-beautician",
+   "pcw-makeup-artist"
+  ],
+  "pcw-makeup-artist": [
+   "pcw-beautician",
+   "pcw-hair-stylist",
+   "pcw-tattoo-artist"
+  ],
+  "pcw-spa-therapist": [
+   "pcw-yoga-instructor",
+   "pcw-beautician"
+  ],
+  "pcw-tattoo-artist": [
+   "pcw-makeup-artist"
+  ]
+ }
+}

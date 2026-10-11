@@ -155,7 +155,7 @@ function MatchesPage() {
                 groups.map((group) => (group.costly ? (
                     <details key={group.key} className="report-details match-group is-costly">
                         <summary className="report-summary">
-                            <strong>Would cost you {SWITCH_COST_GROUP_YEARS}+ years to switch</strong> — {group.entries.length} {group.entries.length === 1 ? "career" : "careers"}
+                            <strong>Would leave {SWITCH_COST_GROUP_YEARS}+ years behind</strong> — {group.entries.length} {group.entries.length === 1 ? "career" : "careers"}
                         </summary>
                         <p className="report-small">The least affected first. Each card says how many years of what you've done would be left behind.</p>
                         <div className="match-list">{group.entries.map((entry) => card(entry))}</div>

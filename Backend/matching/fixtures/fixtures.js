@@ -389,9 +389,86 @@ const fixtures = [
         expect: { fourYears: 1.2, twentyYears: 3, twentyMultiplier: 0.3012 },
     },
     {
-        name: "a graduate switching to a stream-gated profession pays the class 11-12 redo",
+        // Round 25 (owner): the missing subject is added through open school — one year, not a
+        // two-year redo of class 11-12 (it expected 2.6 before)
+        name: "a graduate switching to a stream-gated profession pays one open-school year for the subject",
         run: () => wasteFor(professions[2], { stage: "early_professional", stream: ["commerce"], experienceYears: 2 }),
-        expect: { years: 2.6 }, // 2 years of class 11-12 at 1.0, plus 2 employment years at 0.3
+        expect: { years: 1.6 }, // 1 open-school year at 1.0, plus 2 employment years at 0.3
+    },
+    {
+        name: "ROUND 25 — a working B.Arch architect, 4 years in: her own career 0, Interior Designer 0, a consultant 1.2, a doctor 5.7",
+        run: () => {
+            const { wasteFor } = require("../journey")
+            const real = require("../../data/ALL-professions.json").professions
+            const find = (id) => real.find((profession) => profession.id === id)
+            const muski = { stage: "early_professional", stream: ["physics", "chemistry", "maths"], experienceYears: 4, degree: "barch_bplan", subject: null, currentProfessionId: "eng-architect" }
+            const cost = (id) => wasteFor(find(id), muski).years
+            const got = { architect: cost("eng-architect"), interior: cost("des-interior-designer"), consultant: cost("mgt-management-consultant"), doctor: cost("hlt-doctor") }
+            const want = { architect: 0, interior: 0, consultant: 1.2, doctor: 5.7 }
+            return JSON.stringify(got) === JSON.stringify(want) ? null : `got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — engineering year 2 to medicine costs 3 (two degree years repeated + an open-school year for Biology)",
+        run: () => {
+            const { wasteFor } = require("../journey")
+            const doctor = require("../../data/ALL-professions.json").professions.find((profession) => profession.id === "hlt-doctor")
+            return wasteFor(doctor, { stage: "college", stream: ["physics", "chemistry", "maths"], preAdmission: false, courseYear: 2, degree: "btech", subject: "mechanical" }).years
+        },
+        expect: 3,
+    },
+    {
+        name: "ROUND 25 — work years: a related move costs none, an unrelated one in the same sector still does",
+        run: () => {
+            const { wasteFor } = require("../journey")
+            const real = require("../../data/ALL-professions.json").professions
+            const find = (id) => real.find((profession) => profession.id === id)
+            const dev = { stage: "early_professional", stream: [], experienceYears: 5, degree: null, subject: null, currentProfessionId: "swc-software-developer" }
+            const architect = { stage: "early_professional", stream: ["physics", "chemistry", "maths"], experienceYears: 4, degree: null, subject: null, currentProfessionId: "eng-architect" }
+            const related = wasteFor(find("swc-data-engineer"), dev).breakdown.employment
+            const unrelated = wasteFor(find("eng-aerospace-engineer"), architect).breakdown.employment
+            if (related !== undefined) return `Software Developer → Data Engineer charged ${related} work years`
+            if (unrelated !== 1.2) return `Architect → Aerospace Engineer should cost 4 × 0.3 = 1.2, got ${unrelated}`
+            return null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — time to get there: MBBS without Biology is 5.5 + 1 for a graduate; your own career is 0; a JEE route 5 years on is closed, never removed",
+        run: () => {
+            const { yearsToGetThere, entryClosed, hardFilterReason } = require("../journey")
+            const real = require("../../data/ALL-professions.json").professions
+            const find = (id) => real.find((profession) => profession.id === id)
+            const graduate = { stage: "early_professional", stream: ["physics", "chemistry", "maths"], experienceYears: 4, degree: "barch_bplan", subject: null, currentProfessionId: "eng-architect", yearsSinceClass12: 9 }
+            const doctor = find("hlt-doctor")
+            const civil = find("eng-civil-engineer")
+            const problems = []
+            if (yearsToGetThere(doctor, graduate) !== doctor.years_to_qualify + 1) problems.push(`doctor: ${yearsToGetThere(doctor, graduate)}`)
+            if (yearsToGetThere(find("eng-architect"), graduate) !== 0) problems.push("own career is not 0")
+            if (!entryClosed(civil, graduate)) problems.push("the JEE route should read as closed 9 years after Class 12")
+            if (hardFilterReason(civil, graduate) !== null) problems.push("a closed JEE route must not remove the career — it names another way in")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — related_careers.json: every id exists, nobody lists themselves, every removal has a reason; Architect → Interior Designer carries over, Architect → Aerospace doesn't",
+        run: () => {
+            const related = require("../../data/related_careers.json")
+            const ids = new Set(require("../../data/ALL-professions.json").professions.map((profession) => profession.id))
+            const problems = []
+            Object.entries(related.careers).forEach(([id, list]) => {
+                if (!ids.has(id)) problems.push(`unknown ${id}`)
+                list.forEach((other) => { if (!ids.has(other)) problems.push(`unknown ${other}`); if (other === id) problems.push(`${id} lists itself`) })
+            })
+            if (Object.keys(related.careers).length !== ids.size) problems.push("not every career has a list")
+            related.removed.forEach((row) => { if (!row.note || !ids.has(row.a) || !ids.has(row.b)) problems.push(`removal ${row.a}/${row.b} without a reason`) })
+            if (!related.careers["eng-architect"].includes("des-interior-designer")) problems.push("Architect → Interior Designer should carry over")
+            if (related.careers["eng-architect"].includes("eng-aerospace-engineer")) problems.push("Architect → Aerospace Engineer should not")
+            return problems.length ? problems.slice(0, 5).join("; ") : null
+        },
+        expect: null,
     },
 
     // ── the hard filters ────────────────────────────────────────────────────────────────────────

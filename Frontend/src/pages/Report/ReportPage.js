@@ -55,8 +55,8 @@ function ReportPage() {
             {data.updateAvailable && !data.rebuildFailed && (
                 <div className="report-banner">
                     <p>
-                        <strong>We've improved how we match careers.</strong> Your report stays exactly as it is
-                        unless you choose to update it.
+                        <strong>{data.updateReason === "profile" ? "Your details have changed." : "We've improved how we match careers."}</strong>{" "}
+                        Your report stays exactly as it is unless you choose to update it.
                     </p>
                     <button type="button" className="btn btn-primary btn-sm tap" onClick={() => report.setUpdateOpen(true)}>
                         Update my report
@@ -136,10 +136,13 @@ function ReportPage() {
                 </p>
                 {framingFor(data.journey).switchIsDistinct && (
                     <p className="report-small">
-                        <strong>Switching cost.</strong> Under <em>Best match</em>, careers that would leave {SWITCH_COST_GROUP_YEARS} or
-                        more years of what you've already done behind go to a last group of their own, the least affected
-                        first. On your list, choose <em>Best fit, ignoring switching cost</em> to keep them in their groups,
-                        or sort by <em>Least switching cost</em>.
+                        <strong>Switching cost.</strong> Each career shows two numbers. <em>Years left behind</em> are the
+                        years that wouldn't count towards it — degree years, a Class 12 subject you'd add through open
+                        school, work in a different field (your own career, and work that carries over, cost nothing).
+                        <em> Time to get there</em> is the road ahead from where you are. Only the first moves a career:
+                        under <em>Best match</em>, careers that would leave {SWITCH_COST_GROUP_YEARS} or more years behind go
+                        to a last group of their own, the least affected first. On your list, choose <em>Best fit, ignoring
+                        switching cost</em> to keep them in their groups, or sort by <em>Least switching cost</em>.
                     </p>
                 )}
                 <p className="report-small">

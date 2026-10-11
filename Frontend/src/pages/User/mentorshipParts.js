@@ -74,19 +74,19 @@ export const HelpLine = () => (
     </p>
 )
 
-// "What do you want from your mentor?" — the session list, an open box for anything specific, and a
-// tick box for help with a master's abroad or settling abroad, which a later version will offer.
-// Saved on its own, any time; it never touches the choice or the 20-business-day clock.
+// "What do you want from your mentor?" — the session list and an open box for anything specific.
+// Saved on its own, any time; it never touches the choice or the 20-business-day clock. The old
+// "help with a master's abroad" tick moved into "How else can we help?" (CareerHelpBox, Round 25);
+// a stored yes is sent back unchanged so it is never lost.
 export function HelpWanted({ waitlist, onSaved }) {
     const [text, setText] = useState(waitlist.helpWanted || "")
-    const [abroad, setAbroad] = useState(Boolean(waitlist.abroadHelpWaitlist))
     const [focus, setFocus] = useState(waitlist.helpFocus || null)
     const [saving, setSaving] = useState(false)
-    const changed = text !== (waitlist.helpWanted || "") || abroad !== Boolean(waitlist.abroadHelpWaitlist) || focus !== (waitlist.helpFocus || null)
+    const changed = text !== (waitlist.helpWanted || "") || focus !== (waitlist.helpFocus || null)
 
     const save = async () => {
         setSaving(true)
-        const response = await saveMyHelp({ helpWanted: text, helpFocus: focus, abroadHelpWaitlist: abroad })
+        const response = await saveMyHelp({ helpWanted: text, helpFocus: focus, abroadHelpWaitlist: Boolean(waitlist.abroadHelpWaitlist) })
         setSaving(false)
         if (!response || response.data.success === false) {
             message.error(response?.data?.message || "Could not save")
@@ -122,13 +122,6 @@ export function HelpWanted({ waitlist, onSaved }) {
                 placeholder="For example: what a normal week looks like, which college choices mattered, how you got your first job"
             />
             <p className="report-small mentor-help-count">{text.length}/{HELP_MAX} — your mentor sees this before you meet.</p>
-            <label className="choice">
-                <input type="checkbox" checked={abroad} onChange={(event) => setAbroad(event.target.checked)} />
-                <span>
-                    <strong>Help with a master's abroad or settling abroad?</strong> In a future version we'll help
-                    you with this. Tick to join that waitlist.
-                </span>
-            </label>
             <p>
                 <button type="button" className="btn btn-primary" disabled={!changed || saving} onClick={save}>
                     {saving ? "Saving…" : "Save"}

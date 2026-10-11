@@ -2056,7 +2056,7 @@ const fixtures = [
             // the page uses it, and offers the no-cost order only where it differs
             if (!/groupList\(ranked, primary, secondary, details/.test(source)) problems.push("the page does not build its groups with groupList")
             if (!/framing\.switchIsDistinct \? framing\.switchIntro : null/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
-            if (!/tierNameFor\(group\.tier\)/.test(source) || !/Would cost you \{SWITCH_COST_GROUP_YEARS\}\+ years to switch/.test(source)) problems.push("the open list has no tier headings or no last group")
+            if (!/tierNameFor\(group\.tier\)/.test(source) || !/Would leave \{SWITCH_COST_GROUP_YEARS\}\+ years behind/.test(source)) problems.push("the open list has no tier headings or no last group")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -3539,7 +3539,8 @@ const fixtures = [
             const update = router.slice(router.indexOf('router.post("/updateMyReport"'), router.indexOf('router.get("/getMyScores"'))
             const problems = []
             if (/enqueue/.test(getMyReport)) problems.push("getMyReport queues a rebuild")
-            if (!/updateIsAvailable\(report, recommendation\)/.test(update)) problems.push("updateMyReport does not check there is something to update")
+            // Round 25: a third argument, the student, so a changed stage also offers the update
+            if (!/updateIsAvailable\(report, recommendation(, req\.user)?\)/.test(update)) problems.push("updateMyReport does not check there is something to update")
             if (!/directionUpdate\(\{ via: "update"/.test(update)) problems.push("updateMyReport does not ask which way the student is heading")
             const page = readReportPage()
             if (/status === "stale"/.test(page)) problems.push("the page still waits for an automatic rebuild")
@@ -4879,7 +4880,8 @@ const fixtures = [
             const router = read("Backend/Routers/mentorWaitlistRouter.js")
             const model = read("Backend/model/mentorWaitlistModel.js")
             // Round 20 (owner): the inputs moved to their own page — read the mentor pages together
-            const page = ["Mentorship.js", "MentorshipChoose.js", "mentorshipParts.js"].map((name) => read(`Frontend/src/pages/User/${name}`)).join("\n")
+            // Round 25 (owner): the abroad tick became one option of "How else can we help?" (CareerHelpBox)
+            const page = ["Mentorship.js", "MentorshipChoose.js", "mentorshipParts.js", "CareerHelpBox.js"].map((name) => read(`Frontend/src/pages/User/${name}`)).join("\n")
             const admin = read("Frontend/src/pages/Admin/MentorMatchesList.js")
             const save = (router.split('router.put("/saveMyHelp"')[1] || "").split("router.")[0]
             if (!save) problems.push("there is no saveMyHelp route")
@@ -4892,7 +4894,8 @@ const fixtures = [
             ;["What the work is like day to day", "The drawbacks and the perks", "mentor's own story", "How to get in, and the skills", "Your questions, answered"]
                 .forEach((topic) => { if (!page.includes(topic)) problems.push(`the session list lacks "${topic}"`) })
             if (!/Anything specific you want to know\?/.test(page)) problems.push("there is no open question box")
-            if (!/In a future version we'll help/.test(page)) problems.push("the abroad waitlist box is missing")
+            if (!/A master's abroad, or settling abroad/.test(page) || !/join the waitlist/.test(page)) problems.push("the abroad waitlist box is missing")
+            if (!/<CareerHelpBox fixedCareer=/.test(page)) problems.push("the mentor page does not ask how else we can help")
             if (!/Job roles are listed by how well they fit you/.test(page)) problems.push("\"Suits you\" is not explained")
             if (!/dataIndex: "helpWanted"/.test(admin) || !/dataIndex: "abroadHelpWaitlist"/.test(admin)) problems.push("the admin does not see what the student asked for")
             if (/optional/i.test(page.replace(/\/\/.*$/gm, ""))) problems.push("the page says \"optional\"")
@@ -5102,6 +5105,135 @@ const fixtures = [
             const nav = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Navbar.js"), "utf8")
             if (!/>Dashboard<\/NavLink>/.test(nav) || /to="\/mentorship"/.test(nav)) problems.push("the menu bar should say Dashboard and carry no Mentorship link")
             return problems.length > 0 ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — 'Let's figure out your career' opens the three plans; a plan carries on to Register and the paywall; the nav says 'Mentorship program' and invites professionals in its own colour",
+        run: () => {
+            const root = path.join(__dirname, "..", "..", "..", "Frontend", "src")
+            const read = (file) => fs.readFileSync(path.join(root, file), "utf8")
+            const problems = []
+            ;["pages/Public/PublicNav.js", "pages/Public/Landing.js", "pages/Public/About.js", "pages/Public/SuccessStories.js"].forEach((file) => {
+                const source = read(file)
+                if (/to="\/register"[^>]*>\s*(<span[^>]*>)?Let's figure out your career/.test(source)) problems.push(`${file}: the CTA still opens Register`)
+                if (!/to="\/programs"/.test(source)) problems.push(`${file}: no link to /programs`)
+            })
+            if (!/path="\/programs"/.test(read("App.js"))) problems.push("no /programs route")
+            const cards = read("pages/Public/PricingCards.js")
+            if (!/\/register\?plan=\$\{tier\}/.test(cards) || !/\/paywall\?plan=\$\{tier\}/.test(cards)) problems.push("a plan card does not carry its plan on")
+            if (!/HELP_NOTE/.test(cards) || !/join the waitlist|Join the waitlist/.test(cards)) problems.push("the plan cards lack the 'how else can we help' note")
+            if (!/usePricing/.test(cards) || /₹\s?\d/.test(cards)) problems.push("a price is written in the copy instead of coming from the server")
+            if (!/chosenPlan/.test(read("pages/Register.js")) || !/chosenPlan/.test(read("pages/User/Paywall.js"))) problems.push("the chosen plan is not kept through registration")
+            const nav = read("pages/Public/PublicNav.js")
+            const order = ["How it works", "Success stories", "About us", "Mentorship program"].map((label) => nav.indexOf(`>${label}<`))
+            if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push("the nav order is not How it works · Success stories · About us · Mentorship program")
+            if (!/className="nav-mentor">Are you a professional\? Mentor with us</.test(nav)) problems.push("the mentor invitation is missing or not in its own colour")
+            const how = read("pages/Public/HowItWorks.js")
+            if (!/to="\/programs" className="invite/.test(how) || !/80-20 rule/.test(how) || !/Internships, jobs and fellowships/.test(how) || !/settling abroad/.test(how)) problems.push("the invitation block lacks its three points or doesn't open /programs")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — 'How else can we help?': four options, consent required, the career must be the student's own; on the dashboard for Career Discovery and on the mentor page",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "..", "..", "..", file), "utf8")
+            const router = read("Backend/Routers/careerHelpRouter.js")
+            const box = read("Frontend/src/pages/User/CareerHelpBox.js")
+            const home = read("Frontend/src/pages/User/Home.js")
+            const server = read("Backend/server.js")
+            const { WANTS } = require("../../model/careerHelpModel")
+            const problems = []
+            if (JSON.stringify(WANTS) !== JSON.stringify(["toolkit", "opportunities", "abroad", "other"])) problems.push(`the wants are ${WANTS.join(", ")}`)
+            if (!/req\.body\.consent !== true/.test(router)) problems.push("saving does not require the consent tick")
+            if (!/careerFor\(req\.user\._id, req\.body\.careerId\)/.test(router)) problems.push("the career is not checked against the student's own")
+            if (!/policyVersion: POLICY_VERSION/.test(router)) problems.push("the policy version is not stored")
+            if (!/app\.use\("\/careerHelp", careerHelpRouter\)/.test(server)) problems.push("the router is not mounted at /careerHelp")
+            if (!/detailed call/.test(box) || !/partner/.test(box) || !/join the waitlist/.test(box)) problems.push("the box does not say how we help")
+            if (!/currentTier === 1 && user\.progress\?\.report === "ready" && <CareerHelpBox/.test(home)) problems.push("Career Discovery students are not asked on the dashboard")
+            if (/optional/i.test(box.replace(/\/\/.*$/gm, ""))) problems.push("the box says \"optional\"")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — spam sign-ups: no typed name in any email; names must look like names; a hidden box, 5 an hour, Turnstile when keyed; the email is confirmed by a click, never on load",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "..", "..", "..", file), "utf8")
+            const router = read("Backend/Routers/userRouter.js")
+            const mentors = read("Backend/Routers/mentorsRouter.js")
+            const verify = read("Frontend/src/pages/VerifyEmail.js")
+            const register = read("Frontend/src/pages/Register.js")
+            const { checkName } = require("../../utils/nameRules")
+            const problems = []
+            if (/\$\{user\.name\}/.test(router)) problems.push("an email still prints the typed name")
+            ;["Riya Sharma", "Dr. A. K. O'Neil", "Anna-Maria D'Souza", "राहुल कुमार", "MacKenzie"].forEach((name) => { if (checkName(name)) problems.push(`"${name}" refused`) })
+            ;["fciROfrXyMzFhEZHVTjKuROZ", "AtHTglAwYRtxbfYbGeNc", "DmuyzzAmyWJaSazLSsv", "see http://spam.example", "Riya 123", "x"].forEach((name) => { if (!checkName(name)) problems.push(`"${name}" accepted`) })
+            if (!/router\.post\("\/register", registerRateLimiter/.test(router)) problems.push("student sign-up has no rate limit")
+            if (!/router\.post\("\/register", registerRateLimiter/.test(mentors)) problems.push("mentor sign-up has no rate limit")
+            if (!/req\.body\.website/.test(router) || !/req\.body\.website/.test(mentors) || !/className="hp-field"/.test(register)) problems.push("there is no hidden box for bots")
+            if (!/verifyTurnstile\(req\.body\.turnstileToken, req\.ip\)/.test(router) || !/<TurnstileBox/.test(register)) problems.push("Turnstile is not wired")
+            if (!/phoneRegex\.test\(phone \|\| ""\)/.test(router.split('router.post("/register"')[1].split("router.")[0])) problems.push("the phone is not required at sign-up")
+            if (/useEffect/.test(verify) || !/onClick=\{confirmEmail\}/.test(verify)) problems.push("the verify page still confirms on load")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — a turnstile with no secret key lets everyone through; with one, a missing token fails",
+        run: async () => {
+            const saved = process.env.TURNSTILE_SECRET_KEY
+            delete require.cache[require.resolve("../../utils/turnstile")]
+            const { verifyTurnstile } = require("../../utils/turnstile")
+            delete process.env.TURNSTILE_SECRET_KEY
+            const off = await verifyTurnstile(undefined, "1.2.3.4")
+            process.env.TURNSTILE_SECRET_KEY = "test-secret"
+            const missing = await verifyTurnstile("", "1.2.3.4")
+            if (saved === undefined) delete process.env.TURNSTILE_SECRET_KEY
+            else process.env.TURNSTILE_SECRET_KEY = saved
+            return { off, missing }
+        },
+        expect: { off: true, missing: false },
+    },
+    {
+        name: "ROUND 25 — a changed email waits until its own link is clicked; the account (and its id) stays the same; a changed stage offers 'Update my report'",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "..", "..", "..", file), "utf8")
+            const router = read("Backend/Routers/userRouter.js")
+            const reports = read("Backend/Routers/reportsRouter.js")
+            const admin = read("Frontend/src/pages/Admin/StudentEditForm.js")
+            const change = router.split('router.put("/changeEmail"')[1].split("router.")[0]
+            const verify = router.split('router.post("/verifyEmail/:token"')[1].split("router.")[0]
+            const problems = []
+            if (!/pendingEmail: newEmail/.test(change) || /findByIdAndUpdate\([^)]*[{,]\s*email: newEmail/.test(change)) problems.push("changing the email moves the account before the link is clicked")
+            if (!/sendVerificationEmail\(req\.user, newEmail\)/.test(change)) problems.push("the link does not go to the new address")
+            if (!/email: emailVerification\.newEmail, isEmailVerified: true, pendingEmail: null/.test(verify)) problems.push("confirming the link does not move the account to the new email")
+            if (/User\.create|_id:\s*new/.test(verify)) problems.push("verifying makes a new account")
+            if (!/updates\.profileChangedAt = new Date\(\)/.test(router)) problems.push("a stage change is not stamped")
+            if (!/user\.profileChangedAt/.test(reports)) problems.push("a stage change does not offer 'Update my report'")
+            if (/journeyDetail: student\.journeyDetail/.test(admin) || !/<StageFields/.test(admin)) problems.push("the admin still can't edit a student's stage details")
+            const { cleanJourneyDetail } = require("../../Routers/userRouter")
+            const working = cleanJourneyDetail({ experienceYears: 4, degree: "barch_bplan", class12Year: 2017, currentProfessionId: "eng-architect", field: "ignored", role: "admin" }, "early_professional")
+            if (working.currentProfessionId !== "eng-architect" || working.class12Year !== 2017 || working.field !== undefined || "role" in working) problems.push(`the working detail is not cleaned: ${JSON.stringify(working)}`)
+            if (cleanJourneyDetail({ currentProfessionId: "not-a-career", field: "Sales" }, "early_professional").currentProfessionId !== undefined) problems.push("an unknown profession id is kept")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 25 — durations (interest form 60–75 minutes; assessment about 2 hours plus a 5-minute task a day later) and a highlighted 'Something went wrong' that says a retest is for glitches only",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", file), "utf8")
+            const problems = []
+            if (!/about 60–75 minutes/.test(read("Interest/InterestIntro.js"))) problems.push("the interest form duration is not 60–75 minutes")
+            const intro = read("Assessment/AssessmentIntro.js")
+            if (!/about 2 hours/.test(intro) || !/5-minute task a day later/.test(intro)) problems.push("the assessment duration is not 2 hours plus the next-day task")
+            const box = read("Assessment/ResearchBox.js")
+            if (!/Ask for a retest <strong>only<\/strong> if something technical went wrong/.test(box) || !/Retests to improve a score aren't allowed/.test(box)) problems.push("the issue box does not say retests are for glitches only")
+            const css = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "styles", "app.css"), "utf8")
+            if (!/\.report-problem summary \{[^}]*background: var\(--amber-tint\)/.test(css)) problems.push("'Something went wrong' is not highlighted")
+            return problems.length ? problems.join("; ") : null
         },
         expect: null,
     },

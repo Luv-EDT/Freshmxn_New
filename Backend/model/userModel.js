@@ -21,6 +21,14 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        pendingEmail: {
+            type: String,
+            default: null, // Round 25: a new address waiting for its confirmation link; the old one works until then
+        },
+        profileChangedAt: {
+            type: Date,
+            default: null, // Round 25: stage or its details changed — the report offers "Update my report"
+        },
         googleId: {
             type: String, // leave unset (not null) for password accounts, so the sparse index skips them
         },
@@ -69,6 +77,15 @@ const userSchema = new mongoose.Schema(
                 type: String,
             },
             field: {
+                type: String,   // a working student's own words; since Round 25 only when their profession isn't on our list
+            },
+            // Round 25 (owner): the year Class 12 was (or will be) finished — college and working
+            // students — so an entry window (JEE: 3 years) can say "this route has closed for you";
+            // and a working student's current profession from our list, which costs 0 to stay in.
+            class12Year: {
+                type: Number,
+            },
+            currentProfessionId: {
                 type: String,
             },
         },

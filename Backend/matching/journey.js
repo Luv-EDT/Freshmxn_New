@@ -6,9 +6,14 @@
 // The exponential is a time-discounting curve borrowed from economics, not from career-guidance
 // research. τ and the weights are a starting calibration to tune against real outcomes.
 //
-// A COMPLETED QUALIFICATION IS NEVER WASTE. Only abandoned study is. And school students have
-// waste 0 for everything, so the multiplier is exactly 1.0 for the primary audience — the
-// exponential only activates for switchers, which is the intent, not an oversight.
+// SWITCH COST = THE YEARS LOST OR REPEATED to get into this career (owner, Round 25): degree years a
+// career won't count (a working professional's whole degree, a student's years so far), a Class 12
+// subject added through open school, and work years in an unrelated field. Your own career costs 0.
+// School students have waste 0 for everything, so the multiplier is exactly 1.0 for the primary
+// audience — the exponential only activates for switchers, which is the intent, not an oversight.
+//
+// TIME TO GET THERE NOW is a second, separate number: the years ahead, not the years lost. It is
+// shown on the card and sorts "Quickest to qualify"; it never ranks.
 //
 // GOVERNING PRINCIPLE, from §8.5: nothing is removed unless it is genuinely impossible. Everything
 // else is a bounded nudge. Two things remove a profession and there is not a third.
@@ -16,7 +21,7 @@
 const {
     WASTE_WEIGHTS,
     EMPLOYMENT_WASTE_CAP,
-    CLASS_12_REDO_YEARS,
+    OPEN_SCHOOL_SUBJECT_YEARS,
     TAU,
     WORKING_YEARS_BEFORE_SHORT_TAU,
 } = require("./constants")
@@ -36,9 +41,12 @@ const readJourney = (user) => {
         // Age lives on the user, not in journeyDetail — reading it from journeyDetail meant the
         // age limit could never fire (backend review #15). Both are accepted, user first.
         age: typeof (user && user.age) === "number" ? user.age : (typeof detail.age === "number" ? detail.age : null),
-        yearsSinceClass12: typeof detail.yearsSinceClass12 === "number" ? detail.yearsSinceClass12 : null,
+        // Round 25: asked as the year Class 12 was finished; an explicit count still wins (fixtures)
+        yearsSinceClass12: typeof detail.yearsSinceClass12 === "number" ? detail.yearsSinceClass12
+            : typeof detail.class12Year === "number" ? Math.max(0, new Date().getFullYear() - detail.class12Year) : null,
         degree: typeof detail.degree === "string" ? detail.degree : null,
         subject: typeof detail.subject === "string" ? detail.subject : null,
+        currentProfessionId: typeof detail.currentProfessionId === "string" ? detail.currentProfessionId : null,
     }
 }
 
@@ -81,6 +89,33 @@ const DEGREE_FAMILIES = require("../data/degree_families.json")
 const DEGREE_OPTIONS = require("../data/degree_options.json")
 const BACHELOR = new Set(DEGREE_OPTIONS.families.filter((family) => family.bachelor).map((family) => family.id))
 
+// a degree the student's family list names for this career — the specific test, without "any
+// bachelor's": an MBA-style career takes any graduate, but it doesn't make their work experience its own
+const degreeLeadsHere = (profession, journey) => {
+    if (!journey || !journey.degree) return false
+    const keys = [journey.degree, journey.subject ? `${journey.degree}:${journey.subject}` : null].filter(Boolean)
+    return keys.some((key) => (DEGREE_FAMILIES.by_degree[key] || []).includes(profession.id))
+}
+
+// how long the student's degree is, for a working professional's switch cost (degree_options.json)
+const degreeYears = (journey) => {
+    const family = DEGREE_OPTIONS.families.find((entry) => entry.id === journey.degree)
+    return family && typeof family.years === "number" ? family.years : 0
+}
+
+// WORK EXPERIENCE THAT CARRIES OVER (owner, Round 25): their own career, a career their degree leads
+// to, or one on the reviewed "related careers" list for what they do now (related_careers.json —
+// drafted from the career embeddings, then read by hand). Anything else costs 0.3 a year.
+const RELATED = require("../data/related_careers.json").careers
+const experienceCarriesOver = (profession, journey) => {
+    if (journey.currentProfessionId === profession.id) return true
+    if (degreeLeadsHere(profession, journey)) return true
+    return Boolean(journey.currentProfessionId && (RELATED[journey.currentProfessionId] || []).includes(profession.id))
+}
+
+// years 1-2 at the early rate, each year from 3 on at the late one
+const weightedDegreeYears = (years) => Math.min(years, 2) * WASTE_WEIGHTS.undergrad_early + Math.max(years - 2, 0) * WASTE_WEIGHTS.undergrad_late
+
 const degreeCounts = (profession, journey) => {
     if (!journey || !journey.degree || (journey.stage !== "college" && journey.stage !== "early_professional")) return false
     const keys = [journey.degree, journey.subject ? `${journey.degree}:${journey.subject}` : null].filter(Boolean)
@@ -90,36 +125,70 @@ const degreeCounts = (profession, journey) => {
 
 const wasteFor = (profession, journey) => {
     const breakdown = {}
+
+    // your own career: nothing to lose, nothing to repeat
+    if (journey.currentProfessionId && journey.currentProfessionId === profession.id) {
+        return { years: 0, breakdown, studyWasteWaived: true, ownCareer: true }
+    }
+
     const waived = studyWasteWaived(profession) || degreeCounts(profession, journey)
+    const pastSchool = journey.stage === "college" || journey.stage === "early_professional"
 
-    // Class 11-12 in the wrong stream, for someone already past it. A class 11-12 student is
-    // filtered out instead — see hardFilterReason.
-    if (!waived && (journey.stage === "college" || journey.stage === "early_professional") && !class12Satisfied(profession, journey)) {
-        breakdown.class_11_12 = CLASS_12_REDO_YEARS * WASTE_WEIGHTS.class_11_12
+    // A Class 12 subject they didn't take, added through open school — a step repeated. A class
+    // 11-12 student is filtered out instead — see hardFilterReason.
+    if (!waived && pastSchool && !class12Satisfied(profession, journey)) {
+        breakdown.class_11_12 = OPEN_SCHOOL_SUBJECT_YEARS * WASTE_WEIGHTS.class_11_12
     }
 
-    if (journey.stage === "college" && !waived) {
-        // Nothing has been invested yet, so there is nothing to abandon.
-        if (!journey.preAdmission) {
-            // PER YEAR, by the year it is: years 1-2 at the early rate, each year from 3 on at the
-            // late one (DECISIONS §5's table read as marginal rates). Applying the late rate to ALL
-            // years made a third-year student look less invested than a second-year one — 1.5
-            // against 2 (backend review #16). Now it only ever rises: 1, 2, 2.5, 3.
-            const year = journey.courseYear || 0
-            const early = Math.min(year, 2)
-            const late = Math.max(year - 2, 0)
-            breakdown.undergrad = early * WASTE_WEIGHTS.undergrad_early + late * WASTE_WEIGHTS.undergrad_late
-        }
+    // Degree years this career won't count. PER YEAR, by the year it is: years 1-2 at the early rate,
+    // each year from 3 on at the late one (backend review #16 — it only ever rises: 1, 2, 2.5, 3).
+    if (journey.stage === "college" && !waived && !journey.preAdmission) {
+        breakdown.undergrad = weightedDegreeYears(journey.courseYear || 0)
+    }
+    // Round 25 (owner): a working professional's finished degree counts too, in full, when the
+    // career needs a different one — engineering → medicine repeats the undergraduate step
+    if (journey.stage === "early_professional" && !waived && degreeYears(journey) > 0) {
+        breakdown.undergrad = weightedDegreeYears(degreeYears(journey))
     }
 
-    if (journey.stage === "early_professional") {
+    if (journey.stage === "early_professional" && !experienceCarriesOver(profession, journey)) {
         const years = journey.experienceYears || 0
         breakdown.employment = Math.min(years * WASTE_WEIGHTS.employment, EMPLOYMENT_WASTE_CAP)
     }
 
     const years = Object.values(breakdown).reduce((total, value) => total + value, 0)
 
-    return { years: Math.round(years * 100) / 100, breakdown, studyWasteWaived: waived }
+    return { years: Math.round(years * 100) / 100, breakdown, studyWasteWaived: waived, ownCareer: false }
+}
+
+// TIME TO GET THERE FROM NOW (owner, Round 25), in years, or null when the record gives no length.
+// Not a ranking input. A school student faces the whole road; past school it depends on the door.
+const yearsToGetThere = (profession, journey) => {
+    const full = typeof profession.years_to_qualify === "number" ? profession.years_to_qualify : null
+    if (journey.currentProfessionId && journey.currentProfessionId === profession.id) return 0
+    if (full === null) return null
+    if (journey.stage !== "college" && journey.stage !== "early_professional") return full
+
+    // a college student still finishing their own degree has those years ahead either way
+    const ownDegreeLeft = journey.stage === "college" && !journey.preAdmission && journey.degree
+        ? Math.max(0, degreeYears(journey) - (journey.courseYear || 0)) : 0
+    const subject = !class12Satisfied(profession, journey) && !degreeCounts(profession, journey) ? OPEN_SCHOOL_SUBJECT_YEARS : 0
+    const hasDegree = journey.stage === "early_professional" ? degreeYears(journey) > 0 : Boolean(journey.degree) && !journey.preAdmission
+    let ahead
+
+    if (degreeCounts(profession, journey)) ahead = ownDegreeLeft
+    else if (profession.mid_stream_entry === "open") ahead = 0
+    else if (profession.mid_stream_entry === "after_any_degree" && hasDegree) ahead = ownDegreeLeft + Math.max(1, full - 3)
+    else ahead = full
+    return Math.round((ahead + subject) * 10) / 10
+}
+
+// The usual entrance has closed for them (JEE: 3 years after Class 12). Not a removal — every such
+// record names another way in — but the card says so.
+const entryClosed = (profession, journey) => {
+    const window = profession.entry_window
+    if (!window || typeof window.max_years_since_class12 !== "number" || typeof journey.yearsSinceClass12 !== "number") return false
+    return journey.yearsSinceClass12 > window.max_years_since_class12
 }
 
 const journeyMultiplier = (profession, journey) => {
@@ -132,6 +201,9 @@ const journeyMultiplier = (profession, journey) => {
         wastedYears: waste.years,
         wasteBreakdown: waste.breakdown,
         studyWasteWaived: waste.studyWasteWaived,
+        ownCareer: waste.ownCareer,
+        yearsToGetThere: yearsToGetThere(profession, journey),
+        entryClosed: entryClosed(profession, journey),
         tau: tau === Infinity ? null : tau,
     }
 }
@@ -168,4 +240,4 @@ const hardFilterReason = (profession, journey) => {
     return null
 }
 
-module.exports = { readJourney, tauFor, wasteFor, journeyMultiplier, hardFilterReason, class12Satisfied, degreeCounts }
+module.exports = { readJourney, tauFor, wasteFor, journeyMultiplier, hardFilterReason, class12Satisfied, degreeCounts, yearsToGetThere, entryClosed, experienceCarriesOver }

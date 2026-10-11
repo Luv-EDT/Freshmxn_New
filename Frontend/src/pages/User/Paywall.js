@@ -43,6 +43,17 @@ function Paywall() {
         fetchPaywallData()
     }, [])
 
+    // The plan chosen on /programs (owner, Round 25) — from ?plan=N, or kept through registration and
+    // Google sign-in in localStorage. Preselected once, only for someone who has no plan yet.
+    useEffect(() => {
+        if (!pricing || !user || selectedTier || user.paid) return
+        const fromUrl = new URLSearchParams(window.location.search).get("plan")
+        const plan = Number(fromUrl || localStorage.getItem("chosenPlan"))
+        localStorage.removeItem("chosenPlan")
+        if ([1, 2, 3].includes(plan) && pricing.tiers[plan]) handleSelectTier(plan, "")
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pricing, user])
+
     const fetchPaywallData = async () => {
         try {
             setLoading(true)

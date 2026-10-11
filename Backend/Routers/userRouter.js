@@ -16,10 +16,13 @@ const router = express.Router()
 // Emails go through the shared mailer (utils/mailer.js), which builds its Resend client on first use:
 // a missing RESEND_API_KEY no longer stops the whole server from starting (Round 10).
 const { sendEmail } = require("../utils/mailer")
+const { checkName } = require("../utils/nameRules")
+const { verifyTurnstile } = require("../utils/turnstile")
+const PROFESSION_IDS = new Set(require("../data/ALL-professions.json").professions.map((profession) => profession.id))
 const { sendParentCode } = require("../utils/parentConsent")
 
 const JOURNEYS = ["class9_10", "class11_12", "college", "early_professional"]
-const POLICY_VERSION = "v1.3"   // 4 October 2026: plans to go abroad, and voice typing (v1.2, 3 October: the study-abroad partner on opt-in; v1.1, 1 October: sensitive answers; email-verified parental consent)
+const POLICY_VERSION = "v1.4"   // 11 October 2026: "how else can we help" waitlist, the spam check (v1.3, 4 October: plans to go abroad, and voice typing; v1.2, 3 October: the study-abroad partner on opt-in; v1.1, 1 October: sensitive answers; email-verified parental consent)
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phoneRegex = /^[0-9]{10}$/
 
@@ -50,6 +53,19 @@ const forgotPasswordRateLimiter = rateLimit({
     message: {
         success: false,
         message: "Too many reset requests. Try again in an hour"
+    },
+})
+
+// Round 25 (spam sign-ups): 5 new accounts per IP per hour. A family signing up two children from
+// one phone never gets near it; a bot creating accounts in a loop is stopped after five.
+const registerRateLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: "Too many sign-ups from here. Try again in an hour"
     },
 })
 
@@ -115,26 +131,47 @@ const cleanJourneyDetail = (journeyDetail, journey) => {
         clean.stream = Array.isArray(detail.stream) ? [...new Set(detail.stream.filter((subject) => STREAMS.includes(subject)))] : []
     }
 
+    // Round 25: the year Class 12 was (or will be) finished, for college and working students
+    const class12Year = numberIn(detail.class12Year, 1960, new Date().getFullYear() + 1)
+
     if (journey === "college") {
         clean.collegeStage = ["pre_admission", "enrolled"].includes(detail.collegeStage) ? detail.collegeStage : undefined
         clean.preAdmission = detail.collegeStage === "pre_admission"
         clean.courseYear = clean.collegeStage === "enrolled" ? numberIn(detail.courseYear, 1, 4) : undefined
         Object.assign(clean, cleanDegree(detail))
+        clean.class12Year = class12Year
     }
 
     if (journey === "early_professional") {
         clean.experienceYears = numberIn(detail.experienceYears, 0, 40)
         Object.assign(clean, cleanDegree(detail))
-        clean.field = typeof detail.field === "string" && detail.field.trim() !== "" ? detail.field.trim().slice(0, 80) : undefined
+        clean.class12Year = class12Year
+        // Round 25: their current profession from our list; "something else" keeps their own words
+        clean.currentProfessionId = PROFESSION_IDS.has(detail.currentProfessionId) ? detail.currentProfessionId : undefined
+        clean.field = !clean.currentProfessionId && typeof detail.field === "string" && detail.field.trim() !== "" ? detail.field.trim().slice(0, 80) : undefined
     }
 
     return clean
 }
 
+const withoutPassword = (user) => {
+    if (!user) return user
+    const data = user.toObject()
+    delete data.password
+    return data
+}
+
+// did the stage or anything in its detail change? (the switching cost reads both)
+const comparable = (detail) => JSON.stringify(Object.entries(detail || {}).filter(([, value]) => value !== undefined && value !== null && !(Array.isArray(value) && value.length === 0) && value !== false).sort(([a], [b]) => a.localeCompare(b)))
+const stageChanged = (user, updates) => user.journey !== updates.journey
+    || comparable(user.journeyDetail && user.journeyDetail.toObject ? user.journeyDetail.toObject() : user.journeyDetail) !== comparable(updates.journeyDetail)
+
 // issue a fresh "confirm your email" link and send it. Any older unused link stops working, so a
 // resend can't leave two live tokens behind. Never throws — a signup must not fail because an
 // email did, but the full error is logged so a misconfigured sender is visible in the terminal.
-const sendVerificationEmail = async (user) => {
+// With `newEmail` (Round 25) the link confirms a change of address: it goes to the new address, and
+// confirming it moves the account there — the same user, the same id, everything kept.
+const sendVerificationEmail = async (user, newEmail = null) => {
     const rawToken = crypto.randomBytes(32).toString("hex")
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex")
 
@@ -147,16 +184,19 @@ const sendVerificationEmail = async (user) => {
         user: user._id,
         tokenHash,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),   // 24 hours
+        newEmail,
     })
 
     const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${rawToken}`
 
     // never throws (the mailer logs any failure) — a signup must not fail because an email did
     await sendEmail({
-        to: user.email,
+        to: newEmail || user.email,
         subject: "Confirm your email for Freshmxn",
-        html: `<p>Hi ${user.name},</p>
-               <p>Please confirm this is your email address. The link expires in 24 hours.</p>
+        // Round 25: no typed name in this email — spam sign-ups used the name field to carry their
+        // own text (and links) into a message sent from our address to someone else's inbox
+        html: `<p>Hi,</p>
+               <p>Please confirm this is your email address for Freshmxn. The link expires in 24 hours.</p>
                <p><a href="${verifyUrl}">${verifyUrl}</a></p>
                <p>If you didn't sign up for Freshmxn, you can ignore this email.</p>`,
     })
@@ -188,14 +228,36 @@ const checkParentConsent = (age, parentConsentChecked, parentName, parentPhone, 
 // Register
 // ========================
 
-router.post("/register", async (req, res) => {
+router.post("/register", registerRateLimiter, async (req, res) => {
     try {
-        const { name, email, password, age, journey, journeyDetail, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
+        const { name, email, password, phone, age, journey, journeyDetail, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
 
-        if (!name || !name.trim()) {
+        // Round 25: the "website" box is hidden from people; only a bot fills it. It gets the reply a
+        // real sign-up would, and nothing is stored or sent.
+        if (typeof req.body.website === "string" && req.body.website.trim() !== "") {
+            return res.status(201).json({ success: true, message: "Registered Successfully" })
+        }
+
+        if (!(await verifyTurnstile(req.body.turnstileToken, req.ip))) {
             return res.status(400).json({
                 success: false,
-                message: "Please enter your name"
+                message: "Please complete the check that you're a person, then try again"
+            })
+        }
+
+        const nameError = checkName(name)
+        if (nameError) {
+            return res.status(400).json({
+                success: false,
+                message: nameError
+            })
+        }
+
+        // Round 25 (owner): a phone number is required — it is how we reach a student about their plan
+        if (!phoneRegex.test(phone || "")) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter your 10-digit mobile number"
             })
         }
 
@@ -256,8 +318,9 @@ router.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt)
 
         const newUser = await User.create({
-            name: name.trim(),
+            name: name.trim().replace(/\s+/g, " "),
             email: normalizedEmail,
+            phone,
             password: hashedPassword,
             age: ageNumber,
             journey,
@@ -424,8 +487,8 @@ router.post("/forgotPassword", forgotPasswordRateLimiter, async (req, res) => {
         await sendEmail({
             to: user.email,
             subject: "Reset your Freshmxn password",
-            html: `<p>Hi ${user.name},</p>
-                   <p>Click the link below to set a new password. It expires in 30 minutes.</p>
+            html: `<p>Hi,</p>
+                   <p>Click the link below to set a new password for Freshmxn. It expires in 30 minutes.</p>
                    <p><a href="${resetUrl}">${resetUrl}</a></p>
                    <p>If you didn't ask for this, you can ignore this email.</p>`,
         })
@@ -527,6 +590,26 @@ router.post("/verifyEmail/:token", async (req, res) => {
             })
         }
 
+        // a change of address (Round 25): the account moves to the new email only now, once the
+        // student has shown they can open it — unless someone else has taken that address meanwhile
+        if (emailVerification.newEmail) {
+            const taken = await User.findOne({ email: emailVerification.newEmail, _id: { $ne: emailVerification.user } }).select("_id").lean()
+            if (taken) {
+                await EmailVerification.findByIdAndUpdate(emailVerification._id, { usedAt: new Date() })
+                await User.findByIdAndUpdate(emailVerification.user, { pendingEmail: null })
+                return res.status(400).json({
+                    success: false,
+                    message: "That email now belongs to another account"
+                })
+            }
+            await User.findByIdAndUpdate(emailVerification.user, { email: emailVerification.newEmail, isEmailVerified: true, pendingEmail: null })
+            await EmailVerification.findByIdAndUpdate(emailVerification._id, { usedAt: new Date() })
+            return res.status(200).json({
+                success: true,
+                message: "Your new email is confirmed — use it to log in from now on"
+            })
+        }
+
         await User.findByIdAndUpdate(emailVerification.user, { isEmailVerified: true })
 
         await EmailVerification.findByIdAndUpdate(emailVerification._id, { usedAt: new Date() })
@@ -570,6 +653,79 @@ router.post("/resendVerification", resendVerificationRateLimiter, authMiddleware
         return res.status(500).json({
             success: false,
             message: "Failed to send confirmation email",
+            error: error.message,
+        })
+    }
+})
+
+
+// ========================
+// Change Email
+// ========================
+
+// Round 25 (owner): a student can change their email after registering. The new address waits as
+// `pendingEmail` until its link is clicked; until then they still log in with the old one. The user
+// id never changes, so every payment, answer and report stays theirs.
+router.put("/changeEmail", resendVerificationRateLimiter, authMiddleware, async (req, res) => {
+    try {
+        const newEmail = typeof req.body.newEmail === "string" ? req.body.newEmail.trim().toLowerCase() : ""
+
+        if (!emailRegex.test(newEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email"
+            })
+        }
+
+        if (newEmail === req.user.email) {
+            return res.status(400).json({
+                success: false,
+                message: "That is already your email"
+            })
+        }
+
+        const taken = await User.findOne({ email: newEmail }).select("_id").lean()
+        if (taken) {
+            return res.status(400).json({
+                success: false,
+                message: "That email already has an account"
+            })
+        }
+
+        await User.findByIdAndUpdate(req.user._id, { pendingEmail: newEmail })
+        await sendVerificationEmail(req.user, newEmail)
+
+        return res.status(200).json({
+            success: true,
+            message: `We've sent a link to ${newEmail} — click it to finish the change`,
+            data: { pendingEmail: newEmail },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to change email",
+            error: error.message,
+        })
+    }
+})
+
+router.put("/cancelEmailChange", authMiddleware, async (req, res) => {
+    try {
+        await User.findByIdAndUpdate(req.user._id, { pendingEmail: null })
+        // any link already sent for the change stops working
+        await EmailVerification.updateMany({ user: req.user._id, usedAt: null, newEmail: { $ne: null } }, { usedAt: new Date() })
+
+        return res.status(200).json({
+            success: true,
+            message: "Email change cancelled",
+            data: { pendingEmail: null },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to cancel",
             error: error.message,
         })
     }
@@ -660,18 +816,30 @@ router.get(
 router.put("/updateProfile", authMiddleware, async (req, res) => {
     try {
         // never spread req.body here — role, paid and currentTier are server-owned
-        const { name, age, journey, journeyDetail, preferredLanguage, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
+        const { name, phone, age, journey, journeyDetail, preferredLanguage, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
 
         const updates = {}
 
         if (name !== undefined) {
-            if (!name.trim()) {
+            const nameError = checkName(name)
+            if (nameError) {
                 return res.status(400).json({
                     success: false,
-                    message: "Please enter your name"
+                    message: nameError
                 })
             }
-            updates.name = name.trim()
+            updates.name = name.trim().replace(/\s+/g, " ")
+        }
+
+        // Round 25: the phone is required and editable; it can be changed, never emptied
+        if (phone !== undefined) {
+            if (!phoneRegex.test(phone || "")) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please enter your 10-digit mobile number"
+                })
+            }
+            updates.phone = phone
         }
 
         if (age !== undefined) {
@@ -695,6 +863,8 @@ router.put("/updateProfile", authMiddleware, async (req, res) => {
             }
             updates.journey = journey
             updates.journeyDetail = cleanJourneyDetail(journeyDetail, journey)
+            // Round 25: a different stage or detail changes the switching cost — offer "Update my report"
+            if (stageChanged(req.user, updates)) updates.profileChangedAt = new Date()
         }
 
         if (preferredLanguage === "en" || preferredLanguage === "hi") {
@@ -731,11 +901,13 @@ router.put("/updateProfile", authMiddleware, async (req, res) => {
             })
         }
 
-        const updatedUser = await User.findByIdAndUpdate(
+        // the password is removed here rather than by a projection inside the update, which some
+        // MongoDB-compatible databases (FerretDB, used for local tests) don't support
+        const updatedUser = withoutPassword(await User.findByIdAndUpdate(
             req.user._id,
             updates,
             { returnDocument: "after" }  // returns the updated document, not the old one
-        ).select("-password")
+        ))
 
         if (newConsent) await sendParentCode(newConsent, updatedUser)
 
@@ -819,13 +991,14 @@ router.put("/updateForAdmin/:id", authMiddleware, adminAuthMiddleware, async (re
         const updates = {}
 
         if (name !== undefined) {
-            if (!name.trim()) {
+            const nameError = checkName(name)
+            if (nameError) {
                 return res.status(400).json({
                     success: false,
-                    message: "Please enter a name"
+                    message: nameError
                 })
             }
-            updates.name = name.trim()
+            updates.name = name.trim().replace(/\s+/g, " ")
         }
 
         // blank clears the number rather than storing an empty string
@@ -863,13 +1036,14 @@ router.put("/updateForAdmin/:id", authMiddleware, adminAuthMiddleware, async (re
             }
             updates.journey = journey
             updates.journeyDetail = cleanJourneyDetail(journeyDetail, journey)
+            if (stageChanged(student, updates)) updates.profileChangedAt = new Date()
         }
 
-        const updatedUser = await User.findByIdAndUpdate(
+        const updatedUser = withoutPassword(await User.findByIdAndUpdate(
             id,
             updates,
             { returnDocument: "after" }
-        ).select("-password")
+        ))
 
         return res.status(200).json({
             success: true,
@@ -888,3 +1062,5 @@ router.put("/updateForAdmin/:id", authMiddleware, adminAuthMiddleware, async (re
 
 module.exports = router
 module.exports.POLICY_VERSION = POLICY_VERSION
+module.exports.registerRateLimiter = registerRateLimiter
+module.exports.cleanJourneyDetail = cleanJourneyDetail

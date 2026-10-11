@@ -20,7 +20,7 @@ function MentorWaitlistPublic() {
                 <section className="hero">
                     <div className="page hero-grid">
                         <div>
-                            <span className="eyebrow">Mentors</span>
+                            <span className="eyebrow">Mentorship program</span>
                             <h1>Talk to someone who's already where you want to go.</h1>
                             <p className="lead">
                                 Two sessions with a working professional in your chosen field — a 1-hour clarity session
