@@ -23,6 +23,10 @@ const emailVerificationSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        newEmail: {
+            type: String,
+            default: null, // Round 25: a change of address — confirming this link moves the account to it
+        },
     },
     {
         timestamps: true,

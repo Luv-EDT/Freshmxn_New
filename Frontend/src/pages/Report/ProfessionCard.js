@@ -163,6 +163,10 @@ const PORTABILITY_WORDS = {
 
 // `combined` (Round 19): a combined career — two professions from different sectors in one — opens
 // in this same card, with the parts it has: what it is, why we chose it, why it fits, how people get there.
+// what the switch cost is made of, in words (matching's wasteBreakdown)
+const LOST_WORDS = { undergrad: "degree years that won't count", class_11_12: "a Class 12 subject to add through open school", employment: "work years in a different field" }
+const lostParts = (breakdown) => Object.keys(breakdown || {}).filter((key) => breakdown[key] > 0 && LOST_WORDS[key]).map((key) => LOST_WORDS[key]).join(", ")
+
 function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, rank, showAi, degreeLabel, abroadPlans, combined }) {
     // a student who said maybe or yes to going abroad also sees how this career travels
     const abroadMinded = Boolean(abroadPlans && abroadPlans.hope !== "no")
@@ -352,15 +356,25 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                     )}
 
                     {/* 4. YOUR NEXT 12 MONTHS — for this student's stage, inside each career (Round 13, owner) */}
-                    {(nextSteps.length > 0 || switchCost > 0 || (entry.degreeCounts && degreeLabel)) && (
+                    {(nextSteps.length > 0 || switchCost > 0 || entry.ownCareer || typeof entry.yearsToGetThere === "number" || (entry.degreeCounts && degreeLabel)) && (
                         <Section title="Your next 12 months">
+                            {entry.ownCareer && <p className="pc-line">This is the work you do now — nothing is lost by staying.</p>}
                             {/* Round 10: the student's own degree already leads here */}
                             {entry.degreeCounts && degreeLabel && (
                                 <p className="pc-line">Your <strong>{degreeLabel}</strong> already counts towards this — no need to start again.</p>
                             )}
-                            {/* Worth-the-switch shows its cost beside the fit (DECISIONS §5). */}
+                            {/* Round 25 (owner): two numbers — the years lost or repeated, and the road ahead */}
                             {switchCost > 0 && (
-                                <p className="pc-small">About {switchCost} years of what you've done so far would be left behind.</p>
+                                <p className="pc-line">
+                                    <strong>Years left behind:</strong> about {switchCost}
+                                    {lostParts(entry.wasteBreakdown) && ` (${lostParts(entry.wasteBreakdown)})`}.
+                                </p>
+                            )}
+                            {!entry.ownCareer && typeof entry.yearsToGetThere === "number" && (
+                                <p className="pc-line">
+                                    <strong>Time to get there from now:</strong>{" "}
+                                    {entry.yearsToGetThere === 0 ? "you can start now" : `about ${entry.yearsToGetThere} ${entry.yearsToGetThere === 1 ? "year" : "years"}`}.
+                                </p>
                             )}
                             {nextSteps.length > 0 && (
                                 <ul className="pc-steps">
@@ -479,6 +493,7 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
 
                                 {shows.deadline && (
                                     <Fold title="Is there a deadline?">
+                                        {entry.entryClosed && <p className="pc-line"><strong>This route has closed for you.</strong></p>}
                                         <p className="pc-line">{detail.entryWindow.constrainedRoute}</p>
                                         {detail.entryWindow.bypass.length > 0 && (
                                             <p className="pc-small">Other ways in: {detail.entryWindow.bypass.join(" · ")}</p>

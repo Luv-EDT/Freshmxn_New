@@ -19,3 +19,9 @@ export async function getProfessionOptions() {
     const response = await axiosInstance.get("/professions/getOptions")
     return response
 }
+
+// every career's name, public — "What do you work as now?" on Register (Round 25)
+export async function getCareerNames() {
+    const response = await axiosInstance.get("/professions/getNames")
+    return response
+}

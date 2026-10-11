@@ -1,5 +1,4 @@
 import { useRef, useState } from "react"
-import { TOTAL_MINUTES } from "./assessmentModules"
 import { reviewLabel } from "./moduleLabels"
 import { factorCoverage } from "./factorFeeds"
 import { ResearchBox, ModuleWhy, ReportProblem } from "./ResearchBox"
@@ -209,7 +208,8 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
             </p>
 
             <p className="assess-meta">
-                <strong>{doneCount} of {built.length} done</strong> · about {TOTAL_MINUTES} minutes in all
+                <strong>{doneCount} of {built.length} done</strong> · <strong>about 2 hours</strong> in all, plus a
+                5-minute task a day later (to measure long-term memory)
             </p>
 
             {/* how much of the picture the finished sections already measure (owner, Round 10) */}

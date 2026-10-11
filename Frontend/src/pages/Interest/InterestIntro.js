@@ -12,7 +12,7 @@ function InterestIntro({ handleNext, hasSubmitted }) {
             </p>
             <p>
                 There are no right answers and nothing is graded: the more honestly you write, the sharper your
-                results. It takes about 45 minutes, and your answers save as you go, so you can stop and come
+                results. It takes about 60–75 minutes, and your answers save as you go, so you can stop and come
                 back any time.
             </p>
 

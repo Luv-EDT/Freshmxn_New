@@ -26,6 +26,7 @@ import MatchesPage from "./pages/Report/MatchesPage.js"
 import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
 import HowItWorks from "./pages/Public/HowItWorks.js"
+import Programs from "./pages/Public/Programs.js"
 import About from "./pages/Public/About.js"
 import Terms from "./pages/Public/Terms.js"
 import Privacy from "./pages/Public/Privacy.js"
@@ -50,6 +51,7 @@ function App() {
                 <Route path="/success-stories" element={<SuccessStories />} />
                 <Route path="/mentor-waitlist" element={<MentorWaitlistPublic />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/programs" element={<Programs />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />

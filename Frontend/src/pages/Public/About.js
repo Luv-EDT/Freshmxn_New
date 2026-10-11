@@ -77,7 +77,7 @@ function About() {
                 <section className="section closing">
                     <div className="page">
                         <h2>Careers that fit <em>you</em>. And the future.</h2>
-                        <Link to="/register" className="btn btn-light tap">Let's figure out your career →</Link>
+                        <Link to="/programs" className="btn btn-light tap">Let's figure out your career →</Link>
                     </div>
                 </section>
             </main>

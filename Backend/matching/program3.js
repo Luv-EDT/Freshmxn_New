@@ -132,8 +132,13 @@ const scoreOne = ({ profession, rating, studentVector, journey, candidate }) => 
 
         score,
         journeyMultiplier: cost.multiplier,
+        // Round 25 (owner): two fields. wastedYears is the SWITCH COST — the years lost or repeated,
+        // which alone decides the "2+ years" group; yearsToGetThere is the road ahead, shown only.
         wastedYears: cost.wastedYears,
         wasteBreakdown: cost.wasteBreakdown,
+        ownCareer: cost.ownCareer,
+        yearsToGetThere: cost.yearsToGetThere,
+        entryClosed: cost.entryClosed,
         tau: cost.tau,
 
         supportingFactors: explanation.supporting,

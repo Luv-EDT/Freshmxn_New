@@ -45,10 +45,14 @@ const router = express.Router()
 const { SCORING_VERSION } = require("../scoring/scoreProfile")
 const { MATCHING_VERSION } = require("../matching/matchProfile")
 
-const updateIsAvailable = (report, recommendation) => Boolean(report) && (
+// Round 25: also when the student (or the admin) changed their stage or its details after the report
+// was built — the switching cost reads them
+const builtAt = (report) => new Date(report.lastGeneratedAt || report.generatedAt || 0).getTime()
+const updateIsAvailable = (report, recommendation, user = null) => Boolean(report) && (
     report.scoring_version !== SCORING_VERSION
     || report.matching_version !== MATCHING_VERSION
     || (Boolean(recommendation) && recommendation.matching_version !== report.matching_version)
+    || Boolean(user && user.profileChangedAt && new Date(user.profileChangedAt).getTime() > builtAt(report))
 )
 
 
@@ -224,7 +228,7 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
         // A REPORT CHANGES ONLY WHEN THE STUDENT ACTS (owner, Round 11). Built by older scoring or
         // matching than the code now runs — or prose older than the ranking beside it — it is still
         // their report, shown as it is, with an offer: "Update my report". Nothing is queued here.
-        const updateAvailable = updateIsAvailable(report, recommendation)
+        const updateAvailable = updateIsAvailable(report, recommendation, req.user)
 
         return res.status(200).json({
             success: true,
@@ -232,6 +236,8 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
             data: {
                 status: "ready",
                 updateAvailable,
+                // Round 25: why — the student's own details changed, or our matching did
+                updateReason: updateAvailable && req.user.profileChangedAt && new Date(req.user.profileChangedAt).getTime() > builtAt(report) ? "profile" : updateAvailable ? "matching" : null,
                 rebuildFailed: failed,
                 release: report.release,
                 journey: report.journey,
@@ -393,7 +399,7 @@ router.post("/updateMyReport", authMiddleware, requireDiscovery, async (req, res
             Recommendation.findOne({ user: req.user._id }).select("matching_version").lean(),
         ])
 
-        if (!report || req.user.progress.psychometric !== "done" || !updateIsAvailable(report, recommendation)) {
+        if (!report || req.user.progress.psychometric !== "done" || !updateIsAvailable(report, recommendation, req.user)) {
             return res.status(400).json({ success: false, message: "Your report is already up to date" })
         }
 

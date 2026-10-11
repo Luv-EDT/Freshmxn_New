@@ -1,8 +1,8 @@
 import { DEGREE_FAMILIES } from "./journeyOptions"
 
 // The degree questions on Register and Complete Profile (owner, Round 10): college students give the
-// degree they are doing (or joining) and its subject; working students their degree, its subject and
-// the field they work in. Matching uses the degree so the years already put into it are not counted
+// degree they are doing (or joining) and its subject; working students their degree and its subject
+// (what they work as now is asked beside it, in StageFields, since Round 25). Matching uses the degree so the years already put into it are not counted
 // as switching cost for careers it leads to. Same list as Backend/data/degree_options.json.
 function DegreeFields({ journey, detail, onChange }) {
     if (journey !== "college" && journey !== "early_professional") return null
@@ -36,22 +36,6 @@ function DegreeFields({ journey, detail, onChange }) {
                         <option value="">-- Select --</option>
                         {family.subjects.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
                     </select>
-                </div>
-            )}
-
-            {working && (
-                <div>
-                    <label htmlFor="field">What field do you work in?</label>
-                    <br />
-                    <input
-                        id="field"
-                        type="text"
-                        maxLength={80}
-                        value={detail.field || ""}
-                        onChange={(event) => onChange("field", event.target.value)}
-                        placeholder="e.g. IT support, sales, teaching, accounts"
-                        required
-                    />
                 </div>
             )}
         </div>

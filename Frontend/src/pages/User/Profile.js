@@ -10,6 +10,7 @@ import RequestRefundForm from "./RequestRefundForm"
 import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
 import PsychometricScores from "./PsychometricScores"
+import AccountEdit, { EmailChange } from "./AccountEdit"
 import { JOURNEY_OPTIONS } from "../journeyOptions"
 import { PLAN_NAMES as TIER_NAMES } from "../plans"
 
@@ -26,6 +27,7 @@ function Profile() {
     const [aidRequests, setAidRequests] = useState([])
     const [loading, setLoading] = useState(false)
     const [showForm, setShowForm] = useState(false)
+    const [editing, setEditing] = useState(false)
 
     useEffect(() => {
         fetchHistory()
@@ -96,7 +98,7 @@ function Profile() {
         && user.progress?.report !== "locked")
 
     // Account carries the student's access state, so the refund controls belong beside the plan
-    const accountPanel = (
+    const accountPanel = editing ? <AccountEdit user={user} onDone={() => setEditing(false)} /> : (
         <>
             <p>Name: <strong>{user.name}</strong></p>
             <p>
@@ -113,9 +115,13 @@ function Profile() {
                         </>
                     )}
             </p>
-            {user.phone && <p>Phone: <strong>{user.phone}</strong></p>}
+            <EmailChange user={user} />
+            <p>Phone: <strong>{user.phone || "not added yet"}</strong></p>
             <p>Age: <strong>{user.age}</strong></p>
             <p>Stage: <strong>{journeyLabel ? journeyLabel.label : user.journey}</strong></p>
+            {user.role === "student" && (
+                <p><button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>Edit my details</button></p>
+            )}
             <p>Your plan: <strong>{TIER_NAMES[user.currentTier] || TIER_NAMES[0]}</strong></p>
 
             {openRefundRequest && (

@@ -53,7 +53,12 @@ const constants = require("./constants")
 // 2.2.1 (Round 23): the same matching, read reliably — one Voyage call per report, retried when busy,
 // and a report is never written while an activity is unread. Bumped so a report built while Voyage was
 // refusing (0 careers) offers "Update my report".
-const MATCHING_VERSION = "matching@2.2.1"
+// 2.3.0 (Round 25, owner): the switch cost covers everything lost or repeated — a working
+// professional's whole degree when the career needs another, a Class 12 subject through open school
+// as one year (was a two-year redo), and work years only where the experience doesn't carry over
+// (own career, a career the degree leads to, or one on related_careers.json). A second number, the
+// years to get there from now, is shown beside it and never ranks.
+const MATCHING_VERSION = "matching@2.3.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")

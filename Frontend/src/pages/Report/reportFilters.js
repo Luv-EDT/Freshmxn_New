@@ -105,6 +105,8 @@ const attributes = (entry, detail) => {
         years: typeof display.yearsToQualify === "number"
             ? display.yearsToQualify
             : (detail ? detail.yearsToQualify : null),
+        // Round 25: the road from where THIS student stands (matching's yearsToGetThere), when known
+        ahead: typeof entry.yearsToGetThere === "number" ? entry.yearsToGetThere : null,
         early: (display.economics && display.economics.earlyEarningsLpa)
             || (detail && detail.economics ? detail.economics.earlyEarningsLpa : null),
         midpoint: (display.economics && typeof display.economics.midCareerMidpoint === "number"
@@ -226,7 +228,7 @@ export const sortRanked = (ranked, sort, details = {}) => {
     // a missing attribute sinks rather than jumping to the top.
     const by = {
         ai: (left, right) => (facts(left.entry).aiRaw ?? 101) - (facts(right.entry).aiRaw ?? 101) || left.position - right.position,
-        fastest: (left, right) => (facts(left.entry).years ?? 99) - (facts(right.entry).years ?? 99) || left.position - right.position,
+        fastest: (left, right) => (facts(left.entry).ahead ?? facts(left.entry).years ?? 99) - (facts(right.entry).ahead ?? facts(right.entry).years ?? 99) || left.position - right.position,
         pay: (left, right) => (facts(right.entry).midpoint ?? -1) - (facts(left.entry).midpoint ?? -1) || left.position - right.position,
         demand: (left, right) => (
             (DEMAND_ORDER[facts(left.entry).demand] ?? 9) - (DEMAND_ORDER[facts(right.entry).demand] ?? 9)
@@ -261,7 +263,7 @@ export const sortByAiExposure = (ranked) => sortRanked(ranked, "ai")
 export const SWITCH_COST_GROUP_YEARS = 2
 
 export const PRIMARY_SORTS = [
-    { value: "best", label: "Best match", hint: "Our ranking: what you have done and how well it fits you. Careers that would cost you 2 or more years to switch to come last, in a group of their own." },
+    { value: "best", label: "Best match", hint: "Our ranking: what you have done and how well it fits you. Careers that would leave 2 or more years behind come last, in a group of their own." },
     { value: "noCost", label: "Best fit, ignoring switching cost", hint: null },
 ]
 export const SECONDARY_SORTS = SORTS.filter((option) => option.value !== "best")

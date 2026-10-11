@@ -444,6 +444,19 @@ const PICKER_PROFESSIONS = taxonomy.professions
     .map((profession) => ({ id: profession.id, profession: profession.profession, jobRoles: profession.job_roles || [] }))
     .sort((left, right) => left.profession.localeCompare(right.profession))
 
+// Round 25: only the career names, for "What do you work as now?" on Register — before an account
+// exists, so it is public. Names are what the landing page already lists; no other field leaves.
+const CAREER_NAMES = PICKER_PROFESSIONS.map((profession) => ({ id: profession.id, profession: profession.profession }))
+
+router.get("/getNames", async (req, res) => {
+    try {
+        return res.status(200).json({ success: true, message: "Names fetched successfully", data: CAREER_NAMES })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch names", error: error.message })
+    }
+})
+
 router.get("/getOptions", authMiddleware, async (req, res) => {
     try {
         const { INDUSTRIES } = require("../utils/industries")

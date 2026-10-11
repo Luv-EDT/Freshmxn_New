@@ -4,6 +4,7 @@ import Navbar from "../Navbar"
 import JourneyProgress, { journeyStages } from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
 import ParentConsentBanner from "./ParentConsentBanner"
+import CareerHelpBox from "./CareerHelpBox"
 import { PLAN_NAMES as TIER_NAMES, isMentorOnly } from "../plans"
 
 
@@ -103,6 +104,9 @@ function Home() {
                     {!assessmentOpen && !isMentorOnly(user) && (
                         <p><em>The assessment opens once the interest form is finished — it needs what you tell us there to match against.</em></p>
                     )}
+
+                    {/* owner, Round 25: once Career Discovery has delivered its matches, ask how else we can help */}
+                    {user.currentTier === 1 && user.progress?.report === "ready" && <CareerHelpBox />}
 
                     <UpgradeToMentorship user={user} />
                 </div>

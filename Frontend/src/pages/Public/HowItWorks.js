@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
-import usePricing, { formatInr } from "./usePricing"
+import PricingCards from "./PricingCards"
 import { StepIcon } from "./illustrations"
 
 // How it works — its own page since Round 5 (owner, 2026-09-24). It opens on the demand-side
@@ -9,8 +9,6 @@ import { StepIcon } from "./illustrations"
 // moved here VERBATIM from the landing page (landing_page_content_v3.md §3–5, §7); prices still
 // come from the server.
 function HowItWorks() {
-    const { tier1, tier2, tier3, upgrade, names } = usePricing()
-
     return (
         <div>
             <PublicNav />
@@ -94,60 +92,32 @@ function HowItWorks() {
                     </div>
                 </section>
 
-                {/* 3. THE INVITATION-ONLY BONUS */}
+                {/* 3. THE INVITATION-ONLY BONUS — the whole block opens our programs (owner, Round 25) */}
                 <section className="section section-alt">
                     <div className="page">
-                        <div className="invite">
+                        <Link to="/programs" className="invite invite-link">
                             <h2><span aria-hidden="true">🔒</span> We help you get there. (By invitation only)</h2>
                             <p>
                                 The report is the beginning, not the end. For select students, we go further — turning a
                                 recommendation into real momentum.
                             </p>
-                        </div>
+                            <ul className="invite-points">
+                                <li><strong>A getting-started skill kit</strong> — the 20% of skills that get you 80% of the way in (the 80-20 rule).</li>
+                                <li><strong>Internships, jobs and fellowships</strong> — help finding and landing your first ones.</li>
+                                <li><strong>A master's or settling abroad</strong> — help planning the move.</li>
+                            </ul>
+                            <span className="invite-cta">See our programs →</span>
+                        </Link>
                     </div>
                 </section>
 
-                {/* 4. PRICING — amounts from the server */}
+                {/* 4. PRICING — the shared plan cards; amounts from the server */}
                 <section className="section section-alt">
                     <div className="page">
                         <div className="section-head">
                             <h2>Pricing</h2>
                         </div>
-                        <div className="pricing">
-                            <div className="price-card">
-                                <h3>{names[1]}</h3>
-                                <div className="price">{formatInr(tier1)}</div>
-                                <p>
-                                    The complete experience, your detailed profile, and your ranked career matches with a
-                                    readiness guide.
-                                </p>
-                                <Link to="/register" className="btn btn-primary tap">Let's figure out your career →</Link>
-                            </div>
-                            <div className="price-card featured">
-                                <h3>{names[2]}</h3>
-                                <div className="price">{formatInr(tier2)}</div>
-                                <p>
-                                    Everything above plus two sessions with a working professional in your matched field
-                                    (1-hour clarity + 20-min follow-up).
-                                </p>
-                                <Link to="/mentor-waitlist" className="btn btn-primary tap">Join the waitlist →</Link>
-                            </div>
-                            <div className="price-card">
-                                <h3>{names[3]}</h3>
-                                <div className="price">{formatInr(tier3)}</div>
-                                <p>
-                                    Already know the field you want? Skip the assessment — choose a career and job role, and
-                                    we match you with a mentor (the same two sessions).
-                                </p>
-                                <Link to="/mentor-waitlist" className="btn btn-ghost tap">See how it works →</Link>
-                            </div>
-                        </div>
-                        <p className="upgrade-note">
-                            <em>
-                                Did {names[1]} first? Add a mentor for just{" "}
-                                <strong>{formatInr(upgrade)} more</strong> after you see your matches — no paying twice.
-                            </em>
-                        </p>
+                        <PricingCards />
                     </div>
                 </section>
             </main>

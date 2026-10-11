@@ -15,6 +15,7 @@ const SECTION_TITLES = {
     abroad: "Studying abroad",
     working_abroad: "Working abroad",
     degrees: "Degrees that already count",
+    related: "Experience from these careers carries over into yours",
     masters: "Master's degree",
     pay: "Pay",
     demand: "Demand in India",
@@ -116,6 +117,17 @@ function SectionBody({ id, value }) {
                     {value.anyBachelors && <li>Any bachelor's degree</li>}
                     {value.degrees.map((label) => <li key={label}>{label}</li>)}
                 </ul>
+            </>
+        )
+    }
+    if (id === "related") {
+        return (
+            <>
+                <p className="report-small">
+                    Someone who has worked in one of these is not charged switching years for that work when they move
+                    into yours. Tell us if one doesn't belong here, or one is missing.
+                </p>
+                {value.careers.length > 0 ? <ul>{value.careers.map((name) => <li key={name}>{name}</li>)}</ul> : <p>None listed yet.</p>}
             </>
         )
     }

@@ -205,7 +205,7 @@ function SuccessStories() {
                     <div className="page">
                         <h2>Your story is different from all of these. That's the point.</h2>
                         {/* the copy doc links /start, which doesn't exist — sign-up is where the journey starts */}
-                        <Link to="/register" className="btn btn-light tap">Let's figure out your career →</Link>
+                        <Link to="/programs" className="btn btn-light tap">Let's figure out your career →</Link>
                     </div>
                 </section>
             </main>

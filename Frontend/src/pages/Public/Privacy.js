@@ -194,7 +194,7 @@ const SECTIONS = [
                             <tr><td>Voyage AI</td><td>Text matching between your answers and careers</td></tr>
                             <tr><td>MongoDB Atlas</td><td>Our database</td></tr>
                             <tr><td>Render</td><td>Hosting for the website and servers</td></tr>
-                            <tr><td>Cloudflare</td><td>Domain name (DNS) services</td></tr>
+                            <tr><td>Cloudflare</td><td>Domain name (DNS) services, and the spam check on the sign-up form (Turnstile)</td></tr>
                             <tr><td>Resend</td><td>Sending service emails</td></tr>
                             <tr><td>Google</td><td>"Sign in with Google", if you choose it</td></tr>
                             <tr><td>Razorpay</td><td>Card, UPI and bank payments, once online payments are switched on</td></tr>
@@ -222,6 +222,13 @@ const SECTIONS = [
                     study or work outside India, we use that only to show you how each of your careers
                     travels and what those countries ask first, and to offer the study-abroad partner above. It is
                     never used to rank your careers, and it is shared with no one unless you ask to be connected.
+                </p>
+                <p>
+                    <strong>"How else can we help?" — only if you ask.</strong> After you have chosen a career, we
+                    ask whether you'd like help with a starter skill kit, internships and jobs, a master's or
+                    settling abroad, or anything else. If you tick the box and join that waitlist, we use your name,
+                    email, phone and answers to call you, and — only if you ask — to introduce you to a partner
+                    affiliate. You can ask us to remove you at any time.
                 </p>
                 <p>
                     <strong>Voice typing.</strong> If you press the microphone beside an answer, your browser's own
