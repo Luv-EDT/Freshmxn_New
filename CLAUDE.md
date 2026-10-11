@@ -34,15 +34,16 @@ Redis since Round 22). One free Render web service runs the API, the built site 
 ## Data patches (owner, Round 17)
 When the owner gives you an exported data patch, run `node Backend/tools/applyDataPatch.js <file> --write`,
 then also apply its `mentorNotes` (approved mentor wording) by hand. Write each edit into
-ALL-professions.json, or into baseline_rating.json for a quality (one level at most). Then run the
-fixtures and commit. If `profession_embeddings.json` lists `pending_reembed`, run
+ALL-professions.json, into baseline_rating.json for a quality (one level at most), or into
+related_careers.json for an "experience carries over" list (a pair taken out gets a note in `removed`).
+Then run the fixtures and commit. If `profession_embeddings.json` lists `pending_reembed`, run
 `node Backend/tools/verifyEmbeddings.js --write` (needs VOYAGE_API_KEY).
 
 ## Test before every commit
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
-node Backend/matching/fixtures/runFixtures.js    # 66/66
-node Backend/workers/fixtures/runFixtures.js     # 191/191
+node Backend/matching/fixtures/runFixtures.js    # 71/71
+node Backend/workers/fixtures/runFixtures.js     # 197/197
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

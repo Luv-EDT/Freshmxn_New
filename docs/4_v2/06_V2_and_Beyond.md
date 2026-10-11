@@ -14,6 +14,18 @@ are in git history.*
 
 # SOON — before or just after real students
 
+## "How else can we help?" — the products behind the waitlist (Round 25)
+The waitlist is live; the help is a call plus a partner introduction. To build when the waitlist shows
+demand: the getting-started skill kit per career (the 20% of skills that get someone 80% of the way in),
+an internships / jobs / fellowships board or partner feed, and a master's-abroad / settling-abroad
+partner flow. Trigger: enough "toolkit" or "opportunities" rows in admin → Help waitlist to justify one.
+
+## Spam shields, round two (Round 25)
+Turnstile guards only student sign-up. If bots move to the mentor sign-up, the login form or the
+forgot-password form, put the same widget there (`pages/TurnstileBox.js`, `utils/turnstile.js`). Students
+who registered before Round 25 may have no phone number; ask them once (a dashboard prompt) if calls
+start failing.
+
 ## More closing ranks
 Round 12 added the official counselling page for each discipline and seven draft closing-rank rows
 (B.Tech CSE at six IITs and NIT Tiruchirappalli), checked by the study bot from August. Still to add:

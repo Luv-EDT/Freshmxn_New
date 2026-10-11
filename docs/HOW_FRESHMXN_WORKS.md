@@ -47,15 +47,34 @@ same template.
 
 ## 2. Signing up and logging in
 
-1. You type your name, email and password on the **Register** page (`Frontend/src/pages/Register.js`).
-   If you're under 18, you also give your parent's name, mobile and **email**.
+0. **"Let's figure out your career"** opens **Our programs** (`/programs`, Round 25): the three plans side
+   by side. Choosing one opens Register with the plan remembered, and after signing up the payment page
+   has that plan already picked.
+1. You type your name, email, **mobile number** (required since Round 25) and password on the
+   **Register** page (`Frontend/src/pages/Register.js`), and where you are now: school students their
+   class, college and working students their degree and **the year they finished Class 12**, working
+   students also **what they work as now** (picked from our careers, or typed). The same questions are
+   one shared piece (`pages/StageFields.js`), also used by Complete Profile, the profile's Edit and the
+   admin's Edit. If you're under 18, you also give your parent's name, mobile and **email**.
 2. The website sends that to the server: `POST /user/register` (`Backend/Routers/userRouter.js`).
 3. The server **never stores your password as-is**. It scrambles it with *bcrypt* — like putting it
    through a paper shredder that always shreds the same way, so it can check a password later
    without ever keeping the real one.
 4. It saves you in the filing cabinet (the `users` collection) and, for under-18s, saves the
    parent's permission with the time, your IP address and the policy version (`consents`).
-5. It emails you a "verify your email" link (through **Resend**).
+5. It emails you a "verify your email" link (through **Resend**). The link opens a page with a
+   **"Confirm my email"** button — nothing is confirmed until a person presses it, because inbox
+   link-scanners open every link and used to confirm spam sign-ups by themselves (Round 25).
+   **Keeping bots out (Round 25):** the email never prints the name someone typed (bots used the name
+   box to push their own text into our email); a name has to look like a name (`utils/nameRules.js`);
+   a hidden box only a bot fills gets a fake "done" and nothing is saved; one internet address can
+   sign up at most 5 times an hour; and once the owner adds the keys, Cloudflare's **Turnstile**
+   checks "are you a person?" quietly in the background.
+5b. **Changing your details later (Round 25):** Profile → Account information → **Edit my details**
+   (name, mobile, age, stage and its details). Changing the stage or its details means your switching
+   costs change, so the report offers **"Update my report"** ("Your details have changed"). **Changing
+   your email** sends a link to the new address; until you click it you keep logging in with the old
+   one, and when you do, the same account (same everything) moves to the new email.
 6. When you log in, the server gives the website a **token** (a *JWT*) — think of it as a
    **visitor's pass** with your name on it and a signature the office can check. The website keeps
    it in your browser and shows it with every request (`apiCall/axiosInstance.js`), so you don't
@@ -234,10 +253,23 @@ you wait at the desk**. Instead:
         "fits how you think and work" from **0.85** up (it was 0.7, which nearly every career
         cleared);
      3. **16 tiers**: careers you love *and* have achieved something in *and* that fit you come
-        first; within a tier, the careers that fit you best come first. The **switching cost**
-        (years of what you've already done that a career would leave behind) no longer reorders
-        anything — the report uses it to group (below). If your degree already counts for a career
-        (`data/degree_families.json`), it isn't counted as wasted. A career with very different
+        first; within a tier, the careers that fit you best come first. The **switching cost** no
+        longer reorders anything — the report uses it to group (below). Since Round 25 (owner) each
+        career carries **two numbers**:
+        - **Years left behind** (the switch cost): every year that wouldn't count towards it, or
+          that you'd repeat. Degree years the career won't count — your years so far at college,
+          or **your whole degree** if you're working (B.Arch 5, B.Tech 4…) — count 1 each for the
+          first two years and ½ after that. A Class 12 subject you didn't take, added later
+          through open school (NIOS), counts **1 year**. Work years count 0.3 each (at most 3) —
+          **but not** when the experience carries over: into your own career, a career your degree
+          leads to (`data/degree_families.json`), or a close one on the reviewed list
+          `data/related_careers.json` (an architect moving into interior design keeps her years).
+          Your own career is 0.
+        - **Time to get there from now**: the road ahead — 0 for your own career or an open door,
+          a short course after any degree, the full degree for a restart, plus a year for an
+          open-school subject. Shown only; it sorts "Quickest to qualify" but never ranks.
+        If an entrance has closed for you (JEE takes students only 3 years after Class 12), the
+        career stays and says "This route has closed for you" beside the other ways in. A career with very different
         roles inside it (a game developer can build VR worlds or write game logic) is also checked
         role by role, and the report names **the roles that suit you best**;
      4. **careers that join two of yours** (`data/combined_careers.json`, 42 hand-checked ones such as
@@ -270,7 +302,7 @@ running on across them (Round 20). The **filters** fold away behind one **"Filte
 the sort, and the page still says how many careers they hide; the **studying / working abroad** lines are
 the last thing on the page; and **how the list is ordered** is explained on the overview, in a fold beside
 the five fundamentals (Round 24). Under **Best match**, careers that would leave
-**2 or more years** of what you've done behind move into a last fold, "Would cost you 2+ years to switch",
+**2 or more years** behind (the switch cost only) move into a last fold, "Would leave 2+ years behind",
 the least affected first; **Best fit, ignoring switching cost** leaves them in their tiers. Nothing is ever
 added from outside your list. Just the names, with your top 3 coloured, and a
 **Blue-collar** label on hands-on trade careers. The combined careers are at the bottom of this page in the
@@ -403,8 +435,14 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
   their roles as one group). Under **"What do you want from your mentor?"** the page lists what the
   sessions cover — the day-to-day work, drawbacks and perks, the real picture and the mentor's own story,
   how to get in and the skills, and your questions — with a box for anything specific (600 characters)
-  that the admin passes to the mentor, and a tick for help with a master's or settling abroad, which a
-  later version will offer (Round 18, `PUT /mentorWaitlist/saveMyHelp`).
+  that the admin passes to the mentor (Round 18, `PUT /mentorWaitlist/saveMyHelp`).
+- **"How else can we help you?"** (Round 25, owner) — once a career is chosen, a short box asks what
+  else would help: a getting-started skill kit (the 80-20 rule), internships / jobs / fellowships, a
+  master's or settling abroad, or anything else. It is on `/mentorship/choose` for the mentor plans (it
+  replaced the old abroad tick) and on the dashboard for Career Discovery once the report is ready. It is
+  a **waitlist**: with the consent box ticked it is saved (`/careerHelp`, `careerHelpModel`), our team
+  calls the student, and — only if they ask — recommends a partner affiliate or a new product. The admin
+  works through it in the **Help waitlist** tab.
 
 - Mentors sign up on their own page (`/mentor/register`, also linked from the home page's top bar and a
   band near the bottom, for visitors who aren't logged in) and fill a profile. Their profession, job
@@ -480,8 +518,9 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 - **Fixture** — an automatic test with a known right answer (`Backend/*/fixtures/`). If a change
   breaks the maths, a fixture fails before any student sees it.
 - **Deploy** — putting the new version live.
-- **Switching cost** — how much of what you've already done you'd leave behind by changing to a
-  career.
+- **Switching cost** — the years you'd lose or repeat by changing to a career (degree years that
+  wouldn't count, an open-school subject, work that doesn't carry over). Shown beside **time to get
+  there**, the years ahead.
 - **Tier** — a group in the ranking; there are 16, each with a two-or-three-word label, the last five
   under "Build skills first" (Round 24); explained in "How your list is ordered" on the overview.
 - **Coverage** — how much of what a trait needs was actually measured for you. Under 100% it shows as
