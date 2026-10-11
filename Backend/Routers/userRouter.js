@@ -1060,6 +1060,57 @@ router.put("/updateForAdmin/:id", authMiddleware, adminAuthMiddleware, async (re
     }
 })
 
+// ========================
+// Delete An Account For Admin (Round 26, owner)
+// ========================
+
+// The account and everything that belongs to it, in every collection (utils/deleteAccount.js) — a
+// DPDP erasure request, a test account or a bot. The admin types the account's email to confirm, so a
+// mis-click on the wrong row can't do it. Admin accounts are refused.
+router.delete("/deleteForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const student = await User.findById(req.params.id).select("email role").lean()
+
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: "Account not found",
+            })
+        }
+
+        const typed = typeof req.body.confirmEmail === "string" ? req.body.confirmEmail.trim().toLowerCase() : ""
+        if (typed !== student.email) {
+            return res.status(400).json({
+                success: false,
+                message: "Type the account's email exactly to confirm",
+            })
+        }
+
+        const { deleteAccountData } = require("../utils/deleteAccount")
+        const result = await deleteAccountData(student._id)
+
+        if (result.error) {
+            return res.status(400).json({
+                success: false,
+                message: result.error,
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Deleted ${result.email} and everything stored for it`,
+            data: result.counts,
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete the account",
+            error: error.message,
+        })
+    }
+})
+
 module.exports = router
 module.exports.POLICY_VERSION = POLICY_VERSION
 module.exports.registerRateLimiter = registerRateLimiter

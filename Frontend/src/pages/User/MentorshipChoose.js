@@ -8,7 +8,6 @@ import { chooseProfession } from "../../apiCall/mentorWaitlistApi"
 import CareerRolePicker, { pickerComplete, pickerSummary } from "../CareerRolePicker"
 import { hasMentor } from "../plans"
 import { formatDate, useMentorWaitlist, HelpLine, HelpWanted } from "./mentorshipParts"
-import CareerHelpBox from "./CareerHelpBox"
 
 // EVERYTHING THE STUDENT FILLS IN FOR THEIR MENTOR, on its own page (owner, Round 20): the job role
 // (sent once — it starts the 20-business-day clock), what help they want for it, what they want to
@@ -163,11 +162,6 @@ function MentorshipChoose() {
 
                 {waitlist && (
                     <HelpWanted waitlist={waitlist} onSaved={(saved) => setWaitlist((prev) => ({ ...prev, ...saved }))} />
-                )}
-
-                {/* owner, Round 25: asked once a career is chosen; replaces the abroad tick */}
-                {waitlist && waitlist.chosenProfessionId && (
-                    <CareerHelpBox fixedCareer={{ id: waitlist.chosenProfessionId, name: waitlist.chosenProfessionName }} />
                 )}
 
                 <HelpLine />

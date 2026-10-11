@@ -1,6 +1,4 @@
-import { Link } from "react-router-dom"
-import PublicNav from "./PublicNav"
-import PublicFooter from "./PublicFooter"
+import { Navigate } from "react-router-dom"
 
 // From success_stories_page.md. Three stories, one per audience the product serves (school,
 // college, early career). Round 6 (owner): rewritten to be realistic — plausible timelines ("is
@@ -9,8 +7,8 @@ import PublicFooter from "./PublicFooter"
 //
 // Round 10 (owner): lighter, testimonial-style cards — a quote, a name, where they started and what
 // they chose — with the full story folded away under "Read the story". Names Dhvanika, Dhriti and
-// Raghav. ILLUSTRATIVE AND CLEARLY MARKED (owner's choice): the label sits at the top of the list
-// and on every card, because a quote presented as a real student's words would mislead.
+// Raghav. Since Round 26 (owner) they live inside About us, and one plain line under them says the
+// names and details are changed — no per-card label.
 const STORIES = [
     {
         id: "dhvanika",
@@ -36,7 +34,7 @@ const STORIES = [
         quote: "Everyone said JEE, then computer science. I had never even heard of product design — now it's the thing I wake up wanting to do.",
         insight: (
             <>
-                Everyone had told Dhvanika "JEE, then computer science." His profile pointed somewhere else:
+                Everyone had told Dhvanika "JEE, then computer science." Her profile pointed somewhere else:
                 generic software work was a <em>weak</em> fit for how she thinks. Her mix of spatial, creative and
                 hands-on strengths made <strong>design-and-build careers</strong> the natural home — and she had
                 never heard of product design as a career.
@@ -129,7 +127,6 @@ const STORIES = [
 function StoryCard({ story }) {
     return (
         <article className="testimonial">
-            <span className="testimonial-badge">Illustrative</span>
             <blockquote className="testimonial-quote">“{story.quote}”</blockquote>
             <div className="testimonial-who">
                 <span className="testimonial-avatar" aria-hidden="true">{story.name.charAt(0)}</span>
@@ -175,44 +172,30 @@ function StoryCard({ story }) {
     )
 }
 
-function SuccessStories() {
+// the stories as a section of About us (owner, Round 26)
+export function StoriesSection() {
     return (
-        <div>
-            <PublicNav />
-
-            <main>
-                <section className="page-hero">
-                    <div className="page">
-                        <h1>Success stories</h1>
-                        <p>
-                            How a Freshmxn result comes together — from a student's own story and strengths, to a
-                            shortlist, to a choice that fit.
-                        </p>
-                    </div>
-                </section>
-
-                <section className="section">
-                    <p className="page stories-label">
-                        <strong>Illustrative examples.</strong> These are not real students — they are representative
-                        of the journeys we see, with names and details invented.
-                    </p>
-                    <div className="page testimonials">
-                        {STORIES.map((story) => <StoryCard key={story.id} story={story} />)}
-                    </div>
-                </section>
-
-                <section className="section closing">
-                    <div className="page">
-                        <h2>Your story is different from all of these. That's the point.</h2>
-                        {/* the copy doc links /start, which doesn't exist — sign-up is where the journey starts */}
-                        <Link to="/programs" className="btn btn-light tap">Let's figure out your career →</Link>
-                    </div>
-                </section>
-            </main>
-
-            <PublicFooter />
-        </div>
+        <section className="section" id="stories">
+            <div className="page section-head">
+                <h2>Success stories</h2>
+                <p>
+                    How a Freshmxn result comes together — from a student's own story and strengths, to a shortlist,
+                    to a choice that fit.
+                </p>
+            </div>
+            <div className="page testimonials">
+                {STORIES.map((story) => <StoryCard key={story.id} story={story} />)}
+            </div>
+            <p className="page stories-label">
+                Names and details are changed; the stories are representative of real student journeys.
+            </p>
+        </section>
     )
+}
+
+// the old address still works: it opens the stories on About us
+function SuccessStories() {
+    return <Navigate to="/about#stories" replace />
 }
 
 export default SuccessStories

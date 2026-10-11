@@ -78,7 +78,7 @@ the Upstash database can be deleted too.
 | `GOOGLE_CALLBACK_URL` | `https://freshmxn.onrender.com/auth/google/callback` for now — fix in Step 5 | for Google sign-in |
 | `ADMIN_EMAIL` / `ADMIN_NAME` / `ADMIN_PASSWORD` | What you want the admin login to be | for Step 6 |
 
-Already set by `render.yaml` (no action): `PAYMENT_MODE=manual`, `RUN_WORKERS_IN_WEB=true`,
+Already set by `render.yaml` (no action): `RUN_WORKERS_IN_WEB=true`,
 `NODE_VERSION=22`. Render sets
 `PORT` itself — do **not** add it.
 
@@ -205,6 +205,42 @@ The site is now open to search engines (the preview `noindex` tag was removed on
    hides it for about 6 months; meanwhile Google recrawls and finds the new site at those
    addresses (every old path now opens the new landing page).
 5. Expect the results to change over a few days to two weeks — Google's timing, not ours.
+
+## Razorpay live — taking payments online (Round 26)
+
+The code has been ready since Day 1: the paywall's **Pay** button opens Razorpay's checkout, and a plan is
+granted **only** when Razorpay's server tells ours the money arrived (the webhook, signature-checked) —
+never on the browser's word. Refunds from the admin go back through Razorpay automatically. Nothing below
+goes in chat or git: keys are pasted into Render only.
+
+1. **Razorpay Dashboard → switch to Live mode** (top toggle). Account & Settings → **API Keys** →
+   **Generate Key** (Live). Copy the **Key Id** and **Key Secret** (the secret is shown once).
+2. **Account & Settings → Payment capture → Automatic** (so a paid order is captured at once; our
+   webhook listens for `payment.captured`).
+3. **Account & Settings → Webhooks → Add New Webhook:**
+   - URL `https://www.freshmxn.com/payments/payment-verification-webhook`
+   - Secret: make up a long random string (e.g. from a password manager) and keep it for step 4
+   - Active events: **payment.captured** and **refund.processed** → Create
+4. **Render → the service → Environment**:
+   - `RAZORPAY_KEY_ID` = the Key Id (`rzp_live_…`)
+   - `RAZORPAY_KEY_SECRET` = the Key Secret
+   - `RAZORPAY_WEBHOOK_SECRET` = the secret from step 3
+   - `PAYMENT_MODE` = `razorpay` (change it from `manual`)
+   → **Save, rebuild and deploy**.
+5. **Test with real money, then undo it:**
+   - Admin → Coupons → add `LIVETEST`, 99% off, usage limit 1.
+   - Log in as a test student with a confirmed email → Paywall → Career Discovery → apply `LIVETEST`
+     → **Pay ₹25** (or whatever 1% comes to) → pay with UPI.
+   - Within a minute the student's plan unlocks (the webhook). Render's logs show the webhook call;
+     Razorpay → Webhooks shows it delivered with 200.
+   - Admin → Refund Requests (or Students → Downgrade) to refund it; Razorpay shows the refund,
+     and the `refund.processed` webhook marks it refunded.
+6. **If a payment doesn't unlock the plan:** Razorpay → Webhooks → the delivery log. A 400 "Invalid
+   signature" means the secret in Render differs from the one in Razorpay.
+
+Students with a 100% coupon, or a plan you give free, never see Razorpay: a ₹0 price shows **Request
+access** (you grant it), and admin → Students → **Give free access** grants a plan directly. To pause
+online payments, set `PAYMENT_MODE=manual` again.
 
 ## Cloudflare Turnstile — the sign-up spam check (Round 25)
 

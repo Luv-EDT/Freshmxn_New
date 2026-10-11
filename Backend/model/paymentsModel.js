@@ -62,6 +62,13 @@ const paymentSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         },
+        freeByAdmin: {
+            type: Boolean,
+            default: false, // Round 26: a ₹0 plan the admin gave from the Students tab — no money moved, nothing to refund
+        },
+        adminNote: {
+            type: String,   // why it was free, in the admin's words
+        },
         accessRequest: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "AccessRequest",

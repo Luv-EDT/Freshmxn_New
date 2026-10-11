@@ -2,15 +2,15 @@ import { useNavigate, Link } from "react-router-dom"
 import { useSelector } from "react-redux"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
-import MentorRolloverPolicy from "../Public/MentorRolloverPolicy"
 import { hasMentor } from "../plans"
-import { formatDate, Framing, useMentorWaitlist, HelpLine } from "./mentorshipParts"
+import { formatDate, useMentorWaitlist, HelpLine } from "./mentorshipParts"
+import CareerHelpBox from "./CareerHelpBox"
 
 // The mentor waitlist, after payment (mentor_waitlist_page.md). Since Round 20 (owner) this page says
 // WHERE THINGS STAND first — choose your mentor's job role, we're finding your mentor, or your mentor
-// is confirmed — and ends with HOW IT WORKS (contribution and interest, who your mentor will be, how
-// the sessions run, the 20-business-day policy). Everything the student fills in lives on
-// /mentorship/choose (MentorshipChoose.js).
+// is confirmed. Then (Round 26, owner) a "How it works" button to its own page
+// (MentorshipHowItWorks.js) and a folded "How else can we help you?". The choice and the answers for
+// the mentor live on /mentorship/choose (MentorshipChoose.js).
 //
 // For Discovery + Mentor: 1. complete Step 1 → 2. choose ONE JOB ROLE inside one of YOUR OWN MATCHES
 // → 3. we match a mentor within 20 BUSINESS DAYS OF THAT CHOICE (not of payment). The choice is sent
@@ -55,8 +55,6 @@ function Mentorship() {
             </div>
         )
     }
-
-    const matched = Boolean(waitlist && waitlist.matchStatus === "matched")
 
     return (
         <div>
@@ -126,38 +124,16 @@ function Mentorship() {
 
                 <HelpLine />
 
-                {/* 3. HOW IT WORKS — everything else, at the end (owner, Round 20). Once matched, the policy
-                    and the explainer have done their job and only the framing stays (owner, Round 13). */}
-                <section className="mentor-how">
-                    <h3>How it works</h3>
-                    <Framing />
-                    {!matched && (
-                        <>
-                            <h4>Who your mentor will be</h4>
-                            <p>
-                                Your mentor will be a <strong>mid-level professional</strong> — and that's a deliberate
-                                choice, not a compromise. We don't pair you with industry veterans or highly qualified
-                                outliers, because the further someone is from where you're standing, the harder it is to
-                                relate to them.
-                            </p>
-                            <p>
-                                We want someone whose own start is still near enough in time to be useful to you — an
-                                older-sibling kind of relationship rather than a lecture. They will be competent; that
-                                part is a given. What we're really after is relatability, and above all a good
-                                mentor–mentee relationship.
-                            </p>
+                {/* 3. HOW IT WORKS — its own page since Round 26 (owner): the framing, who your mentor will be,
+                    the sessions and the policy (MentorshipHowItWorks.js) */}
+                <p><Link to="/mentorship/how-it-works" className="btn btn-ghost tap mentor-how-link">How it works →</Link></p>
 
-                            <h4>The sessions</h4>
-                            <p>
-                                We connect the two of you here and you have a couple of sessions together. After that you
-                                can book further sessions whenever you want more clarity. In the best case, they simply
-                                become your mentor for the long run.
-                            </p>
-
-                            <MentorRolloverPolicy mentorOnly={Boolean(waitlist && waitlist.mentorOnly)} />
-                        </>
-                    )}
-                </section>
+                {/* 4. HOW ELSE CAN WE HELP — folded, below How it works (owner, Round 26); once a career is
+                    chosen it is asked about that career */}
+                <details className="faq-item mentor-help-fold">
+                    <summary>How else can we help you?</summary>
+                    <CareerHelpBox fixedCareer={waitlist && waitlist.chosenProfessionId ? { id: waitlist.chosenProfessionId, name: waitlist.chosenProfessionName } : null} />
+                </details>
 
                 <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Back to dashboard</button>
             </main>

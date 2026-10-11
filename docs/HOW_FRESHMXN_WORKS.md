@@ -48,7 +48,8 @@ same template.
 ## 2. Signing up and logging in
 
 0. **"Let's figure out your career"** opens **Our programs** (`/programs`, Round 25): the three plans side
-   by side. Choosing one opens Register with the plan remembered, and after signing up the payment page
+   by side, each listing what's inside in a few bullets, with one note under all three on how else we
+   help (Round 26). Choosing one opens Register with the plan remembered, and after signing up the payment page
    has that plan already picked.
 1. You type your name, email, **mobile number** (required since Round 25) and password on the
    **Register** page (`Frontend/src/pages/Register.js`), and where you are now: school students their
@@ -90,10 +91,20 @@ same template.
 
 ## 3. Paying
 
-Right now payments are in **manual mode**: you ask for access (`POST /payments/requestAccess`), our
+Payments can run in **manual mode**: you ask for access (`POST /payments/requestAccess`), our
 team calls you, collects the money, and the admin presses **Grant** in the admin dashboard. That one
 button (`grantAccess` in `paymentsRouter.js`) unlocks your plan. When online payments (Razorpay) are
-switched on, Razorpay will press the same button automatically after you pay — nothing else changes.
+switched on, Razorpay will press the same button automatically after you pay — nothing else changes. Since
+Round 26 the mode is set on Render (`PAYMENT_MODE`), and the steps to go live are in DEPLOY.md.
+
+**Giving a plan for free (Round 26):** the admin presses **Give free access** on the student's row and
+picks a plan. It is recorded as a ₹0 payment marked "free, by admin", so the plan and the history read the
+normal way and there is nothing to refund. A 100% coupon also works: the price shows ₹0 and the student
+presses **Request access** instead of paying.
+
+**Deleting an account (Round 26):** the admin presses **Delete account** and types the email. The account
+and everything stored for it — answers, scores, report, payments, requests, consent, mentor place — are
+removed from every collection (`utils/deleteAccount.js`); admin accounts can't be deleted this way.
 
 Prices are never typed into the website; it always asks the server (`GET /payments/getPricing`), so
 there is only one place to change them (`Backend/utils/plans.js`). There are three **plans**:
@@ -436,9 +447,12 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
   sessions cover — the day-to-day work, drawbacks and perks, the real picture and the mentor's own story,
   how to get in and the skills, and your questions — with a box for anything specific (600 characters)
   that the admin passes to the mentor (Round 18, `PUT /mentorWaitlist/saveMyHelp`).
+- **The mentorship page** (Round 26) shows where things stand, then a **How it works** button that opens
+  its own page (`/mentorship/how-it-works`: who your mentor will be, the sessions, the 20-business-day
+  policy), then a folded **How else can we help you?**.
 - **"How else can we help you?"** (Round 25, owner) — once a career is chosen, a short box asks what
   else would help: a getting-started skill kit (the 80-20 rule), internships / jobs / fellowships, a
-  master's or settling abroad, or anything else. It is on `/mentorship/choose` for the mentor plans (it
+  master's or settling abroad, or anything else. It is folded on `/mentorship` for the mentor plans (it
   replaced the old abroad tick) and on the dashboard for Career Discovery once the report is ready. It is
   a **waitlist**: with the consent box ticked it is saved (`/careerHelp`, `careerHelpModel`), our team
   calls the student, and — only if they ask — recommends a partner affiliate or a new product. The admin

@@ -725,5 +725,28 @@ router.put("/splitActivityFoldForAdmin/:rowId", authMiddleware, adminAuthMiddlew
     }
 })
 
+// ========================
+// Related Careers (Round 26) — read only
+// ========================
+
+// related_careers.json, readable without opening the repo: each career, the careers whose work
+// experience carries over into it, and the pairs taken out by hand with their reasons. Changes are
+// made in the file (or arrive through mentors → Export patch), never here.
+router.get("/getRelatedCareersForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const related = require("../data/related_careers.json")
+        const nameOf = (id) => professionNames.get(id) || id
+        const careers = Object.entries(related.careers)
+            .map(([id, list]) => ({ id, name: nameOf(id), related: list.map(nameOf) }))
+            .sort((left, right) => left.name.localeCompare(right.name))
+        const removed = related.removed.map((row) => ({ a: nameOf(row.a), b: nameOf(row.b), note: row.note }))
+
+        return res.status(200).json({ success: true, message: "Fetched", data: { rule: related.rule, review: related.review, careers, removed } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch", error: error.message })
+    }
+})
+
 module.exports = router
 module.exports.traceReadings = traceReadings

@@ -17,6 +17,7 @@ import EmergingCareersList from "./EmergingCareersList"
 import ActivityMatchesList from "./ActivityMatchesList"
 import StudyAbroadList from "./StudyAbroadList"
 import CareerHelpList from "./CareerHelpList"
+import RelatedCareersList from "./RelatedCareersList"
 import AiUsageCard from "./AiUsageCard"
 import { getAllIssuesForAdmin } from "../../apiCall/assessmentIssuesApi"
 
@@ -106,6 +107,11 @@ function AdminHome() {
             key: "careerHelp",
             label: "Help waitlist",
             children: <CareerHelpList />,
+        },
+        {
+            key: "relatedCareers",
+            label: "Related careers",
+            children: <RelatedCareersList />,
         },
         {
             key: "coupons",

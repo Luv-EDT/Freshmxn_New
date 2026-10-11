@@ -114,3 +114,9 @@ export async function declineFinancialAidForAdmin(id, payload) {
     const response = await axiosInstance.put(`/payments/declineFinancialAidForAdmin/${id}`, payload)
     return response
 }
+
+// Round 26: the admin gives a student a plan for free (a ₹0 payment marked free by admin)
+export async function grantFreeForAdmin(userId, tier, note) {
+    const response = await axiosInstance.put(`/payments/grantFreeForAdmin/${userId}`, { tier, note })
+    return response
+}

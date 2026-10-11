@@ -11,6 +11,10 @@ the one they chose, and where they are now.
 > college, early career), with plausible timelines and careers under their real taxonomy names.
 > They are representative composites, not individual students.
 
+> **Round 26 (owner, 2026-10-11):** the stories moved inside **About us** (`/success-stories` now opens
+> `/about#stories`), and the word "Illustrative" is gone — no badge; one plain line under the cards:
+> *"Names and details are changed; the stories are representative of real student journeys."*
+
 > **Round 10 (owner, 2026-10-01):** the cards are now light testimonials — a quote, the name and
 > where they started, and the career they chose — with the full story folded under "Read the
 > story". Renamed **Dhvanika** (Class 12, PCM — she), **Dhriti** (B.Com 2nd year — she) and

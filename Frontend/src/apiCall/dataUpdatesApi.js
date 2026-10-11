@@ -59,3 +59,9 @@ export async function getActivityReadingsForAdmin(email) {
     const response = await axiosInstance.get("/dataUpdates/getActivityReadingsForAdmin", { params: { email } })
     return response
 }
+
+// Round 26: related_careers.json, read only
+export async function getRelatedCareersForAdmin() {
+    const response = await axiosInstance.get("/dataUpdates/getRelatedCareersForAdmin")
+    return response
+}

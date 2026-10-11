@@ -96,9 +96,10 @@ function CareerHelpBox({ fixedCareer = null }) {
                 </>
             )}
 
-            <label className="choice">
+            {/* the permission, set apart from the options above so it can't be mistaken for one (owner, Round 26) */}
+            <label className="consent-check">
                 <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
-                <span>Freshmxn may contact me about this and, if I ask, introduce me to a partner.</span>
+                <span><span aria-hidden="true">🔒</span> Freshmxn may contact me about this and, if I ask, introduce me to a partner.</span>
             </label>
 
             {saved && <p className="report-small">You're on the waitlist (saved {new Date(saved.consentAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}). Change anything and save again.</p>}

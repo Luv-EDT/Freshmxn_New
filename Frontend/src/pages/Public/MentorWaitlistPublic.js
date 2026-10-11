@@ -137,6 +137,15 @@ function MentorWaitlistPublic() {
                         </div>
                     </div>
                 </section>
+
+                {/* for working professionals (owner, Round 26) */}
+                <section className="section">
+                    <div className="page mentor-invite">
+                        <h2>Are you a professional? Mentor with us</h2>
+                        <p>Give a student the honest picture of your field — two sessions, on your schedule.</p>
+                        <Link to="/mentor/register" className="nav-mentor tap">Are you a professional? Mentor with us →</Link>
+                    </div>
+                </section>
             </main>
 
             <PublicFooter />

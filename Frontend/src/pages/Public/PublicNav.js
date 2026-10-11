@@ -20,12 +20,12 @@ function PublicNav() {
                 <Link to="/"><img src={logo} alt="Freshmxn" height="34" className="brand-logo" /></Link>
                 <div className="nav-links">
                     <Link to="/how-it-works" className="nav-link">How it works</Link>
-                    <Link to="/success-stories" className="nav-link">Success stories</Link>
+                    {/* success stories live inside About us since Round 26 (owner) */}
                     <Link to="/about" className="nav-link">About us</Link>
                     <Link to="/mentor-waitlist" className="nav-link">Mentorship program</Link>
-                    {!isLoggedIn && <Link to="/login" className="nav-link">Log in</Link>}
-                    {/* for working professionals (owner, Rounds 12 and 25) — only to visitors, in its own colour */}
+                    {/* for working professionals (owner, Rounds 12, 25, 26) — only to visitors, each in its own colour */}
                     {!isLoggedIn && <Link to="/mentor/register" className="nav-mentor">Are you a professional? Mentor with us</Link>}
+                    {!isLoggedIn && <Link to="/login" className="nav-login">Log in</Link>}
                 </div>
                 <div className="nav-cta">
                     {isLoggedIn && (
