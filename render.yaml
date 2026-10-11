@@ -26,8 +26,10 @@ services:
         value: "22"
       - key: RUN_WORKERS_IN_WEB
         value: "true"
+      # Round 26: set on the dashboard (manual | razorpay) so going live with Razorpay never needs a
+      # code change, and a Blueprint sync can't flip it back
       - key: PAYMENT_MODE
-        value: manual
+        sync: false
 
       # ── secrets: filled in on the Render dashboard ──
       - key: DB_URI
@@ -49,6 +51,12 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: VOYAGE_API_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false   # Round 26: live keys from Razorpay → API Keys (DEPLOY.md → Razorpay live)
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
       - key: REACT_APP_TURNSTILE_SITE_KEY
         sync: false   # Round 25: Cloudflare Turnstile on sign-up — off while empty (DEPLOY.md)

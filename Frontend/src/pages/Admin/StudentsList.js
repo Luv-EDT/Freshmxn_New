@@ -4,6 +4,7 @@ import dayjs from "dayjs"
 import { getAllUsersForAdmin } from "../../apiCall/userApi"
 import { downgradeUserForAdmin, getPricing } from "../../apiCall/paymentsApi"
 import StudentEditForm from "./StudentEditForm"
+import { GiveFreeAccess, DeleteAccount } from "./StudentAccessActions"
 import { PLAN_NAMES } from "../plans"
 
 function StudentsList({ dataVersion, onDataChanged }) {
@@ -90,6 +91,13 @@ function StudentsList({ dataVersion, onDataChanged }) {
                         </>
                     )}
                     <Button size="small" onClick={() => setEditingStudent(record)}>Edit</Button>
+                    {/* Round 26 (owner): a plan for free, and deleting an account with everything in it */}
+                    {record.role === "student" && record.currentTier !== 2 && (
+                        <>{" "}<GiveFreeAccess student={record} onDone={handleSaved} /></>
+                    )}
+                    {record.role !== "admin" && (
+                        <>{" "}<DeleteAccount student={record} onDone={(id) => { setUsers((prev) => prev.filter((user) => user._id !== id)); onDataChanged() }} /></>
+                    )}
                 </>
             ),
         },

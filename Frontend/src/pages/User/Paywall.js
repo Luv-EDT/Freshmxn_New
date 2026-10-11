@@ -306,7 +306,9 @@ function Paywall() {
                                 <strong>{formatInr(quote.finalAmountInr)}</strong>
                             </p>
 
-                            {pricing.paymentMode === "razorpay" ? (
+                            {/* a 100% coupon makes it ₹0 — nothing to pay online, so it is a request the admin
+                                grants, in either payment mode (Round 26) */}
+                            {pricing.paymentMode === "razorpay" && quote.finalAmountInr > 0 ? (
                                 <button type="button" className="btn btn-primary" onClick={handlePayNow}>Pay {formatInr(quote.finalAmountInr)}</button>
                             ) : (
                                 <button type="button" className="btn btn-primary" onClick={() => setShowForm(true)}>Request access</button>

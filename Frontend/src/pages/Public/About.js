@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
+import { StoriesSection } from "./SuccessStories"
 
 // About us (owner, Round 5, 2026-09-24). The founder's story is the owner's own words, edited only
 // for spelling and flow and kept in the first person — nothing here is invented in their voice.
@@ -73,6 +74,8 @@ function About() {
                         </div>
                     </div>
                 </section>
+
+                <StoriesSection />
 
                 <section className="section closing">
                     <div className="page">

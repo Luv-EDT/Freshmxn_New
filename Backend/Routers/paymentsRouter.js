@@ -172,10 +172,14 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
         paidAt: new Date(),
         grantedByAdmin: options.grantedByAdmin,
         accessRequest: options.accessRequest,
+        freeByAdmin: Boolean(options.freeByAdmin),
+        adminNote: options.adminNote,
     })
 
     // dot-paths so the other progress fields are never overwritten
-    const updatedUser = await User.findByIdAndUpdate(
+    // the password is dropped here, not by a projection inside the update (FerretDB, used for local
+    // tests, can't project in findAndModify; Atlas behaves the same either way)
+    const updated = await User.findByIdAndUpdate(
         userId,
         {
             paid: true,
@@ -183,7 +187,8 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
             "progress.mentor": grants(tier).mentor ? "waitlisted" : "not_applicable",
         },
         { returnDocument: "after" }
-    ).select("-password")
+    ).lean()
+    const { password, ...updatedUser } = updated
 
     if (coupon) {
         await Coupon.updateOne({ code: coupon }, { $inc: { timesUsed: 1 } })
@@ -924,6 +929,64 @@ router.put("/grantForAdmin/:id", express.json(), authMiddleware, adminAuthMiddle
         return res.status(500).json({
             success: false,
             message: "Failed to grant access",
+            error: error.message,
+        })
+    }
+})
+
+
+// ========================
+// Give Free Access For Admin (Round 26, owner)
+// ========================
+
+// The admin gives a student a plan for free, straight from the Students tab — no request, no coupon.
+// It goes through the same grantAccess as every paid plan, so the student's tier, mentor place and
+// payment history all read the usual way: a ₹0 "paid" row marked freeByAdmin, with the admin's note.
+// A ₹0 row has nothing refundable (getRefundableBalance), so it can never pay money back out.
+router.put("/grantFreeForAdmin/:userId", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const tier = Number(req.body.tier)
+        const student = await User.findById(req.params.userId).select("role currentTier paid").lean()
+
+        if (!student || student.role !== "student") {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found",
+            })
+        }
+
+        const problem = purchaseProblem(student.currentTier, tier, student.paid === true)
+        if (problem) {
+            return res.status(400).json({
+                success: false,
+                message: problem,
+            })
+        }
+
+        const grantResult = await grantAccess(student._id, tier, 0, null, {
+            mode: "manual",
+            grantedByAdmin: req.user._id,
+            freeByAdmin: true,
+            adminNote: typeof req.body.note === "string" ? req.body.note.trim().slice(0, 300) : undefined,
+        })
+
+        if (grantResult.error) {
+            return res.status(404).json({
+                success: false,
+                message: grantResult.error,
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `${PLAN_NAMES[tier]} given free`,
+            data: { user: grantResult.user, payment: grantResult.payment },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to give free access",
             error: error.message,
         })
     }

@@ -5094,11 +5094,18 @@ const fixtures = [
             if (!/path="\/mentorship\/choose"/.test(app)) problems.push("no /mentorship/choose route")
             if (/<textarea|type="radio"|CareerRolePicker|<HelpWanted/.test(main)) problems.push("an input is still on /mentorship")
             if (!/<HelpWanted/.test(choose) || !/CareerRolePicker/.test(choose) || !/name="jobRole"/.test(choose)) problems.push("the inputs are not on /mentorship/choose")
+            // Round 26 (owner): "How it works" is a button to its own page, which holds the framing, who your
+            // mentor will be, the sessions and the policy; "How else can we help you?" folds below it
             const standing = main.indexOf("We're finding your mentor")
-            const how = main.indexOf("<h3>How it works</h3>")
-            if (standing < 0 || how < 0 || standing > how) problems.push("the status does not come first, or How it works is missing")
+            const how = main.indexOf('to="/mentorship/how-it-works"')
+            const helpFold = main.lastIndexOf("How else can we help you?")
+            if (standing < 0 || how < 0 || standing > how) problems.push("the status does not come first, or the How it works button is missing")
+            if (helpFold < how || !/<details[^>]*>\s*<summary>How else can we help you\?<\/summary>/.test(main)) problems.push("'How else can we help you?' is not a fold below How it works")
+            const howPage = read("MentorshipHowItWorks.js")
+            if (!/path="\/mentorship\/how-it-works"/.test(app)) problems.push("no /mentorship/how-it-works route")
             ;["<Framing />", "Who your mentor will be", "The sessions", "<MentorRolloverPolicy"].forEach((part) => {
-                if (main.indexOf(part) < how) problems.push(`${part} is not inside How it works at the end`)
+                if (!howPage.includes(part)) problems.push(`${part} is not on the How it works page`)
+                if (main.includes(part)) problems.push(`${part} is still on /mentorship`)
             })
             if (!/Need to change your choice\?/.test(main)) problems.push("the WhatsApp line for changing a choice is gone")
             if (!/You chose <strong>\{chosenText\}/.test(choose)) problems.push("a sent choice is not shown on the choose page")
@@ -5114,7 +5121,7 @@ const fixtures = [
             const root = path.join(__dirname, "..", "..", "..", "Frontend", "src")
             const read = (file) => fs.readFileSync(path.join(root, file), "utf8")
             const problems = []
-            ;["pages/Public/PublicNav.js", "pages/Public/Landing.js", "pages/Public/About.js", "pages/Public/SuccessStories.js"].forEach((file) => {
+            ;["pages/Public/PublicNav.js", "pages/Public/Landing.js", "pages/Public/About.js"].forEach((file) => {
                 const source = read(file)
                 if (/to="\/register"[^>]*>\s*(<span[^>]*>)?Let's figure out your career/.test(source)) problems.push(`${file}: the CTA still opens Register`)
                 if (!/to="\/programs"/.test(source)) problems.push(`${file}: no link to /programs`)
@@ -5126,9 +5133,17 @@ const fixtures = [
             if (!/usePricing/.test(cards) || /₹\s?\d/.test(cards)) problems.push("a price is written in the copy instead of coming from the server")
             if (!/chosenPlan/.test(read("pages/Register.js")) || !/chosenPlan/.test(read("pages/User/Paywall.js"))) problems.push("the chosen plan is not kept through registration")
             const nav = read("pages/Public/PublicNav.js")
-            const order = ["How it works", "Success stories", "About us", "Mentorship program"].map((label) => nav.indexOf(`>${label}<`))
-            if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push("the nav order is not How it works · Success stories · About us · Mentorship program")
+            // Round 26 (owner): success stories moved inside About us; then the mentor invitation and Log in, each
+            // in its own colour, and the main button last
+            const order = ["How it works", "About us", "Mentorship program", "Are you a professional? Mentor with us", "Log in", "Let's figure out your career"].map((label) => nav.indexOf(`>${label}<`))
+            if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push("the nav order is not How it works · About us · Mentorship program · Mentor with us · Log in · Let's figure out your career")
+            if (/>Success stories</.test(nav)) problems.push("Success stories is still in the nav")
             if (!/className="nav-mentor">Are you a professional\? Mentor with us</.test(nav)) problems.push("the mentor invitation is missing or not in its own colour")
+            if (!/className="nav-login">Log in</.test(nav)) problems.push("Log in is not in its own colour")
+            const stories = read("pages/Public/SuccessStories.js")
+            if (/illustrative/i.test(stories) || !/<StoriesSection \/>/.test(read("pages/Public/About.js")) || !/Navigate to="\/about#stories"/.test(stories)) problems.push("the success stories are not inside About us, or still say \"Illustrative\"")
+            if (!/className="pricing-note"/.test(cards) || /price-help/.test(cards) || !/className="price-points"/.test(cards)) problems.push("the programs don't show bullets with one shared note below")
+            if (!/to="\/mentor\/register"/.test(read("pages/Public/MentorWaitlistPublic.js"))) problems.push("the public mentorship page doesn't invite professionals")
             const how = read("pages/Public/HowItWorks.js")
             if (!/to="\/programs" className="invite/.test(how) || !/80-20 rule/.test(how) || !/Internships, jobs and fellowships/.test(how) || !/settling abroad/.test(how)) problems.push("the invitation block lacks its three points or doesn't open /programs")
             return problems.length ? problems.join("; ") : null
@@ -5233,6 +5248,69 @@ const fixtures = [
             if (!/Ask for a retest <strong>only<\/strong> if something technical went wrong/.test(box) || !/Retests to improve a score aren't allowed/.test(box)) problems.push("the issue box does not say retests are for glitches only")
             const css = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "styles", "app.css"), "utf8")
             if (!/\.report-problem summary \{[^}]*background: var\(--amber-tint\)/.test(css)) problems.push("'Something went wrong' is not highlighted")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 26 — deleting an account clears every collection that holds that person, the mentor's opinions, their jobs; an admin is never deleted",
+        run: async () => {
+            const { deleteAccountData, USER_COLLECTIONS } = require("../../utils/deleteAccount")
+            const same = (left, right) => String(left) === String(right)
+            const matches = (row, filter) => Object.entries(filter).every(([key, wanted]) => {
+                if (key === "$or") return wanted.some((part) => matches(row, part))
+                const value = key.split(".").reduce((at, part) => (Array.isArray(at) ? at.map((item) => item && item[part]) : at && at[part]), row)
+                return Array.isArray(value) ? value.some((item) => same(item, wanted)) : same(value, wanted)
+            })
+            const fake = (rows) => ({
+                rows,
+                countDocuments: async (filter) => rows.filter((row) => matches(row, filter)).length,
+                deleteMany: async (filter) => { const before = rows.length; for (let index = rows.length - 1; index >= 0; index--) if (matches(rows[index], filter)) rows.splice(index, 1); return { deletedCount: before - rows.length } },
+                deleteOne: async (filter) => { const index = rows.findIndex((row) => matches(row, filter)); if (index > -1) rows.splice(index, 1); return { deletedCount: index > -1 ? 1 : 0 } },
+                updateMany: async (filter, update) => { const hit = rows.filter((row) => matches(row, filter)); hit.forEach((row) => Object.assign(row, update.$set)); return { modifiedCount: hit.length } },
+                updateOne: async (filter, update) => { const row = rows.find((item) => matches(item, filter)); if (row) Object.assign(row, update.$set); return {} },
+                find: (filter) => ({ lean: async () => rows.filter((row) => matches(row, filter)).map((row) => ({ ...row })) }),
+                findById: (id) => ({ select: () => ({ lean: async () => rows.find((row) => same(row._id, id)) || null }) }),
+            })
+            const student = "u1", other = "u2", admin = "a1"
+            const byUser = Object.fromEntries(USER_COLLECTIONS.map(([name]) => [name, fake([{ user: student }, { user: student }, { user: other }])]))
+            const models = {
+                User: fake([{ _id: student, email: "s@x.com", role: "student" }, { _id: other, email: "o@x.com", role: "student" }, { _id: admin, email: "a@x.com", role: "admin" }]),
+                Job: fake([{ key: student }, { key: null, data: { userId: student } }, { key: other }]),
+                MentorReview: fake([{ mentor: student }, { mentor: other }]),
+                ProfessionSuggestions: fake([{ _id: "p1", mentor_suggestions: [{ mentor: student, note: "x" }, { mentor: other, note: "y" }] }]),
+                MentorWaitlist: fake([{ user: "u9", assignedMentor: student, matchStatus: "matched" }]),
+                byUser,
+            }
+            const problems = []
+            const dry = await deleteAccountData(student, { dryRun: true, models })
+            if (dry.counts.submissions !== 2 || models.User.rows.length !== 3) problems.push("the dry run deleted something or miscounted")
+            const result = await deleteAccountData(student, { models })
+            USER_COLLECTIONS.forEach(([name]) => { if (byUser[name].rows.some((row) => row.user === student)) problems.push(`${name} still holds the person`); if (!byUser[name].rows.some((row) => row.user === other)) problems.push(`${name} lost someone else's row`) })
+            if (models.Job.rows.length !== 1) problems.push("their queued jobs were not removed")
+            if (models.MentorReview.rows.length !== 1 || models.ProfessionSuggestions.rows[0].mentor_suggestions.length !== 1) problems.push("the mentor's reviews or opinions remain")
+            if (models.MentorWaitlist.rows[0].assignedMentor !== null || models.MentorWaitlist.rows[0].matchStatus !== "matching") problems.push("a student matched to them was not sent back to matching")
+            if (models.User.rows.some((row) => row._id === student) || result.counts.users !== 1) problems.push("the user row remains")
+            if (!(await deleteAccountData(admin, { models })).error || !models.User.rows.some((row) => row._id === admin)) problems.push("an admin was deleted")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/userRouter.js"), "utf8")
+            const route = router.split('router.delete("/deleteForAdmin/:id"')[1] || ""
+            if (!/adminAuthMiddleware/.test(route.split("\n")[0]) || !/typed !== student\.email/.test(route)) problems.push("the admin route is not admin-only or doesn't make the admin type the email")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 26 — free access: admin-only, a ₹0 'paid' row marked free by admin through grantAccess; a ₹0 coupon in Razorpay mode is a request, never 'Pay ₹0'",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            const route = router.split('router.put("/grantFreeForAdmin/:userId"')[1] || ""
+            const paywall = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/Paywall.js"), "utf8")
+            const problems = []
+            if (!route) return "there is no grantFreeForAdmin route"
+            if (!/authMiddleware, adminAuthMiddleware/.test(route.split("\n")[0])) problems.push("the route is not admin-only")
+            if (!/grantAccess\(student\._id, tier, 0, null, \{[\s\S]*freeByAdmin: true/.test(route)) problems.push("free access does not go through grantAccess at ₹0, marked free")
+            if (!/purchaseProblem\(/.test(route)) problems.push("a plan the student already has is not refused")
+            if (!/paymentMode === "razorpay" && quote\.finalAmountInr > 0/.test(paywall)) problems.push("a ₹0 quote in Razorpay mode still shows 'Pay'")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

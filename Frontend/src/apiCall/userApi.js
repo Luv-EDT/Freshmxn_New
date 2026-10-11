@@ -128,3 +128,9 @@ export function getGoogleSignInUrl() {
     // compiled to "undefined/auth/google" and Google sign-in silently bounced back to the start
     return `${process.env.REACT_APP_API_URL || ""}/auth/google`
 }
+
+// Round 26: delete an account and everything stored for it — the admin types its email to confirm
+export async function deleteAccountForAdmin(id, confirmEmail) {
+    const response = await axiosInstance.delete(`/user/deleteForAdmin/${id}`, { data: { confirmEmail } })
+    return response
+}

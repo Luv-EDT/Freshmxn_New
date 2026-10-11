@@ -28,7 +28,7 @@ function PublicFooter() {
                         <h3>Explore</h3>
                         <ul className="footer-links">
                             <li><Link to="/how-it-works">How it works</Link></li>
-                            <li><Link to="/success-stories">Success stories</Link></li>
+                            <li><Link to="/about#stories">Success stories</Link></li>
                             <li><Link to="/mentor-waitlist">Mentor waitlist</Link></li>
                             <li><Link to="/mentor/register">Are you a professional? Mentor with us</Link></li>
                             <li><Link to="/about">About us</Link></li>
