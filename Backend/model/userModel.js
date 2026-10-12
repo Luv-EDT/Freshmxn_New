@@ -107,6 +107,12 @@ const userSchema = new mongoose.Schema(
         lastLoginAt: {
             type: Date,
         },
+        // one device at a time (Round 27): each login moves it on, and a pass carrying an older
+        // number is refused — see utils/sessionToken.js
+        sessionVersion: {
+            type: Number,
+            default: 0,
+        },
         paid: {
             type: Boolean,
             default: false,

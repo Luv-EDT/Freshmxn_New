@@ -95,6 +95,10 @@ function Login() {
         <AuthCard>
             <Link to="/" className="brand-link"><img src={logo} alt="Freshmxn" height="40" /></Link>
             <h2>Login</h2>
+            {/* one device at a time (Round 27): the pass on this device was replaced by a newer login */}
+            {searchParams.get("signedOut") === "other_device" && (
+                <p className="report-banner" role="status">You were signed out because your account was opened on another device. Log in again to continue here.</p>
+            )}
 
             <form onSubmit={handleLogin}>
                 <div>

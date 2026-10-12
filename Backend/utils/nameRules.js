@@ -6,12 +6,19 @@
 
 const NAME_CHARS = /^[\p{L}\p{M} .'-]+$/u
 
-// a word that keeps switching case mid-way ("ROfrXy") or runs past 20 letters is not a name
+// a word that keeps switching case mid-way ("ROfrXy") or runs past 20 letters is not a name.
+// Round 27: nor is a Latin word with 6 consonants in a row ("rjxkqwpzmfhv"), or one of 8+ letters
+// that is almost all consonants ("bvhfjdkslaqp") — y counts as a vowel. Real names checked against
+// the NAMES fixture (Krishna, Bhagyashree, Brahmbhatt, Schwarzschild…) all pass.
+const CONSONANT_RUN = /[b-df-hj-np-tv-xz]{6}/i
 const looksRandom = (word) => {
     const letters = word.replace(/[.'-]/g, "")
     if (letters.length > 20) return true
     const afterFirstLower = letters.slice(letters.search(/\p{Ll}/u) + 1)
-    return /\p{Ll}/u.test(letters) && (afterFirstLower.match(/\p{Lu}/gu) || []).length >= 3
+    if (/\p{Ll}/u.test(letters) && (afterFirstLower.match(/\p{Lu}/gu) || []).length >= 3) return true
+    if (!/^[a-z]+$/i.test(letters)) return false
+    const vowels = (letters.match(/[aeiouy]/gi) || []).length
+    return CONSONANT_RUN.test(letters) || (letters.length >= 8 && vowels / letters.length < 0.15)
 }
 
 const checkName = (raw) => {

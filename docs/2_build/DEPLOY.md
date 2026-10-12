@@ -220,7 +220,8 @@ goes in chat or git: keys are pasted into Render only.
 3. **Account & Settings → Webhooks → Add New Webhook:**
    - URL `https://www.freshmxn.com/payments/payment-verification-webhook`
    - Secret: make up a long random string (e.g. from a password manager) and keep it for step 4
-   - Active events: **payment.captured** and **refund.processed** → Create
+   - Active events: **payment.captured**, **refund.processed** and **refund.failed** → Create
+     (refund.failed shows a failed refund in admin with a retry)
 4. **Render → the service → Environment**:
    - `RAZORPAY_KEY_ID` = the Key Id (`rzp_live_…`)
    - `RAZORPAY_KEY_SECRET` = the Key Secret
@@ -236,7 +237,11 @@ goes in chat or git: keys are pasted into Render only.
    - Admin → Refund Requests (or Students → Downgrade) to refund it; Razorpay shows the refund,
      and the `refund.processed` webhook marks it refunded.
 6. **If a payment doesn't unlock the plan:** Razorpay → Webhooks → the delivery log. A 400 "Invalid
-   signature" means the secret in Render differs from the one in Razorpay.
+   signature" means the secret in Render differs from the one in Razorpay. **No delivery at all** usually
+   means payment capture is not Automatic (step 2): the payment sits "authorized", `payment.captured`
+   never fires, and Razorpay refunds it after a few days.
+7. A smaller real test than the 99% coupon: a test student asks for financial aid, and admin approves it
+   at **₹1** — an approved aid replaces the price.
 
 Students with a 100% coupon, or a plan you give free, never see Razorpay: a ₹0 price shows **Request
 access** (you grant it), and admin → Students → **Give free access** grants a plan directly. To pause

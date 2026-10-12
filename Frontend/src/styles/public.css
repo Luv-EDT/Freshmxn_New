@@ -1287,3 +1287,46 @@
     gap: var(--space-3);
     justify-items: center;
 }
+
+/* ── round 27: plan notes, aligned Choose buttons, a one-row nav ───────────────────────────────── */
+
+.price-note {
+    font-size: 0.85rem;
+    color: var(--navy-soft);
+    background: var(--cream);
+    border-radius: var(--radius);
+    padding: var(--space-2) var(--space-3);
+}
+
+.price-actions {
+    margin-top: auto;
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+}
+
+.price-card .price-actions .btn {
+    margin-top: 0;
+}
+
+.price-more-spacer {
+    visibility: hidden;
+}
+
+@media (min-width: 720px) {
+    .public-header .nav-links {
+        flex-wrap: nowrap;
+        gap: 4px 14px;
+        white-space: nowrap;
+    }
+
+    .public-header .nav-cta {
+        white-space: nowrap;
+    }
+}
+
+/* the long CTA wording only where the row has room for it */
+@media (min-width: 720px) and (max-width: 1179px) {
+    .label-long { display: none; }
+    .label-short { display: inline; }
+}

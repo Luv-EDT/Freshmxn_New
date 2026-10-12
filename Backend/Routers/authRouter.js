@@ -1,5 +1,6 @@
 const express = require("express")
 const jwt = require("jsonwebtoken")
+const { startSession } = require("../utils/sessionToken")
 const { OAuth2Client } = require("google-auth-library")
 const User = require("../model/userModel")
 
@@ -114,15 +115,7 @@ router.get("/google/callback", async (req, res) => {
 
         await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() })
 
-        const jwtToken = jwt.sign(
-            {
-                userId: user._id
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "7d"
-            }
-        )
+        const jwtToken = await startSession(user._id)
 
         // the token goes in the URL fragment (#), which browsers never send to any server
         return res.redirect(`${process.env.FRONTEND_URL}/oauth-success#token=${jwtToken}`)
