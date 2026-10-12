@@ -16,6 +16,7 @@ import FollowUpPage from "./pages/Public/FollowUpPage"
 import Profile from "./pages/User/Profile.js"
 import Mentorship from "./pages/User/Mentorship.js"
 import MentorshipChoose from "./pages/User/MentorshipChoose.js"
+import MentorshipReview from "./pages/User/MentorshipReview.js"
 import MentorshipHowItWorks from "./pages/User/MentorshipHowItWorks.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
 import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
@@ -117,6 +118,12 @@ function App() {
                 <Route path="/mentorship/choose" element={
                     <ProtectedRoute>
                         <MentorshipChoose />
+                    </ProtectedRoute>
+                } />
+                {/* Round 28 (owner): the review after a session, and reporting a mentor */}
+                <Route path="/mentorship/review" element={
+                    <ProtectedRoute>
+                        <MentorshipReview />
                     </ProtectedRoute>
                 } />
 

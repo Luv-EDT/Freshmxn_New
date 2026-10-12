@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { Input } from "antd"
 import { registerMentor } from "../../apiCall/mentorsApi"
+import { getGoogleSignInUrl } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 import logo from "../../assets/brand/logo.png"
 import AuthCard from "../AuthCard"
@@ -81,6 +82,13 @@ function MentorRegister() {
                     <input type="text" name="hp_url" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
                 </div>
             </form>
+
+            <p className="auth-divider">or</p>
+
+            {/* Round 28 (owner): the same Google sign-up as students — a new account is made a mentor */}
+            <a href={getGoogleSignInUrl("mentor")}>
+                <button type="button">Sign up with Google</button>
+            </a>
 
             <p>Already a mentor? <Link to="/mentor/login">Log in</Link></p>
             <p>Looking for career guidance instead? <Link to="/register">Student sign-up</Link></p>

@@ -40,7 +40,7 @@ function Profile() {
     useEffect(() => {
         if (!hasMentor(user)) return
         getMyWaitlist().then((response) => setMentorSessions((response?.data?.data && response.data.data.sessions) || [])).catch(() => setMentorSessions([]))
-    }, [user?._id])
+    }, [user])
 
     const fetchHistory = async () => {
         try {

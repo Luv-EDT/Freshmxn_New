@@ -220,8 +220,10 @@ goes in chat or git: keys are pasted into Render only.
 3. **Account & Settings → Webhooks → Add New Webhook:**
    - URL `https://www.freshmxn.com/payments/payment-verification-webhook`
    - Secret: make up a long random string (e.g. from a password manager) and keep it for step 4
-   - Active events: **payment.captured**, **refund.processed** and **refund.failed** → Create
-     (refund.failed shows a failed refund in admin with a retry)
+   - Active events: **payment.captured**, **payment.failed**, **refund.processed** and **refund.failed** → Create
+     (refund.failed shows a failed refund in admin with a retry; payment.failed — Round 28 — records the
+     failed attempt with its payment id and the bank's reason in the student's payment history, and
+     emails them that no money was taken)
 4. **Render → the service → Environment**:
    - `RAZORPAY_KEY_ID` = the Key Id (`rzp_live_…`)
    - `RAZORPAY_KEY_SECRET` = the Key Secret
@@ -235,7 +237,12 @@ goes in chat or git: keys are pasted into Render only.
    - Within a minute the student's plan unlocks (the webhook). Render's logs show the webhook call;
      Razorpay → Webhooks shows it delivered with 200.
    - Admin → Refund Requests (or Students → Downgrade) to refund it; Razorpay shows the refund,
-     and the `refund.processed` webhook marks it refunded.
+     and the `refund.processed` webhook marks it refunded and stores the bank reference (ARN), which
+     the student sees and is emailed (Round 28). Razorpay never reports when the bank actually credits
+     it — "sent to your bank, usually 5–7 working days, quote this ARN" is the most anyone can say.
+   - **WhatsApp for mentor invites (Round 28) needs no setup:** the mentor's invite is emailed on a
+     match, and admin → Mentor Matches → **Send invite on WhatsApp** opens WhatsApp with the same text
+     typed in; you press send. An automatic WhatsApp provider (Meta Cloud API) can come later.
 6. **If a payment doesn't unlock the plan:** Razorpay → Webhooks → the delivery log. A 400 "Invalid
    signature" means the secret in Render differs from the one in Razorpay. **No delivery at all** usually
    means payment capture is not Automatic (step 2): the payment sits "authorized", `payment.captured`

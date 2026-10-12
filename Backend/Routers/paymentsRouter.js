@@ -709,23 +709,6 @@ router.post("/getQuote", express.json(), authMiddleware, async (req, res) => {
     try {
         const { tier, coupon } = req.body
 
-        // Round 28: another mentor session is its own product, priced on the server
-        if (req.body.product === "mentor_session") {
-            const problem = await mentorSessionProblem(req.user)
-            if (problem) return res.status(400).json({ success: false, message: problem })
-            const order = await razorpay.orders.create({
-                amount: MENTOR_SESSION_INR * 100,
-                currency: "INR",
-                receipt: `ms${req.user._id}${Date.now().toString(36)}`,
-                notes: { userId: req.user._id.toString(), tier: String(req.user.currentTier), product: "mentor_session" },
-            })
-            return res.status(201).json({
-                success: true,
-                message: "Order created successfully",
-                data: { order, keyId: process.env.RAZORPAY_KEY_ID, quote: { product: "mentor_session", finalAmountInr: MENTOR_SESSION_INR } },
-            })
-        }
-
         const { quote, error } = await calculateQuote(req.user, tier, coupon)
 
         if (error) {
@@ -867,6 +850,23 @@ router.post("/create-order", express.json(), authMiddleware, async (req, res) =>
             return res.status(403).json({
                 success: false,
                 message: "Please confirm your email first"
+            })
+        }
+
+        // Round 28: another mentor session is its own product, priced on the server
+        if (req.body.product === "mentor_session") {
+            const problem = await mentorSessionProblem(req.user)
+            if (problem) return res.status(400).json({ success: false, message: problem })
+            const order = await razorpay.orders.create({
+                amount: MENTOR_SESSION_INR * 100,
+                currency: "INR",
+                receipt: `ms${req.user._id}${Date.now().toString(36)}`,
+                notes: { userId: req.user._id.toString(), tier: String(req.user.currentTier), product: "mentor_session" },
+            })
+            return res.status(201).json({
+                success: true,
+                message: "Order created successfully",
+                data: { order, keyId: process.env.RAZORPAY_KEY_ID, quote: { product: "mentor_session", finalAmountInr: MENTOR_SESSION_INR } },
             })
         }
 

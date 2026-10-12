@@ -8,6 +8,7 @@ import { chooseProfession } from "../../apiCall/mentorWaitlistApi"
 import CareerRolePicker, { pickerComplete, pickerSummary } from "../CareerRolePicker"
 import { hasMentor } from "../plans"
 import { formatDate, useMentorWaitlist, HelpLine, HelpWanted } from "./mentorshipParts"
+import { ContactChoice, contactReady } from "./ContactChoice"
 
 // EVERYTHING THE STUDENT FILLS IN FOR THEIR MENTOR, on its own page (owner, Round 20): the job role
 // (sent once — it starts the 20-business-day clock), what help they want for it, what they want to
@@ -21,6 +22,7 @@ function MentorshipChoose() {
     const { waitlist, setWaitlist, options, loading } = useMentorWaitlist(isTier2)
     const [selected, setSelected] = useState(null)   // { professionId, profession, jobRole }
     const [ownChoice, setOwnChoice] = useState({})   // Mentor Only: the picker's value
+    const [contact, setContact] = useState({ contactVia: null, consent: false })   // Round 28: how the mentor reaches you
 
     const sendChoice = async () => {
         const payload = waitlist && waitlist.mentorOnly
@@ -28,7 +30,7 @@ function MentorshipChoose() {
                 ? { other: ownChoice.other, industryCode: ownChoice.industryCode || null }
                 : { professionId: ownChoice.professionId, jobRole: ownChoice.jobRole, jobRoleOther: ownChoice.jobRoleOther, industryCode: ownChoice.industryCode || null })
             : { professionId: selected.professionId, jobRole: selected.jobRole }
-        const response = await chooseProfession(payload)
+        const response = await chooseProfession({ ...payload, contactVia: contact.contactVia, contactConsent: contact.consent })
 
         if (!response || response.data.success === false) {
             message.error(response?.data?.message || "Could not send your choice")
@@ -43,6 +45,7 @@ function MentorshipChoose() {
     const confirmChoice = () => {
         const mentorOnly = waitlist && waitlist.mentorOnly
         if (mentorOnly ? !pickerComplete(ownChoice) : !selected) return
+        if (!contactReady(contact)) return
 
         Modal.confirm({
             title: mentorOnly ? `Send "${pickerSummary(ownChoice)}" as your choice?` : `Send "${selected.jobRole}" (${selected.profession}) as your choice?`,
@@ -79,9 +82,10 @@ function MentorshipChoose() {
                             schedule your two sessions within <strong>20 business days</strong> of your choice.
                         </p>
                         <CareerRolePicker value={ownChoice} onChange={setOwnChoice} allowAnyCareer />
+                        <ContactChoice value={contact} onChange={setContact} />
                         <p>
                             {pickerComplete(ownChoice) ? <>Your choice: <strong>{pickerSummary(ownChoice)}</strong>{" "}</> : ""}
-                            <button type="button" className="btn btn-primary" disabled={!pickerComplete(ownChoice)} onClick={confirmChoice}>
+                            <button type="button" className="btn btn-primary" disabled={!pickerComplete(ownChoice) || !contactReady(contact)} onClick={confirmChoice}>
                                 Send my choice
                             </button>
                         </p>
@@ -134,9 +138,10 @@ function MentorshipChoose() {
                                         </details>
                                     ))}
                                 </div>
+                                <ContactChoice value={contact} onChange={setContact} />
                                 <p>
                                     {selected ? <>Your choice: <strong>{selected.jobRole}</strong> ({selected.profession}){" "}</> : "Pick one job role. "}
-                                    <button type="button" className="btn btn-primary" disabled={!selected} onClick={confirmChoice}>
+                                    <button type="button" className="btn btn-primary" disabled={!selected || !contactReady(contact)} onClick={confirmChoice}>
                                         Send my choice
                                     </button>
                                 </p>

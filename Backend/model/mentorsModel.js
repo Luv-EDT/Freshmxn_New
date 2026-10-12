@@ -81,7 +81,7 @@ const mentorSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            default: "pending_review", // pending_review | onboarded — server-owned, only an admin approves
+            default: "pending_review", // pending_review | onboarded | paused (Round 28: after a student's report) — server-owned, only an admin sets it
         },
         approvedByAdmin: {
             type: mongoose.Schema.Types.ObjectId,

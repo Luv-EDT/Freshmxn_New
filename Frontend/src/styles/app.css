@@ -2932,3 +2932,21 @@ hr.story-end {
 .test-result-title { font-weight: 700; color: var(--teal-dark); }
 .test-result-line { font-size: 1.1rem; }
 .test-result-note { font-size: 0.9rem; color: var(--navy-soft); }
+
+/* Round 28: the mentor contact choice, the session review, reporting a mentor, the mentor's students */
+.contact-choice { border: 0; padding: 0; margin: var(--space-4) 0; max-width: 560px; display: grid; gap: 6px; }
+.contact-choice legend { font-weight: 700; margin-bottom: 6px; }
+.contact-card { border-left: 4px solid var(--teal); background: var(--teal-tint); padding: var(--space-3) var(--space-4); border-radius: 12px; max-width: 640px; }
+.session-review fieldset { border: 0; padding: 0; margin: var(--space-4) 0; max-width: 560px; display: grid; gap: 6px; }
+.session-review legend { font-weight: 700; margin-bottom: 6px; }
+.session-review textarea, .report-mentor textarea { width: 100%; max-width: 560px; box-sizing: border-box; }
+.rating-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.rating-dot { min-width: 44px; min-height: 44px; border-radius: 22px; border: 1px solid var(--teal); background: #fff; color: var(--navy); font-weight: 700; cursor: pointer; }
+.rating-dot.is-on { background: var(--teal); color: #fff; }
+.report-mentor { margin: var(--space-4) 0; max-width: 680px; }
+.report-mentor fieldset { border: 0; padding: 0; margin: var(--space-3) 0; display: grid; gap: 6px; }
+.report-mentor legend { font-weight: 700; margin-bottom: 6px; }
+.report-mentor-sent { border-left: 4px solid var(--teal); padding: var(--space-2) var(--space-3); }
+.mentor-students { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
+.mentor-student { border: 1px solid var(--line); border-radius: 12px; padding: var(--space-3) var(--space-4); background: #fff; max-width: 680px; }
+.mentor-student ul { margin: 6px 0 var(--space-3) 18px; }

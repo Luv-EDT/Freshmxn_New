@@ -7,6 +7,8 @@ import { formatDate, useMentorWaitlist, HelpLine } from "./mentorshipParts"
 import CareerHelpBox from "./CareerHelpBox"
 import AnotherSession from "./AnotherSession"
 import { getMyWaitlist } from "../../apiCall/mentorWaitlistApi"
+import { ContactCard } from "./ContactChoice"
+import ReportMentor from "./ReportMentor"
 
 // The mentor waitlist, after payment (mentor_waitlist_page.md). Since Round 20 (owner) this page says
 // WHERE THINGS STAND first — choose your mentor's job role, we're finding your mentor, or your mentor
@@ -66,6 +68,11 @@ function Mentorship() {
             <main className="page">
                 <h2>🤝 Mentorship</h2>
 
+                {/* Round 28: a choice sent before we asked how the mentor may reach them — no match until answered */}
+                {waitlist && ["matching", "matched"].includes(waitlist.matchStatus) && !waitlist.contactConsented && (
+                    <ContactCard onSaved={(saved) => setWaitlist((prev) => ({ ...prev, ...saved }))} />
+                )}
+
                 {/* 1. WHERE THINGS STAND */}
                 {waitlist && waitlist.matchStatus === "awaiting_choice" && (
                     <section>
@@ -103,9 +110,23 @@ function Mentorship() {
                                 {waitlist.mentor.discipline ? `, ${waitlist.mentor.discipline}` : ""}
                             </p>
                         )}
-                        <p>Career: {waitlist.otherRequest || `${waitlist.chosenProfessionName}${waitlist.chosenJobRole ? ` — ${waitlist.chosenJobRole}` : ""}`}. We'll contact you to schedule your two sessions.</p>
+                        <p>Career: {waitlist.otherRequest || `${waitlist.chosenProfessionName}${waitlist.chosenJobRole ? ` — ${waitlist.chosenJobRole}` : ""}`}.</p>
+                        <p>
+                            {waitlist.bookingLinkSent
+                                ? <>Your mentor has sent you their booking link on <strong>{waitlist.contactVia === "email" ? "email" : "WhatsApp"}</strong> — pick a time that suits you.</>
+                                : <>Your mentor will message you on <strong>{waitlist.contactVia === "email" ? "email" : "WhatsApp"}</strong> with a link to book your two sessions.</>}
+                        </p>
+                        <p><Link to="/mentorship/review" className="btn btn-ghost btn-sm tap">After your session: leave a review →</Link></p>
                     </section>
                 )}
+
+                {/* Round 28 (owner): the review opens when we mark the session done */}
+                {waitlist && waitlist.matchStatus === "completed" && (
+                    <p><Link to="/mentorship/review" className="btn btn-ghost btn-sm tap">Review your last session →</Link></p>
+                )}
+
+                {/* Round 28 (owner): report a mentor — block them on WhatsApp, then a refund or another mentor */}
+                {waitlist && waitlist.mentor && ["matched", "completed"].includes(waitlist.matchStatus) && <ReportMentor />}
 
                 {/* Round 28 (owner): a finished session is logged; another can be booked (paid) */}
                 {waitlist && waitlist.matchStatus === "completed" && <AnotherSession waitlist={waitlist} onChanged={reload} />}

@@ -123,10 +123,11 @@ export async function updateStudentForAdmin(id, payload) {
 }
 
 // Google sign-in is a full-page redirect through the backend, not an axios call
-export function getGoogleSignInUrl() {
+export function getGoogleSignInUrl(as) {
     // same-origin in production, where REACT_APP_API_URL is unset — without the fallback the link
-    // compiled to "undefined/auth/google" and Google sign-in silently bounced back to the start
-    return `${process.env.REACT_APP_API_URL || ""}/auth/google`
+    // compiled to "undefined/auth/google" and Google sign-in silently bounced back to the start.
+    // as = "mentor" from the mentor pages (Round 28): a NEW account is then made a mentor
+    return `${process.env.REACT_APP_API_URL || ""}/auth/google${as === "mentor" ? "?as=mentor" : ""}`
 }
 
 // Round 26: delete an account and everything stored for it — the admin types its email to confirm

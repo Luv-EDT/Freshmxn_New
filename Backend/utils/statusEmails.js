@@ -1,4 +1,5 @@
 const { sendEmail, escapeHtml } = require("./mailer")
+const { PRIVACY_RULES } = require("./mentorInvite")
 
 // EVERY STATUS A STUDENT IS WAITING ON GETS AN EMAIL (owner, Round 28): payments, refunds, financial
 // aid and retake requests. One place for the wording, so it reads the same everywhere. "Hi," with no
@@ -73,6 +74,27 @@ const TEMPLATES = {
         subject: "Your report is being prepared again",
         body: `<p>We've fixed what stopped your report and it is being prepared again. It is usually ready within a few minutes: <a href="${site()}/report">${site()}/report</a></p>`,
     }),
+    // ── mentor sessions (Round 28) ──
+    mentorInvite: ({ firstName, profession, jobRole, focus, helpWanted }) => ({
+        subject: "You've received a mentor invite",
+        body: `<p>You've been matched with a student who would like your help.</p>${line("Student", firstName)}${line("Career", profession)}${line("Job role", jobRole)}${line("Help with", focus)}${line("They'd like to know", helpWanted)}<p>Please open your mentor page, accept our privacy rules, and you'll see how to reach the student: <a href="${site()}/mentor">${site()}/mentor</a></p><p>Then send them your Calendly (booking) link and press "I've sent my booking link".</p><p><strong>Privacy rules</strong></p><ul>${PRIVACY_RULES.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>`,
+    }),
+    mentorConfirmed: ({ mentorName, contactVia }) => ({
+        subject: "Your mentor is confirmed",
+        body: `<p>Your mentor${mentorName ? `, <strong>${escapeHtml(mentorName)}</strong>,` : ""} is confirmed. They'll message you on <strong>${contactVia === "email" ? "email" : "WhatsApp"}</strong> with a link to book your session.</p><p>After your session, leave a short review here — it opens once we've marked the session done: <a href="${site()}/mentorship/review">${site()}/mentorship/review</a></p><p>If anything about your mentor feels wrong, use "Report a problem with my mentor" on <a href="${site()}/mentorship">${site()}/mentorship</a>.</p>`,
+    }),
+    reviewOpen: () => ({
+        subject: "How was your mentor session?",
+        body: `<p>Your mentor session is marked done. Tell us how it went — a rating out of 10 and two quick questions: <a href="${site()}/mentorship/review">${site()}/mentorship/review</a></p>`,
+    }),
+    mentorReportReceived: () => ({
+        subject: "We've received your report about your mentor",
+        body: `<p>Thank you for telling us. <strong>Please block your mentor's number on WhatsApp now</strong> if you haven't already.</p><p>We'll stop them contacting you and come back to you within 2 working days with what you chose — your money back, or another mentor.</p>`,
+    }),
+    mentorReportResolved: ({ outcome, note }) => ({
+        subject: "About your report",
+        body: `<p>${outcome === "new_mentor" ? "We're finding you a different mentor — the one you reported will not be matched with you again." : outcome === "refund" ? "We're processing your refund. You'll get a separate email when it is on its way." : "We've looked into your report."}</p>${line("Note from our team", note)}`,
+    }),
     retakeDeclined: ({ testName, reason }) => ({
         subject: `About your request for ${testName}`,
         body: `<p>We looked into what you told us about <strong>${escapeHtml(testName)}</strong> and couldn't reopen it.</p>${line("Reason", reason)}<p>If something still seems wrong, reply to this email.</p>`,
@@ -80,13 +102,13 @@ const TEMPLATES = {
 }
 
 // only money emails point to the payment history
-const NOT_MONEY = ["retakeGranted", "retakeDeclined", "reportRerun"]
+const MONEY = ["paymentSuccess", "planGranted", "paymentFailed", "refundStarted", "refundCompleted", "refundFailed", "refundDeclined", "aidApproved", "aidDeclined", "aidCancelled"]
 
 const notifyStudent = (user, kind, details = {}) => {
     const template = TEMPLATES[kind]
     if (!template) return Promise.resolve({ sent: false, error: `unknown email ${kind}` })
     const { subject, body } = template(details)
-    return send(user, subject, body, !NOT_MONEY.includes(kind))
+    return send(user, subject, body, MONEY.includes(kind))
 }
 
 module.exports = { notifyStudent, TEMPLATES }

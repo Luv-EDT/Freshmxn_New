@@ -4,16 +4,19 @@ import { message } from "antd"
 import { getMyMentorProfile, onboardMentor, updateMyMentorProfile } from "../../apiCall/mentorsApi"
 import MentorOnboarding from "./MentorOnboarding"
 import MentorReviewSheet from "./MentorReviewSheet"
+import MentorStudents from "./MentorStudents"
 import LogoutButton from "../LogoutButton"
 import logo from "../../assets/brand/logo.png"
 
 const STATUS_TEXT = {
     pending_review: "Thanks — our team is reviewing your profile. We'll be in touch before we match you with a student.",
     onboarded: "You're approved. We'll contact you when a student in your field is matched with you.",
+    paused: "Your profile is paused, so you won't be matched with new students for now. Our team will be in touch.",
 }
 
 // The mentor's home: the onboarding form until it's submitted, then their status and a read-only
-// summary they can edit. V1 has no booking or sessions here — matching is done by our team.
+// summary they can edit. Matching is done by our team; the students matched with them, and the steps
+// for each (privacy, then the booking link), show at the top (Round 28).
 function MentorHome() {
     const { user } = useSelector((state) => state.user)
     const [profile, setProfile] = useState(null)
@@ -84,8 +87,11 @@ function MentorHome() {
 
                 {profile && !editing && (
                     <>
+                        {/* Round 28 (owner): each match is an invite — privacy first, then the booking link */}
+                        <MentorStudents />
+
                         <h2>Your mentor profile</h2>
-                        <p><strong>Status:</strong> {profile.status === "onboarded" ? "Approved" : "Under review"}</p>
+                        <p><strong>Status:</strong> {profile.status === "onboarded" ? "Approved" : profile.status === "paused" ? "Paused" : "Under review"}</p>
                         <p>{STATUS_TEXT[profile.status]}</p>
 
                         <ul>

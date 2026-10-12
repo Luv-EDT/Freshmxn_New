@@ -104,6 +104,25 @@ const mentorWaitlistSchema = new mongoose.Schema(
             type: Boolean,     // Round 28: this round is the same career and role, with a DIFFERENT mentor
             default: false,
         },
+        // HOW THE MENTOR REACHES THE STUDENT (owner, Round 28). The student picks WhatsApp or email and
+        // agrees that we share their first name and that one contact with the mentor — no match
+        // without it. The mentor sees the contact only after accepting our privacy rules.
+        contactVia: {
+            type: String,      // whatsapp | email
+            default: null,
+        },
+        contactConsentAt: {
+            type: Date,
+            default: null,
+        },
+        excludedMentors: {
+            type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],   // never offered to this student again: a reported mentor, or last time's for "same field, different mentor"
+            default: [],
+        },
+        // the current match, step by step (cleared on every new match)
+        whatsappInviteAt: { type: Date, default: null },          // the admin sent the invite on WhatsApp
+        mentorPrivacyAcceptedAt: { type: Date, default: null },   // the mentor accepted the privacy rules
+        bookingLinkSentAt: { type: Date, default: null },         // the mentor sent their booking (Calendly) link
     },
     {
         timestamps: true,

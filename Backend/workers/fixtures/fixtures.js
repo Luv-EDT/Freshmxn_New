@@ -5563,6 +5563,9 @@ const fixtures = [
             if (!/status\(402\)/.test(another.slice(0, 2500))) problems.push("another session starts without a credit")
             if (!/const MENTOR_SESSION_INR = TIER_PRICE_INR\[3\]/.test(payments)) problems.push("the session price is not the Mentor Only price")
             if (!/action: "mentor_session"/.test(payments) || !/extraSessionsPaid: 1/.test(payments)) problems.push("a paid session is not recorded as a credit")
+            const createOrder = (payments.split('router.post("/create-order"')[1] || "").split("router.")[0]
+            const quote = (payments.split('router.post("/getQuote"')[1] || "").split("router.")[0]
+            if (!/req\.body\.product === "mentor_session"/.test(createOrder) || /orders\.create/.test(quote)) problems.push("another session is not ordered through create-order (or a quote opens a Razorpay order)")
             const reset = waitlist.split('router.put("/resetChoiceForAdmin/:id"')[1] || ""
             if (/sessions: \[\]|\$unset[^}]*sessions/.test(reset.slice(0, 3000))) problems.push("Reset choice wipes the session history")
             return problems.length ? problems.join("; ") : null
@@ -5588,6 +5591,126 @@ const fixtures = [
             const problems = []
             if (!/if \(event\.repeat\) return/.test(sart)) problems.push("key auto-repeat counts as presses")
             if (!/records\.filter\(\(record\) => !record\.dropped\)/.test(sart)) problems.push("dropped trials are still scored")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — mentors can sign up with Google: the mentor role comes only from the signed state and only for a NEW account; an existing account keeps its role",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../..", file), "utf8")
+            const auth = read("Backend/Routers/authRouter.js")
+            const problems = []
+            if (!/const as = req\.query\.as === "mentor" \? "mentor" : "student"/.test(auth) || !/jwt\.sign\(\{ purpose: "google_oauth", as \}/.test(auth)) problems.push("the mentor wish is not carried in the signed state")
+            if (!/role: decodedState\.as === "mentor" \? "mentor" : "student"/.test(auth)) problems.push("a new Google account does not take its role from the signed state")
+            const linking = auth.split("existingUser._id,")[1] || ""
+            if (/role/.test(linking.slice(0, 120))) problems.push("linking an existing account can change its role")
+            if (!read("Frontend/src/pages/Mentor/MentorRegister.js").includes('getGoogleSignInUrl("mentor")')) problems.push("the mentor sign-up page has no Google button")
+            if (!/userData\.role === "mentor"\) \{ navigate\("\/mentor"\)/.test(read("Frontend/src/pages/OAuthSuccess.js"))) problems.push("a mentor signing in with Google is not sent to /mentor")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — a mentor invite: no match without the student's contact consent, the invite carries no student contact, the mentor sees it only after accepting privacy, and a kept-away mentor can't be matched",
+        run: () => {
+            const { inviteFacts, whatsappText, whatsappLink, PRIVACY_RULES } = require("../../utils/mentorInvite")
+            const { TEMPLATES } = require("../../utils/statusEmails")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const problems = []
+            const student = { name: "Riya Sharma", email: "riya@example.com", phone: "9876543210" }
+            const facts = inviteFacts({ chosenProfessionName: "Architect", chosenJobRole: "Urban designer", helpFocus: "career", helpWanted: "What is a day like?" }, student)
+            if (facts.firstName !== "Riya" || Object.keys(facts).sort().join() !== "firstName,focus,helpWanted,jobRole,profession") problems.push(`the invite carries ${JSON.stringify(facts)}`)
+            const text = whatsappText(facts) + TEMPLATES.mentorInvite(facts).body
+            if (/riya@example\.com|9876543210|Sharma/.test(text)) problems.push("the invite carries the student's contact or full name")
+            if (!PRIVACY_RULES.every((rule) => whatsappText(facts).includes(rule))) problems.push("the WhatsApp invite lacks the privacy rules")
+            if (!/^https:\/\/wa\.me\/919812345678\?text=/.test(whatsappLink("+91 98123 45678", facts)) || whatsappLink("", facts) !== null) problems.push("the WhatsApp link is not built from the mentor's number")
+            const waitlist = read("Routers/mentorWaitlistRouter.js")
+            const choose = waitlist.split('router.post("/chooseProfession"')[1] || ""
+            if (!/const contact = contactChoice\(req\.body\)\s*\n\s*if \(!contact\)/.test(choose)) problems.push("a choice can be sent without the contact consent")
+            const match = waitlist.split('router.put("/matchForAdmin/:id"')[1] || ""
+            if (!/if \(!row\.contactConsentAt\)/.test(match)) problems.push("a student can be matched without contact consent")
+            if (!/excludedMentors/.test(match.slice(0, 3000)) || !/status: "onboarded"/.test(match.slice(0, 3000))) problems.push("a kept-away or paused mentor can be matched")
+            if (!/"mentorInvite"/.test(match) || !/"mentorConfirmed"/.test(match)) problems.push("the match does not email the mentor and the student")
+            const sessions = read("Routers/mentorSessionsRouter.js")
+            if (!/const showContact = current && Boolean\(row\.mentorPrivacyAcceptedAt\)/.test(sessions)) problems.push("the mentor sees the contact before accepting privacy")
+            if (!/if \(!row\.mentorPrivacyAcceptedAt\)/.test(sessions.split('router.put("/markBookingLinkSent/:id"')[1] || "")) problems.push("a booking link can be marked sent before privacy is accepted")
+            if (!/excludedMentors \|\| \[\]\)\.some/.test(fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/MentorMatchesList.js"), "utf8"))) problems.push("the admin picker offers a kept-away mentor")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — the session review opens only after the admin marks the session done, one per session, a rating from 1 to 10; a report needs a reason and a choice, and \"another mentor\" keeps that mentor away",
+        run: async () => {
+            const SessionReview = require("../../model/sessionReviewsModel")
+            const { reviewState } = require("../../Routers/mentorSessionsRouter")
+            const problems = []
+            const reviewed = new Set()
+            const original = SessionReview.exists
+            SessionReview.exists = async ({ sessionIndex }) => (reviewed.has(sessionIndex) ? { _id: 1 } : null)
+            try {
+                if ((await reviewState({ _id: "w", matchStatus: "matched", sessions: [] })).state !== "waiting") problems.push("a matched student can review before the session is marked done")
+                const open = await reviewState({ _id: "w", matchStatus: "completed", sessions: [{ profession: "Architect", jobRole: "Urban designer", mentorName: "M" }] })
+                if (open.state !== "open" || open.sessionIndex !== 0) problems.push("a done session does not open the review")
+                reviewed.add(0)
+                if ((await reviewState({ _id: "w", matchStatus: "completed", sessions: [{}] })).state !== "done") problems.push("a reviewed session opens again")
+                if ((await reviewState({ _id: "w", matchStatus: "matched", sessions: [{}] })).state !== "waiting") problems.push("a new match with the last session reviewed is not waiting")
+            } finally {
+                SessionReview.exists = original
+            }
+            const model = fs.readFileSync(path.join(__dirname, "../../model/sessionReviewsModel.js"), "utf8")
+            if (!/rating: \{ type: Number, min: 1, max: 10/.test(model) || !/\{ user: 1, waitlist: 1, sessionIndex: 1 \}, \{ unique: true \}/.test(model)) problems.push("the rating is not 1-10 or a session can be reviewed twice")
+            const sessions = fs.readFileSync(path.join(__dirname, "../../Routers/mentorSessionsRouter.js"), "utf8")
+            const report = sessions.split('router.post("/reportMentor"')[1] || ""
+            if (!/MentorReport\.REASONS\.includes\(reason\)/.test(report) || !/\["refund", "new_mentor"\]\.includes\(wants\)/.test(report)) problems.push("a report goes in without a reason or a choice")
+            const resolve = sessions.split('router.put("/resolveReportForAdmin/:id"')[1] || ""
+            if (!/\$addToSet: \{ excludedMentors: report\.mentor \}/.test(resolve)) problems.push("\"another mentor\" can match the same mentor again")
+            if (!/status: "paused"/.test(resolve)) problems.push("a mentor can't be paused")
+            const waitlist = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
+            if (!/"reviewOpen"/.test(waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || "")) problems.push("the student is not asked for a review when the session is done")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — deleting an account also clears its session reviews and mentor reports, and a deleted mentor's name is replaced in other people's records",
+        run: async () => {
+            const { deleteAccountData, USER_COLLECTIONS } = require("../../utils/deleteAccount")
+            const problems = []
+            const names = USER_COLLECTIONS.map(([name]) => name)
+            ;["sessionReviews", "mentorReports"].forEach((name) => { if (!names.includes(name)) problems.push(`${name} is not cleared`) })
+            const same = (left, right) => String(left) === String(right)
+            const matches = (row, filter) => Object.entries(filter).every(([key, wanted]) => {
+                const value = key.split(".").reduce((at, part) => (Array.isArray(at) ? at.map((item) => item && item[part]) : at && at[part]), row)
+                return Array.isArray(value) ? value.some((item) => same(item, wanted)) : same(value, wanted)
+            })
+            const fake = (rows) => ({
+                rows,
+                countDocuments: async (filter) => rows.filter((row) => matches(row, filter)).length,
+                deleteMany: async (filter) => { const before = rows.length; for (let index = rows.length - 1; index >= 0; index--) if (matches(rows[index], filter)) rows.splice(index, 1); return { deletedCount: before - rows.length } },
+                deleteOne: async (filter) => { const index = rows.findIndex((row) => matches(row, filter)); if (index > -1) rows.splice(index, 1); return { deletedCount: index > -1 ? 1 : 0 } },
+                updateMany: async (filter, update) => { const hit = rows.filter((row) => matches(row, filter)); hit.forEach((row) => Object.assign(row, update.$set)); return { modifiedCount: hit.length } },
+                updateOne: async (filter, update) => { const row = rows.find((item) => matches(item, filter)); if (row) Object.assign(row, update.$set); return {} },
+                find: (filter) => ({ lean: async () => rows.filter((row) => matches(row, filter)).map((row) => ({ ...row })) }),
+                findById: (id) => ({ select: () => ({ lean: async () => rows.find((row) => same(row._id, id)) || null }) }),
+            })
+            const mentor = "m1"
+            const history = fake([{ _id: "w1", user: "s1", sessions: [{ mentor, mentorName: "Asha" }, { mentor: "m2", mentorName: "Ravi" }] }])
+            const reviews = fake([{ _id: "r1", user: "s1", mentor, mentorName: "Asha" }])
+            const models = {
+                User: fake([{ _id: mentor, email: "m@x.com", role: "mentor" }]),
+                Job: fake([]),
+                MentorReview: fake([]),
+                ProfessionSuggestions: fake([]),
+                MentorWaitlist: fake([]),
+                named: [[history, "sessions"], [reviews, null]],
+                byUser: Object.fromEntries(USER_COLLECTIONS.map(([name]) => [name, fake([])])),
+            }
+            await deleteAccountData(mentor, { models })
+            const sessions = history.rows[0].sessions
+            if (sessions[0].mentorName !== "Removed mentor" || sessions[1].mentorName !== "Ravi") problems.push("the session history still names the deleted mentor, or renamed someone else")
+            if (reviews.rows[0].mentorName !== "Removed mentor" || reviews.rows[0].user !== "s1") problems.push("a student's review still names the deleted mentor, or was lost")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

@@ -209,7 +209,10 @@ const SECTIONS = [
                 <p>
                     We also share data where the law requires it — for example, with a court or government
                     authority acting lawfully. When we match you with a mentor, we share only what they need to
-                    prepare, such as your name and the career you chose.
+                    prepare: your first name, the career and role you chose and what you'd like help with. Your
+                    WhatsApp number <em>or</em> email — whichever you choose — is shared only with your agreement,
+                    and only after the mentor has agreed to keep it private and use it just to arrange your sessions.
+                    Reviews you leave after a session, and any report about a mentor, are seen by our team only.
                 </p>
                 <p>
                     <strong>Study-abroad partner — only if you ask.</strong> If studying abroad helps for one of your

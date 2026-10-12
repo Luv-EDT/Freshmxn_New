@@ -65,3 +65,13 @@ export async function completeSessionForAdmin(studentId, payload) {
     const response = await axiosInstance.put(`/mentorWaitlist/completeSessionForAdmin/${studentId}`, payload || {})
     return response
 }
+
+// Round 28: how the mentor may reach the student — WhatsApp or email, with their consent
+export async function saveMyContact(payload) {
+    try {
+        const response = await axiosInstance.put("/mentorWaitlist/saveMyContact", payload)
+        return response
+    } catch (error) {
+        return error.response
+    }
+}
