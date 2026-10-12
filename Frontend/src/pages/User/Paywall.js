@@ -142,7 +142,7 @@ function Paywall() {
                 amount: order.amount,
                 currency: "INR",
                 name: "Freshmxn",
-                description: `Tier ${quote.tier}`,
+                description: planName(quote.tier),     // the plan's own name, never "Tier N" (Round 27)
                 prefill: { name: user?.name, email: user?.email },
                 // this callback is NOT trusted — access is only granted by the verified webhook.
                 // we just wait for the webhook to land.

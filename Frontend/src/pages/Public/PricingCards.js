@@ -6,15 +6,16 @@ import usePricing, { formatInr } from "./usePricing"
 // rides along as ?plan=N and the paywall preselects it); someone already logged in goes to the paywall.
 export const HELP_NOTE = "In every program we also ask how else we can help your career — a starter skill kit, internships and jobs, a master's or settling abroad. Join the waitlist and we help through partner affiliates or new products."
 
-// what each plan holds, as short bullets (owner, Round 26)
+// what each plan holds, as short bullets; the promise about matching is a note under them, not a
+// bullet (owner, Rounds 26–27)
 const PLANS = [
     {
         tier: 1,
         points: [
-            "Your virtual career-counselling journey — an interest form about your story, activities and goals",
-            "A research-backed psychometric assessment of 31 factors",
-            "Your ranked matches from 1,000+ careers and job roles, with the road, money, exams and where to study for each",
-            "Compare careers side by side, and a profile of your strengths",
+            "Virtual career counselling — your story, activities and goals",
+            "A psychometric assessment of 31 research-backed factors",
+            "Ranked matches from 1,000+ careers and job roles",
+            "Compare careers and see your strengths",
         ],
     },
     {
@@ -22,20 +23,19 @@ const PLANS = [
         featured: true,
         points: [
             "Everything in Career Discovery",
-            "A mentor in the job role you choose from your matches",
-            "A 1-hour clarity session and a 20-minute follow-up",
-            "Matched within 20 business days, or move back to Career Discovery and get the difference back",
+            "A mentor in a job role from your matches",
+            "1-hour clarity session + 20-min follow-up",
         ],
+        note: "Matched within 20 business days — or move back to Career Discovery and get the difference back.",
         more: true,
     },
     {
         tier: 3,
         points: [
-            "Skip the assessment — you already know the field",
-            "Pick any career and job role, or describe your own",
+            "Skip the assessment — pick any career and job role, or describe your own",
             "The same two mentor sessions",
-            "A full refund if we can't match you",
         ],
+        note: "A full refund if we can't match you.",
         more: true,
     },
 ]
@@ -56,8 +56,15 @@ function PricingCards() {
                         <ul className="price-points">
                             {plan.points.map((point) => <li key={point}>{point}</li>)}
                         </ul>
-                        <Link to={startFor(plan.tier)} className="btn btn-primary tap">Choose {names[plan.tier]} →</Link>
-                        {plan.more && <Link to="/mentor-waitlist" className="price-more">How mentoring works</Link>}
+                        {plan.note && <p className="price-note"><span aria-hidden="true">ⓘ </span>{plan.note}</p>}
+                        {/* the button and the link sit together at the bottom, and Career Discovery keeps an
+                            empty line where the link would be, so all three Choose buttons line up (Round 27) */}
+                        <div className="price-actions">
+                            <Link to={startFor(plan.tier)} className="btn btn-primary tap">Choose {names[plan.tier]} →</Link>
+                            {plan.more
+                                ? <Link to="/mentor-waitlist" className="price-more">How mentoring works</Link>
+                                : <span className="price-more price-more-spacer" aria-hidden="true">&nbsp;</span>}
+                        </div>
                     </div>
                 ))}
             </div>

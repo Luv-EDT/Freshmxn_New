@@ -1,9 +1,11 @@
 const jwt = require("jsonwebtoken")
 const User = require("../model/userModel")
+const { isCurrentSession, OTHER_DEVICE_MESSAGE } = require("../utils/sessionToken")
 
 // 1st check: the token is signed with JWT_SECRET
 // 2nd check: the token is not expired
 // then load the latest user (without the password) onto req.user
+// last check (Round 27): the pass is from this user's latest login, not one replaced by another device
 
 const authMiddleware = async (req, res, next) => {
     try {
@@ -30,6 +32,13 @@ const authMiddleware = async (req, res, next) => {
             return res.status(401).json({
                 success: false,
                 message: "User not found"
+            })
+        }
+
+        if (!isCurrentSession(decoded, user)) {
+            return res.status(401).json({
+                success: false,
+                message: OTHER_DEVICE_MESSAGE
             })
         }
 

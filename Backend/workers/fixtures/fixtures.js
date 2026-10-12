@@ -5135,14 +5135,23 @@ const fixtures = [
             const nav = read("pages/Public/PublicNav.js")
             // Round 26 (owner): success stories moved inside About us; then the mentor invitation and Log in, each
             // in its own colour, and the main button last
-            const order = ["How it works", "About us", "Mentorship program", "Are you a professional? Mentor with us", "Log in", "Let's figure out your career"].map((label) => nav.indexOf(`>${label}<`))
+            // Round 27 (owner): the mentor pill reads "Mentor with us" so the nav fits one row; the full
+            // question stays as its title
+            const order = ["How it works", "About us", "Mentorship program", "Mentor with us", "Log in", "Let's figure out your career"].map((label) => nav.indexOf(`>${label}<`))
             if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push("the nav order is not How it works · About us · Mentorship program · Mentor with us · Log in · Let's figure out your career")
             if (/>Success stories</.test(nav)) problems.push("Success stories is still in the nav")
-            if (!/className="nav-mentor">Are you a professional\? Mentor with us</.test(nav)) problems.push("the mentor invitation is missing or not in its own colour")
+            if (!/className="nav-mentor" title="Are you a professional\? Mentor with us"[^>]*>Mentor with us</.test(nav)) problems.push("the mentor invitation is missing, not in its own colour, or has lost its full wording as a title")
             if (!/className="nav-login">Log in</.test(nav)) problems.push("Log in is not in its own colour")
             const stories = read("pages/Public/SuccessStories.js")
             if (/illustrative/i.test(stories) || !/<StoriesSection \/>/.test(read("pages/Public/About.js")) || !/Navigate to="\/about#stories"/.test(stories)) problems.push("the success stories are not inside About us, or still say \"Illustrative\"")
             if (!/className="pricing-note"/.test(cards) || /price-help/.test(cards) || !/className="price-points"/.test(cards)) problems.push("the programs don't show bullets with one shared note below")
+            // Round 27 (owner): the match promise and the refund are notes, not bullets; Mentor Only's two
+            // choice lines are one; the Choose buttons share one bottom block so they line up
+            const pointsOf = (tier) => (cards.match(new RegExp(`tier: ${tier},[\\s\\S]*?points: \\[([\\s\\S]*?)\\]`)) || [])[1] || ""
+            if (/Matched within|full refund/.test(pointsOf(2) + pointsOf(3))) problems.push("the match promise or the refund is still a bullet")
+            if (!/note: "Matched within 20 business days/.test(cards) || !/note: "A full refund if we can't match you/.test(cards)) problems.push("the match promise or the refund note is missing")
+            if (!/Skip the assessment — pick any career and job role, or describe your own/.test(pointsOf(3))) problems.push("Mentor Only's two choice lines are not combined")
+            if (!/className="price-actions"/.test(cards) || !/price-more-spacer/.test(cards)) problems.push("the Choose buttons are not in one aligned block")
             if (!/to="\/mentor\/register"/.test(read("pages/Public/MentorWaitlistPublic.js"))) problems.push("the public mentorship page doesn't invite professionals")
             const how = read("pages/Public/HowItWorks.js")
             if (!/to="\/programs" className="invite/.test(how) || !/80-20 rule/.test(how) || !/Internships, jobs and fellowships/.test(how) || !/settling abroad/.test(how)) problems.push("the invitation block lacks its three points or doesn't open /programs")
@@ -5311,6 +5320,86 @@ const fixtures = [
             if (!/grantAccess\(student\._id, tier, 0, null, \{[\s\S]*freeByAdmin: true/.test(route)) problems.push("free access does not go through grantAccess at ₹0, marked free")
             if (!/purchaseProblem\(/.test(route)) problems.push("a plan the student already has is not refused")
             if (!/paymentMode === "razorpay" && quote\.finalAmountInr > 0/.test(paywall)) problems.push("a ₹0 quote in Razorpay mode still shows 'Pay'")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 27 — one device at a time: every login goes through startSession, a pass from an older login is refused, a pre-Round-27 pass lasts until the next login, a password reset signs every device out",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const { isCurrentSession, OTHER_DEVICE_MESSAGE } = require("../../utils/sessionToken")
+            const problems = []
+            if (!isCurrentSession({ sv: 3 }, { sessionVersion: 3 })) problems.push("the latest pass is refused")
+            if (isCurrentSession({ sv: 2 }, { sessionVersion: 3 })) problems.push("a pass from an older login still works")
+            if (!isCurrentSession({}, {}) || !isCurrentSession({}, { sessionVersion: 0 })) problems.push("a pass from before Round 27 is refused before the next login")
+            if (isCurrentSession({}, { sessionVersion: 1 })) problems.push("a pass from before Round 27 still works after a new login")
+            ;["Routers/userRouter.js", "Routers/mentorsRouter.js", "Routers/authRouter.js"].forEach((file) => {
+                const source = read(file)
+                if (/jwt\.sign\(\s*\{\s*userId/.test(source) || /signToken/.test(source)) problems.push(`${file} still signs a pass itself`)
+                if (!/await startSession\(/.test(source)) problems.push(`${file} does not use startSession`)
+            })
+            const middleware = read("middlewares/authMiddleware.js")
+            if (!/isCurrentSession\(decoded, user\)/.test(middleware) || !/OTHER_DEVICE_MESSAGE/.test(middleware)) problems.push("authMiddleware does not refuse an older pass")
+            if (!/password: hashedPassword, \$inc: \{ sessionVersion: 1 \}/.test(read("Routers/userRouter.js"))) problems.push("a password reset does not sign every device out")
+            const axios = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/apiCall/axiosInstance.js"), "utf8")
+            if (!axios.includes(`"${OTHER_DEVICE_MESSAGE}"`) || !/signedOut=other_device/.test(axios)) problems.push("the app does not send a signed-out device to the login page")
+            if (!/signedOut"\) === "other_device"/.test(fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Login.js"), "utf8"))) problems.push("the login page does not say why")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 27 — the deletion tool (owner's version): --bots covers mentors and students, never an admin, spares a mentor with a profile, and falls back to public DNS before connecting",
+        run: () => {
+            const tool = fs.readFileSync(path.join(__dirname, "../../tools/deleteAccounts.js"), "utf8")
+            const problems = []
+            if (!/role: \{ \$ne: "admin" \}/.test(tool)) problems.push("--bots is not every role but admin")
+            if (!/withProfile\.has\(String\(user\._id\)\)/.test(tool)) problems.push("a mentor with a profile could be deleted as a bot")
+            if (!/checkName\(user\.name\)/.test(tool)) problems.push("bots are not picked by the name rule")
+            if (!/dryRun: !write/.test(tool)) problems.push("it is not a dry run without --write")
+            const dnsAt = tool.indexOf("dns.setServers")
+            if (dnsAt < 0 || dnsAt > tool.indexOf("mongoose.connect")) problems.push("no DNS fallback before connecting")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 27 — mentor sign-up has the student form's shields (Turnstile, a hidden box, the name rule); the name rule turns away lowercase random strings and keeps real names",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../..", file), "utf8")
+            const { checkName } = require("../../utils/nameRules")
+            const problems = []
+            const route = read("Backend/Routers/mentorsRouter.js").split('router.post("/register"')[1] || ""
+            const body = route.split("router.")[0]
+            if (!/registerRateLimiter/.test(route.split("\n")[0])) problems.push("no rate limit")
+            if (!/req\.body\.website/.test(body) || !/verifyTurnstile\(req\.body\.turnstileToken/.test(body) || !/checkName\(name\)/.test(body)) problems.push("the route lacks the hidden box, Turnstile or the name rule")
+            const form = read("Frontend/src/pages/Mentor/MentorRegister.js")
+            if (!/className="hp-field"/.test(form) || !/<TurnstileBox onToken=\{onToken\} \/>/.test(form) || !/website, turnstileToken/.test(form)) problems.push("the mentor form does not render the hidden box and Turnstile, or does not send them")
+            const real = ["Krishna Iyer", "Bhagyashree Jadhav", "Shrishti Agarwal", "Brahmbhatt", "Kshitij Shrivastava", "Subramanian Swaminathan", "Simranjeet Dhillon", "Chhabra", "Rwitwik Ghosh", "Hrushikesh", "Tsering Dorjee", "Przybylski", "Schwarzschild", "Bryn Llywelyn", "Dr. A. K. O'Neil", "Mary-Jane Watson", "Mohd. Imran", "Joseph D'Souza", "Luv Goel", "Riya"]
+            const wrongly = real.filter((name) => checkName(name))
+            if (wrongly.length) problems.push(`real names turned away: ${wrongly.join(", ")}`)
+            const bots = ["fciROfrXyMzFhEZHVTjKuROZ", "rjxkqwpzmfhv", "bvhfjdkslaqp", "QzPLmnbVcx", "xkcdmnbvqwerty"]
+            const through = bots.filter((name) => !checkName(name))
+            if (through.length) problems.push(`random strings let through: ${through.join(", ")}`)
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 27 — Razorpay: only a signed webhook grants access (the raw bytes are hashed, compared in constant time), a retried payment is ignored, the checkout callback is never trusted, and the popup names the plan",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            const paywall = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/Paywall.js"), "utf8")
+            const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
+            const problems = []
+            if (!/express\.raw\(\{ type: "\*\/\*" \}\),\s*paymentVerificationWebhook/.test(router)) problems.push("the webhook does not read the raw body")
+            if (!/createHmac\("sha256", process\.env\.RAZORPAY_WEBHOOK_SECRET\)\s*\.update\(req\.body\)/.test(router) || !/timingSafeEqual/.test(router)) problems.push("the signature is not checked over the raw bytes in constant time")
+            if (server.indexOf('app.use("/payments", paymentsRouter)') > server.indexOf("app.use(express.json())")) problems.push("the payments router is mounted after express.json, so the raw body is lost")
+            if (!/findOne\(\{ razorpayPaymentId: razorpayPayment\.id \}\)/.test(router)) problems.push("a retried payment.captured could grant twice")
+            ;["payment.captured", "refund.processed", "refund.failed"].forEach((event) => { if (!router.includes(`event.event === "${event}"`)) problems.push(`${event} is not handled`) })
+            if (!/handler: \(\) => \{[\s\S]{0,200}waitForAccess\(\)/.test(paywall) || /handler: \(response\)/.test(paywall)) problems.push("the checkout callback is trusted instead of waiting for the webhook")
+            if (/description: `Tier/.test(paywall) || !/description: planName\(quote\.tier\)/.test(paywall)) problems.push("the Razorpay popup says \"Tier N\" instead of the plan name")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

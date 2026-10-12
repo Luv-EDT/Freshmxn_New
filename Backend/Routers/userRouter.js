@@ -1,6 +1,6 @@
 const express = require("express")
 const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
+const { startSession } = require("../utils/sessionToken")
 const crypto = require("crypto")
 const rateLimit = require("express-rate-limit")
 const User = require("../model/userModel")
@@ -85,18 +85,6 @@ const resendVerificationRateLimiter = rateLimit({
 // ========================
 // Helpers
 // ========================
-
-const signToken = (userId) => {
-    return jwt.sign(
-        {
-            userId: userId
-        },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: "7d"
-        }
-    )
-}
 
 // KEEP ONLY WHAT BELONGS TO THIS STAGE, WITH THE RIGHT TYPES AND RANGES (Round 10). Before, every
 // key was kept whatever the stage — a stream ticked under Class 11-12 stayed on a student who then
@@ -352,7 +340,7 @@ router.post("/register", registerRateLimiter, async (req, res) => {
         // they can log in and look around straight away; paying is what waits for the link
         await sendVerificationEmail(newUser)
 
-        const jwtToken = signToken(newUser._id)
+        const jwtToken = await startSession(newUser._id)
 
         const userData = newUser.toObject()
         delete userData.password
@@ -417,7 +405,7 @@ router.post("/login", loginRateLimiter, async (req, res) => {
 
         await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() })
 
-        const jwtToken = signToken(user._id)
+        const jwtToken = await startSession(user._id)
 
         const userData = user.toObject()
         delete userData.password
@@ -544,7 +532,8 @@ router.post("/resetPassword/:token", async (req, res) => {
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
 
-        await User.findByIdAndUpdate(passwordReset.user, { password: hashedPassword })
+        // a new password signs every device out (Round 27)
+        await User.findByIdAndUpdate(passwordReset.user, { password: hashedPassword, $inc: { sessionVersion: 1 } })
 
         await PasswordReset.findByIdAndUpdate(passwordReset._id, { usedAt: new Date() })
 

@@ -21,8 +21,15 @@ const path = require("path")
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") })
 
 const mongoose = require("mongoose")
+const dns = require("dns")
 const Job = require("../model/jobsModel")
 const { createJobQueue } = require("../workers/jobQueue")
+
+// the same fallback as config/MongoDBCon.js: a dead 127.0.0.1 DNS server on Windows fails the
+// mongodb+srv:// lookup with "querySrv ECONNREFUSED"
+if (process.platform === "win32" && dns.getServers().every((server) => server.startsWith("127.") || server === "::1")) {
+    dns.setServers(["1.1.1.1", "8.8.8.8"])
+}
 
 const QUEUES = ["score_profile", "generate_report", "housekeeping"]
 const START = { score_profile: "worker:score", generate_report: "worker:report", housekeeping: "worker:housekeeping" }

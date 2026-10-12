@@ -1,6 +1,6 @@
 const express = require("express")
 const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
+const { startSession } = require("../utils/sessionToken")
 const User = require("../model/userModel")
 const Mentor = require("../model/mentorsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
@@ -9,6 +9,7 @@ const mentorAuthMiddleware = require("../middlewares/mentorAuthMiddleware")
 
 const { registerRateLimiter } = require("./userRouter")
 const { checkName } = require("../utils/nameRules")
+const { verifyTurnstile } = require("../utils/turnstile")
 
 const router = express.Router()
 
@@ -26,18 +27,6 @@ const professionById = new Map(taxonomy.professions.map((profession) => [profess
 // ========================
 // Helpers
 // ========================
-
-const signToken = (userId) => {
-    return jwt.sign(
-        {
-            userId: userId
-        },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: "7d"
-        }
-    )
-}
 
 // "Finance, Consulting" or ["Finance", "Consulting"] → ["Finance", "Consulting"]
 const toList = (value) => {
@@ -108,13 +97,21 @@ const cleanOnboarding = (body) => {
 // ========================
 
 // Round 25 (spam sign-ups): the same shields as a student sign-up — 5 an hour per IP, a hidden box
-// only bots fill, and a name that has to look like one
+// only bots fill, and a name that has to look like one. Round 27: and Cloudflare's check, once its
+// keys are set — the bots of 6–10 Oct arrived through this form
 router.post("/register", registerRateLimiter, async (req, res) => {
     try {
         const { name, email, password } = req.body
 
         if (typeof req.body.website === "string" && req.body.website.trim() !== "") {
             return res.status(201).json({ success: true, message: "Registered Successfully" })
+        }
+
+        if (!(await verifyTurnstile(req.body.turnstileToken, req.ip))) {
+            return res.status(400).json({
+                success: false,
+                message: "Please complete the check that you're a person, then try again"
+            })
         }
 
         const nameError = checkName(name)
@@ -171,7 +168,7 @@ router.post("/register", registerRateLimiter, async (req, res) => {
         return res.status(201).json({
             success: true,
             message: "Registered Successfully",
-            token: signToken(newUser._id),
+            token: await startSession(newUser._id),
             userData,
         })
 

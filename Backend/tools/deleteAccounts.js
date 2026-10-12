@@ -4,14 +4,23 @@
 //   node Backend/tools/deleteAccounts.js --emails a@x.com,b@y.com [--bots] [--write]
 //
 // --bots   adds every account that never paid and whose name fails the name rule (utils/nameRules.js:
-//          random strings like "fciROfrXyMzFhEZHVTjKuROZ")
+//          random strings like "fciROfrXyMzFhEZHVTjKuROZ"), student or mentor sign-up alike — except a
+//          mentor with a profile
 // --write  actually deletes. Without it, a dry run: who would go, and how many rows each.
 // Admin accounts are never deleted. Reads DB_URI from Backend/.env (or the environment).
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") })
 const mongoose = require("mongoose")
+const dns = require("dns")
 const User = require("../model/userModel")
+const Mentors = require("../model/mentorsModel")
 const { deleteAccountData } = require("../utils/deleteAccount")
 const { checkName } = require("../utils/nameRules")
+
+// the same fallback as config/MongoDBCon.js: a dead 127.0.0.1 DNS server on Windows fails the
+// mongodb+srv:// lookup with "querySrv ECONNREFUSED"
+if (process.platform === "win32" && dns.getServers().every((server) => server.startsWith("127.") || server === "::1")) {
+    dns.setServers(["1.1.1.1", "8.8.8.8"])
+}
 
 const argValue = (flag) => {
     const index = process.argv.indexOf(flag)
@@ -34,8 +43,11 @@ const main = async () => {
         else targets.set(String(user._id), { user, why: "listed" })
     }
     if (bots) {
-        const unpaid = await User.find({ paid: { $ne: true }, role: "student" }).select("email name role paid").lean()
-        unpaid.filter((user) => checkName(user.name)).forEach((user) => {
+        // any role but admin — the bots sign up through the mentor form as well as the student one
+        const unpaid = await User.find({ paid: { $ne: true }, role: { $ne: "admin" } }).select("email name role paid").lean()
+        // a mentor who filled in a profile is a person, whatever their name looks like ("Luv_ad")
+        const withProfile = new Set((await Mentors.find({}).select("user").lean()).map((row) => String(row.user)))
+        unpaid.filter((user) => checkName(user.name) && !withProfile.has(String(user._id))).forEach((user) => {
             if (!targets.has(String(user._id))) targets.set(String(user._id), { user, why: "bot name" })
         })
     }
