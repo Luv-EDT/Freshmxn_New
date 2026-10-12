@@ -11,7 +11,8 @@ import { getMyScores } from "../../apiCall/reportsApi"
 // against, and most readers are minors. Confidence shows as a word level only. Uncertainty tolerance
 // is a position, not a level. Names and meanings come from Backend/utils/factorGuide.js, the same
 // table the report uses.
-function PsychometricScores() {
+// `allOpen` (Round 28): on the psychometric analysis page every group starts open
+function PsychometricScores({ allOpen = false }) {
     const [scores, setScores] = useState(undefined) // undefined = loading, null = none yet
     const [failed, setFailed] = useState(false)
 
@@ -41,7 +42,7 @@ function PsychometricScores() {
             )}
 
             {scores.groups.map((group, index) => (
-                <details key={group.key} className="faq-item score-group" open={index === 0}>
+                <details key={group.key} className="faq-item score-group" open={allOpen || index === 0}>
                     <summary>{group.title}</summary>
                     <p className="report-small">{group.meaning}</p>
                     <ul className="score-list">

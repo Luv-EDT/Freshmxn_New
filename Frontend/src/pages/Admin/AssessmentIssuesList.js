@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Table, Button, Popconfirm, Segmented, Tag, message } from "antd"
 import dayjs from "dayjs"
+import ReasonModal from "./ReasonModal"
 import { getAllIssuesForAdmin, grantRetakeForAdmin, dismissIssueForAdmin } from "../../apiCall/assessmentIssuesApi"
 
 // Technical problems with a student's test (owner, Round 10). Written by the code that noticed them —
@@ -45,6 +46,7 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
     const [queues, setQueues] = useState(null)
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("open")   // open | retake_granted | dismissed | all
+    const [dismissing, setDismissing] = useState(null)
 
     const fetchIssues = useCallback(async () => {
         try {
@@ -75,10 +77,12 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
         }
     }
 
-    const handleDismiss = async (id) => {
+    // a student's own request needs a reason (it is emailed to them); a system-raised issue doesn't
+    const handleDismiss = async (id, reason) => {
         try {
-            await dismissIssueForAdmin(id)
-            message.success("Dismissed")
+            const response = await dismissIssueForAdmin(id, { adminNote: reason })
+            message.success(response.data.message)
+            setDismissing(null)
             fetchIssues()
         } catch (error) {
             message.error(error.response?.data?.message || "Failed to dismiss")
@@ -105,9 +109,13 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
                             <Button type="primary" size="small">{record.module === "report" ? "Run report again" : "Allow one retake"}</Button>
                         </Popconfirm>
                     )}{" "}
-                    <Popconfirm title="Dismiss — nothing to fix?" onConfirm={() => handleDismiss(record._id)}>
-                        <Button size="small">Dismiss</Button>
-                    </Popconfirm>
+                    {record.raisedBy === "student"
+                        ? <Button size="small" onClick={() => setDismissing(record)}>Decline</Button>
+                        : (
+                            <Popconfirm title="Dismiss — nothing to fix?" onConfirm={() => handleDismiss(record._id)}>
+                                <Button size="small">Dismiss</Button>
+                            </Popconfirm>
+                        )}
                 </>
             ),
         },
@@ -122,6 +130,13 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
             <Button onClick={fetchIssues}>Refresh</Button>
 
             <Table rowKey="_id" loading={loading} columns={columns} dataSource={visible} scroll={{ x: "max-content" }} />
+
+            <ReasonModal
+                open={dismissing !== null}
+                title="Why can't this test be reopened?"
+                onCancel={() => setDismissing(null)}
+                onSubmit={(reason) => handleDismiss(dismissing._id, reason)}
+            />
         </div>
     )
 }

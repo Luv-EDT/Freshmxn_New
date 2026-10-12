@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react"
 import { message } from "antd"
 import { wordRecallNext, wordRecallAnswer } from "../../apiCall/submissionsApi"
 import OneAttemptWarning from "./OneAttemptWarning"
+import TestResult from "./TestResult"
+import { ReportProblem } from "./ResearchBox"
 import useLeaveWarning from "./useLeaveWarning"
 
 // The in-house word-memory test (Round 11) — two lists of fifteen everyday words, each word shown
@@ -77,6 +79,8 @@ function WordRecallTest({ alreadyTaken, onDone }) {
             <section className="word-recall">
                 <h2>{phase === "done" ? "Both lists done" : "Word memory"}</h2>
                 <p>{phase === "done" ? "Your answers are saved. Your results are part of your report." : "You have finished this section — thank you. It is taken once, so there is nothing more to do here."}</p>
+                <TestResult moduleKey="wordRecall" />
+                <ReportProblem moduleKey="wordRecall" />
                 <button type="button" className="btn btn-primary" onClick={onDone}>Back to all sections</button>
             </section>
         )

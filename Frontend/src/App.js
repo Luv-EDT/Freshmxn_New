@@ -16,6 +16,7 @@ import FollowUpPage from "./pages/Public/FollowUpPage"
 import Profile from "./pages/User/Profile.js"
 import Mentorship from "./pages/User/Mentorship.js"
 import MentorshipChoose from "./pages/User/MentorshipChoose.js"
+import MentorshipReview from "./pages/User/MentorshipReview.js"
 import MentorshipHowItWorks from "./pages/User/MentorshipHowItWorks.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
 import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
@@ -23,6 +24,7 @@ import InterestForm from "./pages/Interest/InterestForm.js"
 import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
 import ReportPage from "./pages/Report/ReportPage.js"
 import ComparePage from "./pages/Report/ComparePage.js"
+import PsychometricAnalysis from "./pages/Report/PsychometricAnalysis"
 import MatchesPage from "./pages/Report/MatchesPage.js"
 import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
@@ -118,6 +120,12 @@ function App() {
                         <MentorshipChoose />
                     </ProtectedRoute>
                 } />
+                {/* Round 28 (owner): the review after a session, and reporting a mentor */}
+                <Route path="/mentorship/review" element={
+                    <ProtectedRoute>
+                        <MentorshipReview />
+                    </ProtectedRoute>
+                } />
 
                 {/* Stage 1 — only after payment */}
                 <Route path="/interest" element={<Navigate to="/interest/start" replace />} />
@@ -150,6 +158,12 @@ function App() {
                 <Route path="/report/compare" element={
                     <ProtectedRoute requirePaid={true}>
                         <ComparePage />
+                    </ProtectedRoute>
+                } />
+                {/* Round 28 (owner): the four fundamentals and everything else measured, on one page */}
+                <Route path="/report/psychometric" element={
+                    <ProtectedRoute requirePaid={true}>
+                        <PsychometricAnalysis />
                     </ProtectedRoute>
                 } />
 

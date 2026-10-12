@@ -259,8 +259,8 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                     </Section>
                     <Section title="Why we chose it for you">
                         <p className="pc-line">
-                            It joins <strong>{entry.sideA.label}</strong> (from <em>{entry.sideA.via}</em> in your list) and{" "}
-                            <strong>{entry.sideB.label}</strong> (from <em>{entry.sideB.via}</em>).
+                            It joins two professions that are both in your matches: <strong>{entry.sideA.via}</strong> and{" "}
+                            <strong>{entry.sideB.via}</strong>.
                         </p>
                     </Section>
                     {fit.strengths.length > 0 && (

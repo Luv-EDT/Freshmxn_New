@@ -61,11 +61,24 @@ const dueByFor = (row) => (row && row.choiceSentAt ? addBusinessDays(row.choiceS
 
 // Discovery + Mentor (tier 2) or Mentor Only (tier 3) — utils/plans.js
 const { grants } = require("../utils/plans")
+const { notifyStudent } = require("../utils/statusEmails")
+const { inviteFacts, whatsappLink } = require("../utils/mentorInvite")
 const { industryByCode } = require("../utils/industries")
 const hasMentorPlan = (user) => user.paid === true && grants(Number(user.currentTier)).mentor
 const isMentorOnly = (user) => user.paid === true && Number(user.currentTier) === 3
 const professionById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
 const cleanText = (value, max) => (typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max) : "")
+
+// HOW THE MENTOR MAY REACH THE STUDENT (owner, Round 28): WhatsApp or email, with the student's
+// agreement that we share their first name and that one contact with their mentor. null = not given.
+const CONTACT_VIA = ["whatsapp", "email"]
+const contactChoice = (body) => (CONTACT_VIA.includes(body.contactVia) && body.contactConsent === true
+    ? { contactVia: body.contactVia, contactConsentAt: new Date() }
+    : null)
+const CONTACT_NEEDED = "Choose how your mentor should contact you, and tick that we may share it with them"
+
+// every new match starts its steps again
+const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null }
 
 // what a student may see about their assigned mentor — the profile-visible name and role only.
 // Contact details, currency and residence never leave the admin side.
@@ -136,6 +149,14 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 matchedAt: row.matchedAt,
                 resolution: row.resolution,
                 mentor: await mentorSummary(row.assignedMentor),
+                // Round 28: the sessions already done, and whether another can be started now
+                sessions: (row.sessions || []).map((session) => ({ profession: session.profession, jobRole: session.jobRole, mentorName: session.mentorName, completedAt: session.completedAt })),
+                extraSessionCredit: Math.max(0, (row.extraSessionsPaid || 0) - (row.extraSessionsUsed || 0)),
+                sameFieldNewMentor: Boolean(row.sameFieldNewMentor),
+                // Round 28: how the mentor reaches them, and whether the booking link is on its way
+                contactVia: row.contactVia || null,
+                contactConsented: Boolean(row.contactConsentAt),
+                bookingLinkSent: Boolean(row.bookingLinkSentAt),
             },
         })
 
@@ -197,6 +218,40 @@ router.put("/saveMyHelp", authMiddleware, async (req, res) => {
 
 
 // ========================
+// Save My Contact (Round 28)
+// ========================
+
+// For a student who sent their choice before this was asked, or who wants to switch between WhatsApp
+// and email. A change after the match is not re-sent to the mentor — they message us instead.
+router.put("/saveMyContact", authMiddleware, async (req, res) => {
+    try {
+        if (!hasMentorPlan(req.user)) {
+            return res.status(403).json({ success: false, message: "The mentor waitlist comes with the Discovery + Mentor or Mentor Only plan" })
+        }
+
+        const contact = contactChoice(req.body)
+        if (!contact) {
+            return res.status(400).json({ success: false, message: CONTACT_NEEDED })
+        }
+        if (contact.contactVia === "whatsapp" && !req.user.phone) {
+            return res.status(400).json({ success: false, message: "Add your phone number on your profile first, or choose email" })
+        }
+
+        const row = await MentorWaitlist.findOneAndUpdate(
+            { user: req.user._id },
+            { $set: contact, $setOnInsert: { user: req.user._id, matchStatus: "awaiting_choice" } },
+            { upsert: true, returnDocument: "after" }
+        )
+
+        return res.status(200).json({ success: true, message: "Saved — your mentor will contact you this way", data: { contactVia: row.contactVia, contactConsented: true } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to save", error: error.message })
+    }
+})
+
+
+// ========================
 // Choose A Profession
 // ========================
 
@@ -212,6 +267,15 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
         }
 
         const { professionId, jobRole, jobRoleOther, industryCode, other } = req.body
+
+        // Round 28: no choice goes in without knowing how the mentor may reach them
+        const contact = contactChoice(req.body)
+        if (!contact) {
+            return res.status(400).json({ success: false, message: CONTACT_NEEDED })
+        }
+        if (contact.contactVia === "whatsapp" && !req.user.phone) {
+            return res.status(400).json({ success: false, message: "Add your phone number on your profile first, or choose email" })
+        }
 
         // an industry is a nice-to-have on either plan; when given it must be one of ours
         const industry = industryCode ? industryByCode.get(String(industryCode)) : null
@@ -284,6 +348,7 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
             {
                 user: req.user._id,
                 ...choice,
+                ...contact,
                 chosenIndustryCode: industry ? industry.code : null,
                 planTier: Number(req.user.currentTier),
                 choiceSentAt: new Date(),
@@ -346,8 +411,13 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
             (submission.psychometric.accommodations.needs || []).map((need) => NEED_LABELS[need] || need),
         ]))
 
+        // Round 28: the one-tap WhatsApp invite for each matched row — the mentor's phone is admin-only
+        const mentorIds = rows.filter((row) => row.matchStatus === "matched" && row.assignedMentor).map((row) => row.assignedMentor._id)
+        const mentorPhones = new Map((await Mentor.find({ user: { $in: mentorIds } }).select("user phone").lean()).map((mentor) => [String(mentor.user), mentor.phone]))
+
         const data = students.map((student) => {
             const row = rowByUser.get(String(student._id)) || { matchStatus: "awaiting_choice" }
+            const mentorPhone = row.matchStatus === "matched" && row.assignedMentor ? mentorPhones.get(String(row.assignedMentor._id)) : null
             return {
                 student,
                 ...row,
@@ -356,6 +426,8 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
                 sharedSupportNeeds: supportByUser.get(String(student._id)) || [],
                 plan: Number(student.currentTier) === 3 ? "Mentor Only" : "Discovery + Mentor",
                 chosenIndustry: row.chosenIndustryCode && industryByCode.get(row.chosenIndustryCode) ? industryByCode.get(row.chosenIndustryCode).name : null,
+                contactConsented: Boolean(row.contactConsentAt),
+                whatsappInvite: mentorPhone ? whatsappLink(mentorPhone, inviteFacts(row, student)) : null,
             }
         })
 
@@ -393,6 +465,15 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
             })
         }
 
+        // Round 28: the student must have said how the mentor may reach them, and agreed to it
+        if (!row.contactConsentAt) {
+            return res.status(400).json({
+                success: false,
+                message: "Waiting for the student's contact consent — they choose WhatsApp or email on their mentorship page"
+            })
+        }
+
+        // only approved mentors (a paused one is never offered), and never one kept away from this student
         const mentor = await Mentor.findOne({ user: mentorUserId, status: "onboarded" })
 
         if (!mentor) {
@@ -402,16 +483,29 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
             })
         }
 
+        if ((row.excludedMentors || []).some((excluded) => String(excluded) === String(mentor.user))) {
+            return res.status(400).json({
+                success: false,
+                message: "This student must not be matched with this mentor again — pick someone else"
+            })
+        }
+
         const updated = await MentorWaitlist.findOneAndUpdate(
             { user: id },
-            { assignedMentor: mentor.user, matchedAt: new Date(), matchStatus: "matched", resolution: "matched" },
+            { assignedMentor: mentor.user, matchedAt: new Date(), matchStatus: "matched", resolution: "matched", ...FRESH_MATCH_STEPS },
             { returnDocument: "after" }
         )
 
+        // the invite to the mentor (email; WhatsApp is the admin's one tap), and the news to the student
+        const student = await User.findById(id).select("name email").lean()
+        const mentorUser = await User.findById(mentor.user).select("email").lean()
+        notifyStudent(mentorUser, "mentorInvite", inviteFacts(updated, student))
+        notifyStudent(student, "mentorConfirmed", { mentorName: mentor.name, contactVia: updated.contactVia })
+
         return res.status(200).json({
             success: true,
-            message: `Matched with ${mentor.name}`,
-            data: updated,
+            message: `Matched with ${mentor.name} — they've been emailed the invite. Send it on WhatsApp too.`,
+            data: { ...updated.toObject(), whatsappInvite: whatsappLink(mentor.phone, inviteFacts(updated, student)) },
         })
 
     } catch (error) {
@@ -511,6 +605,93 @@ router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             message: "Failed to reset the choice",
             error: error.message,
         })
+    }
+})
+
+
+// ========================
+// Mentor sessions (owner, Round 28)
+// ========================
+
+// The admin marks a matched session done: it is logged on the row, and the student can then book
+// another (paid) — a new career or job role, or the same one with a different mentor.
+router.put("/completeSessionForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params   // :id is the STUDENT's user id
+        const row = await MentorWaitlist.findOne({ user: id }).lean()
+
+        if (!row || row.matchStatus !== "matched") {
+            return res.status(400).json({ success: false, message: "Only a matched session can be marked done" })
+        }
+
+        const mentor = await mentorSummary(row.assignedMentor)
+        const session = {
+            professionId: row.chosenProfessionId,
+            profession: row.chosenProfessionName || row.otherRequest,
+            jobRole: row.chosenJobRole,
+            mentor: row.assignedMentor,
+            mentorName: mentor ? mentor.name : null,
+            matchedAt: row.matchedAt,
+            completedAt: new Date(),
+            adminNote: cleanText(req.body.adminNote, 500) || undefined,
+        }
+        const updated = await MentorWaitlist.findOneAndUpdate(
+            { _id: row._id, matchStatus: "matched" },
+            { $push: { sessions: session }, $set: { matchStatus: "completed" } },
+            { returnDocument: "after" }
+        )
+
+        notifyStudent(await User.findById(id).select("email").lean(), "reviewOpen")
+
+        return res.status(200).json({ success: true, message: "Session logged — the student has been asked for a review", data: updated })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to log the session", error: error.message })
+    }
+})
+
+// The student starts another session with one they've paid for: a fresh choice (any of their
+// recommendations — or any career on Mentor Only), or `sameField` — the same career and role, with a
+// different mentor, which goes straight to matching on a new 20-business-day clock.
+router.post("/startAnotherSession", authMiddleware, async (req, res) => {
+    try {
+        if (!hasMentorPlan(req.user)) {
+            return res.status(403).json({ success: false, message: "Mentor sessions come with a mentor plan" })
+        }
+
+        const row = await MentorWaitlist.findOne({ user: req.user._id }).lean()
+        if (!row || row.matchStatus !== "completed") {
+            return res.status(400).json({ success: false, message: "You can book another session once your current one is done" })
+        }
+        if ((row.extraSessionsPaid || 0) <= (row.extraSessionsUsed || 0)) {
+            return res.status(402).json({ success: false, message: "Another mentor session needs a payment first", data: { needsPayment: true } })
+        }
+
+        const sameField = req.body.sameField === true && Boolean(row.chosenProfessionId || row.otherRequest)
+        const update = sameField
+            ? {
+                $set: { matchStatus: "matching", choiceSentAt: new Date(), sameFieldNewMentor: true, resolution: null, adminNote: "Same career and role — find a DIFFERENT mentor from last time", ...FRESH_MATCH_STEPS },
+                $unset: { assignedMentor: "", matchedAt: "" },
+                $inc: { extraSessionsUsed: 1 },
+                // last time's mentor can't be picked again for this one
+                ...(row.assignedMentor ? { $addToSet: { excludedMentors: row.assignedMentor } } : {}),
+            }
+            : {
+                $set: { matchStatus: "awaiting_choice", sameFieldNewMentor: false, resolution: null, adminNote: "Booked another session — waiting for a new choice", ...FRESH_MATCH_STEPS },
+                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                $inc: { extraSessionsUsed: 1 },
+            }
+
+        const updated = await MentorWaitlist.findOneAndUpdate({ _id: row._id, matchStatus: "completed" }, update, { returnDocument: "after" })
+
+        return res.status(200).json({
+            success: true,
+            message: sameField ? "We're finding you a different mentor in the same field" : "Choose the career and job role for your next session",
+            data: { matchStatus: updated ? updated.matchStatus : row.matchStatus },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not start another session", error: error.message })
     }
 })
 

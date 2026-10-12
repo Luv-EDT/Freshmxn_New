@@ -55,7 +55,7 @@ export const journeyStages = (user) => {
     return [
         {
             key: "interest",
-            title: "Interest form",
+            title: "Virtual Career Counselling",
             path: "/interest",
             state: interestDone ? "done" : interest === "in_progress" ? "active" : "active",
             note: interestDone ? "Done — you can still edit it" : interest === "in_progress" ? "In progress" : "Not started",
@@ -67,7 +67,7 @@ export const journeyStages = (user) => {
             path: "/assessment/start",
             state: assessmentDone ? "done" : interestDone ? "active" : "locked",
             note: !interestDone
-                ? "Opens once the interest form is done"
+                ? "Opens once Virtual Career Counselling is done"
                 : assessmentDone
                     ? "Submitted — you can still add sections"
                     : psychometric === "in_progress" ? "In progress" : "Not started",

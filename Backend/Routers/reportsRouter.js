@@ -48,12 +48,24 @@ const { MATCHING_VERSION } = require("../matching/matchProfile")
 // Round 25: also when the student (or the admin) changed their stage or its details after the report
 // was built — the switching cost reads them
 const builtAt = (report) => new Date(report.lastGeneratedAt || report.generatedAt || 0).getTime()
-const updateIsAvailable = (report, recommendation, user = null) => Boolean(report) && (
-    report.scoring_version !== SCORING_VERSION
+const changedSince = (when, report) => Boolean(when) && new Date(when).getTime() > builtAt(report)
+// a change on OUR side (scoring or matching) — free, always
+const systemUpdate = (report, recommendation) => report.scoring_version !== SCORING_VERSION
     || report.matching_version !== MATCHING_VERSION
     || (Boolean(recommendation) && recommendation.matching_version !== report.matching_version)
-    || Boolean(user && user.profileChangedAt && new Date(user.profileChangedAt).getTime() > builtAt(report))
+const updateIsAvailable = (report, recommendation, user = null) => Boolean(report) && (
+    systemUpdate(report, recommendation)
+    || Boolean(user && changedSince(user.profileChangedAt, report))
+    // Round 28: saved Virtual Career Counselling answers after the report was built
+    || Boolean(user && changedSince(user.answersChangedAt, report))
 )
+// why: "matching" (ours, free) wins over the student's own "answers" / "profile" (limited, Round 28)
+const updateReasonFor = (report, recommendation, user) => {
+    if (!updateIsAvailable(report, recommendation, user)) return null
+    if (systemUpdate(report, recommendation)) return "matching"
+    return changedSince(user && user.answersChangedAt, report) ? "answers" : "profile"
+}
+const { selfUpdatesLeft, LIMIT_REACHED } = require("../utils/selfUpdates")
 
 
 // ========================
@@ -236,8 +248,10 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
             data: {
                 status: "ready",
                 updateAvailable,
-                // Round 25: why — the student's own details changed, or our matching did
-                updateReason: updateAvailable && req.user.profileChangedAt && new Date(req.user.profileChangedAt).getTime() > builtAt(report) ? "profile" : updateAvailable ? "matching" : null,
+                // Round 25: why — the student's own details changed, or our matching did; Round 28: or
+                // their answers, and how many of their own updates are left
+                updateReason: updateReasonFor(report, recommendation, req.user),
+                selfUpdatesLeft: selfUpdatesLeft(req.user),
                 rebuildFailed: failed,
                 release: report.release,
                 journey: report.journey,
@@ -403,6 +417,12 @@ router.post("/updateMyReport", authMiddleware, requireDiscovery, async (req, res
             return res.status(400).json({ success: false, message: "Your report is already up to date" })
         }
 
+        // Round 28 (owner): an update from the student's own changes uses one of their three
+        const ownChange = updateReasonFor(report, recommendation, req.user) !== "matching"
+        if (ownChange && selfUpdatesLeft(req.user) === 0) {
+            return res.status(400).json({ success: false, message: LIMIT_REACHED })
+        }
+
         const direction = directionUpdate({ via: "update", direction: req.body.direction, firstTime: false })
         if (!direction) {
             return res.status(400).json({ success: false, message: "Tell us whether you're heading the same way or looking for something new" })
@@ -414,6 +434,7 @@ router.post("/updateMyReport", authMiddleware, requireDiscovery, async (req, res
         await User.updateOne({ _id: req.user._id }, {
             ...direction,
             $set: { ...(direction.$set || {}), reportUpdateRequestedAt: new Date(), reportFailedAt: null },
+            ...(ownChange ? { $inc: { selfUpdatesUsed: 1 } } : {}),
         })
 
         return res.status(200).json({ success: true, message: "Your report is being updated", data: { status: "generating" } })

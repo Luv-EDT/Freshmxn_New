@@ -5,7 +5,6 @@ import { message, Modal } from "antd"
 import { saveInterest, getMySubmission } from "../../apiCall/submissionsApi"
 import { setUser } from "../../store/userSlice"
 import Navbar from "../Navbar"
-import BackToDashboard from "../BackToDashboard"
 import InterestIntro from "./InterestIntro"
 import PostCollege from "./PostCollege"
 import College from "./College"
@@ -28,10 +27,17 @@ import {
     buildSubmissionInterest,
 } from "./interestFormState"
 
-// Stage 1 — the interest form. Holds the whole form state (ported from virtual-career-counselling
-// App.jsx) and saves it to the server every time the student leaves a section, so the form survives
-// a closed tab, a flat battery or a switch from phone to laptop. There is no submit page: reaching
-// the end is what marks it complete.
+// what a refresh, a closed tab or a lost connection would cost while editing (Round 28)
+const UNSAVED_WARNING = "If you refresh or lose your connection now, the changes you made in this session will be lost."
+
+// Stage 1 — Virtual Career Counselling (the interest form; owner's name since Round 28). Holds the
+// whole form state (ported from virtual-career-counselling App.jsx) and saves it to the server every
+// time the student leaves a section, so the form survives a closed tab, a flat battery or a switch from
+// phone to laptop. There is no submit page: reaching the end is what marks it complete.
+//
+// EDITING AFTER FINISHING (owner, Round 28) is different: the student may only be looking, or trying
+// words out. Nothing is kept in this browser and moving between sections saves nothing — only "Save
+// changes" does. Leaving, refreshing or going offline with unsaved changes is warned about.
 function InterestForm() {
     const navigate = useNavigate()
     const dispatch = useDispatch()
@@ -46,7 +52,11 @@ function InterestForm() {
     const [pendingAction, setPendingAction] = useState(null)   // a queued save or section change, see goToStep
     const sectionDraftTimer = useRef(null)                     // debounce for in-progress typing, see reportSectionDraft
     const sectionDraft = useRef({})                            // the open section's latest typing, for "Save and go"
-    const [leaveOpen, setLeaveOpen] = useState(false)          // "← Dashboard" asks first (Round 19)
+    const [leaveOpen, setLeaveOpen] = useState(false)          // leaving asks first (Rounds 19, 28)
+    const [leaveTo, setLeaveTo] = useState("/dashboard")       // where a guarded link was going
+    const [dirty, setDirty] = useState(false)                  // editing: changes not saved yet
+    const [online, setOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine)
+    const savedBaseline = useRef(null)                         // editing: the answers as last saved
     const sectionRef = useRef(null)                            // the open section, for its form's required items
     // Round 13: where the student is and how far they have got. `reachedStep` is the furthest stage
     // they arrived at with everything before it complete; a tab beyond it, or Finish, is refused
@@ -60,6 +70,7 @@ function InterestForm() {
     const currentStepIndex = steps.findIndex((s) => s.key === step)
     const storageKey = user ? `freshmxnInterestForm_${user._id}` : null   // per student, so a shared computer never mixes answers
     const hasSubmitted = user?.progress?.interestForm === "done"
+    const editMode = hasSubmitted                              // Round 28: save only on "Save changes"
     const savedReached = steps.findIndex((s) => s.key === progress.reachedStep)
     const reachedIndex = hasSubmitted ? steps.length - 1 : Math.max(savedReached, 0)
 
@@ -90,7 +101,9 @@ function InterestForm() {
     }
 
     const fetchSavedForm = async () => {
-        const draft = readLocalDraft()
+        // editing a finished form starts from what was saved, never from a draft in this browser
+        if (editMode) localStorage.removeItem(storageKey)
+        const draft = editMode ? null : readLocalDraft()
         let submission = null
 
         try {
@@ -118,8 +131,10 @@ function InterestForm() {
         }
 
         if (submission?.interest && Object.keys(submission.interest).length > 0) {
+            const saved = fromSubmissionInterest(submission.interest)
+            savedBaseline.current = JSON.stringify(saved)
             setProgress(submission.interest.formProgress || legacy)
-            setFormState(fromSubmissionInterest(submission.interest))
+            setFormState(saved)
             return
         }
 
@@ -130,7 +145,8 @@ function InterestForm() {
     useEffect(() => {
         if (!formState || !storageKey) return
 
-        writeLocalDraft(formState, progress)
+        if (editMode) setDirty(JSON.stringify(formState) !== savedBaseline.current)
+        else writeLocalDraft(formState, progress)
 
         const derived = extractInterestData(formState, getVisibleLifeStages(user))
         setExtractedActivities(derived.extractedActivities)
@@ -152,7 +168,9 @@ function InterestForm() {
         sectionDraft.current = { ...sectionDraft.current, ...patch }
         clearTimeout(sectionDraftTimer.current)
         sectionDraftTimer.current = setTimeout(() => {
-            writeLocalDraft({ ...formState, ...patch })
+            // editing: nothing goes to this browser — only whether there is something unsaved
+            if (editMode) setDirty(JSON.stringify({ ...formState, ...sectionDraft.current }) !== savedBaseline.current)
+            else writeLocalDraft({ ...formState, ...patch })
         }, 400)
     }
 
@@ -192,11 +210,16 @@ function InterestForm() {
         const response = await saveInterest({ interest, isComplete: isFinishing || hasSubmitted })
 
         // the server is the source of truth once it has the answers
-        localStorage.setItem(storageKey, JSON.stringify({
-            savedAt: response.data.data.lastSavedAt || new Date().toISOString(),
-            formState,
-            progress: at,
-        }))
+        if (editMode) {
+            savedBaseline.current = JSON.stringify(formState)
+            setDirty(false)
+        } else {
+            localStorage.setItem(storageKey, JSON.stringify({
+                savedAt: response.data.data.lastSavedAt || new Date().toISOString(),
+                formState,
+                progress: at,
+            }))
+        }
 
         return response
     }
@@ -251,13 +274,55 @@ function InterestForm() {
 
     const requestSave = () => setPendingAction({ kind: "save", at: { lastStep: step, reachedStep: steps[reachedIndex].key } })
 
-    // "← Dashboard" → "Save and go" (owner, Round 19): what the open section has typed but not yet
-    // handed up is merged in first, then saved, then the student goes to their dashboard.
-    const saveAndGoHome = () => {
+    // Leaving → "Save and go" (owner, Rounds 19 and 28): what the open section has typed but not yet
+    // handed up is merged in first, then saved, then the student goes where the link was going.
+    const saveAndGo = () => {
         const typed = sectionDraft.current
         setFormState((previous) => ({ ...previous, ...typed }))
-        setPendingAction({ kind: "save", then: "/dashboard", at: { lastStep: step, reachedStep: steps[reachedIndex].key } })
+        setPendingAction({ kind: "save", then: leaveTo, at: { lastStep: step, reachedStep: steps[reachedIndex].key } })
     }
+
+    // Round 28: the menu, the logo and every other link ask first too — before, only the page's own
+    // button did, and the navbar's Dashboard left without a word. While editing, only when something
+    // is unsaved; the first time through, always (the section being typed isn't saved until you move on).
+    const guardLeaving = !editMode || dirty
+    useEffect(() => {
+        if (!guardLeaving) return undefined
+        const onClick = (event) => {
+            const link = event.target.closest && event.target.closest("a[href]")
+            if (!link || link.target === "_blank" || (sectionRef.current && sectionRef.current.contains(link))) return
+            const url = new URL(link.href, window.location.href)
+            if (url.origin !== window.location.origin || url.pathname.startsWith("/interest")) return
+            event.preventDefault()
+            event.stopPropagation()
+            setLeaveTo(url.pathname + url.search + url.hash)
+            setLeaveOpen(true)
+        }
+        document.addEventListener("click", onClick, true)
+        return () => document.removeEventListener("click", onClick, true)
+    }, [guardLeaving])
+
+    // editing: a refresh or a closed tab with unsaved changes is warned about; so is going offline
+    useEffect(() => {
+        if (!editMode || !dirty) return undefined
+        const onBeforeUnload = (event) => {
+            event.preventDefault()
+            event.returnValue = UNSAVED_WARNING
+            return UNSAVED_WARNING
+        }
+        window.addEventListener("beforeunload", onBeforeUnload)
+        return () => window.removeEventListener("beforeunload", onBeforeUnload)
+    }, [editMode, dirty])
+    useEffect(() => {
+        const up = () => setOnline(true)
+        const down = () => setOnline(false)
+        window.addEventListener("online", up)
+        window.addEventListener("offline", down)
+        return () => {
+            window.removeEventListener("online", up)
+            window.removeEventListener("offline", down)
+        }
+    }, [])
 
     useEffect(() => {
         if (!pendingAction || !formState) return
@@ -277,14 +342,15 @@ function InterestForm() {
 
             if (isFinishing) setIsSubmitting(true)
 
-            await saveToServer(isFinishing, action.at)
+            // editing: moving between sections saves nothing — only Save changes (or finishing) does
+            if (!(editMode && isNavigating && !isFinishing)) await saveToServer(isFinishing, action.at)
             setProgress(action.at)
 
             if (isFinishing) {
                 dispatch(setUser({
                     user: { ...user, progress: { ...user.progress, interestForm: "done" } },
                 }))
-                message.success("Interest form submitted successfully")
+                message.success(editMode ? "Your changes are saved" : "Virtual Career Counselling submitted — well done")
             }
 
             sectionDraft.current = {}
@@ -295,7 +361,7 @@ function InterestForm() {
                 navigate(`/interest/${steps[action.index].key}`)
                 window.scrollTo(0, 0)
             } else {
-                message.success("Progress saved — you can come back any time")
+                message.success(editMode ? "Your changes are saved" : "Progress saved — you can come back any time")
             }
         } catch (error) {
             // never lose a section to a bad connection: stay put, keep the answers, say so
@@ -331,8 +397,8 @@ function InterestForm() {
                 <div className="page if-landing">
                     {hasSubmitted ? (
                         <>
-                            <h2>You've already submitted your interest form</h2>
-                            <p>Would you like to edit your answers? You can change anything until your report is generated.</p>
+                            <h2>You've already finished Virtual Career Counselling</h2>
+                            <p>Would you like to look at or edit your answers? Nothing changes until you press <strong>Save</strong>.</p>
                         </>
                     ) : (
                         <>
@@ -447,20 +513,37 @@ function InterestForm() {
     return (
         <div>
             <Navbar />
-            <BackToDashboard onLeave={() => setLeaveOpen(true)} />
+            {/* Round 28 (owner): the menu already has Dashboard, so the page's own button goes back a section */}
+            {currentStepIndex > 0 && (
+                <div className="back-to-dashboard">
+                    <button type="button" className="btn btn-ghost btn-sm tap" onClick={() => handlePreviousSection({ sectionOk: false })}>
+                        ← Previous section
+                    </button>
+                </div>
+            )}
+            {editMode && (
+                <div className={`if-edit-banner${dirty ? " is-dirty" : ""}`} role="status">
+                    {dirty
+                        ? <>You have <strong>unsaved changes</strong>. Press <strong>Save</strong> to keep them.</>
+                        : <>You're editing your answers. Moving between sections saves nothing — only <strong>Save</strong> does.</>}
+                </div>
+            )}
+            {editMode && dirty && !online && (
+                <div className="if-edit-banner is-dirty" role="alert">{UNSAVED_WARNING}</div>
+            )}
             <Modal
                 open={leaveOpen}
-                title="Leave for your dashboard?"
+                title="Leave this page?"
                 onCancel={() => setLeaveOpen(false)}
                 footer={[
                     <button key="stay" type="button" className="btn btn-ghost" onClick={() => setLeaveOpen(false)}>Stay</button>,
-                    <button key="leave" type="button" className="btn btn-ghost" onClick={() => navigate("/dashboard")}>Leave without saving</button>,
-                    <button key="save" type="button" className="btn btn-primary" onClick={saveAndGoHome} disabled={isSaving}>
+                    <button key="leave" type="button" className="btn btn-ghost" onClick={() => navigate(leaveTo)}>Leave without saving</button>,
+                    <button key="save" type="button" className="btn btn-primary" onClick={saveAndGo} disabled={isSaving}>
                         {isSaving ? "Saving…" : "Save and go"}
                     </button>,
                 ]}
             >
-                <p>Answers you haven't saved may be lost. Save them first?</p>
+                <p>{editMode ? "Your changes haven't been saved and will be lost. Save them first?" : "Answers you haven't saved may be lost. Save them first?"}</p>
                 {saveError && <p><strong>{saveError}</strong></p>}
             </Modal>
             {isSaving && <p>Saving...</p>}

@@ -16,9 +16,9 @@ function Home() {
     if (!user) return null
 
     const interestFormLabel = {
-        not_started: "Start the interest form",
-        in_progress: "Continue the interest form",
-        done: "Review / edit your interest form",
+        not_started: "Start Virtual Career Counselling",
+        in_progress: "Continue Virtual Career Counselling",
+        done: "Review / edit Virtual Career Counselling",
     }
 
     const assessmentLabel = {
@@ -85,7 +85,7 @@ function Home() {
                                 className="btn btn-primary btn-next"
                                 onClick={() => navigate(nextStage.path)}
                             >
-                                {nextStage.key === "interest" && (interestFormLabel[user.progress?.interestForm] || "Open the interest form")}
+                                {nextStage.key === "interest" && (interestFormLabel[user.progress?.interestForm] || "Open Virtual Career Counselling")}
                                 {nextStage.key === "assessment" && (assessmentLabel[user.progress?.psychometric] || "Open the assessment")}
                                 {nextStage.key === "report" && (user.progress?.report === "ready" ? "Read your report" : "See how your report is coming")}
                                 {nextStage.key === "mentor" && "See your mentor status"}
@@ -102,7 +102,7 @@ function Home() {
                     )}
 
                     {!assessmentOpen && !isMentorOnly(user) && (
-                        <p><em>The assessment opens once the interest form is finished — it needs what you tell us there to match against.</em></p>
+                        <p><em>The assessment opens once Virtual Career Counselling is finished — it needs what you tell us there to match against.</em></p>
                     )}
 
                     {/* owner, Round 25: once Career Discovery has delivered its matches, ask how else we can help */}

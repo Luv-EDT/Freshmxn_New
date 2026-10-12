@@ -28,7 +28,7 @@ const SECTIONS = [
                 <p>Freshmxn's Lab offers three paid plans:</p>
                 <ul>
                     <li>
-                        <strong>Career Discovery</strong> — an interest form, a psychometric assessment, your
+                        <strong>Career Discovery</strong> — Virtual Career Counselling (questions about your story and interests), a psychometric assessment, your
                         profile, and a report with your ranked career matches and a readiness guide.
                     </li>
                     <li>
@@ -97,7 +97,7 @@ const SECTIONS = [
         body: (
             <>
                 <p>
-                    <strong>Career Discovery:</strong> once your interest form, assessment and report have been
+                    <strong>Career Discovery:</strong> once your Virtual Career Counselling, assessment and report have been
                     delivered, you can request a refund from your Profile page. Each request is reviewed
                     individually, and we'll tell you the outcome.
                 </p>

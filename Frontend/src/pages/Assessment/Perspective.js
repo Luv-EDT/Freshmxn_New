@@ -11,6 +11,7 @@ import {
     VALUES_SCALE_IMPORTANCE,
     OPEN_ITEM_NOTE,
 } from "./perspectiveItems"
+import { REPEAT_NOTE } from "./repeatNote"
 
 // The Perspective block — the largest module, and the one that carries the assessment past the
 // release threshold. Four different answer shapes, which is why it cannot just reuse LikertModule:
@@ -111,6 +112,8 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
             {mcqPage && (
                 <>
                     <h3>{mcqPage.title}</h3>
+                    {/* Round 28 (owner): the calibration pair on this part asks a similar thing twice */}
+                    {mcqPage.key === "uncertainty" && <p className="repeat-note">{REPEAT_NOTE}</p>}
                     {mcqPage.key === "uncertainty" && (
                         <p>
                             <em>
@@ -137,7 +140,7 @@ function Perspective({ answers, narrative, openText, onAnswer, onNarrative, onOp
             {isValuesPage && (
                 <>
                     <h3>What matters to you</h3>
-                    <p>Two passes over the same four areas: how things are now, then how much each matters.</p>
+                    <p>Two passes over the same four areas: how things are now, then how much each matters. The repeat is on purpose — answer each pass on its own.</p>
 
                     <h4>Right now, how fulfilled do you feel in each?</h4>
                     {VALUES_FULFILMENT.map((item) => (

@@ -12,7 +12,7 @@ import Navbar from "../Navbar"
 import { formatInr } from "../Public/usePricing"
 
 // loads Razorpay's checkout script once, only when Razorpay mode is on
-const loadRazorpayCheckout = () => {
+export const loadRazorpayCheckout = () => {
     return new Promise((resolve) => {
         if (window.Razorpay) return resolve(true)
         const script = document.createElement("script")
@@ -150,6 +150,11 @@ function Paywall() {
                     message.info("Payment received — confirming...")
                     waitForAccess()
                 },
+            })
+            // Round 28: say so at once; the webhook records the failure and emails the payment id
+            checkout.on("payment.failed", (response) => {
+                const reason = response?.error?.description || "The payment didn't go through"
+                message.error(`${reason}. No money was taken — you can try again.`)
             })
             checkout.open()
         } catch (error) {

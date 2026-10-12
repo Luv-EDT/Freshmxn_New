@@ -17,7 +17,7 @@ import ChipListInput from "./ChipListInput"
 const ACTIVITY_GROUPS = [
     { key: "personalGrowth", title: "What helped you grow?" },
     { key: "curiosityDriven", title: "What did you explore just because you were curious?" },
-    { key: "socialRecognition", title: "When did people notice or praise you?" },
+    { key: "socialRecognition", title: "What did you do that people noticed or praised?" },
     { key: "effortlessEngagement", title: "What felt effortless — where time just flew?" },
 ]
 
@@ -198,7 +198,9 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
 
             <div className="if-step-head">
                 <h2>{stage.heading}</h2>
-                <p>{stage.subtitle} Anything counts — finished or ongoing, like winning a competition, playing cricket or reading.</p>
+                <p>{stage.subtitle}</p>
+                {/* Round 28 (owner): everything, not only what lasted — the next stage narrows it down */}
+                <p className="if-write-all">Write down <strong>everything</strong> you did or went through in these years — even once, even if you stopped, even if you can't do it now. We'll narrow it down later.</p>
             </div>
 
             {/* Pre-High School can be skipped */}

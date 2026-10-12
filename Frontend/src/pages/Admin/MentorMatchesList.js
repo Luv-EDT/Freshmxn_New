@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react"
 import { Table, Button, Popconfirm, Segmented, Select, Modal, Input, message } from "antd"
 import dayjs from "dayjs"
-import { getWaitlistForAdmin, matchForAdmin, resolveForAdmin, resetChoiceForAdmin } from "../../apiCall/mentorWaitlistApi"
+import { getWaitlistForAdmin, matchForAdmin, resolveForAdmin, resetChoiceForAdmin, completeSessionForAdmin } from "../../apiCall/mentorWaitlistApi"
+import { grantMentorSessionForAdmin } from "../../apiCall/paymentsApi"
 import { getAllMentorsForAdmin } from "../../apiCall/mentorsApi"
+import { markWhatsappInviteForAdmin } from "../../apiCall/mentorSessionsApi"
 
 // Every Tier-2 student and where their mentor match stands. The 20-business-day clock runs from the
 // student's CHOICE, not their payment. Actions are keyed on the student's user id.
@@ -10,6 +12,11 @@ import { getAllMentorsForAdmin } from "../../apiCall/mentorsApi"
 //   Resolve — no mentor found: rollover first, refund on request. Recording only: the money itself
 //             still moves through the Refund Requests tab.
 //   Reset   — the student asked (on WhatsApp) to change their career choice
+//   Done    — Round 28: the session happened; it is logged and the student can book another (paid)
+//   Another — Round 28: record another session the student paid for by hand, or give one free
+//   WhatsApp — Round 28: a match emails the mentor the invite; this opens WhatsApp with the same
+//             invite typed in (the mentor's number from their profile) — press send there
+// A student must have chosen WhatsApp or email and agreed to it before they can be matched.
 
 // weekdays left until the promised date; negative once it has passed
 const businessDaysLeft = (dueBy) => {
@@ -46,6 +53,33 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
             message.error("Failed to fetch the mentor waitlist")
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleDone = async (studentId) => {
+        try {
+            const response = await completeSessionForAdmin(studentId)
+            message.success(response.data.message)
+            fetchAll()
+        } catch (error) {
+            message.error(error.response?.data?.message || "Failed to log the session")
+        }
+    }
+
+    // opens WhatsApp with the invite typed in, and notes that it was sent
+    const sendWhatsapp = async (record) => {
+        window.open(record.whatsappInvite, "_blank", "noopener")
+        const response = await markWhatsappInviteForAdmin(record.student?._id)
+        if (response && response.data.success) fetchAll()
+    }
+
+    const handleAnother = async (studentId, free) => {
+        try {
+            const response = await grantMentorSessionForAdmin(studentId, { free })
+            message.success(response.data.message)
+            fetchAll()
+        } catch (error) {
+            message.error(error.response?.data?.message || "Could not add the session")
         }
     }
 
@@ -129,8 +163,20 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                 return `${dayjs(record.dueBy).format("DD MMM YYYY")} (${record.matchStatus === "matching" ? label : "—"})`
             },
         },
-        { title: "Status", dataIndex: "matchStatus" },
+        { title: "Status", dataIndex: "matchStatus", render: (value, record) => `${value}${(record.sessions || []).length ? ` · ${record.sessions.length} done` : ""}${record.sameFieldNewMentor ? " · different mentor wanted" : ""}` },
         { title: "Mentor", render: (_, record) => record.assignedMentor?.name || "—" },
+        // Round 28: how the mentor may reach the student, and where this match's steps stand
+        { title: "Contact", render: (_, record) => (record.contactConsented ? (record.contactVia === "email" ? "Email" : "WhatsApp") : "Waiting for consent") },
+        {
+            title: "Invite steps",
+            render: (_, record) => (record.matchStatus === "matched"
+                ? [
+                    record.whatsappInviteAt ? "✓ WhatsApp sent" : "WhatsApp not sent",
+                    record.mentorPrivacyAcceptedAt ? "✓ privacy accepted" : "privacy not accepted",
+                    record.bookingLinkSentAt ? "✓ booking link sent" : "no booking link yet",
+                ].join(" · ")
+                : "—"),
+        },
         // rows written before Round 13 carry the old, unclear wording
         { title: "Note", render: (_, record) => (record.adminNote === "Re-opened on a new Tier 2 place" ? "Re-joined the mentor plan after leaving it — waiting for a new choice" : record.adminNote) || "—" },
         {
@@ -141,18 +187,42 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                     <>
                         {record.matchStatus === "matching" && (
                             <>
-                                <Select
-                                    placeholder="Pick a mentor"
-                                    style={{ minWidth: 180 }}
-                                    options={mentors.map((mentor) => ({ value: mentor.user, label: `${mentor.name} — ${mentor.discipline}` }))}
-                                    value={chosenMentor[studentId]}
-                                    onChange={(value) => setChosenMentor((prev) => ({ ...prev, [studentId]: value }))}
-                                />{" "}
-                                <Popconfirm title="Match this student with the selected mentor?" onConfirm={() => handleMatch(studentId)} disabled={!chosenMentor[studentId]}>
-                                    <Button type="primary" size="small" disabled={!chosenMentor[studentId]}>Match</Button>
-                                </Popconfirm>{" "}
+                                {record.contactConsented ? (
+                                    <>
+                                        <Select
+                                            placeholder="Pick a mentor"
+                                            style={{ minWidth: 180 }}
+                                            options={mentors
+                                                .filter((mentor) => !(record.excludedMentors || []).some((excluded) => String(excluded) === String(mentor.user)))
+                                                .map((mentor) => ({ value: mentor.user, label: `${mentor.name} — ${mentor.discipline}` }))}
+                                            value={chosenMentor[studentId]}
+                                            onChange={(value) => setChosenMentor((prev) => ({ ...prev, [studentId]: value }))}
+                                        />{" "}
+                                        <Popconfirm title="Match this student with the selected mentor? The mentor is emailed the invite." onConfirm={() => handleMatch(studentId)} disabled={!chosenMentor[studentId]}>
+                                            <Button type="primary" size="small" disabled={!chosenMentor[studentId]}>Match</Button>
+                                        </Popconfirm>{" "}
+                                    </>
+                                ) : <span>Waiting for the student's contact consent </span>}
                                 <Button size="small" onClick={() => handleResolve(studentId, "rolled_over")}>Roll over</Button>{" "}
                                 <Button size="small" danger onClick={() => handleResolve(studentId, "refunded")}>Refunded</Button>{" "}
+                            </>
+                        )}
+                        {record.matchStatus === "matched" && record.whatsappInvite && (
+                            <><Button size="small" onClick={() => sendWhatsapp(record)}>{record.whatsappInviteAt ? "Send invite on WhatsApp again" : "Send invite on WhatsApp"}</Button>{" "}</>
+                        )}
+                        {record.matchStatus === "matched" && (
+                            <Popconfirm title="Mark this student's mentor session done? It is logged and they are asked for a review." onConfirm={() => handleDone(studentId)}>
+                                <Button type="primary" size="small">Session done</Button>
+                            </Popconfirm>
+                        )}{" "}
+                        {record.matchStatus === "completed" && (record.extraSessionsPaid || 0) <= (record.extraSessionsUsed || 0) && (
+                            <>
+                                <Popconfirm title="Record another session the student paid for by hand?" onConfirm={() => handleAnother(studentId, false)}>
+                                    <Button size="small">Another session (paid)</Button>
+                                </Popconfirm>{" "}
+                                <Popconfirm title="Give the student another session free?" onConfirm={() => handleAnother(studentId, true)}>
+                                    <Button size="small">Another session (free)</Button>
+                                </Popconfirm>{" "}
                             </>
                         )}
                         {record.choiceSentAt && (
@@ -175,7 +245,7 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
     return (
         <div>
             <Segmented
-                options={["awaiting_choice", "matching", "matched", "unmatchable", "all"]}
+                options={["awaiting_choice", "matching", "matched", "completed", "unmatchable", "all"]}
                 value={statusFilter}
                 onChange={setStatusFilter}
             />{" "}

@@ -59,7 +59,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
         },
         matchStatus: {
             type: String,
-            default: "awaiting_choice", // awaiting_choice | matching | matched | unmatchable
+            default: "awaiting_choice", // awaiting_choice | matching | matched | completed (Round 28) | unmatchable
         },
         assignedMentor: {
             type: mongoose.Schema.Types.ObjectId,
@@ -74,6 +74,55 @@ const mentorWaitlistSchema = new mongoose.Schema(
         adminNote: {
             type: String,
         },
+        // MENTOR SESSIONS (owner, Round 28). When the admin marks a matched session done it is logged
+        // here and the place shows "completed". Another session — a different career or job role, or the
+        // same one with a different mentor — is a paid add-on at the Mentor Only price: each payment adds
+        // one to extraSessionsPaid, and starting one adds one to extraSessionsUsed. Nothing here is ever
+        // removed, so the student's history stays whole (a "Reset choice" keeps it too).
+        sessions: {
+            type: [{
+                professionId: String,
+                profession: String,
+                jobRole: String,
+                mentor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+                mentorName: String,
+                matchedAt: Date,
+                completedAt: Date,
+                adminNote: String,
+            }],
+            default: [],
+        },
+        extraSessionsPaid: {
+            type: Number,
+            default: 0,
+        },
+        extraSessionsUsed: {
+            type: Number,
+            default: 0,
+        },
+        sameFieldNewMentor: {
+            type: Boolean,     // Round 28: this round is the same career and role, with a DIFFERENT mentor
+            default: false,
+        },
+        // HOW THE MENTOR REACHES THE STUDENT (owner, Round 28). The student picks WhatsApp or email and
+        // agrees that we share their first name and that one contact with the mentor — no match
+        // without it. The mentor sees the contact only after accepting our privacy rules.
+        contactVia: {
+            type: String,      // whatsapp | email
+            default: null,
+        },
+        contactConsentAt: {
+            type: Date,
+            default: null,
+        },
+        excludedMentors: {
+            type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],   // never offered to this student again: a reported mentor, or last time's for "same field, different mentor"
+            default: [],
+        },
+        // the current match, step by step (cleared on every new match)
+        whatsappInviteAt: { type: Date, default: null },          // the admin sent the invite on WhatsApp
+        mentorPrivacyAcceptedAt: { type: Date, default: null },   // the mentor accepted the privacy rules
+        bookingLinkSentAt: { type: Date, default: null },         // the mentor sent their booking (Calendly) link
     },
     {
         timestamps: true,

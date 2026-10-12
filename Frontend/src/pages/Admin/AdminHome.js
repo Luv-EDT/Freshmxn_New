@@ -10,6 +10,7 @@ import CouponsList from "./CouponsList"
 import MentorsList from "./MentorsList"
 import MentorMatchesList from "./MentorMatchesList"
 import MentorReviewsList from "./MentorReviewsList"
+import SessionFeedbackList from "./SessionFeedbackList"
 import AssessmentIssuesList from "./AssessmentIssuesList"
 import FollowUpsList from "./FollowUpsList"
 import DataUpdatesList from "./DataUpdatesList"
@@ -67,6 +68,11 @@ function AdminHome() {
             key: "mentorMatches",
             label: "Mentor Matches",
             children: <MentorMatchesList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
+        },
+        {
+            key: "sessionFeedback",
+            label: "Session feedback",
+            children: <SessionFeedbackList />,
         },
         {
             key: "mentorReviews",

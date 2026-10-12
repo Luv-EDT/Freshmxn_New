@@ -24,8 +24,12 @@ const USER_COLLECTIONS = [
     ["mentorWaitlist", "../model/mentorWaitlistModel"],
     ["studyAbroadLeads", "../model/studyAbroadLeadsModel"],
     ["careerHelp", "../model/careerHelpModel"],
+    ["sessionReviews", "../model/sessionReviewsModel"],
+    ["mentorReports", "../model/mentorReportsModel"],
     ["mentors", "../model/mentorsModel"],
 ]
+
+const REMOVED = "Removed mentor"
 
 // the real models, required on first use so the fixtures can pass stand-ins
 const realModels = () => ({
@@ -34,6 +38,13 @@ const realModels = () => ({
     MentorReview: require("../model/mentorReviewsModel"),
     ProfessionSuggestions: require("../model/professionSuggestionsModel"),
     MentorWaitlist: require("../model/mentorWaitlistModel"),
+    // where a mentor's name is kept in someone else's record (Round 28): kept, but as "Removed mentor"
+    named: [
+        [require("../model/mentorWaitlistModel"), "sessions"],
+        [require("../model/dataProposalsModel"), "fromMentors"],
+        [require("../model/sessionReviewsModel"), null],
+        [require("../model/mentorReportsModel"), null],
+    ],
     byUser: Object.fromEntries(USER_COLLECTIONS.map(([name, file]) => [name, require(file)])),
 })
 
@@ -69,6 +80,23 @@ const deleteAccountData = async (userId, { dryRun = false, models = null } = {})
     counts.matchesUnassigned = dryRun
         ? await M.MentorWaitlist.countDocuments({ assignedMentor: id })
         : (await M.MentorWaitlist.updateMany({ assignedMentor: id }, { $set: { assignedMentor: null, matchStatus: "matching", matchedAt: null } })).modifiedCount
+
+    // other students' session history, reviews and reports, and mentor-backed proposals keep the
+    // record — without the name of the person who asked to be deleted
+    counts.namesRemoved = 0
+    for (const [Model, field] of M.named || []) {
+        if (!field) {
+            counts.namesRemoved += dryRun ? await Model.countDocuments({ mentor: id }) : (await Model.updateMany({ mentor: id }, { $set: { mentorName: REMOVED } })).modifiedCount
+            continue
+        }
+        const rows = await Model.find({ [`${field}.mentor`]: id }).lean()
+        counts.namesRemoved += rows.length
+        if (dryRun) continue
+        for (const row of rows) {
+            const renamed = (row[field] || []).map((item) => (String(item.mentor) === String(id) ? { ...item, mentorName: REMOVED } : item))
+            await Model.updateOne({ _id: row._id }, { $set: { [field]: renamed } })
+        }
+    }
 
     counts.users = dryRun ? 1 : (await M.User.deleteOne({ _id: id })).deletedCount
 

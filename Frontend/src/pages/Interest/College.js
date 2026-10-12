@@ -2,10 +2,12 @@ import LifeStageSection from "./LifeStageSection"
 import { ACTIVITY_REFERENCE_LISTS } from "./activityReferenceLists"
 import { PROBLEM_PROMPTS } from "./problemPrompts"
 
-// text ported unchanged from virtual-career-counselling College.jsx
+// text first ported from virtual-career-counselling College.jsx
+// Round 28 (owner): the prompts are crisp, and "noticed or praised" asks for the ACTIVITY people
+// praised, never the prize or award it led to
 const STAGE = {
     heading: "🎓 College Activities",
-    subtitle: "Think back to your college years. What activities did you enjoy?",
+    subtitle: "Your college years — classes, clubs, internships, life outside.",
     isSkippable: false,
     referenceList: ACTIVITY_REFERENCE_LISTS.college,
     prompts: PROBLEM_PROMPTS.college,
@@ -15,18 +17,18 @@ const STAGE = {
         individualInternalProblems: ["e.g., Fear of networking", "e.g., Joining professional clubs"],
         interpersonalInternalProblems: ["e.g., Group project conflicts", "e.g., Team leadership roles"],
         externalProblems: ["e.g., Campus sustainability issues", "e.g., Organizing sustainability club"],
-        socialRecognition: "e.g., Winning case competition",
+        socialRecognition: "e.g., Running the college fest's sponsorship",
         effortlessEngagement: "e.g., Playing intramural sports",
     },
     help: {
-        personalGrowth: ["Activities that helped you develop confidence, discipline, or self-awareness.", "Examples: leadership roles, overcoming fears, learning new skills.", "Write short, specific answers."],
-        curiosityDriven: ["Activities that made you ask questions or explore new things.", "Examples: research projects, reading books, asking \"why\" questions.", "Write short, specific answers."],
+        personalGrowth: ["What you did that made you braver, more disciplined or more sure of yourself.", "Examples: running a club, an internship, living on your own, a part-time job."],
+        curiosityDriven: ["What you explored just because you were curious.", "Examples: research projects, online courses, case competitions, building something."],
         individualInternalProblems: [{ strong: "Personal challenges:", text: "Self-doubt, fear, lack of skills, or confusion." }, "Describe the problem briefly, then list activities that helped you overcome it.", "Examples: fear of public speaking → joining debate club"],
         interpersonalInternalProblems: [{ strong: "Relationship challenges:", text: "Issues with family, friends, or social pressure." }, "Describe the problem briefly, then list activities that helped you overcome it.", "Examples: peer pressure → joining positive groups"],
         externalProblems: [{ strong: "Community or environmental issues:", text: "Problems you noticed around you." }, "Describe the problem briefly, then list activities you took to help.", "Examples: plastic waste → organizing clean-up drives"],
-        socialRecognition: ["Activities where you felt appreciated, recognized, or praised by others.", "Examples: winning competitions, receiving awards, being thanked.", "Write short, specific answers."],
-        effortlessEngagement: ["Activities that felt natural, fun, and easy — where time flew by.", "Examples: playing games, drawing, reading stories.", "Don't overthink — just what felt enjoyable."],
-        additionalInterests: ["Any other activities you enjoyed that weren't covered above.", "Write the activity and briefly why you liked it.", "Keep answers short and specific."],
+        socialRecognition: ["What you DID that people noticed or praised — the activity, not the prize.", "Examples: running a club event, tutoring juniors, designing posters, leading a project."],
+        effortlessEngagement: ["What felt easy and fun — where time flew.", "Examples: sports, music, writing, organising trips."],
+        additionalInterests: ["Anything else you enjoyed doing — write the activity and why.", "Examples: volunteering, travel, a hobby you picked up."],
     },
 }
 

@@ -6,7 +6,7 @@ const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const requireDiscovery = require("../middlewares/requireDiscovery")
 const { raiseIssue } = require("../utils/assessmentIssues")
-const { sendEmail, escapeHtml } = require("../utils/mailer")
+const { notifyStudent } = require("../utils/statusEmails")
 
 const router = express.Router()
 
@@ -140,6 +140,7 @@ router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             const { queueReport } = require("../workers/queueHelpers")
             await queueReport(student._id, "queueing the report")
             await User.updateOne({ _id: student._id }, { reportFailedAt: null })
+            notifyStudent(student, "reportRerun")
         } else {
             if (!RETAKEABLE.includes(issue.module)) {
                 return res.status(400).json({ success: false, message: "This test cannot be retaken" })
@@ -175,13 +176,7 @@ router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
 
             await Submission.updateOne({ user: student._id }, update, { upsert: true })
 
-            await sendEmail({
-                to: student.email,
-                subject: "You can take one of your Freshmxn tests again",
-                html: `<p>Hi ${escapeHtml(student.name)},</p>
-                       <p>Your earlier attempt at <strong>${escapeHtml(MODULE_NAMES[issue.module] || issue.module)}</strong> had a technical problem, so we have opened it again for you — one more attempt.</p>
-                       <p>Open your assessment at <a href="${process.env.FRONTEND_URL}/assessment">${process.env.FRONTEND_URL}/assessment</a>, take the test, then press Submit again so your report is updated.</p>`,
-            })
+            await notifyStudent(student, "retakeGranted", { testName: MODULE_NAMES[issue.module] || issue.module })
         }
 
         issue.status = issue.module === "report" ? "resolved" : "retake_granted"
@@ -218,13 +213,25 @@ router.put("/dismissForAdmin/:id", authMiddleware, adminAuthMiddleware, async (r
             return res.status(400).json({ success: false, message: "This issue has already been handled" })
         }
 
+        // Round 28 (owner): a student who asked always hears back. Their request can only be turned
+        // down with a reason, which is emailed to them; issues the system raised need none.
+        const reason = typeof req.body.adminNote === "string" ? req.body.adminNote.trim().slice(0, 500) : ""
+        const askedByStudent = issue.raisedBy === "student"
+        if (askedByStudent && !reason) {
+            return res.status(400).json({ success: false, message: "Please write the reason — the student is emailed it" })
+        }
+
         issue.status = "dismissed"
         issue.handledByAdmin = req.user._id
         issue.handledAt = new Date()
-        issue.adminNote = typeof req.body.adminNote === "string" ? req.body.adminNote.slice(0, 500) : issue.adminNote
+        issue.adminNote = reason || issue.adminNote
         await issue.save()
 
-        return res.status(200).json({ success: true, message: "Issue dismissed", data: issue })
+        if (askedByStudent) {
+            notifyStudent(await User.findById(issue.user).lean(), "retakeDeclined", { testName: MODULE_NAMES[issue.module] || issue.module, reason })
+        }
+
+        return res.status(200).json({ success: true, message: askedByStudent ? "Dismissed — the student has been emailed" : "Issue dismissed", data: issue })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to dismiss the issue", error: error.message })

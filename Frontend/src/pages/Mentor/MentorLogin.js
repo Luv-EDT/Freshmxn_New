@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { useDispatch } from "react-redux"
 import { Input } from "antd"
-import { loginUser, getCurrentUser } from "../../apiCall/userApi"
+import { loginUser, getCurrentUser, getGoogleSignInUrl } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 import logo from "../../assets/brand/logo.png"
 import AuthCard from "../AuthCard"
@@ -66,6 +66,12 @@ function MentorLogin() {
                 </div>
                 <button type="submit" className="tap">Log in</button>
             </form>
+
+            <p className="auth-divider">or</p>
+
+            <a href={getGoogleSignInUrl("mentor")}>
+                <button type="button">Log in with Google</button>
+            </a>
 
             <p><Link to="/forgot-password">Forgot password?</Link></p>
             <p>New mentor? <Link to="/mentor/register">Create a mentor account</Link></p>

@@ -10,6 +10,7 @@ const Coupon = require("../model/couponsModel")
 const MentorWaitlist = require("../model/mentorWaitlistModel")
 const Consent = require("../model/consentModel")
 const { isMinor, isVerified } = require("../utils/parentConsent")
+const { notifyStudent } = require("../utils/statusEmails")
 
 // NO PAYMENT FROM AN UNDER-18 UNTIL THEIR PARENT HAS CONFIRMED (Round 10). Asked once, at the two
 // doors to paying: a manual access request and a Razorpay order. A student already paying before
@@ -91,6 +92,12 @@ const calculateQuote = async (user, tier, coupon) => {
         // never a silent 0% — a student who typed a code must know it didn't work
         if (!isCouponUsable) {
             return { error: "Invalid coupon" }
+        }
+
+        // one use per person (owner, Round 28): applying it again after a paid use is refused, so a
+        // code can never be counted twice for the same student
+        if (await Payment.exists({ user: user._id, coupon: couponCode, status: "paid" })) {
+            return { error: "You've already used this coupon" }
         }
 
         discountPct = existingCoupon.discountPct
@@ -190,6 +197,8 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
     ).lean()
     const { password, ...updatedUser } = updated
 
+    // a coupon counts as used only here, when a plan is actually granted with it — never when it is
+    // typed or quoted (owner, Round 28)
     if (coupon) {
         await Coupon.updateOne({ code: coupon }, { $inc: { timesUsed: 1 } })
     }
@@ -200,7 +209,63 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
         { usedAt: new Date() }
     )
 
+    // Round 28: a request for aid on a plan they now hold is closed — they paid without it
+    const nowHeld = TIERS.filter((held) => owns(tier, held, true))
+    const openAid = await FinancialAidRequest.find({ user: userId, status: "pending", requestedTier: { $in: nowHeld } }).lean()
+    if (openAid.length) {
+        await FinancialAidRequest.updateMany(
+            { _id: { $in: openAid.map((row) => row._id) } },
+            { status: "cancelled", adminNote: "Closed automatically: the student paid for this plan", handledAt: new Date() }
+        )
+        openAid.forEach((row) => notifyStudent(updatedUser, "aidCancelled", { planName: PLAN_NAMES[row.requestedTier] }))
+    }
+
+    notifyStudent(updatedUser, amountInr > 0 ? "paymentSuccess" : "planGranted", {
+        planName: PLAN_NAMES[tier], amountInr, paymentId: options.razorpayPaymentId,
+    })
+
     return { user: updatedUser, payment: newPayment, isAlreadyGranted: false }
+}
+
+
+// ========================
+// Another mentor session (owner, Round 28) — a paid add-on at the Mentor Only price
+// ========================
+
+const MENTOR_SESSION_INR = TIER_PRICE_INR[3]
+
+// why a student can't buy another session now, or null
+const mentorSessionProblem = async (user) => {
+    if (!(user.paid === true && grants(Number(user.currentTier)).mentor)) return "Mentor sessions come with a mentor plan"
+    const row = await MentorWaitlist.findOne({ user: user._id }).select("matchStatus extraSessionsPaid extraSessionsUsed").lean()
+    if (!row || row.matchStatus !== "completed") return "You can book another session once your current one is done"
+    if ((row.extraSessionsPaid || 0) > (row.extraSessionsUsed || 0)) return "You already have a session paid for — choose it on your mentorship page"
+    return null
+}
+
+// records the payment and adds one session the student can start (mentorWaitlistRouter startAnotherSession)
+const grantMentorSession = async (userId, amountInr, options = {}) => {
+    const user = await User.findById(userId).lean()
+    if (!user) return { error: "User not found" }
+    if (options.razorpayPaymentId && await Payment.exists({ razorpayPaymentId: options.razorpayPaymentId })) return { isAlreadyGranted: true }
+
+    const payment = await Payment.create({
+        user: userId,
+        mode: options.mode || "manual",
+        razorpayOrderId: options.razorpayOrderId,
+        razorpayPaymentId: options.razorpayPaymentId,
+        tier: user.currentTier,
+        action: "mentor_session",
+        amountInr,
+        status: "paid",
+        paidAt: new Date(),
+        grantedByAdmin: options.grantedByAdmin,
+        freeByAdmin: Boolean(options.freeByAdmin),
+        adminNote: options.adminNote,
+    })
+    await MentorWaitlist.updateOne({ user: userId }, { $inc: { extraSessionsPaid: 1 } })
+    notifyStudent(user, amountInr > 0 ? "paymentSuccess" : "planGranted", { planName: "Another mentor session", amountInr, paymentId: options.razorpayPaymentId })
+    return { payment }
 }
 
 
@@ -260,6 +325,8 @@ const refundThroughRazorpay = async (originalPayment, amountInr, refundContext) 
         })
 
         const isAlreadyProcessed = razorpayRefund.status === "processed"
+        const student = await User.findById(originalPayment.user).lean()
+        notifyStudent(student, isAlreadyProcessed ? "refundCompleted" : "refundStarted", { amountInr, refundId: razorpayRefund.id })
 
         return Payment.create({
             ...refundRow,
@@ -286,6 +353,9 @@ const sendRefund = async (originalPayment, amountInr, refundContext) => {
     if (originalPayment.razorpayPaymentId && process.env.PAYMENT_MODE === "razorpay" && razorpay) {
         return refundThroughRazorpay(originalPayment, amountInr, refundContext)
     }
+
+    const student = await User.findById(originalPayment.user).lean()
+    notifyStudent(student, "refundCompleted", { amountInr, manual: true })
 
     return Payment.create({
         user: originalPayment.user,
@@ -354,9 +424,10 @@ const closeMentorWaitlist = async (userId) => {
 
 // everything paid, minus everything already refunded
 const getFullRefundAmount = async (user) => {
+    // Round 28: a full refund also returns any extra mentor sessions paid for
     const paidPayments = await Payment.find({
         user: user._id,
-        action: { $in: ["purchase", "upgrade"] },
+        action: { $in: ["purchase", "upgrade", "mentor_session"] },
     })
 
     let amountInr = 0
@@ -442,7 +513,15 @@ const paymentVerificationWebhook = async (req, res) => {
             }
 
             // the notes attached at /create-order tell us who paid for what
-            const { userId, tier, coupon, discountPct } = razorpayPayment.notes
+            const { userId, tier, coupon, discountPct, product } = razorpayPayment.notes
+
+            // Round 28: another mentor session, not a plan
+            if (product === "mentor_session") {
+                await grantMentorSession(userId, razorpayPayment.amount / 100, {
+                    mode: "razorpay", razorpayOrderId: razorpayPayment.order_id, razorpayPaymentId: razorpayPayment.id,
+                })
+                return res.status(200).json({ success: true, message: "Mentor session payment verified" })
+            }
 
             const grantResult = await grantAccess(userId, Number(tier), razorpayPayment.amount / 100, coupon || null, {
                 mode: "razorpay",
@@ -474,7 +553,13 @@ const paymentVerificationWebhook = async (req, res) => {
                 })
             }
 
-            await Payment.findByIdAndUpdate(refundRow._id, { status: "refunded", paidAt: new Date() })
+            // Razorpay has sent it to the bank; the ARN is the bank's own reference for it. Nobody —
+            // not us, not Razorpay — is told when the bank actually credits the account (Round 28)
+            const arn = razorpayRefund.acquirer_data && razorpayRefund.acquirer_data.arn
+            await Payment.findByIdAndUpdate(refundRow._id, { status: "refunded", paidAt: new Date(), refundArn: arn || undefined })
+            notifyStudent(await User.findById(refundRow.user).lean(), "refundCompleted", {
+                amountInr: refundRow.amountInr, refundId: razorpayRefund.id, arn,
+            })
 
             // the request is done once none of its refunds are still waiting
             if (refundRow.refundRequest) {
@@ -513,6 +598,7 @@ const paymentVerificationWebhook = async (req, res) => {
             const failureMessage = "Razorpay could not complete this refund"
 
             await Payment.findByIdAndUpdate(refundRow._id, { status: "failed", failureMessage })
+            notifyStudent(await User.findById(refundRow.user).lean(), "refundFailed", { amountInr: refundRow.amountInr, refundId: razorpayRefund.id })
 
             if (refundRow.refundRequest) {
                 await RefundRequest.findByIdAndUpdate(refundRow.refundRequest, {
@@ -525,6 +611,40 @@ const paymentVerificationWebhook = async (req, res) => {
                 success: true,
                 message: "Refund failure recorded"
             })
+        }
+
+        // ── payment.failed → record it and tell the student (Round 28) ─────────
+        // A row with status "failed" is history only: getRefundableBalance reads it as worth nothing.
+        if (event.event === "payment.failed") {
+            const razorpayPayment = event.payload.payment.entity
+
+            if (await Payment.findOne({ razorpayPaymentId: razorpayPayment.id })) {
+                return res.status(200).json({ success: true, message: "Payment failure already recorded" })
+            }
+
+            const { userId, tier } = razorpayPayment.notes || {}
+            const student = userId ? await User.findById(userId).lean() : null
+            if (!student) {
+                return res.status(200).json({ success: true, message: "Payment failure for an unknown student ignored" })
+            }
+
+            const reason = (razorpayPayment.error_description || razorpayPayment.error_reason || "The payment was not completed").slice(0, 300)
+            await Payment.create({
+                user: student._id,
+                mode: "razorpay",
+                razorpayOrderId: razorpayPayment.order_id,
+                razorpayPaymentId: razorpayPayment.id,
+                tier: Number(tier) || student.currentTier || 0,
+                action: "purchase",
+                amountInr: (razorpayPayment.amount || 0) / 100,
+                status: "failed",
+                failureMessage: reason,
+            })
+            notifyStudent(student, "paymentFailed", {
+                planName: PLAN_NAMES[Number(tier)], amountInr: (razorpayPayment.amount || 0) / 100, paymentId: razorpayPayment.id, reason,
+            })
+
+            return res.status(200).json({ success: true, message: "Payment failure recorded" })
         }
 
         // ack anything we don't handle, or Razorpay retries it for days
@@ -564,6 +684,8 @@ router.get("/getPricing", async (req, res) => {
                     "3-2": upgradePrice(3, 2),
                 },
                 upgradeAmountInr: upgradePrice(1, 2),
+                // Round 28 (owner): another mentor session after one is done, at the Mentor Only price
+                mentorSessionInr: MENTOR_SESSION_INR,
                 paymentMode,
                 razorpayKeyId: paymentMode === "razorpay" ? process.env.RAZORPAY_KEY_ID : null,   // public key, safe to send
             },
@@ -728,6 +850,23 @@ router.post("/create-order", express.json(), authMiddleware, async (req, res) =>
             return res.status(403).json({
                 success: false,
                 message: "Please confirm your email first"
+            })
+        }
+
+        // Round 28: another mentor session is its own product, priced on the server
+        if (req.body.product === "mentor_session") {
+            const problem = await mentorSessionProblem(req.user)
+            if (problem) return res.status(400).json({ success: false, message: problem })
+            const order = await razorpay.orders.create({
+                amount: MENTOR_SESSION_INR * 100,
+                currency: "INR",
+                receipt: `ms${req.user._id}${Date.now().toString(36)}`,
+                notes: { userId: req.user._id.toString(), tier: String(req.user.currentTier), product: "mentor_session" },
+            })
+            return res.status(201).json({
+                success: true,
+                message: "Order created successfully",
+                data: { order, keyId: process.env.RAZORPAY_KEY_ID, quote: { product: "mentor_session", finalAmountInr: MENTOR_SESSION_INR } },
             })
         }
 
@@ -1402,10 +1541,21 @@ router.post("/requestRefund", express.json(), authMiddleware, requirePaid, async
 // Get My Refund Requests
 // ========================
 
+// Round 28: each request carries the refund rows sent for it — Razorpay's refund id, the bank's ARN
+// once processed, and their own status — so both the student and the admin can track the money
+const withRefundRows = async (requests) => {
+    const plain = requests.map((request) => (request.toObject ? request.toObject() : request))
+    const rows = await Payment.find({ refundRequest: { $in: plain.map((request) => request._id) }, action: "refund" })
+        .select("refundRequest amountInr status razorpayRefundId refundArn failureMessage paidAt createdAt mode")
+        .sort({ createdAt: 1 })
+        .lean()
+    return plain.map((request) => ({ ...request, refunds: rows.filter((row) => String(row.refundRequest) === String(request._id)) }))
+}
+
 router.get("/getMyRefundRequests", authMiddleware, async (req, res) => {
     try {
-        const refundRequests = await RefundRequest.find({ user: req.user._id })
-            .sort({ createdAt: -1 })
+        const refundRequests = await withRefundRows(await RefundRequest.find({ user: req.user._id })
+            .sort({ createdAt: -1 }))
 
         return res.status(200).json({
             success: true,
@@ -1429,10 +1579,10 @@ router.get("/getMyRefundRequests", authMiddleware, async (req, res) => {
 
 router.get("/getAllRefundRequestsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const refundRequests = await RefundRequest.find({})
+        const refundRequests = await withRefundRows(await RefundRequest.find({})
             .populate("user", "-password")
             .populate("handledByAdmin", "name email")
-            .sort({ createdAt: -1 })
+            .sort({ createdAt: -1 }))
 
         return res.status(200).json({
             success: true,
@@ -1582,7 +1732,7 @@ router.put("/refundForAdmin/:id", express.json(), authMiddleware, adminAuthMiddl
             // against the balance, so only the part that failed is attempted again.
             const paidPayments = await Payment.find({
                 user: refundRequest.user,
-                action: { $in: ["purchase", "upgrade"] },
+                action: { $in: ["purchase", "upgrade", "mentor_session"] },   // Round 28: extra sessions too
             })
 
             for (const payment of paidPayments) {
@@ -1673,20 +1823,32 @@ router.put("/declineRefundForAdmin/:id", express.json(), authMiddleware, adminAu
             })
         }
 
+        // Round 28 (owner): a "no" always comes with a reason — the student is emailed it and sees it in
+        // their payment history
+        const reason = typeof adminNote === "string" ? adminNote.trim().slice(0, 500) : ""
+        if (!reason) {
+            return res.status(400).json({
+                success: false,
+                message: "Please write the reason — the student is emailed it",
+            })
+        }
+
         const updatedRefundRequest = await RefundRequest.findByIdAndUpdate(
             id,
             {
                 status: "declined",
-                adminNote: adminNote || undefined,
+                adminNote: reason,
                 handledByAdmin: req.user._id,
                 handledAt: new Date(),
             },
             { returnDocument: "after" }
         )
 
+        notifyStudent(await User.findById(refundRequest.user).lean(), "refundDeclined", { amountInr: refundRequest.amountInr, reason })
+
         return res.status(200).json({
             success: true,
-            message: "Refund request declined",
+            message: "Refund request declined — the student has been emailed",
             data: updatedRefundRequest,
         })
 
@@ -1861,6 +2023,15 @@ router.put("/approveFinancialAidForAdmin/:id", express.json(), authMiddleware, a
             })
         }
 
+        // Round 28: no discount on a plan they already hold (paying closes the request automatically)
+        const aidStudent = await User.findById(aidRequest.user).lean()
+        if (aidStudent && owns(aidStudent.currentTier, aidRequest.requestedTier, aidStudent.paid === true)) {
+            return res.status(400).json({
+                success: false,
+                message: "The student already holds this plan",
+            })
+        }
+
         const amountInr = Math.round(Number(approvedAmountInr))
 
         // ₹0 would hand out free access through a route meant for a discount — grant it deliberately
@@ -1890,6 +2061,8 @@ router.put("/approveFinancialAidForAdmin/:id", express.json(), authMiddleware, a
             },
             { returnDocument: "after" }
         )
+
+        notifyStudent(aidStudent, "aidApproved", { planName: PLAN_NAMES[aidRequest.requestedTier], amountInr })
 
         return res.status(200).json({
             success: true,
@@ -1928,20 +2101,32 @@ router.put("/declineFinancialAidForAdmin/:id", express.json(), authMiddleware, a
             })
         }
 
+        // Round 28 (owner): a "no" always comes with a reason — the student is emailed it and sees it in
+        // their payment history
+        const reason = typeof adminNote === "string" ? adminNote.trim().slice(0, 500) : ""
+        if (!reason) {
+            return res.status(400).json({
+                success: false,
+                message: "Please write the reason — the student is emailed it",
+            })
+        }
+
         const updatedAidRequest = await FinancialAidRequest.findByIdAndUpdate(
             id,
             {
                 status: "declined",
-                adminNote: adminNote || undefined,
+                adminNote: reason,
                 handledByAdmin: req.user._id,
                 handledAt: new Date(),
             },
             { returnDocument: "after" }
         )
 
+        notifyStudent(await User.findById(aidRequest.user).lean(), "aidDeclined", { planName: PLAN_NAMES[aidRequest.requestedTier], reason })
+
         return res.status(200).json({
             success: true,
-            message: "Financial aid request declined",
+            message: "Financial aid request declined — the student has been emailed",
             data: updatedAidRequest,
         })
 
@@ -1951,6 +2136,29 @@ router.put("/declineFinancialAidForAdmin/:id", express.json(), authMiddleware, a
             message: "Failed to decline financial aid request",
             error: error.message,
         })
+    }
+})
+
+
+// Admin: another mentor session paid by hand (UPI/bank) or given free — manual mode's way in (Round 28)
+router.put("/grantMentorSessionForAdmin/:userId", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const student = await User.findById(req.params.userId).lean()
+        if (!student) return res.status(404).json({ success: false, message: "Student not found" })
+        const problem = await mentorSessionProblem(student)
+        if (problem) return res.status(400).json({ success: false, message: problem })
+
+        const free = req.body.free === true
+        const result = await grantMentorSession(student._id, free ? 0 : MENTOR_SESSION_INR, {
+            mode: "manual", grantedByAdmin: req.user._id, freeByAdmin: free,
+            adminNote: typeof req.body.note === "string" ? req.body.note.trim().slice(0, 300) : undefined,
+        })
+        if (result.error) return res.status(400).json({ success: false, message: result.error })
+
+        return res.status(200).json({ success: true, message: free ? "Another session given free" : "Another session recorded as paid", data: result.payment })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not add the session", error: error.message })
     }
 })
 

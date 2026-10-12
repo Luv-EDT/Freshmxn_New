@@ -489,7 +489,8 @@ router.get("/getOptions", authMiddleware, async (req, res) => {
 // scrape surface, and the server's only rate limiter is on login.
 router.post("/getProfessions", authMiddleware, requireDiscovery, async (req, res) => {
     try {
-        const ids = Array.isArray(req.body.ids) ? req.body.ids.slice(0, 60) : []
+        // Round 28: every match — 60 cut off long lists, and the filters then misread careers past #60
+        const ids = Array.isArray(req.body.ids) ? req.body.ids.slice(0, 400) : []
 
         if (ids.length === 0) {
             return res.status(400).json({ success: false, message: "No professions requested" })

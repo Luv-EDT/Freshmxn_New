@@ -189,14 +189,15 @@ export const hasData = (ranked, details, key) => ranked.some((entry) => {
 // control, and the pay FILTER is the one that had to be softened to a dim.
 //
 // NO SORT EVER REMOVES ANYTHING. Every one of them is a permutation of the same list.
+// Round 28 (owner): every sort says exactly what it does, in an ⓘ beside it
 export const SORTS = [
     { value: "best", label: "Best match" },
-    { value: "ai", label: "Least AI-exposed" },
-    { value: "fastest", label: "Quickest to qualify" },
-    { value: "pay", label: "Highest mid-career pay" },
-    { value: "demand", label: "Most in demand" },
+    { value: "ai", label: "Least AI-exposed", hint: "Inside each group, the careers AI is least likely to change come first." },
+    { value: "fastest", label: "Quickest to qualify", hint: "Inside each group, the careers you could get into soonest from where you are now come first." },
+    { value: "pay", label: "Highest mid-career pay", hint: "Inside each group, the best-paid careers after 5–8 years of work come first." },
+    { value: "demand", label: "Most in demand", hint: "Inside each group, the careers India needs most people for right now come first." },
     // Round 20 (owner): the switching cost as a sort of its own, under either main order
-    { value: "switchCost", label: "Least switching cost" },
+    { value: "switchCost", label: "Least switching cost", hint: "Inside each group, the careers that would leave the fewest years of what you've already done behind come first." },
 ]
 
 const DEMAND_ORDER = { high: 0, moderate: 1, low: 2, declining: 3 }
@@ -262,9 +263,10 @@ export const sortByAiExposure = (ranked) => sortRanked(ranked, "ai")
 // Must equal Backend/matching/constants.js SWITCH_COST_GROUP_YEARS (a fixture checks).
 export const SWITCH_COST_GROUP_YEARS = 2
 
+// Round 28 (owner): the two main orders in words a student can follow
 export const PRIMARY_SORTS = [
-    { value: "best", label: "Best match", hint: "Our ranking: what you have done and how well it fits you. Careers that would leave 2 or more years behind come last, in a group of their own." },
-    { value: "noCost", label: "Best fit, ignoring switching cost", hint: null },
+    { value: "best", label: "Best match", hint: "First, what you've actually done and loved — your passions, achievements and longest activities. Then, how well the work fits how you think. Careers that would leave 2 or more years of what you've done behind come last." },
+    { value: "noCost", label: "Best fit, ignoring switching cost", hint: "The same order, but nothing is held back for what you'd leave behind — for when you're open to starting fresh." },
 ]
 export const SECONDARY_SORTS = SORTS.filter((option) => option.value !== "best")
 
@@ -313,6 +315,27 @@ export const buildList = (ranked, primary, secondary, details = {}, options = {}
 // The filters a student can turn on (owner, Round 18). Each hides careers, so each is labelled,
 // off by default, and the page says how many it hid.
 export const ONLY_FILTERS = [
-    { value: "coreEngineering", label: "Core engineering only", hidden: "not core engineering" },
-    { value: "studyAbroadHelps", label: "Studying abroad helps", hidden: "where studying abroad doesn't help much" },
+    { value: "coreEngineering", label: "Core engineering only", hidden: "not core engineering", hint: "Keeps only core engineering careers and the ones built on them." },
+    // Round 28 (owner): renamed from "Studying abroad helps"
+    { value: "studyAbroadHelps", label: "For studying abroad", hidden: "where studying abroad doesn't help much", hint: "Keeps only careers where a degree or master's abroad is a real advantage." },
 ]
+
+// HOW MUCH OF THE LIST SHOWS (owner, Round 28: 40+ careers was too much). The top three; then up to
+// MAIN_SHOWN in their groups; the rest folded under "explore a few more". Cut AFTER the filters and
+// the sorts, so the top fifteen always follow what the student chose.
+export const MAIN_SHOWN = 15
+
+// groups → the groups as they hold the first `limit` entries, and the groups holding the rest
+export const splitShown = (groups, limit = MAIN_SHOWN) => {
+    const shown = []
+    const rest = []
+    let left = limit
+    groups.forEach((group) => {
+        const head = group.entries.slice(0, Math.max(left, 0))
+        const tail = group.entries.slice(head.length)
+        if (head.length) shown.push({ ...group, entries: head })
+        if (tail.length) rest.push({ ...group, key: `${group.key}-more`, entries: tail })
+        left -= head.length
+    })
+    return { shown, rest }
+}

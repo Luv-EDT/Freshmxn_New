@@ -37,7 +37,7 @@ const financialAidRequestSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            default: "pending", // pending | approved | declined
+            default: "pending", // pending | approved | declined | cancelled (the student paid for that plan anyway — Round 28)
         },
         approvedAmountInr: {
             type: Number, // what the admin agreed on the call — overrides the list price

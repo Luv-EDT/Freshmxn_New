@@ -22,8 +22,17 @@ const loadScript = () => new Promise((resolve) => {
     }
 })
 
-function TurnstileBox({ onToken }) {
+// resetKey: change it after a failed sign-up and the widget hands out a fresh token — each token
+// works once, so a retry with the old one always failed (Round 28)
+function TurnstileBox({ onToken, resetKey }) {
     const box = useRef(null)
+    const widget = useRef(null)
+
+    useEffect(() => {
+        if (!resetKey || widget.current === null || !window.turnstile) return
+        onToken("")
+        window.turnstile.reset(widget.current)
+    }, [resetKey, onToken])
 
     useEffect(() => {
         if (!turnstileOn) return undefined
@@ -37,10 +46,12 @@ function TurnstileBox({ onToken }) {
                 "expired-callback": () => onToken(""),
                 "error-callback": () => onToken(""),
             })
+            widget.current = widgetId
         })
         return () => {
             gone = true
             if (widgetId !== null && window.turnstile) window.turnstile.remove(widgetId)
+            widget.current = null
         }
     }, [onToken])
 

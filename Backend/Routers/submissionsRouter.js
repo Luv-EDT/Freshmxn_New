@@ -1,6 +1,7 @@
 const express = require("express")
 const Submission = require("../model/submissionsModel")
 const User = require("../model/userModel")
+const Report = require("../model/reportsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requireDiscovery = require("../middlewares/requireDiscovery")
 
@@ -118,9 +119,14 @@ router.post("/saveInterest", authMiddleware, requireDiscovery, async (req, res) 
             })
         }
 
+        // Round 28: saved changes to a finished form once a report exists → "Update my report"
+        if (req.user.progress.interestForm === "done" && await Report.exists({ user: req.user._id })) {
+            await User.updateOne({ _id: req.user._id }, { answersChangedAt: new Date() })
+        }
+
         return res.status(isFinished ? 201 : 200).json({
             success: true,
-            message: isFinished ? "Interest form submitted successfully" : "Progress saved",
+            message: isFinished ? "Virtual Career Counselling submitted" : "Progress saved",
             data: updatedSubmission,
         })
 
@@ -773,6 +779,14 @@ router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req,
         // A RESUBMIT says which way the student is heading (Round 11, utils/direction.js): only "new"
         // restarts the follow-up clock. The first submit starts it and asks nothing.
         const firstTime = !submission.psychometricSubmittedAt
+
+        // Round 28 (owner): once a report exists, a resubmit is one of the student's three own updates
+        const { selfUpdatesLeft, LIMIT_REACHED } = require("../utils/selfUpdates")
+        const hasReport = !firstTime && Boolean(await Report.exists({ user: req.user._id }))
+        if (hasReport && selfUpdatesLeft(req.user) === 0) {
+            return res.status(400).json({ success: false, message: LIMIT_REACHED, data: { limitReached: true } })
+        }
+
         const direction = directionUpdate({ via: "resubmit", direction: req.body.direction, firstTime })
         if (!direction) {
             return res.status(400).json({
@@ -794,6 +808,7 @@ router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req,
         await User.findByIdAndUpdate(req.user._id, {
             ...direction,
             $set: { ...(direction.$set || {}), "progress.psychometric": "done", reportFailedAt: null },
+            ...(hasReport ? { $inc: { selfUpdatesUsed: 1 } } : {}),
         })
 
         // Required here rather than at the top of the file, so this router loads without the workers
@@ -884,4 +899,85 @@ router.get("/getMySubmission", authMiddleware, requireDiscovery, async (req, res
     }
 })
 
+// A student's own result on a finished timed test (Round 28, owner): reopening the reasoning
+// puzzles, word memory, number memory or the focus test shows what they got, in counts and the same
+// High / Medium / Low words as the profile. Built with the scorers the profile uses, so the two never
+// disagree. Never an answer key, and never a confidence or data-quality figure (CLAUDE.md). A test
+// set aside because of the interest form reads "not measured"; a run that did not record properly
+// says so and points to "Something went wrong".
+const testResultsFor = (psychometric) => {
+    const { levelFor } = require("./reportsRouter")
+    const skipped = (psychometric.accommodations && psychometric.accommodations.skipped) || {}
+    const results = {}
+
+    const reasoning = psychometric.reasoning
+    if (reasoning && reasoning.completedAt) {
+        const scored = require("../scoring/reasoningInHouse")(reasoning)
+        const right = (reasoning.responses || []).filter((response) => response.correct === true).length
+        results.reasoning = scored.score === null
+            ? { state: "not_measured" }
+            : { state: "done", line: `${right} of ${(reasoning.responses || []).length} puzzles right`, level: levelFor(scored.score) }
+    }
+
+    const words = psychometric.wordRecall
+    if (words && words.completedAt) {
+        const scoreWordRecall = require("../scoring/wordRecall")
+        const scored = scoreWordRecall(words)
+        const remembered = (words.trials || []).reduce((sum, trial) => sum + (Number.isInteger(trial.correct) ? trial.correct : 0), 0)
+        results.wordRecall = scored.score === null
+            ? { state: "not_measured" }
+            : { state: "done", line: `${remembered} of ${scoreWordRecall.LISTS * scoreWordRecall.PER_LIST} words remembered`, level: levelFor(scored.score) }
+    }
+
+    const digits = psychometric.digitSpan
+    if (digits && (digits.trials || []).length > 0) {
+        const scored = require("../scoring/digitSpan")(digits)
+        if (scored.score !== null) {
+            results.digitSpan = {
+                state: "done",
+                line: scored.span ? `Longest sequence remembered: ${scored.span} digits` : "No sequence remembered in full",
+                level: levelFor(scored.score),
+            }
+        }
+    }
+
+    if (psychometric.sartRaw) {
+        const scored = require("../scoring/sartScoring")(psychometric.sartRaw)
+        const seen = scored && scored.descriptives
+        results.sartRaw = scored && scored.valid
+            ? {
+                state: "done",
+                line: `Average response ${(seen.mean_rt_clean / 1000).toFixed(2)} s · ${seen.commission_errors} wrong ${seen.commission_errors === 1 ? "press" : "presses"} on a 3`,
+                levels: { speed: levelFor(scored.processing_speed), focus: levelFor(scored.sart_attention) },
+            }
+            : { state: "invalid" }
+    }
+
+    Object.keys(skipped).forEach((key) => {
+        if (skipped[key] === true && !results[key]) results[key] = { state: "set_aside" }
+    })
+
+    return results
+}
+
+router.get("/getMyTestResults", authMiddleware, requireDiscovery, async (req, res) => {
+    try {
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+
+        return res.status(200).json({
+            success: true,
+            message: "Test results fetched",
+            data: testResultsFor((submission && submission.psychometric) || {}),
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch test results",
+            error: error.message,
+        })
+    }
+})
+
 module.exports = router
+module.exports.testResultsFor = testResultsFor

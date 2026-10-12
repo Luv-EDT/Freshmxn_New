@@ -44,7 +44,7 @@ const SECTIONS = [
                         and a record of their permission (see <a href="#children">Children and parental consent</a>).
                     </li>
                     <li>
-                        <strong>Your answers:</strong> everything you tell us in the interest form (interests,
+                        <strong>Your answers:</strong> everything you tell us in Virtual Career Counselling (interests,
                         activities, achievements, problems you care about, beliefs, aspirations) and your
                         responses to the assessment, including written answers and task timings.
                     </li>
@@ -120,7 +120,7 @@ const SECTIONS = [
         body: (
             <>
                 <p>
-                    The interest form asks whether you have a disability and whether you or your family have been
+                    Virtual Career Counselling asks whether you have a disability and whether you or your family have been
                     through difficult or traumatic experiences. Every one of these questions has a "Prefer not to
                     say" answer, and the details box is always up to you.
                 </p>
@@ -209,7 +209,10 @@ const SECTIONS = [
                 <p>
                     We also share data where the law requires it — for example, with a court or government
                     authority acting lawfully. When we match you with a mentor, we share only what they need to
-                    prepare, such as your name and the career you chose.
+                    prepare: your first name, the career and role you chose and what you'd like help with. Your
+                    WhatsApp number <em>or</em> email — whichever you choose — is shared only with your agreement,
+                    and only after the mentor has agreed to keep it private and use it just to arrange your sessions.
+                    Reviews you leave after a session, and any report about a mentor, are seen by our team only.
                 </p>
                 <p>
                     <strong>Study-abroad partner — only if you ask.</strong> If studying abroad helps for one of your
@@ -218,7 +221,7 @@ const SECTIONS = [
                     and press "Connect me". You can ask us to withdraw this at any time.
                 </p>
                 <p>
-                    <strong>Your plans to go abroad.</strong> If you tell us in the interest form that you hope to
+                    <strong>Your plans to go abroad.</strong> If you tell us in Virtual Career Counselling that you hope to
                     study or work outside India, we use that only to show you how each of your careers
                     travels and what those countries ask first, and to offer the study-abroad partner above. It is
                     never used to rank your careers, and it is shared with no one unless you ask to be connected.

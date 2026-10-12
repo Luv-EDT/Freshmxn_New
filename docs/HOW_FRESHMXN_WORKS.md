@@ -113,6 +113,15 @@ presses **Request access** instead of paying.
 and everything stored for it — answers, scores, report, payments, requests, consent, mentor place — are
 removed from every collection (`utils/deleteAccount.js`); admin accounts can't be deleted this way.
 
+**Every money step is emailed and shown (Round 28, owner).** `utils/statusEmails.js` holds one wording for
+each: a payment that went through (with Razorpay's payment id), a payment that **failed** (the bank's
+reason, "no money was taken"), a refund started (**processing**, with its refund id), sent (with the bank
+reference, the **ARN**, to quote to your bank — Razorpay doesn't tell anyone when the bank actually credits
+it), failed (we retry) or **declined** (the admin must write a reason, which you see), and financial aid
+approved, declined (with a reason) or **closed because you paid** for that plan anyway. Profile → Payment
+history shows the same words and ids, and every refund request you made. A coupon counts once per person,
+and only when a plan is actually granted.
+
 Prices are never typed into the website; it always asks the server (`GET /payments/getPricing`), so
 there is only one place to change them (`Backend/utils/plans.js`). There are three **plans**:
 
@@ -130,13 +139,19 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
 
 ## 4. Telling us your story and taking the assessment
 
-- **The interest form** is where you tell us what you love, what you've actually done, problems you
-  care about and what you want to be. Each stage of your life is a set of cards with a plain question,
+- **Virtual Career Counselling** (the interest form's name for students since Round 28, owner) is where you
+  tell us what you love, what you've actually done, problems you care about and what you want to be.
+  Each life stage asks you to write down **everything** — even things done once or stopped — and
+  "What still feels like you" then asks which still resonate. **Editing it after you've finished** saves
+  only when you press **Save changes**: moving between sections saves nothing, no copy is kept in the
+  browser, and a refresh, going offline or any link away (the menu bar included) warns first and offers
+  Save and go / Leave without saving / Stay. The top button is "← Previous section". Saved changes after a
+  report exists offer "Update my report". Each stage of your life is a set of cards with a plain question,
   a "See examples" fold, and your answers as little chips. Every step is saved as you go
   (`POST /submissions/saveInterest`), so closing the tab loses nothing. College students also tell us
   their degree and subject, working people their degree and field — so the report can say "your
   B.Com already counts".
-- **"← Dashboard"** (Round 19) is always in sight on the interest form, the assessment, the report, the
+- **"← Dashboard"** (Round 19) is always in sight on the assessment, the report, the
   matches page, compare and the mentor page — those pages no longer show the four-step journey bar (it
   stays on your dashboard). On the interest form it asks first: **Save and go**, **Leave without saving** or
   **Stay**. Inside an assessment questionnaire it offers to save first; inside a test that saves itself it
@@ -291,8 +306,9 @@ you wait at the desk**. Instead:
         roles inside it (a game developer can build VR worlds or write game logic) is also checked
         role by role, and the report names **the roles that suit you best**;
      4. **careers that join two of yours** (`data/combined_careers.json`, 42 hand-checked ones such as
-        Sports Journalist or Wildlife Photographer): each has two sides, and if your list or your own
-        activities touch both, it is shown in its own short section;
+        Sports Journalist or Wildlife Photographer): since Round 28 (owner) each joins **two exact
+        professions**, and it is shown only when **both** are among the careers on show in your list
+        (the top fifteen, after your filters);
    - **no AI writes anything for the report** (Round 19, owner: "remove the AI summary entirely").
      The report is the ranking plus the data behind each career, so building it costs no AI call
      (`report@4.0.0`). `reportComposer.js` stays in the repo as reference, unused;
@@ -300,18 +316,38 @@ you wait at the desk**. Instead:
 5. **Meanwhile your report page checks every 5 seconds** (`GET /reports/getMyReport`) and shows
    "preparing" until the report is there — then shows it.
 
+**Updating your report (Round 28, owner).** An update because *we* improved scoring or matching is always
+free. An update from **your own changes** — resubmitting the assessment, saved Virtual Career Counselling
+answers, a changed stage or details — is limited to **3**; the update box says which one this is, and after
+the third your changes are still saved but the report stays as it is (WhatsApp us if you need another).
+
+**Your result on a finished test (Round 28, owner).** Reopening the reasoning puzzles, word memory, number
+memory or the focus test shows your own result — "11 of 16 puzzles right", "19 of 30 words remembered",
+"longest sequence 7 digits", "average response 0.34 s · 2 wrong presses on a 3" — with the same High /
+Medium / Low word as your profile (`GET /submissions/getMyTestResults`, worked out by the profile's own
+scorers; never an answer key). Every test page, the short story included, has **"Something went wrong
+with this test?"**; a request the admin turns down needs a reason, which is emailed to you, and a retake
+granted or a report re-run is emailed too.
+
 **The report (`/report`) is a short overview** (Round 19, owner), in this order: **"Your report"** at the
 top centre; **Your matches** — your top three, with three buttons: "See all N matches", "Combined careers
 (N)" (careers that mix two professions, often from different sectors) and "Compare careers"; **What seems
-to drive you**; **The five fundamentals** — confidence, sticking with things, picking up new material and
+to drive you**; (since Round 28 a **Your psychometric analysis →** card opens `/report/psychometric`: the
+four fundamentals first — they help in every career, so higher is better — then every other group, which
+only make you different, never better or worse; the Profile links to your report instead of repeating it);
+before Round 28, **The five fundamentals** — confidence, sticking with things, picking up new material and
 deciding with good information, each as a word (High / Medium / Low) with what it means and why it
 matters, and a fifth: **the rest of your qualities**, with a link to your Profile and why they aren't here
 (they matter once you've chosen a profession, and then we work on the ones it needs); and **What you said
 you wanted**. The last three share one medium heading size; Your matches is only slightly larger (Round 20).
 
 **"See all" opens `/report/matches`**, the whole list: the first **three** of the order you've chosen,
-each with its **rank number** (1, 2, 3…) on the left, and a **"Show the other N careers"** button for the
-rest (choosing a new order starts again at three). Opened, the list is shown **under its tier headings**
+each with its **rank number** (1, 2, 3…) on the left, then **"Show 12 more careers"** up to fifteen, and
+the rest folded under **"Careers that suit you aren't limited to these — explore a few more"** (Round 28,
+owner; choosing a new order starts again at three). The cut is made after the filters and sorts. On a
+laptop the **sorts and filters sit open in a column on the left** (on a phone, open above the list), each
+with an ⓘ explaining it; a "then order by" sort only reorders careers **inside** each group, never across
+groups. Opened, the list is shown **under its tier headings**
 — two or three words each since Round 24: "Proven long-time passion", "Confident current passion",
 "Long-time interest", "Other interests"… (*proven* = you achieved at it, *confident* = you said you're sure,
 *passion* = you love it). The careers that ask for more than your profile shows today sit under one band,
@@ -423,7 +459,7 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 |---|---|---|
 | The 1st of each month, 9:00 India time | **Follow-up** (`housekeeping/followUpScan.js`) | 6 and 12 months after your latest assessment, emails you a link (`/follow-up/…`) to five quick questions: what you're doing now, which career, did a match help. One reminder, then never again. You can opt out. This is how we'll learn, one day, whether our matches really work. The clock restarts only if you told us you're looking for something new |
 | The 1st of each month | **Data refresh** (`housekeeping/dataRefresh.js`) | For up to 60 careers, checks job-board numbers (Adzuna) and asks Claude to search a few official sources (government labour survey, National Career Service, India Skills Report, Naukri, LinkedIn's published reports). Suggested changes to **demand and pay** go to the admin's **Data updates** tab. Approved ones show on the career page at once; the ranking itself is never changed by them |
-| Every Monday | **Careers scout** (`housekeeping/careerScout.js`) | Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit. *The monthly refresh never picks these up — only the admin does* (Round 27): read the row → **New career** or **Combined career** (a draft is written) → **View draft → Accept** (or send back with a note) → Data updates → **Export patch** → Claude Code applies, re-embeds, runs the fixtures and commits → live with that deploy |
+| Every Monday | **Careers scout** (`housekeeping/careerScout.js`) | (Round 28: a title is compared with our careers' **names and job titles**, short text with short text — comparing it with whole career descriptions made everything look "Nothing close"; every run also re-sorts the watch list and sets aside rows that turn out to be covered.) Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit. *The monthly refresh never picks these up — only the admin does* (Round 27): read the row → **New career** or **Combined career** (a draft is written) → **View draft → Accept** (or send back with a note) → Data updates → **Export patch** → Claude Code applies, re-embeds, runs the fixtures and commits → live with that deploy |
 | The 1st of each month — but only what's in season | **Study bot** (`housekeeping/studyRefresh.js`) | Checks things only when they can have changed (Round 13): an **exam** in the two months before its applications usually open (each on its own official site); **colleges** in September and October, after NIRF publishes (NIRF first, then other published rankings and the regulators); **master's and study-abroad answers** in January, April, July and October (government and university sites only); **closing ranks** August to October (official counselling results); **licences abroad** in January (the licensing body's own site). A month with nothing due makes no AI call. Suggested changes go to **Data updates**; nothing changes until the admin approves. The admin's **Run now** checks everything regardless of season |
 | Every hour, at :17 | **Batch collector** (`housekeeping/researchBatch.js`) | The data refresh and the study bot don't wait for Claude's answers one by one. They hand Anthropic all their questions in **one bundle at half price**. Anthropic answers the bundle in the background — usually within the hour, at most a day. This small check asks every hour "is a bundle finished?"; if so it reads the answers, runs exactly the same checks the job would have, and files the suggestions in Data updates. Any answer that came back incomplete or unreadable is asked again the normal way. With no bundle waiting it does nothing and costs nothing |
 | Only when the admin presses it | **Model comparison** (`housekeeping/modelCompare.js`) | Asks the same 20 careers of two Claude models (Opus 5.5 and Sonnet 5.5) and shows side by side what each would change, how many pages it cited and what it cost. Nothing is filed. The admin then chooses which model runs the monthly jobs |
@@ -434,6 +470,29 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 ---
 
 ## 7. The mentor part
+
+**After the match, step by step (Round 28, owner):**
+1. With your choice you tell us **how your mentor should contact you** — WhatsApp or email — and tick
+   that we may share your first name and that one contact with them. No match happens without it.
+2. When the admin matches you, the **mentor is emailed an invite** (your first name, the career and role,
+   what you want help with — never your contact) and the admin sends the same invite on **WhatsApp** with
+   one tap. You are emailed that your mentor is confirmed.
+3. On their mentor page the mentor must **agree to our privacy rules** (use your details only for the
+   sessions, share them with no one, no groups, delete the chat afterwards). Only then do they see your
+   WhatsApp number or email. They send you their **Calendly booking link** and press "I've sent my booking
+   link"; your mentorship page then says it's on its way.
+4. After the session the admin presses **Session done**. Your **review** opens (`/mentorship/review`, the
+   link is in your match email): a rating out of 10, "did it help you decide?", "would you recommend this
+   mentor?", and a box. One review per session; the admin sees each mentor's average.
+5. **Report a problem with my mentor** is on `/mentorship` and the review page at any time: what happened,
+   then your choice — **another mentor** or **a refund**. You are told to block them on WhatsApp straight
+   away. Another mentor puts you back in matching on a new clock, and that mentor is never offered to you
+   again; the admin can also pause the mentor for everyone.
+6. **Another session** (paid, at the Mentor Only price) can be booked once a session is done: a new career
+   or role, or the same one with a **different** mentor (last time's mentor is kept away).
+
+Mentors can also sign up and log in **with Google** (Round 28); a new Google account started from the
+mentor page becomes a mentor, an existing account keeps what it is.
 
 - **Two pages** (Round 20, owner). `/mentorship` says where you stand first — "Choose the job role you'd
   like a mentor in", or "We're finding your mentor — you chose Founder (…) on 7 Oct; we'll confirm your

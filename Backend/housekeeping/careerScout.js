@@ -14,6 +14,11 @@
 //        new        nothing we hold is close
 //        between    it sits between two careers in DIFFERENT sectors — a combined career
 //      Anything close to one career we already hold is dropped.
+//      LIKE WITH LIKE (Round 28). A career's closeness is the best of its NAME and each of its JOB
+//      TITLES, all embedded the same way as the candidate — a short title against short titles.
+//      Before, a 2–4 word title was compared with each career's long description vector (name +
+//      one-liner + eight titles); those scores sit around 0.3–0.55 even for an obvious match, so with
+//      the 0.55 line almost everything read "Nothing close" and "between" could never fire.
 //   3. The top SCOUT_MAX_CANDIDATES are assessed by Claude from the named public sources: pay, how
 //      much AI touches the work, whether it is growing, and what it is.
 //   4. Everything lands on one watchlist (scoutCandidatesModel). The admin approves it as a combined
@@ -37,11 +42,17 @@ const DAY = 24 * 60 * 60 * 1000
 
 // INVENTED, like activityResolver's DEDUP_COSINE, and tunable without a deploy. Every row stores
 // its nearest careers with their similarity, so the first runs show whether these are right.
-const newBelow = () => Number(process.env.SCOUT_NEW_BELOW) || 0.55
-const betweenGap = () => Number(process.env.SCOUT_BETWEEN_GAP) || 0.03
-const maxCandidates = () => Number(process.env.SCOUT_MAX_CANDIDATES) || 25
+// Round 28: title-against-title scores run higher than the old title-against-description ones, so the
+// "new" line moved from 0.55 to 0.62. A setting of 0 is now respected (it used to fall back).
+const envNumber = (name, fallback) => {
+    const value = Number(process.env[name])
+    return process.env[name] !== undefined && process.env[name] !== "" && Number.isFinite(value) ? value : fallback
+}
+const newBelow = () => envNumber("SCOUT_NEW_BELOW", 0.62)
+const betweenGap = () => envNumber("SCOUT_BETWEEN_GAP", 0.03)
+const maxCandidates = () => envNumber("SCOUT_MAX_CANDIDATES", 25)
 // a title this close in meaning to one of our job titles IS that job title (INVENTED, tunable)
-const roleKnownAt = () => Number(process.env.SCOUT_ROLE_KNOWN) || 0.8
+const roleKnownAt = () => envNumber("SCOUT_ROLE_KNOWN", 0.8)
 
 const SENIORITY = /\b(senior|sr|junior|jr|lead|principal|head|chief|associate|assistant|trainee|intern|internship|fresher|freshers|entry level|executive|i{1,3}|iv|[0-9]+\+? ?(years?|yrs?))\b/g
 
@@ -144,12 +155,21 @@ const nearestRoles = (vector, roleVectors, limit = 3) => roleVectors
     .slice(0, limit)
 
 const sectorById = new Map(taxonomy.professions.map((profession) => [profession.id, profession.professional_sector]))
+const nameOfCareer = new Map(taxonomy.professions.map((profession) => [profession.id, profession.profession]))
 
-// new / between / known, with the three nearest careers for the admin to see
-const classifyAgainstCareers = (vector, embeddings, { below = newBelow(), gap = betweenGap(), sectors = sectorById } = {}) => {
-    const ranked = embeddings
-        .map((entry) => ({ id: entry.id, name: entry.profession, similarity: Math.round(cosine(vector, entry.embedding) * 1000) / 1000 }))
-        .sort((left, right) => right.similarity - left.similarity)
+// Round 28: each career's closeness = the best of its name and its job titles (`via` says which)
+const rankCareers = (vector, titleVectors, nameById = nameOfCareer) => {
+    const best = new Map()
+    titleVectors.forEach((entry) => {
+        const similarity = Math.round(cosine(vector, entry.vector) * 1000) / 1000
+        const held = best.get(entry.professionId)
+        if (!held || similarity > held.similarity) best.set(entry.professionId, { id: entry.professionId, name: nameById.get(entry.professionId) || entry.professionId, similarity, via: entry.role })
+    })
+    return [...best.values()].sort((left, right) => right.similarity - left.similarity || left.id.localeCompare(right.id))
+}
+
+// new / between / known from a ranked list of careers, best first
+const classifyRanked = (ranked, { below = newBelow(), gap = betweenGap(), sectors = sectorById } = {}) => {
     const nearest = ranked.slice(0, 3)
     const [first, second] = ranked
 
@@ -161,6 +181,11 @@ const classifyAgainstCareers = (vector, embeddings, { below = newBelow(), gap = 
 
     return { kind: "known", nearest }
 }
+
+// the same, against whole-career vectors (kept for the fixtures and for comparing old with new)
+const classifyAgainstCareers = (vector, embeddings, options = {}) => classifyRanked(embeddings
+    .map((entry) => ({ id: entry.id, name: entry.profession, similarity: Math.round(cosine(vector, entry.embedding) * 1000) / 1000 }))
+    .sort((left, right) => right.similarity - left.similarity), options)
 
 const LEVELS = ["low", "medium", "high"]
 const GROWTH = ["falling", "flat", "rising", "unknown"]
@@ -223,7 +248,8 @@ const reportTitles = async (research) => {
 const roleVectorsFor = async (professions, embed, model) => {
     const RoleEmbedding = require("../model/roleEmbeddingsModel")
     const wanted = []
-    professions.forEach((profession) => (profession.job_roles || []).forEach((role) => wanted.push({ key: `${model}::${normaliseTitle(role)}`, professionId: profession.id, role })))
+    // Round 28: each career's own name too, so a career is compared by its name and its titles
+    professions.forEach((profession) => [profession.profession, ...(profession.job_roles || [])].forEach((role) => wanted.push({ key: `${model}::${normaliseTitle(role)}`, professionId: profession.id, role })))
     const unique = [...new Map(wanted.map((entry) => [entry.key, entry])).values()]
 
     const cached = await RoleEmbedding.find({ key: { $in: unique.map((entry) => entry.key) } }).lean()
@@ -254,7 +280,6 @@ const runCareerScout = async ({
     research,
     adzuna = createAdzuna(),
     embed = voyageEmbed(),
-    embeddings = professionEmbeddings.embeddings,
     professions = taxonomy.professions,
     now = new Date(),
 } = {}) => {
@@ -289,19 +314,43 @@ const runCareerScout = async ({
     const pool = merged.filter((row) => !known.has(row.key)).sort(byPriority).slice(0, MAX_EMBEDDED)
 
     const result = { postingsRead: titles.length, adzuna: adzuna ? "used" : "skipped (no keys)", reportsNamed: reports.length, considered: merged.length, knownByName: merged.length - merged.filter((row) => !known.has(row.key)).length, knownByMeaning: 0, listed: 0, assessed: 0, refused: [], failed: [] }
-    if (pool.length === 0) return result
 
     const roleVectors = await roleVectorsFor(professions, embed, embeddingModel())
-    const vectors = await embed(pool.map((row) => row.title))
+    const place = (vector) => {
+        const roles = nearestRoles(vector, roleVectors)
+        if (roles.length > 0 && roles[0].similarity >= roleKnownAt()) return { kind: "role", nearestRoles: roles }
+        return { ...classifyRanked(rankCareers(vector, roleVectors)), nearestRoles: roles }
+    }
+
+    // Round 28: the watch list is re-sorted with today's rule every run, so rows listed under the old
+    // comparison are fixed. One now known to be one of our careers is set aside, with why — never deleted.
+    const watching = await ScoutCandidate.find({ status: "watch" }).select("key title").limit(MAX_EMBEDDED).lean()
+    const fresh = watching.filter((row) => !pool.some((entry) => entry.key === row.key))
+    result.rechecked = fresh.length
+    result.setAside = 0
+    if (fresh.length) {
+        const oldVectors = await embed(fresh.map((row) => row.title))
+        for (const [index, row] of fresh.entries()) {
+            const placed = place(oldVectors[index])
+            if (placed.kind === "role" || placed.kind === "known") {
+                const covered = placed.kind === "role" ? `${placed.nearestRoles[0].role} (${nameOfCareer.get(placed.nearestRoles[0].professionId)})` : placed.nearest[0].name
+                await ScoutCandidate.updateOne({ _id: row._id }, { $set: { status: "dismissed", adminNote: `Set aside by the scout: already covered by ${covered}`, nearestRoles: placed.nearestRoles, ...(placed.nearest ? { nearest: placed.nearest } : {}) } })
+                result.setAside += 1
+            } else {
+                await ScoutCandidate.updateOne({ _id: row._id }, { $set: { kind: placed.kind, nearest: placed.nearest, nearestRoles: placed.nearestRoles } })
+            }
+        }
+    }
+
+    const vectors = pool.length ? await embed(pool.map((row) => row.title)) : []
     const candidates = []
     pool.forEach((row, index) => {
-        const roles = nearestRoles(vectors[index], roleVectors)
-        if (roles.length > 0 && roles[0].similarity >= roleKnownAt()) {
+        const placed = place(vectors[index])
+        if (placed.kind === "role") {
             result.knownByMeaning += 1     // already one of our job titles, by meaning
             return
         }
-        const placed = classifyAgainstCareers(vectors[index], embeddings)
-        if (placed.kind !== "known") candidates.push({ ...row, ...placed, nearestRoles: roles })
+        if (placed.kind !== "known") candidates.push({ ...row, ...placed })
     })
     candidates.splice(maxCandidates())
 
@@ -351,4 +400,4 @@ const runCareerScout = async ({
     return result
 }
 
-module.exports = { runCareerScout, normaliseTitle, countTitles, countAspirations, mergeSources, classifyAgainstCareers, byPriority, jobRoleIndex, nearestRoles, reportTitles, MIN_POSTINGS }
+module.exports = { runCareerScout, normaliseTitle, countTitles, countAspirations, mergeSources, classifyAgainstCareers, classifyRanked, rankCareers, byPriority, jobRoleIndex, nearestRoles, reportTitles, MIN_POSTINGS }

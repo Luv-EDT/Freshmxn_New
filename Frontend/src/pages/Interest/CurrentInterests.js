@@ -201,9 +201,9 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
 
     const emptyOngoingNote = (
         <p>
-            No ongoing activities found from earlier sections.
+            Nothing ticked yet.
             <br />
-            <span>You can select them above or continue if none apply.</span>
+            <span>Tick what still feels like you above, or continue if none apply.</span>
         </p>
     )
 
@@ -223,19 +223,21 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
 
             {/* Brief section header */}
             <div className="if-step-head">
-                <h2>💡 Current Interests</h2>
-                <p>Look back at your past activities and pick the ones that still feel meaningful to you today.</p>
+                <h2>💡 What still feels like you</h2>
+                {/* Round 28 (owner): not only things you'd still DO — an experience you can't repeat but
+                    still resonate with counts too ("living alone in college taught me a lot") */}
+                <p>Here is everything you wrote in the earlier stages. Tick what still resonates with you — something you'd still enjoy, still care about, or an experience that shaped who you are, even if you can't do it again.</p>
                 <details className="if-examples">
-                    <summary>How to reflect on your interests</summary>
-                    <p>Think about which activities you still enjoy or care about today and which ones you've outgrown. This helps us understand what motivates you right now.</p>
+                    <summary>How to choose</summary>
+                    <p>Ask yourself: "Does this still feel like me?" If yes, tick it — whether you still do it, would like to, or simply carry what it taught you. Leave out what you've outgrown.</p>
                 </details>
             </div>
 
             <form onSubmit={handleContinue}>
                 {/* Persistent Interests */}
                 <div className="if-card">
-                    <label><strong>Ongoing Interests</strong></label> <span>*</span>
-                    <p>Which of your earlier activities would you still like to continue? Pick the ones that still feel meaningful to you, even if you don't have time for them right now.</p>
+                    <label><strong>Still feels like me</strong></label> <span>*</span>
+                    <p>Tick each one that still resonates — an activity you'd keep doing, something you still care about, or an experience that shaped you, even if you can't repeat it.</p>
 
                     {extractedActivities.length === 0 ? (
                         <p>No activities found from earlier sections. Please go back and add some activities first.</p>
@@ -280,7 +282,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 {/* Passion */}
                 <div className="if-card">
                     <label><strong>Strongest Passions</strong></label>
-                    <p>Which of your ongoing interests are you most passionate about? These are the ones that excite you and you often think about.</p>
+                    <p>Of the ones you ticked, which do you feel most strongly about — the ones that excite you or that you think about often?</p>
                     <p>(Note: Passion is just an extreme form of interest).</p>
 
                     {ongoingActivities.length === 0 ? emptyOngoingNote : ongoingActivities.map((item, idx) => (
@@ -299,7 +301,7 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
                 {/* Longer Term Pursuits */}
                 <div className="if-card">
                     <label><strong>Long-Term Commitments</strong></label>
-                    <p>Which activities have you been doing for more than 6 months? These show your dedication and consistency.</p>
+                    <p>Which of these have been part of your life for more than 6 months? They show your dedication and consistency.</p>
 
                     {ongoingActivities.length === 0 ? emptyOngoingNote : ongoingActivities.map((item, idx) => (
                         <div key={`longTermPursuit-activity-${idx}`}>
@@ -316,8 +318,8 @@ function CurrentInterests({ formData, extractedActivities, extractedProblems, up
 
                 {/* Discontinued Pursuits */}
                 <div className="if-card">
-                    <label><strong>Activities You've Paused</strong></label>
-                    <p>Which activities did you pursue but later stop? Please share why you paused or stopped them.</p>
+                    <label><strong>Things you've paused</strong></label>
+                    <p>Which of these did you stop or pause along the way? Tell us why.</p>
 
                     {ongoingActivities.length === 0 ? emptyOngoingNote : ongoingActivities.map((item, idx) => {
                         const slot = (localFormData.discontinuedPursuits || {})[item.activity] || { isSelected: false, reason: [], otherReason: "", youOrThem: "" }

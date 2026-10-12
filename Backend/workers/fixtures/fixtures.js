@@ -2055,7 +2055,8 @@ const fixtures = [
 
             // the page uses it, and offers the no-cost order only where it differs
             if (!/groupList\(ranked, primary, secondary, details/.test(source)) problems.push("the page does not build its groups with groupList")
-            if (!/framing\.switchIsDistinct \? framing\.switchIntro : null/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
+            // Round 28: the controls are open in a column; "ignoring switching cost" still only where it differs
+            if (!/showNoCost=\{framing\.switchIsDistinct\}/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
             if (!/tierNameFor\(group\.tier\)/.test(source) || !/Would leave \{SWITCH_COST_GROUP_YEARS\}\+ years behind/.test(source)) problems.push("the open list has no tier headings or no last group")
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2166,7 +2167,8 @@ const fixtures = [
             // is one tap away — a fold, not a filter. Round 20: opened, it is the same entries in groups.
             if (!/ordered\.slice\(0, TOP_SHOWN\)\.map\(\(entry\) => card\(entry\)\)/.test(page) || !/showAllFor !== sortKey \?/.test(page)) problems.push("the rendered list is not the chosen order (top three, then all)")
             if (!/const ordered = useMemo\(\(\) => groups\.flatMap\(\(group\) => group\.entries\), \[groups\]\)/.test(page)) problems.push("the open list is not the same entries as the top three")
-            if (!/Show the other \{ordered\.length - TOP_SHOWN\}/.test(page)) problems.push("the rest of the list has no 'Show the other N' button")
+            // Round 28 (owner): three, then up to fifteen, then the rest folded under "explore a few more"
+            if (!/Show \{Math\.min\(ordered\.length, MAIN_SHOWN\) - TOP_SHOWN\} more/.test(page) || !/explore a few more/.test(page) || !/splitShown\(groups, MAIN_SHOWN\)/.test(page)) problems.push("the list does not open to fifteen with the rest folded")
             if (!/const TOP_SHOWN = 3/.test(page)) problems.push("the list does not open on three")
             if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at three")
             if (!/rank=\{ordered\.indexOf\(entry\) \+ 1\}/.test(page)) problems.push("the cards are not numbered in the order shown")
@@ -3615,8 +3617,10 @@ const fixtures = [
             })
             if (DECISION_SECTIONS.length < 10) problems.push("too few rule sections")
 
-            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "photo_film" }).blocking.length === 0) problems.push("a combined career with the same group on both sides was accepted")
-            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "no_such_group" }).blocking.length === 0) problems.push("an unknown side group was accepted")
+            // Round 28 (owner): two exact professions
+            if (validateCombined({ name: "X", parentA: "med-photographer", parentB: "med-photographer" }).blocking.length === 0) problems.push("a combined career with the same profession twice was accepted")
+            if (validateCombined({ name: "X", parentA: "med-photographer", parentB: "no-such-career" }).blocking.length === 0) problems.push("an unknown profession was accepted")
+            if (validateCombined({ name: "X", parentA: "med-photographer", parentB: "env-forest-officer" }).blocking.length !== 0) problems.push("two real professions were refused")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -4827,7 +4831,8 @@ const fixtures = [
             if (!/<AbroadWaitlist professionId=\{entry\.professionId\} \/>/.test(card)) problems.push("the abroad part has no waitlist")
             if (!/subjectRoutes/.test(card)) problems.push("the card does not show subjects per route")
             if (/journeyHeadline|mastersOptions/.test(page)) problems.push("a report-level overview is back")
-            if (!/data\.fundamentals/.test(page)) problems.push("the fundamentals are not on the report")
+            // Round 28 (owner): the fundamentals live on the psychometric analysis page, linked from the report
+            if (!/to="\/report\/psychometric"/.test(page)) problems.push("the fundamentals are not reachable from the report")
             if (!/Not a career on our list/.test(page) || !/signal\.readAs/.test(page) || !/Direct match/.test(page) || !/Indirect match/.test(page)) problems.push("the aspiration copy is not the owner's")
             const abroadCard = read("AbroadWaitlist.js")
             if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad help is not a waitlist")
@@ -4989,18 +4994,22 @@ const fixtures = [
             const problems = []
             if (!/path="\/report\/matches"/.test(app)) problems.push("no /report/matches route")
             if (!/className="report-title">Your report/.test(page)) problems.push("'Your report' is not the centred title")
-            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">What seems to drive you</h2>", ">The five fundamentals</strong>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
+            // Round 28 (owner): the fundamentals become "Your psychometric analysis", a page of its own
+            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">What seems to drive you</h2>", ">Your psychometric analysis</h2>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
             if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push(`the overview is not in the owner's order: ${order.join(",")}`)
             if (!/to="\/report\/matches"/.test(page)) problems.push("the overview does not open the matches page")
-            if (!/The rest of your qualities<\/strong> — <Link to="\/profile">/.test(page) || !/They aren't\s+here on purpose/.test(page)) problems.push("the fifth fundamental does not point to the Profile, and say why")
+            if (!/to="\/report\/psychometric"/.test(page) || !/path="\/report\/psychometric"/.test(app)) problems.push("the overview does not open the psychometric analysis page")
+            const psych = fs.readFileSync(path.join(REPORT_DIR, "PsychometricAnalysis.js"), "utf8")
+            if (!/four fundamentals/.test(psych) || !/doesn't make you good or bad — only different/.test(psych) || !/<PsychometricScores allOpen \/>/.test(psych)) problems.push("the psychometric analysis page does not say what the fundamentals are and that the rest only make you different")
             if (/<h2>Combined careers<\/h2>/.test(page)) problems.push("combined careers are still a card of their own")
-            const medium = ["What seems to drive you", "The five fundamentals", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
+            const medium = ["What seems to drive you", "Your psychometric analysis", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
             if (medium.length > 0) problems.push(`not in the shared medium heading: ${medium.join(", ")}`)
             if (/<ReportSortMenu|buildList\(/.test(page)) problems.push("the sort or the list is still on the overview")
-            // Round 24 (owner): the filters fold away behind "Filter your list", like the sort
-            const filterMenu = fs.readFileSync(path.join(REPORT_DIR, "ReportFilterMenu.js"), "utf8")
-            if (!/Leave out blue-collar careers\*/.test(filterMenu) || !/\* Some of the most AI-proof careers are blue-collar\./.test(filterMenu)) problems.push("the blue-collar filter has no asterisk and side note")
-            if (!/<ReportFilterMenu/.test(matches) || !/Filter your list/.test(filterMenu)) problems.push("the filters are not folded behind one button")
+            // Round 28 (owner): the sorts and filters sit open beside the list, each with an ⓘ; blue-collar
+            // is defined where the word is used
+            const controls = fs.readFileSync(path.join(REPORT_DIR, "ReportControls.js"), "utf8")
+            if (!/Leave out blue-collar careers\*/.test(controls) || !/Blue-collar careers are hands-on, skilled work that doesn't need a degree/.test(controls) || !/Some of the most AI-proof careers are blue-collar\./.test(controls)) problems.push("the blue-collar filter has no asterisk, definition and side note")
+            if (!/<ReportControls/.test(matches) || !/className="matches-side"/.test(matches) || !/<Info text=/.test(controls)) problems.push("the sorts and filters are not open in a column, each explained")
             if (/added that our main ranking leaves out/.test(matches) || !/nothing is moved for what\s+switching would cost you/.test(matches)) problems.push("'ignoring switching cost' does not say what it does")
             const combined = fs.readFileSync(path.join(REPORT_DIR, "CombinedCareers.js"), "utf8")
             if (!/<ProfessionCard[\s\S]*?combined\s/.test(combined) || !/mix two professions/.test(combined)) problems.push("combined careers are not the same card with the note")
@@ -5016,15 +5025,18 @@ const fixtures = [
             const pages = path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages")
             const read = (...parts) => fs.readFileSync(path.join(pages, ...parts), "utf8")
             const problems = []
-            ;[["Interest", "InterestForm.js"], ["Assessment", "AssessmentShell.js"], ["Report", "ReportPage.js"], ["Report", "MatchesPage.js"], ["Report", "ComparePage.js"], ["Report", "ReportStatus.js"], ["User", "Mentorship.js"]].forEach((parts) => {
+            // Round 28 (owner): the interest form's own button goes back a section — the menu has Dashboard
+            if (!/← Previous section/.test(read("Interest", "InterestForm.js"))) problems.push("the interest form has no Previous section button")
+            ;[["Assessment", "AssessmentShell.js"], ["Report", "ReportPage.js"], ["Report", "MatchesPage.js"], ["Report", "ComparePage.js"], ["Report", "ReportStatus.js"], ["User", "Mentorship.js"]].forEach((parts) => {
                 if (!/<BackToDashboard/.test(read(...parts))) problems.push(`${parts[1]} has no Dashboard button`)
             })
             ;[["Assessment", "AssessmentShell.js"], ...["ReportPage.js", "MatchesPage.js", "ReportStatus.js", "ComparePage.js"].map((name) => ["Report", name])].forEach((parts) => {
                 if (/<JourneyProgress/.test(read(...parts))) problems.push(`${parts[1]} still shows the journey bar`)
             })
             const form = read("Interest", "InterestForm.js")
-            if (!/onLeave=\{\(\) => setLeaveOpen\(true\)\}/.test(form) || !/Save and go/.test(form) || !/Leave without saving/.test(form)) problems.push("the interest form does not ask before leaving")
-            if (!/then: "\/dashboard"/.test(form)) problems.push("'Save and go' does not save first")
+            // Round 28: every link out (the menu's Dashboard included) asks, and "Save and go" saves first
+            if (!/document\.addEventListener\("click", onClick, true\)/.test(form) || !/Save and go/.test(form) || !/Leave without saving/.test(form)) problems.push("the interest form does not ask before leaving")
+            if (!/then: leaveTo/.test(form)) problems.push("'Save and go' does not save first")
             const shell = read("Assessment", "AssessmentShell.js")
             if (!/onLeave=\{\(\) => setLeaveOpen\(true\)\}/.test(shell) || !/Save and go/.test(shell)) problems.push("the assessment does not ask before leaving")
             return problems.length > 0 ? problems.join("; ") : null
@@ -5375,7 +5387,7 @@ const fixtures = [
             if (!/registerRateLimiter/.test(route.split("\n")[0])) problems.push("no rate limit")
             if (!/req\.body\.website/.test(body) || !/verifyTurnstile\(req\.body\.turnstileToken/.test(body) || !/checkName\(name\)/.test(body)) problems.push("the route lacks the hidden box, Turnstile or the name rule")
             const form = read("Frontend/src/pages/Mentor/MentorRegister.js")
-            if (!/className="hp-field"/.test(form) || !/<TurnstileBox onToken=\{onToken\} \/>/.test(form) || !/website, turnstileToken/.test(form)) problems.push("the mentor form does not render the hidden box and Turnstile, or does not send them")
+            if (!/className="hp-field"/.test(form) || !/<TurnstileBox onToken=\{onToken\}/.test(form) || !/website, turnstileToken/.test(form)) problems.push("the mentor form does not render the hidden box and Turnstile, or does not send them")
             const real = ["Krishna Iyer", "Bhagyashree Jadhav", "Shrishti Agarwal", "Brahmbhatt", "Kshitij Shrivastava", "Subramanian Swaminathan", "Simranjeet Dhillon", "Chhabra", "Rwitwik Ghosh", "Hrushikesh", "Tsering Dorjee", "Przybylski", "Schwarzschild", "Bryn Llywelyn", "Dr. A. K. O'Neil", "Mary-Jane Watson", "Mohd. Imran", "Joseph D'Souza", "Luv Goel", "Riya"]
             const wrongly = real.filter((name) => checkName(name))
             if (wrongly.length) problems.push(`real names turned away: ${wrongly.join(", ")}`)
@@ -5400,6 +5412,305 @@ const fixtures = [
             ;["payment.captured", "refund.processed", "refund.failed"].forEach((event) => { if (!router.includes(`event.event === "${event}"`)) problems.push(`${event} is not handled`) })
             if (!/handler: \(\) => \{[\s\S]{0,200}waitForAccess\(\)/.test(paywall) || /handler: \(response\)/.test(paywall)) problems.push("the checkout callback is trusted instead of waiting for the webhook")
             if (/description: `Tier/.test(paywall) || !/description: planName\(quote\.tier\)/.test(paywall)) problems.push("the Razorpay popup says \"Tier N\" instead of the plan name")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — a finished test shows the student's own result (counts and a level word), never an answer key, confidence or data quality; set-aside and broken runs say so",
+        run: () => {
+            const { testResultsFor } = require("../../Routers/submissionsRouter")
+            const problems = []
+            const done = new Date()
+            const responses = Array.from({ length: 16 }, (unused, index) => ({ type: ["matrix", "series", "verbal", "rotation"][index % 4], correct: index < 11, choice: "B" }))
+            const results = testResultsFor({
+                reasoning: { completedAt: done, responses, seed: 7 },
+                wordRecall: { completedAt: done, trials: [{ correct: 10, words: ["cat"] }, { correct: 9, words: ["dog"] }] },
+                digitSpan: { completedAt: done, trials: [{ length: 3, correct: true, ms: 2000, response: "123" }, { length: 4, correct: true, ms: 2000, response: "1234" }, { length: 5, correct: false, ms: 2000, response: "12345" }, { length: 5, correct: false, ms: 2000, response: "12354" }] },
+                sartRaw: "not a real run",
+                accommodations: { skipped: { storyRecall: true } },
+            })
+            if (!results.reasoning || results.reasoning.line !== "11 of 16 puzzles right" || !["High", "Medium", "Low"].includes(results.reasoning.level)) problems.push(`reasoning reads ${JSON.stringify(results.reasoning)}`)
+            if (!results.wordRecall || results.wordRecall.line !== "19 of 30 words remembered") problems.push(`word memory reads ${JSON.stringify(results.wordRecall)}`)
+            if (!results.digitSpan || !/4 digits/.test(results.digitSpan.line)) problems.push(`number memory reads ${JSON.stringify(results.digitSpan)}`)
+            if (!results.sartRaw || results.sartRaw.state !== "invalid") problems.push("a focus run that did not record properly is not marked as such")
+            if (!results.storyRecall || results.storyRecall.state !== "set_aside") problems.push("a set-aside test is not marked set aside")
+            const text = JSON.stringify(results)
+            ;["correct", "answer", "seed", "words", "confidence", "data_quality", "choice"].forEach((key) => { if (text.includes(`"${key}"`)) problems.push(`the results carry "${key}"`) })
+            if (/\d\.\d{2}"/.test(JSON.stringify(results.reasoning))) problems.push("a raw 0-10 score leaks out")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment", file), "utf8")
+            ;[["DigitSpan.js", "digitSpan"], ["ReasoningTest.js", "reasoning"], ["WordRecallTest.js", "wordRecall"], ["Sart.js", "sartRaw"]].forEach(([file, key]) => {
+                const page = read(file)
+                if (!page.includes(`<TestResult moduleKey="${key}" />`)) problems.push(`${file} shows no result`)
+                if (!page.includes(`<ReportProblem moduleKey="${key}" />`)) problems.push(`${file} has no "Something went wrong"`)
+            })
+            if (!read("AssessmentShell.js").includes('<ReportProblem moduleKey="storyRecall" />')) problems.push("the short story has no \"Something went wrong\"")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — every status a student waits on is emailed (payments, refunds, aid, retakes), \"Hi,\" with no typed name and every value escaped; a decline needs a reason",
+        run: () => {
+            const { TEMPLATES } = require("../../utils/statusEmails")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const problems = []
+            const wanted = ["paymentSuccess", "planGranted", "paymentFailed", "refundStarted", "refundCompleted", "refundFailed", "refundDeclined", "aidApproved", "aidDeclined", "aidCancelled", "retakeGranted", "retakeDeclined", "reportRerun"]
+            wanted.forEach((kind) => {
+                if (!TEMPLATES[kind]) return problems.push(`no ${kind} email`)
+                const { body } = TEMPLATES[kind]({ planName: "<b>x</b>", reason: "<script>", testName: "<i>t</i>", paymentId: "<p>", refundId: "r", arn: "<a>", amountInr: 100 })
+                if (/<script>|<b>x<\/b>|<i>t<\/i>/.test(body)) problems.push(`${kind} does not escape what it is given`)
+            })
+            const payments = read("Routers/paymentsRouter.js")
+            const issues = read("Routers/assessmentIssuesRouter.js")
+            ;["paymentFailed", "refundStarted", "refundCompleted", "refundFailed", "refundDeclined", "aidApproved", "aidDeclined", "aidCancelled"].forEach((kind) => { if (!payments.includes(`"${kind}"`)) problems.push(`payments never sends ${kind}`) })
+            ;["retakeGranted", "retakeDeclined", "reportRerun"].forEach((kind) => { if (!issues.includes(`"${kind}"`)) problems.push(`assessment issues never sends ${kind}`) })
+            if (/Hi \$\{/.test(issues + payments + read("housekeeping/followUpScan.js"))) problems.push("an email greets the student by the name they typed")
+            if ((payments.match(/Please write the reason — the student is emailed it/g) || []).length < 2) problems.push("a refund or aid decline does not need a reason")
+            if (!/askedByStudent && !reason/.test(issues)) problems.push("a student's retake request can be dismissed without a reason")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — money flows: a failed payment is recorded with its id, a coupon counts once per person and only on payment, a pending aid request closes when the student pays, and aid is refused for a plan already held",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            const problems = []
+            const failed = router.split('event.event === "payment.failed"')[1] || ""
+            if (!failed || !/status: "failed"/.test(failed.slice(0, 2500)) || !/failureMessage/.test(failed.slice(0, 2500))) problems.push("payment.failed does not write a failed row with its reason")
+            if (!/Payment\.exists\(\{ user: user\._id, coupon: couponCode, status: "paid" \}\)/.test(router)) problems.push("a coupon can be used twice by one person")
+            const grant = router.split("const grantAccess")[1] || ""
+            if (!/status: "cancelled"/.test(grant.slice(0, 6000))) problems.push("a pending aid request survives a payment")
+            if (!/aidCancelled/.test(grant.slice(0, 6000))) problems.push("the student is not told their aid request closed")
+            const model = fs.readFileSync(path.join(__dirname, "../../model/financialAidRequestsModel.js"), "utf8")
+            if (!/\| cancelled/.test(model)) problems.push("the aid model has no cancelled status")
+            const approve = router.split('router.put("/approveFinancialAidForAdmin/:id"')[1] || ""
+            if (!/owns\(/.test(approve.slice(0, 3000))) problems.push("aid can be approved for a plan the student already holds")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — the scout compares like with like: a title is ranked against career names and job titles, and new / between / known follow the thresholds",
+        run: () => {
+            const { rankCareers, classifyRanked } = require("../../housekeeping/careerScout")
+            const problems = []
+            const names = new Map([["a", "Alpha"], ["b", "Beta"], ["c", "Gamma"]])
+            const titles = [
+                { professionId: "a", role: "Alpha", vector: [1, 0, 0] },
+                { professionId: "a", role: "Alpha Lead", vector: [0.9, 0.1, 0] },
+                { professionId: "b", role: "Beta", vector: [0, 1, 0] },
+                { professionId: "c", role: "Gamma", vector: [0, 0, 1] },
+            ]
+            const ranked = rankCareers([1, 0, 0], titles, names)
+            if (ranked[0].id !== "a" || ranked[0].similarity !== 1 || ranked[0].via !== "Alpha") problems.push(`ranking is off: ${JSON.stringify(ranked[0])}`)
+            if (ranked.filter((row) => row.id === "a").length !== 1) problems.push("a career appears twice")
+            const sectors = new Map([["a", "s1"], ["b", "s2"], ["c", "s1"]])
+            if (classifyRanked([{ id: "a", similarity: 0.5 }], { below: 0.62, gap: 0.03, sectors }).kind !== "new") problems.push("a far title is not new")
+            if (classifyRanked([{ id: "a", similarity: 0.7 }, { id: "b", similarity: 0.69 }], { below: 0.62, gap: 0.03, sectors }).kind !== "between") problems.push("a title between two sectors is not between")
+            if (classifyRanked([{ id: "a", similarity: 0.7 }, { id: "c", similarity: 0.69 }], { below: 0.62, gap: 0.03, sectors }).kind !== "known") problems.push("two careers in one sector made it between")
+            if (classifyRanked([{ id: "a", similarity: 0.8 }, { id: "b", similarity: 0.65 }], { below: 0.62, gap: 0.03, sectors }).kind !== "known") problems.push("a clearly close title is not known")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — the matches list is cut after filters and sorts: the first fifteen in their groups, the rest kept (nothing lost, nothing doubled)",
+        run: () => {
+            const { splitShown, MAIN_SHOWN } = loadReportFilters()
+            const problems = []
+            if (MAIN_SHOWN !== 15) problems.push(`MAIN_SHOWN is ${MAIN_SHOWN}`)
+            const groups = [
+                { key: "t1", entries: Array.from({ length: 9 }, (unused, index) => ({ professionId: `a${index}` })) },
+                { key: "t2", entries: Array.from({ length: 10 }, (unused, index) => ({ professionId: `b${index}` })) },
+            ]
+            const { shown, rest } = splitShown(groups)
+            const count = (list) => list.reduce((sum, group) => sum + group.entries.length, 0)
+            if (count(shown) !== 15 || count(rest) !== 4) problems.push(`split ${count(shown)} / ${count(rest)}`)
+            const ids = [...shown, ...rest].flatMap((group) => group.entries.map((entry) => entry.professionId))
+            if (new Set(ids).size !== 19) problems.push("an entry was lost or doubled")
+            if (shown[1].entries[5].professionId !== "b5" || rest[0].entries[0].professionId !== "b6") problems.push("the order is not kept across the cut")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — a student's own report updates are limited to 3 and counted; an update because we changed matching or scoring is always free",
+        run: () => {
+            const { selfUpdatesLeft, SELF_UPDATE_LIMIT } = require("../../utils/selfUpdates")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../Routers", file), "utf8")
+            const problems = []
+            if (SELF_UPDATE_LIMIT !== 3 || selfUpdatesLeft({}) !== 3 || selfUpdatesLeft({ selfUpdatesUsed: 2 }) !== 1 || selfUpdatesLeft({ selfUpdatesUsed: 5 }) !== 0) problems.push("the count is off")
+            const reports = read("reportsRouter.js")
+            if (!/ownChange && selfUpdatesLeft\(req\.user\) === 0/.test(reports) || !/ownChange \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(reports)) problems.push("Update my report does not count only own changes")
+            const submissions = read("submissionsRouter.js")
+            if (!/hasReport && selfUpdatesLeft\(req\.user\) === 0/.test(submissions) || !/hasReport \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(submissions)) problems.push("a resubmit does not count as an own update")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — mentor sessions: marking one done logs it, another needs a paid (or free) credit, priced on the server at the Mentor Only price, and history is never wiped",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const waitlist = read("Routers/mentorWaitlistRouter.js")
+            const payments = read("Routers/paymentsRouter.js")
+            const problems = []
+            const complete = waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || ""
+            if (!/\$push: \{ sessions: session \}/.test(complete.slice(0, 2500)) || !/matchStatus: "completed"/.test(complete.slice(0, 2500))) problems.push("a done session is not logged")
+            const another = waitlist.split('router.post("/startAnotherSession"')[1] || ""
+            if (!/status\(402\)/.test(another.slice(0, 2500))) problems.push("another session starts without a credit")
+            if (!/const MENTOR_SESSION_INR = TIER_PRICE_INR\[3\]/.test(payments)) problems.push("the session price is not the Mentor Only price")
+            if (!/action: "mentor_session"/.test(payments) || !/extraSessionsPaid: 1/.test(payments)) problems.push("a paid session is not recorded as a credit")
+            const createOrder = (payments.split('router.post("/create-order"')[1] || "").split("router.")[0]
+            const quote = (payments.split('router.post("/getQuote"')[1] || "").split("router.")[0]
+            if (!/req\.body\.product === "mentor_session"/.test(createOrder) || /orders\.create/.test(quote)) problems.push("another session is not ordered through create-order (or a quote opens a Razorpay order)")
+            const reset = waitlist.split('router.put("/resetChoiceForAdmin/:id"')[1] || ""
+            if (/sessions: \[\]|\$unset[^}]*sessions/.test(reset.slice(0, 3000))) problems.push("Reset choice wipes the session history")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — editing a finished Virtual Career Counselling form saves only on Save: no local draft, no save between sections, a warning on refresh",
+        run: () => {
+            const form = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Interest/InterestForm.js"), "utf8")
+            const problems = []
+            if (!/const draft = editMode \? null : readLocalDraft\(\)/.test(form)) problems.push("edit mode still reads a local draft")
+            if (!/if \(!\(editMode && isNavigating && !isFinishing\)\) await saveToServer/.test(form)) problems.push("moving between sections saves in edit mode")
+            if (!/beforeunload/.test(form)) problems.push("no warning on refresh")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — focus test: a held-down key is one press, and a digit the device never showed is not scored as an error (the stimulus block is untouched)",
+        run: () => {
+            const sart = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/Sart.js"), "utf8")
+            const problems = []
+            if (!/if \(event\.repeat\) return/.test(sart)) problems.push("key auto-repeat counts as presses")
+            if (!/records\.filter\(\(record\) => !record\.dropped\)/.test(sart)) problems.push("dropped trials are still scored")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — mentors can sign up with Google: the mentor role comes only from the signed state and only for a NEW account; an existing account keeps its role",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../..", file), "utf8")
+            const auth = read("Backend/Routers/authRouter.js")
+            const problems = []
+            if (!/const as = req\.query\.as === "mentor" \? "mentor" : "student"/.test(auth) || !/jwt\.sign\(\{ purpose: "google_oauth", as \}/.test(auth)) problems.push("the mentor wish is not carried in the signed state")
+            if (!/role: decodedState\.as === "mentor" \? "mentor" : "student"/.test(auth)) problems.push("a new Google account does not take its role from the signed state")
+            const linking = auth.split("existingUser._id,")[1] || ""
+            if (/role/.test(linking.slice(0, 120))) problems.push("linking an existing account can change its role")
+            if (!read("Frontend/src/pages/Mentor/MentorRegister.js").includes('getGoogleSignInUrl("mentor")')) problems.push("the mentor sign-up page has no Google button")
+            if (!/userData\.role === "mentor"\) \{ navigate\("\/mentor"\)/.test(read("Frontend/src/pages/OAuthSuccess.js"))) problems.push("a mentor signing in with Google is not sent to /mentor")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — a mentor invite: no match without the student's contact consent, the invite carries no student contact, the mentor sees it only after accepting privacy, and a kept-away mentor can't be matched",
+        run: () => {
+            const { inviteFacts, whatsappText, whatsappLink, PRIVACY_RULES } = require("../../utils/mentorInvite")
+            const { TEMPLATES } = require("../../utils/statusEmails")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const problems = []
+            const student = { name: "Riya Sharma", email: "riya@example.com", phone: "9876543210" }
+            const facts = inviteFacts({ chosenProfessionName: "Architect", chosenJobRole: "Urban designer", helpFocus: "career", helpWanted: "What is a day like?" }, student)
+            if (facts.firstName !== "Riya" || Object.keys(facts).sort().join() !== "firstName,focus,helpWanted,jobRole,profession") problems.push(`the invite carries ${JSON.stringify(facts)}`)
+            const text = whatsappText(facts) + TEMPLATES.mentorInvite(facts).body
+            if (/riya@example\.com|9876543210|Sharma/.test(text)) problems.push("the invite carries the student's contact or full name")
+            if (!PRIVACY_RULES.every((rule) => whatsappText(facts).includes(rule))) problems.push("the WhatsApp invite lacks the privacy rules")
+            if (!/^https:\/\/wa\.me\/919812345678\?text=/.test(whatsappLink("+91 98123 45678", facts)) || whatsappLink("", facts) !== null) problems.push("the WhatsApp link is not built from the mentor's number")
+            const waitlist = read("Routers/mentorWaitlistRouter.js")
+            const choose = waitlist.split('router.post("/chooseProfession"')[1] || ""
+            if (!/const contact = contactChoice\(req\.body\)\s*\n\s*if \(!contact\)/.test(choose)) problems.push("a choice can be sent without the contact consent")
+            const match = waitlist.split('router.put("/matchForAdmin/:id"')[1] || ""
+            if (!/if \(!row\.contactConsentAt\)/.test(match)) problems.push("a student can be matched without contact consent")
+            if (!/excludedMentors/.test(match.slice(0, 3000)) || !/status: "onboarded"/.test(match.slice(0, 3000))) problems.push("a kept-away or paused mentor can be matched")
+            if (!/"mentorInvite"/.test(match) || !/"mentorConfirmed"/.test(match)) problems.push("the match does not email the mentor and the student")
+            const sessions = read("Routers/mentorSessionsRouter.js")
+            if (!/const showContact = current && Boolean\(row\.mentorPrivacyAcceptedAt\)/.test(sessions)) problems.push("the mentor sees the contact before accepting privacy")
+            if (!/if \(!row\.mentorPrivacyAcceptedAt\)/.test(sessions.split('router.put("/markBookingLinkSent/:id"')[1] || "")) problems.push("a booking link can be marked sent before privacy is accepted")
+            if (!/excludedMentors \|\| \[\]\)\.some/.test(fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/MentorMatchesList.js"), "utf8"))) problems.push("the admin picker offers a kept-away mentor")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — the session review opens only after the admin marks the session done, one per session, a rating from 1 to 10; a report needs a reason and a choice, and \"another mentor\" keeps that mentor away",
+        run: async () => {
+            const SessionReview = require("../../model/sessionReviewsModel")
+            const { reviewState } = require("../../Routers/mentorSessionsRouter")
+            const problems = []
+            const reviewed = new Set()
+            const original = SessionReview.exists
+            SessionReview.exists = async ({ sessionIndex }) => (reviewed.has(sessionIndex) ? { _id: 1 } : null)
+            try {
+                if ((await reviewState({ _id: "w", matchStatus: "matched", sessions: [] })).state !== "waiting") problems.push("a matched student can review before the session is marked done")
+                const open = await reviewState({ _id: "w", matchStatus: "completed", sessions: [{ profession: "Architect", jobRole: "Urban designer", mentorName: "M" }] })
+                if (open.state !== "open" || open.sessionIndex !== 0) problems.push("a done session does not open the review")
+                reviewed.add(0)
+                if ((await reviewState({ _id: "w", matchStatus: "completed", sessions: [{}] })).state !== "done") problems.push("a reviewed session opens again")
+                if ((await reviewState({ _id: "w", matchStatus: "matched", sessions: [{}] })).state !== "waiting") problems.push("a new match with the last session reviewed is not waiting")
+            } finally {
+                SessionReview.exists = original
+            }
+            const model = fs.readFileSync(path.join(__dirname, "../../model/sessionReviewsModel.js"), "utf8")
+            if (!/rating: \{ type: Number, min: 1, max: 10/.test(model) || !/\{ user: 1, waitlist: 1, sessionIndex: 1 \}, \{ unique: true \}/.test(model)) problems.push("the rating is not 1-10 or a session can be reviewed twice")
+            const sessions = fs.readFileSync(path.join(__dirname, "../../Routers/mentorSessionsRouter.js"), "utf8")
+            const report = sessions.split('router.post("/reportMentor"')[1] || ""
+            if (!/MentorReport\.REASONS\.includes\(reason\)/.test(report) || !/\["refund", "new_mentor"\]\.includes\(wants\)/.test(report)) problems.push("a report goes in without a reason or a choice")
+            const resolve = sessions.split('router.put("/resolveReportForAdmin/:id"')[1] || ""
+            if (!/\$addToSet: \{ excludedMentors: report\.mentor \}/.test(resolve)) problems.push("\"another mentor\" can match the same mentor again")
+            if (!/status: "paused"/.test(resolve)) problems.push("a mentor can't be paused")
+            const waitlist = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
+            if (!/"reviewOpen"/.test(waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || "")) problems.push("the student is not asked for a review when the session is done")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — deleting an account also clears its session reviews and mentor reports, and a deleted mentor's name is replaced in other people's records",
+        run: async () => {
+            const { deleteAccountData, USER_COLLECTIONS } = require("../../utils/deleteAccount")
+            const problems = []
+            const names = USER_COLLECTIONS.map(([name]) => name)
+            ;["sessionReviews", "mentorReports"].forEach((name) => { if (!names.includes(name)) problems.push(`${name} is not cleared`) })
+            const same = (left, right) => String(left) === String(right)
+            const matches = (row, filter) => Object.entries(filter).every(([key, wanted]) => {
+                const value = key.split(".").reduce((at, part) => (Array.isArray(at) ? at.map((item) => item && item[part]) : at && at[part]), row)
+                return Array.isArray(value) ? value.some((item) => same(item, wanted)) : same(value, wanted)
+            })
+            const fake = (rows) => ({
+                rows,
+                countDocuments: async (filter) => rows.filter((row) => matches(row, filter)).length,
+                deleteMany: async (filter) => { const before = rows.length; for (let index = rows.length - 1; index >= 0; index--) if (matches(rows[index], filter)) rows.splice(index, 1); return { deletedCount: before - rows.length } },
+                deleteOne: async (filter) => { const index = rows.findIndex((row) => matches(row, filter)); if (index > -1) rows.splice(index, 1); return { deletedCount: index > -1 ? 1 : 0 } },
+                updateMany: async (filter, update) => { const hit = rows.filter((row) => matches(row, filter)); hit.forEach((row) => Object.assign(row, update.$set)); return { modifiedCount: hit.length } },
+                updateOne: async (filter, update) => { const row = rows.find((item) => matches(item, filter)); if (row) Object.assign(row, update.$set); return {} },
+                find: (filter) => ({ lean: async () => rows.filter((row) => matches(row, filter)).map((row) => ({ ...row })) }),
+                findById: (id) => ({ select: () => ({ lean: async () => rows.find((row) => same(row._id, id)) || null }) }),
+            })
+            const mentor = "m1"
+            const history = fake([{ _id: "w1", user: "s1", sessions: [{ mentor, mentorName: "Asha" }, { mentor: "m2", mentorName: "Ravi" }] }])
+            const reviews = fake([{ _id: "r1", user: "s1", mentor, mentorName: "Asha" }])
+            const models = {
+                User: fake([{ _id: mentor, email: "m@x.com", role: "mentor" }]),
+                Job: fake([]),
+                MentorReview: fake([]),
+                ProfessionSuggestions: fake([]),
+                MentorWaitlist: fake([]),
+                named: [[history, "sessions"], [reviews, null]],
+                byUser: Object.fromEntries(USER_COLLECTIONS.map(([name]) => [name, fake([])])),
+            }
+            await deleteAccountData(mentor, { models })
+            const sessions = history.rows[0].sessions
+            if (sessions[0].mentorName !== "Removed mentor" || sessions[1].mentorName !== "Ravi") problems.push("the session history still names the deleted mentor, or renamed someone else")
+            if (reviews.rows[0].mentorName !== "Removed mentor" || reviews.rows[0].user !== "s1") problems.push("a student's review still names the deleted mentor, or was lost")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

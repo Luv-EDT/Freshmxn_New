@@ -89,3 +89,9 @@ export async function markTestStarted(module) {
     const response = await axiosInstance.post("/submissions/markTestStarted", { module })
     return response
 }
+
+// a finished test's own result, in counts and level words — never an answer key (Round 28)
+export async function getMyTestResults() {
+    const response = await axiosInstance.get("/submissions/getMyTestResults")
+    return response
+}

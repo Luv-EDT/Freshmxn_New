@@ -32,8 +32,11 @@ const redirectWithError = (res, reason) => {
 
 router.get("/google", async (req, res) => {
     try {
-        // state is a short-lived signed token, checked on the way back (CSRF protection without a session)
-        const state = jwt.sign({ purpose: "google_oauth" }, process.env.JWT_SECRET, { expiresIn: "10m" })
+        // state is a short-lived signed token, checked on the way back (CSRF protection without a session).
+        // Round 28 (owner): the mentor sign-up page starts here with ?as=mentor — carried in the signed
+        // state, so the role can't be added on the way back.
+        const as = req.query.as === "mentor" ? "mentor" : "student"
+        const state = jwt.sign({ purpose: "google_oauth", as }, process.env.JWT_SECRET, { expiresIn: "10m" })
 
         const authUrl = getGoogleClient(req).generateAuthUrl({
             access_type: "online",
@@ -100,13 +103,14 @@ router.get("/google/callback", async (req, res) => {
                     { returnDocument: "after" }
                 )
             } else {
-                // first Google sign-in → new student. No age or journey yet → Complete Profile.
+                // first Google sign-in → a new student (Complete Profile next), or a new mentor when it
+                // started on the mentor page. An existing account keeps its role — never changed here.
                 user = await User.create({
                     name: payload.name || normalizedEmail.split("@")[0],
                     email: normalizedEmail,
                     googleId: payload.sub,
                     isEmailVerified: true,
-                    role: "student",
+                    role: decodedState.as === "mentor" ? "mentor" : "student",
                     paid: false,
                     currentTier: 0,
                 })

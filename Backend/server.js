@@ -33,6 +33,7 @@ const dataUpdatesRouter = require("./Routers/dataUpdatesRouter")
 const studyAbroadRouter = require("./Routers/studyAbroadRouter")
 const careerHelpRouter = require("./Routers/careerHelpRouter")
 const mentorReviewsRouter = require("./Routers/mentorReviewsRouter")
+const mentorSessionsRouter = require("./Routers/mentorSessionsRouter")
 
 const cors = require("cors")
 const path = require("path")
@@ -96,6 +97,7 @@ app.use("/dataUpdates", dataUpdatesRouter)
 app.use("/studyAbroad", studyAbroadRouter)
 app.use("/careerHelp", careerHelpRouter)
 app.use("/mentorReviews", mentorReviewsRouter)
+app.use("/mentorSessions", mentorSessionsRouter)   // Round 28: invite steps, reviews, reports (pages are /mentor and /mentorship)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")
