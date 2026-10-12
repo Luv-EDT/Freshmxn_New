@@ -6,7 +6,6 @@ const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const requireDiscovery = require("../middlewares/requireDiscovery")
 const { raiseIssue } = require("../utils/assessmentIssues")
-const { sendEmail, escapeHtml } = require("../utils/mailer")
 const { notifyStudent } = require("../utils/statusEmails")
 
 const router = express.Router()
@@ -141,6 +140,7 @@ router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             const { queueReport } = require("../workers/queueHelpers")
             await queueReport(student._id, "queueing the report")
             await User.updateOne({ _id: student._id }, { reportFailedAt: null })
+            notifyStudent(student, "reportRerun")
         } else {
             if (!RETAKEABLE.includes(issue.module)) {
                 return res.status(400).json({ success: false, message: "This test cannot be retaken" })
@@ -176,13 +176,7 @@ router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
 
             await Submission.updateOne({ user: student._id }, update, { upsert: true })
 
-            await sendEmail({
-                to: student.email,
-                subject: "You can take one of your Freshmxn tests again",
-                html: `<p>Hi ${escapeHtml(student.name)},</p>
-                       <p>Your earlier attempt at <strong>${escapeHtml(MODULE_NAMES[issue.module] || issue.module)}</strong> had a technical problem, so we have opened it again for you — one more attempt.</p>
-                       <p>Open your assessment at <a href="${process.env.FRONTEND_URL}/assessment">${process.env.FRONTEND_URL}/assessment</a>, take the test, then press Submit again so your report is updated.</p>`,
-            })
+            await notifyStudent(student, "retakeGranted", { testName: MODULE_NAMES[issue.module] || issue.module })
         }
 
         issue.status = issue.module === "report" ? "resolved" : "retake_granted"

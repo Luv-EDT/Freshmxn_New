@@ -9,6 +9,8 @@ import {
     toPsyToolkitRows, median, describeDevice, describeSession, TYPICAL,
 } from "./sartTask"
 import OneAttemptWarning from "./OneAttemptWarning"
+import TestResult from "./TestResult"
+import { ReportProblem } from "./ResearchBox"
 
 // SART — sustained attention and processing speed. 04_Item_Bank.md §6.
 //
@@ -437,6 +439,8 @@ function Sart({ alreadyTaken, onDone }) {
             <>
                 <h2>Staying focused</h2>
                 <p><strong>You have already done this one.</strong> Your result is saved.</p>
+                <TestResult moduleKey="sartRaw" />
+                <ReportProblem moduleKey="sartRaw" />
                 <p>
                     Like the number task, this cannot be retaken — you now know the rhythm and where
                     the 3s tend to fall, and a second attempt would measure practice rather than

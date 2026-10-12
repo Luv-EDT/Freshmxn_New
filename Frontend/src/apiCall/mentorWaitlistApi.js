@@ -48,3 +48,20 @@ export async function saveMyHelp(payload) {
         return error.response
     }
 }
+
+// Round 28: start another mentor session already paid for — a new choice, or the same field with a
+// different mentor
+export async function startAnotherSession(payload) {
+    try {
+        const response = await axiosInstance.post("/mentorWaitlist/startAnotherSession", payload)
+        return response
+    } catch (error) {
+        return error.response
+    }
+}
+
+// Round 28: the admin marks a matched session done (it is logged on the student's place)
+export async function completeSessionForAdmin(studentId, payload) {
+    const response = await axiosInstance.put(`/mentorWaitlist/completeSessionForAdmin/${studentId}`, payload || {})
+    return response
+}

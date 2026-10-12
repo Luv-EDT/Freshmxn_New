@@ -12,7 +12,7 @@ import Navbar from "../Navbar"
 import { formatInr } from "../Public/usePricing"
 
 // loads Razorpay's checkout script once, only when Razorpay mode is on
-const loadRazorpayCheckout = () => {
+export const loadRazorpayCheckout = () => {
     return new Promise((resolve) => {
         if (window.Razorpay) return resolve(true)
         const script = document.createElement("script")

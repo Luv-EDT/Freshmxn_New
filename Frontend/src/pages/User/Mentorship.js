@@ -5,6 +5,8 @@ import BackToDashboard from "../BackToDashboard"
 import { hasMentor } from "../plans"
 import { formatDate, useMentorWaitlist, HelpLine } from "./mentorshipParts"
 import CareerHelpBox from "./CareerHelpBox"
+import AnotherSession from "./AnotherSession"
+import { getMyWaitlist } from "../../apiCall/mentorWaitlistApi"
 
 // The mentor waitlist, after payment (mentor_waitlist_page.md). Since Round 20 (owner) this page says
 // WHERE THINGS STAND first — choose your mentor's job role, we're finding your mentor, or your mentor
@@ -19,7 +21,8 @@ function Mentorship() {
     const navigate = useNavigate()
     const { user } = useSelector((state) => state.user)
     const isTier2 = hasMentor(user)   // Discovery + Mentor or Mentor Only — the name is kept from before
-    const { waitlist, loading } = useMentorWaitlist(isTier2)
+    const { waitlist, setWaitlist, loading } = useMentorWaitlist(isTier2)
+    const reload = async () => setWaitlist((await getMyWaitlist())?.data?.data || null)
 
     if (!user) return null
 
@@ -77,7 +80,7 @@ function Mentorship() {
 
                 {waitlist && waitlist.matchStatus === "matching" && (
                     <section>
-                        <h3>We're finding your mentor</h3>
+                        <h3>{waitlist.sameFieldNewMentor ? "We're finding you a different mentor" : "We're finding your mentor"}</h3>
                         <p>
                             You chose <strong>{waitlist.otherRequest ? waitlist.otherRequest : waitlist.chosenJobRole ? `${waitlist.chosenJobRole} (${waitlist.chosenProfessionName})` : waitlist.chosenProfessionName}</strong>
                             {waitlist.chosenIndustry ? ` in ${waitlist.chosenIndustry}` : ""} on {formatDate(waitlist.choiceSentAt)}.
@@ -103,6 +106,9 @@ function Mentorship() {
                         <p>Career: {waitlist.otherRequest || `${waitlist.chosenProfessionName}${waitlist.chosenJobRole ? ` — ${waitlist.chosenJobRole}` : ""}`}. We'll contact you to schedule your two sessions.</p>
                     </section>
                 )}
+
+                {/* Round 28 (owner): a finished session is logged; another can be booked (paid) */}
+                {waitlist && waitlist.matchStatus === "completed" && <AnotherSession waitlist={waitlist} onChanged={reload} />}
 
                 {waitlist && waitlist.matchStatus === "unmatchable" && (
                     <section>

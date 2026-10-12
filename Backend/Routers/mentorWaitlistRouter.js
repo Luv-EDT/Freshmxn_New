@@ -136,6 +136,10 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 matchedAt: row.matchedAt,
                 resolution: row.resolution,
                 mentor: await mentorSummary(row.assignedMentor),
+                // Round 28: the sessions already done, and whether another can be started now
+                sessions: (row.sessions || []).map((session) => ({ profession: session.profession, jobRole: session.jobRole, mentorName: session.mentorName, completedAt: session.completedAt })),
+                extraSessionCredit: Math.max(0, (row.extraSessionsPaid || 0) - (row.extraSessionsUsed || 0)),
+                sameFieldNewMentor: Boolean(row.sameFieldNewMentor),
             },
         })
 
@@ -511,6 +515,89 @@ router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
             message: "Failed to reset the choice",
             error: error.message,
         })
+    }
+})
+
+
+// ========================
+// Mentor sessions (owner, Round 28)
+// ========================
+
+// The admin marks a matched session done: it is logged on the row, and the student can then book
+// another (paid) — a new career or job role, or the same one with a different mentor.
+router.put("/completeSessionForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params   // :id is the STUDENT's user id
+        const row = await MentorWaitlist.findOne({ user: id }).lean()
+
+        if (!row || row.matchStatus !== "matched") {
+            return res.status(400).json({ success: false, message: "Only a matched session can be marked done" })
+        }
+
+        const mentor = await mentorSummary(row.assignedMentor)
+        const session = {
+            professionId: row.chosenProfessionId,
+            profession: row.chosenProfessionName || row.otherRequest,
+            jobRole: row.chosenJobRole,
+            mentor: row.assignedMentor,
+            mentorName: mentor ? mentor.name : null,
+            matchedAt: row.matchedAt,
+            completedAt: new Date(),
+            adminNote: cleanText(req.body.adminNote, 500) || undefined,
+        }
+        const updated = await MentorWaitlist.findOneAndUpdate(
+            { _id: row._id, matchStatus: "matched" },
+            { $push: { sessions: session }, $set: { matchStatus: "completed" } },
+            { returnDocument: "after" }
+        )
+
+        return res.status(200).json({ success: true, message: "Session logged — the student can book another", data: updated })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to log the session", error: error.message })
+    }
+})
+
+// The student starts another session with one they've paid for: a fresh choice (any of their
+// recommendations — or any career on Mentor Only), or `sameField` — the same career and role, with a
+// different mentor, which goes straight to matching on a new 20-business-day clock.
+router.post("/startAnotherSession", authMiddleware, async (req, res) => {
+    try {
+        if (!hasMentorPlan(req.user)) {
+            return res.status(403).json({ success: false, message: "Mentor sessions come with a mentor plan" })
+        }
+
+        const row = await MentorWaitlist.findOne({ user: req.user._id }).lean()
+        if (!row || row.matchStatus !== "completed") {
+            return res.status(400).json({ success: false, message: "You can book another session once your current one is done" })
+        }
+        if ((row.extraSessionsPaid || 0) <= (row.extraSessionsUsed || 0)) {
+            return res.status(402).json({ success: false, message: "Another mentor session needs a payment first", data: { needsPayment: true } })
+        }
+
+        const sameField = req.body.sameField === true && Boolean(row.chosenProfessionId || row.otherRequest)
+        const update = sameField
+            ? {
+                $set: { matchStatus: "matching", choiceSentAt: new Date(), sameFieldNewMentor: true, resolution: null, adminNote: "Same career and role — find a DIFFERENT mentor from last time" },
+                $unset: { assignedMentor: "", matchedAt: "" },
+                $inc: { extraSessionsUsed: 1 },
+            }
+            : {
+                $set: { matchStatus: "awaiting_choice", sameFieldNewMentor: false, resolution: null, adminNote: "Booked another session — waiting for a new choice" },
+                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                $inc: { extraSessionsUsed: 1 },
+            }
+
+        const updated = await MentorWaitlist.findOneAndUpdate({ _id: row._id, matchStatus: "completed" }, update, { returnDocument: "after" })
+
+        return res.status(200).json({
+            success: true,
+            message: sameField ? "We're finding you a different mentor in the same field" : "Choose the career and job role for your next session",
+            data: { matchStatus: updated ? updated.matchStatus : row.matchStatus },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not start another session", error: error.message })
     }
 })
 

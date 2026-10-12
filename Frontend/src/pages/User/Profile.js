@@ -5,6 +5,8 @@ import { Link } from "react-router-dom"
 import { Table, Collapse, message } from "antd"
 import dayjs from "dayjs"
 import { getMyPayments, getMyRefundRequests, getMyFinancialAid } from "../../apiCall/paymentsApi"
+import { getMyWaitlist } from "../../apiCall/mentorWaitlistApi"
+import { hasMentor } from "../plans"
 import { resendVerification, getCurrentUser } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 import RequestRefundForm from "./RequestRefundForm"
@@ -29,10 +31,16 @@ function Profile() {
     const [loading, setLoading] = useState(false)
     const [showForm, setShowForm] = useState(false)
     const [editing, setEditing] = useState(false)
+    const [mentorSessions, setMentorSessions] = useState([])   // Round 28: sessions done, from the waitlist place
 
     useEffect(() => {
         fetchHistory()
     }, [])
+
+    useEffect(() => {
+        if (!hasMentor(user)) return
+        getMyWaitlist().then((response) => setMentorSessions((response?.data?.data && response.data.data.sessions) || [])).catch(() => setMentorSessions([]))
+    }, [user?._id])
 
     const fetchHistory = async () => {
         try {
@@ -222,6 +230,30 @@ function Profile() {
                     </ul>
                 </>
             ),
+        })
+    }
+
+    // MENTOR SESSIONS (owner, Round 28): every session done, with another one bookable on /mentorship
+    if (hasMentor(user)) {
+        panels.push({
+            key: "mentor-sessions",
+            label: "Mentor sessions",
+            children: mentorSessions.length === 0
+                ? <p>No sessions done yet. <Link to="/mentorship">See where your mentor match stands →</Link></p>
+                : (
+                    <>
+                        <ul className="refund-request-list">
+                            {mentorSessions.map((session, index) => (
+                                <li key={`${session.profession}-${index}`}>
+                                    {session.completedAt ? dayjs(session.completedAt).format("DD MMM YYYY") : "—"} ·{" "}
+                                    <strong>{session.jobRole ? `${session.jobRole} (${session.profession})` : session.profession}</strong>
+                                    {session.mentorName ? ` · with ${session.mentorName}` : ""}
+                                </li>
+                            ))}
+                        </ul>
+                        <p><Link to="/mentorship">Book another mentor session →</Link></p>
+                    </>
+                ),
         })
     }
 

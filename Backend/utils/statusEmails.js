@@ -65,17 +65,28 @@ const TEMPLATES = {
         subject: "Your financial aid request is closed",
         body: `<p>You've already paid for <strong>${escapeHtml(planName)}</strong>, so we've closed your financial aid request for it. Nothing else is needed.</p>`,
     }),
+    retakeGranted: ({ testName }) => ({
+        subject: "You can take one of your Freshmxn tests again",
+        body: `<p>Your earlier attempt at <strong>${escapeHtml(testName)}</strong> had a technical problem, so we have opened it again for you — one more attempt.</p><p>Open your assessment at <a href="${site()}/assessment">${site()}/assessment</a>, take the test, then press Submit again so your report is updated.</p>`,
+    }),
+    reportRerun: () => ({
+        subject: "Your report is being prepared again",
+        body: `<p>We've fixed what stopped your report and it is being prepared again. It is usually ready within a few minutes: <a href="${site()}/report">${site()}/report</a></p>`,
+    }),
     retakeDeclined: ({ testName, reason }) => ({
         subject: `About your request for ${testName}`,
         body: `<p>We looked into what you told us about <strong>${escapeHtml(testName)}</strong> and couldn't reopen it.</p>${line("Reason", reason)}<p>If something still seems wrong, reply to this email.</p>`,
     }),
 }
 
+// only money emails point to the payment history
+const NOT_MONEY = ["retakeGranted", "retakeDeclined", "reportRerun"]
+
 const notifyStudent = (user, kind, details = {}) => {
     const template = TEMPLATES[kind]
     if (!template) return Promise.resolve({ sent: false, error: `unknown email ${kind}` })
     const { subject, body } = template(details)
-    return send(user, subject, body, !kind.startsWith("retake"))
+    return send(user, subject, body, !NOT_MONEY.includes(kind))
 }
 
 module.exports = { notifyStudent, TEMPLATES }

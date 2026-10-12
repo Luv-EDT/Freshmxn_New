@@ -229,6 +229,47 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
 
 
 // ========================
+// Another mentor session (owner, Round 28) — a paid add-on at the Mentor Only price
+// ========================
+
+const MENTOR_SESSION_INR = TIER_PRICE_INR[3]
+
+// why a student can't buy another session now, or null
+const mentorSessionProblem = async (user) => {
+    if (!(user.paid === true && grants(Number(user.currentTier)).mentor)) return "Mentor sessions come with a mentor plan"
+    const row = await MentorWaitlist.findOne({ user: user._id }).select("matchStatus extraSessionsPaid extraSessionsUsed").lean()
+    if (!row || row.matchStatus !== "completed") return "You can book another session once your current one is done"
+    if ((row.extraSessionsPaid || 0) > (row.extraSessionsUsed || 0)) return "You already have a session paid for — choose it on your mentorship page"
+    return null
+}
+
+// records the payment and adds one session the student can start (mentorWaitlistRouter startAnotherSession)
+const grantMentorSession = async (userId, amountInr, options = {}) => {
+    const user = await User.findById(userId).lean()
+    if (!user) return { error: "User not found" }
+    if (options.razorpayPaymentId && await Payment.exists({ razorpayPaymentId: options.razorpayPaymentId })) return { isAlreadyGranted: true }
+
+    const payment = await Payment.create({
+        user: userId,
+        mode: options.mode || "manual",
+        razorpayOrderId: options.razorpayOrderId,
+        razorpayPaymentId: options.razorpayPaymentId,
+        tier: user.currentTier,
+        action: "mentor_session",
+        amountInr,
+        status: "paid",
+        paidAt: new Date(),
+        grantedByAdmin: options.grantedByAdmin,
+        freeByAdmin: Boolean(options.freeByAdmin),
+        adminNote: options.adminNote,
+    })
+    await MentorWaitlist.updateOne({ user: userId }, { $inc: { extraSessionsPaid: 1 } })
+    notifyStudent(user, amountInr > 0 ? "paymentSuccess" : "planGranted", { planName: "Another mentor session", amountInr, paymentId: options.razorpayPaymentId })
+    return { payment }
+}
+
+
+// ========================
 // Refund helpers — money-back logic lives here once, shared by downgrade and full refund
 // ========================
 
@@ -383,9 +424,10 @@ const closeMentorWaitlist = async (userId) => {
 
 // everything paid, minus everything already refunded
 const getFullRefundAmount = async (user) => {
+    // Round 28: a full refund also returns any extra mentor sessions paid for
     const paidPayments = await Payment.find({
         user: user._id,
-        action: { $in: ["purchase", "upgrade"] },
+        action: { $in: ["purchase", "upgrade", "mentor_session"] },
     })
 
     let amountInr = 0
@@ -471,7 +513,15 @@ const paymentVerificationWebhook = async (req, res) => {
             }
 
             // the notes attached at /create-order tell us who paid for what
-            const { userId, tier, coupon, discountPct } = razorpayPayment.notes
+            const { userId, tier, coupon, discountPct, product } = razorpayPayment.notes
+
+            // Round 28: another mentor session, not a plan
+            if (product === "mentor_session") {
+                await grantMentorSession(userId, razorpayPayment.amount / 100, {
+                    mode: "razorpay", razorpayOrderId: razorpayPayment.order_id, razorpayPaymentId: razorpayPayment.id,
+                })
+                return res.status(200).json({ success: true, message: "Mentor session payment verified" })
+            }
 
             const grantResult = await grantAccess(userId, Number(tier), razorpayPayment.amount / 100, coupon || null, {
                 mode: "razorpay",
@@ -634,6 +684,8 @@ router.get("/getPricing", async (req, res) => {
                     "3-2": upgradePrice(3, 2),
                 },
                 upgradeAmountInr: upgradePrice(1, 2),
+                // Round 28 (owner): another mentor session after one is done, at the Mentor Only price
+                mentorSessionInr: MENTOR_SESSION_INR,
                 paymentMode,
                 razorpayKeyId: paymentMode === "razorpay" ? process.env.RAZORPAY_KEY_ID : null,   // public key, safe to send
             },
@@ -656,6 +708,23 @@ router.get("/getPricing", async (req, res) => {
 router.post("/getQuote", express.json(), authMiddleware, async (req, res) => {
     try {
         const { tier, coupon } = req.body
+
+        // Round 28: another mentor session is its own product, priced on the server
+        if (req.body.product === "mentor_session") {
+            const problem = await mentorSessionProblem(req.user)
+            if (problem) return res.status(400).json({ success: false, message: problem })
+            const order = await razorpay.orders.create({
+                amount: MENTOR_SESSION_INR * 100,
+                currency: "INR",
+                receipt: `ms${req.user._id}${Date.now().toString(36)}`,
+                notes: { userId: req.user._id.toString(), tier: String(req.user.currentTier), product: "mentor_session" },
+            })
+            return res.status(201).json({
+                success: true,
+                message: "Order created successfully",
+                data: { order, keyId: process.env.RAZORPAY_KEY_ID, quote: { product: "mentor_session", finalAmountInr: MENTOR_SESSION_INR } },
+            })
+        }
 
         const { quote, error } = await calculateQuote(req.user, tier, coupon)
 
@@ -1663,7 +1732,7 @@ router.put("/refundForAdmin/:id", express.json(), authMiddleware, adminAuthMiddl
             // against the balance, so only the part that failed is attempted again.
             const paidPayments = await Payment.find({
                 user: refundRequest.user,
-                action: { $in: ["purchase", "upgrade"] },
+                action: { $in: ["purchase", "upgrade", "mentor_session"] },   // Round 28: extra sessions too
             })
 
             for (const payment of paidPayments) {
@@ -2067,6 +2136,29 @@ router.put("/declineFinancialAidForAdmin/:id", express.json(), authMiddleware, a
             message: "Failed to decline financial aid request",
             error: error.message,
         })
+    }
+})
+
+
+// Admin: another mentor session paid by hand (UPI/bank) or given free — manual mode's way in (Round 28)
+router.put("/grantMentorSessionForAdmin/:userId", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const student = await User.findById(req.params.userId).lean()
+        if (!student) return res.status(404).json({ success: false, message: "Student not found" })
+        const problem = await mentorSessionProblem(student)
+        if (problem) return res.status(400).json({ success: false, message: problem })
+
+        const free = req.body.free === true
+        const result = await grantMentorSession(student._id, free ? 0 : MENTOR_SESSION_INR, {
+            mode: "manual", grantedByAdmin: req.user._id, freeByAdmin: free,
+            adminNote: typeof req.body.note === "string" ? req.body.note.trim().slice(0, 300) : undefined,
+        })
+        if (result.error) return res.status(400).json({ success: false, message: result.error })
+
+        return res.status(200).json({ success: true, message: free ? "Another session given free" : "Another session recorded as paid", data: result.payment })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not add the session", error: error.message })
     }
 })
 

@@ -59,7 +59,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
         },
         matchStatus: {
             type: String,
-            default: "awaiting_choice", // awaiting_choice | matching | matched | unmatchable
+            default: "awaiting_choice", // awaiting_choice | matching | matched | completed (Round 28) | unmatchable
         },
         assignedMentor: {
             type: mongoose.Schema.Types.ObjectId,
@@ -73,6 +73,36 @@ const mentorWaitlistSchema = new mongoose.Schema(
         },
         adminNote: {
             type: String,
+        },
+        // MENTOR SESSIONS (owner, Round 28). When the admin marks a matched session done it is logged
+        // here and the place shows "completed". Another session — a different career or job role, or the
+        // same one with a different mentor — is a paid add-on at the Mentor Only price: each payment adds
+        // one to extraSessionsPaid, and starting one adds one to extraSessionsUsed. Nothing here is ever
+        // removed, so the student's history stays whole (a "Reset choice" keeps it too).
+        sessions: {
+            type: [{
+                professionId: String,
+                profession: String,
+                jobRole: String,
+                mentor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+                mentorName: String,
+                matchedAt: Date,
+                completedAt: Date,
+                adminNote: String,
+            }],
+            default: [],
+        },
+        extraSessionsPaid: {
+            type: Number,
+            default: 0,
+        },
+        extraSessionsUsed: {
+            type: Number,
+            default: 0,
+        },
+        sameFieldNewMentor: {
+            type: Boolean,     // Round 28: this round is the same career and role, with a DIFFERENT mentor
+            default: false,
         },
     },
     {

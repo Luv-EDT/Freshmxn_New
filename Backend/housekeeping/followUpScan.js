@@ -2,7 +2,7 @@ const crypto = require("crypto")
 const Report = require("../model/reportsModel")
 const User = require("../model/userModel")
 const FollowUp = require("../model/followUpsModel")
-const { sendEmail, escapeHtml } = require("../utils/mailer")
+const { sendEmail } = require("../utils/mailer")
 
 // THE MONTHLY FOLLOW-UP SCAN (Round 10; monthly and re-anchored in Round 11) — run by the housekeeping
 // worker on the 1st of each month (IST).
@@ -38,7 +38,7 @@ const linkFor = (token) => `${process.env.FRONTEND_URL}/follow-up/${token}`
 const emailFor = (user, wave, token, reminder) => ({
     to: user.email,
     subject: reminder ? "A quick reminder — how is it going?" : `${wave} months on — how is it going?`,
-    html: `<p>Hi ${escapeHtml(user.name)},</p>
+    html: `<p>Hi,</p>
            <p>${reminder ? "Just a reminder: " : ""}it has been ${wave} months since your Freshmxn report. Four short questions — about a minute — on
            what you are doing now and whether the report helped.</p>
            <p><a href="${linkFor(token)}">${linkFor(token)}</a></p>

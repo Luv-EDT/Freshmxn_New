@@ -120,3 +120,9 @@ export async function grantFreeForAdmin(userId, tier, note) {
     const response = await axiosInstance.put(`/payments/grantFreeForAdmin/${userId}`, { tier, note })
     return response
 }
+
+// Round 28: another mentor session paid by hand, or given free, recorded by the admin
+export async function grantMentorSessionForAdmin(userId, payload) {
+    const response = await axiosInstance.put(`/payments/grantMentorSessionForAdmin/${userId}`, payload)
+    return response
+}

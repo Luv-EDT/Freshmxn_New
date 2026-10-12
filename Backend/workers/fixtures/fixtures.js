@@ -5416,6 +5416,182 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 28 — a finished test shows the student's own result (counts and a level word), never an answer key, confidence or data quality; set-aside and broken runs say so",
+        run: () => {
+            const { testResultsFor } = require("../../Routers/submissionsRouter")
+            const problems = []
+            const done = new Date()
+            const responses = Array.from({ length: 16 }, (unused, index) => ({ type: ["matrix", "series", "verbal", "rotation"][index % 4], correct: index < 11, choice: "B" }))
+            const results = testResultsFor({
+                reasoning: { completedAt: done, responses, seed: 7 },
+                wordRecall: { completedAt: done, trials: [{ correct: 10, words: ["cat"] }, { correct: 9, words: ["dog"] }] },
+                digitSpan: { completedAt: done, trials: [{ length: 3, correct: true, ms: 2000, response: "123" }, { length: 4, correct: true, ms: 2000, response: "1234" }, { length: 5, correct: false, ms: 2000, response: "12345" }, { length: 5, correct: false, ms: 2000, response: "12354" }] },
+                sartRaw: "not a real run",
+                accommodations: { skipped: { storyRecall: true } },
+            })
+            if (!results.reasoning || results.reasoning.line !== "11 of 16 puzzles right" || !["High", "Medium", "Low"].includes(results.reasoning.level)) problems.push(`reasoning reads ${JSON.stringify(results.reasoning)}`)
+            if (!results.wordRecall || results.wordRecall.line !== "19 of 30 words remembered") problems.push(`word memory reads ${JSON.stringify(results.wordRecall)}`)
+            if (!results.digitSpan || !/4 digits/.test(results.digitSpan.line)) problems.push(`number memory reads ${JSON.stringify(results.digitSpan)}`)
+            if (!results.sartRaw || results.sartRaw.state !== "invalid") problems.push("a focus run that did not record properly is not marked as such")
+            if (!results.storyRecall || results.storyRecall.state !== "set_aside") problems.push("a set-aside test is not marked set aside")
+            const text = JSON.stringify(results)
+            ;["correct", "answer", "seed", "words", "confidence", "data_quality", "choice"].forEach((key) => { if (text.includes(`"${key}"`)) problems.push(`the results carry "${key}"`) })
+            if (/\d\.\d{2}"/.test(JSON.stringify(results.reasoning))) problems.push("a raw 0-10 score leaks out")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment", file), "utf8")
+            ;[["DigitSpan.js", "digitSpan"], ["ReasoningTest.js", "reasoning"], ["WordRecallTest.js", "wordRecall"], ["Sart.js", "sartRaw"]].forEach(([file, key]) => {
+                const page = read(file)
+                if (!page.includes(`<TestResult moduleKey="${key}" />`)) problems.push(`${file} shows no result`)
+                if (!page.includes(`<ReportProblem moduleKey="${key}" />`)) problems.push(`${file} has no "Something went wrong"`)
+            })
+            if (!read("AssessmentShell.js").includes('<ReportProblem moduleKey="storyRecall" />')) problems.push("the short story has no \"Something went wrong\"")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — every status a student waits on is emailed (payments, refunds, aid, retakes), \"Hi,\" with no typed name and every value escaped; a decline needs a reason",
+        run: () => {
+            const { TEMPLATES } = require("../../utils/statusEmails")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const problems = []
+            const wanted = ["paymentSuccess", "planGranted", "paymentFailed", "refundStarted", "refundCompleted", "refundFailed", "refundDeclined", "aidApproved", "aidDeclined", "aidCancelled", "retakeGranted", "retakeDeclined", "reportRerun"]
+            wanted.forEach((kind) => {
+                if (!TEMPLATES[kind]) return problems.push(`no ${kind} email`)
+                const { body } = TEMPLATES[kind]({ planName: "<b>x</b>", reason: "<script>", testName: "<i>t</i>", paymentId: "<p>", refundId: "r", arn: "<a>", amountInr: 100 })
+                if (/<script>|<b>x<\/b>|<i>t<\/i>/.test(body)) problems.push(`${kind} does not escape what it is given`)
+            })
+            const payments = read("Routers/paymentsRouter.js")
+            const issues = read("Routers/assessmentIssuesRouter.js")
+            ;["paymentFailed", "refundStarted", "refundCompleted", "refundFailed", "refundDeclined", "aidApproved", "aidDeclined", "aidCancelled"].forEach((kind) => { if (!payments.includes(`"${kind}"`)) problems.push(`payments never sends ${kind}`) })
+            ;["retakeGranted", "retakeDeclined", "reportRerun"].forEach((kind) => { if (!issues.includes(`"${kind}"`)) problems.push(`assessment issues never sends ${kind}`) })
+            if (/Hi \$\{/.test(issues + payments + read("housekeeping/followUpScan.js"))) problems.push("an email greets the student by the name they typed")
+            if ((payments.match(/Please write the reason — the student is emailed it/g) || []).length < 2) problems.push("a refund or aid decline does not need a reason")
+            if (!/askedByStudent && !reason/.test(issues)) problems.push("a student's retake request can be dismissed without a reason")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — money flows: a failed payment is recorded with its id, a coupon counts once per person and only on payment, a pending aid request closes when the student pays, and aid is refused for a plan already held",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            const problems = []
+            const failed = router.split('event.event === "payment.failed"')[1] || ""
+            if (!failed || !/status: "failed"/.test(failed.slice(0, 2500)) || !/failureMessage/.test(failed.slice(0, 2500))) problems.push("payment.failed does not write a failed row with its reason")
+            if (!/Payment\.exists\(\{ user: user\._id, coupon: couponCode, status: "paid" \}\)/.test(router)) problems.push("a coupon can be used twice by one person")
+            const grant = router.split("const grantAccess")[1] || ""
+            if (!/status: "cancelled"/.test(grant.slice(0, 6000))) problems.push("a pending aid request survives a payment")
+            if (!/aidCancelled/.test(grant.slice(0, 6000))) problems.push("the student is not told their aid request closed")
+            const model = fs.readFileSync(path.join(__dirname, "../../model/financialAidRequestsModel.js"), "utf8")
+            if (!/\| cancelled/.test(model)) problems.push("the aid model has no cancelled status")
+            const approve = router.split('router.put("/approveFinancialAidForAdmin/:id"')[1] || ""
+            if (!/owns\(/.test(approve.slice(0, 3000))) problems.push("aid can be approved for a plan the student already holds")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — the scout compares like with like: a title is ranked against career names and job titles, and new / between / known follow the thresholds",
+        run: () => {
+            const { rankCareers, classifyRanked } = require("../../housekeeping/careerScout")
+            const problems = []
+            const names = new Map([["a", "Alpha"], ["b", "Beta"], ["c", "Gamma"]])
+            const titles = [
+                { professionId: "a", role: "Alpha", vector: [1, 0, 0] },
+                { professionId: "a", role: "Alpha Lead", vector: [0.9, 0.1, 0] },
+                { professionId: "b", role: "Beta", vector: [0, 1, 0] },
+                { professionId: "c", role: "Gamma", vector: [0, 0, 1] },
+            ]
+            const ranked = rankCareers([1, 0, 0], titles, names)
+            if (ranked[0].id !== "a" || ranked[0].similarity !== 1 || ranked[0].via !== "Alpha") problems.push(`ranking is off: ${JSON.stringify(ranked[0])}`)
+            if (ranked.filter((row) => row.id === "a").length !== 1) problems.push("a career appears twice")
+            const sectors = new Map([["a", "s1"], ["b", "s2"], ["c", "s1"]])
+            if (classifyRanked([{ id: "a", similarity: 0.5 }], { below: 0.62, gap: 0.03, sectors }).kind !== "new") problems.push("a far title is not new")
+            if (classifyRanked([{ id: "a", similarity: 0.7 }, { id: "b", similarity: 0.69 }], { below: 0.62, gap: 0.03, sectors }).kind !== "between") problems.push("a title between two sectors is not between")
+            if (classifyRanked([{ id: "a", similarity: 0.7 }, { id: "c", similarity: 0.69 }], { below: 0.62, gap: 0.03, sectors }).kind !== "known") problems.push("two careers in one sector made it between")
+            if (classifyRanked([{ id: "a", similarity: 0.8 }, { id: "b", similarity: 0.65 }], { below: 0.62, gap: 0.03, sectors }).kind !== "known") problems.push("a clearly close title is not known")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — the matches list is cut after filters and sorts: the first fifteen in their groups, the rest kept (nothing lost, nothing doubled)",
+        run: () => {
+            const { splitShown, MAIN_SHOWN } = loadReportFilters()
+            const problems = []
+            if (MAIN_SHOWN !== 15) problems.push(`MAIN_SHOWN is ${MAIN_SHOWN}`)
+            const groups = [
+                { key: "t1", entries: Array.from({ length: 9 }, (unused, index) => ({ professionId: `a${index}` })) },
+                { key: "t2", entries: Array.from({ length: 10 }, (unused, index) => ({ professionId: `b${index}` })) },
+            ]
+            const { shown, rest } = splitShown(groups)
+            const count = (list) => list.reduce((sum, group) => sum + group.entries.length, 0)
+            if (count(shown) !== 15 || count(rest) !== 4) problems.push(`split ${count(shown)} / ${count(rest)}`)
+            const ids = [...shown, ...rest].flatMap((group) => group.entries.map((entry) => entry.professionId))
+            if (new Set(ids).size !== 19) problems.push("an entry was lost or doubled")
+            if (shown[1].entries[5].professionId !== "b5" || rest[0].entries[0].professionId !== "b6") problems.push("the order is not kept across the cut")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — a student's own report updates are limited to 3 and counted; an update because we changed matching or scoring is always free",
+        run: () => {
+            const { selfUpdatesLeft, SELF_UPDATE_LIMIT } = require("../../utils/selfUpdates")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../Routers", file), "utf8")
+            const problems = []
+            if (SELF_UPDATE_LIMIT !== 3 || selfUpdatesLeft({}) !== 3 || selfUpdatesLeft({ selfUpdatesUsed: 2 }) !== 1 || selfUpdatesLeft({ selfUpdatesUsed: 5 }) !== 0) problems.push("the count is off")
+            const reports = read("reportsRouter.js")
+            if (!/ownChange && selfUpdatesLeft\(req\.user\) === 0/.test(reports) || !/ownChange \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(reports)) problems.push("Update my report does not count only own changes")
+            const submissions = read("submissionsRouter.js")
+            if (!/hasReport && selfUpdatesLeft\(req\.user\) === 0/.test(submissions) || !/hasReport \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(submissions)) problems.push("a resubmit does not count as an own update")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — mentor sessions: marking one done logs it, another needs a paid (or free) credit, priced on the server at the Mentor Only price, and history is never wiped",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const waitlist = read("Routers/mentorWaitlistRouter.js")
+            const payments = read("Routers/paymentsRouter.js")
+            const problems = []
+            const complete = waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || ""
+            if (!/\$push: \{ sessions: session \}/.test(complete.slice(0, 2500)) || !/matchStatus: "completed"/.test(complete.slice(0, 2500))) problems.push("a done session is not logged")
+            const another = waitlist.split('router.post("/startAnotherSession"')[1] || ""
+            if (!/status\(402\)/.test(another.slice(0, 2500))) problems.push("another session starts without a credit")
+            if (!/const MENTOR_SESSION_INR = TIER_PRICE_INR\[3\]/.test(payments)) problems.push("the session price is not the Mentor Only price")
+            if (!/action: "mentor_session"/.test(payments) || !/extraSessionsPaid: 1/.test(payments)) problems.push("a paid session is not recorded as a credit")
+            const reset = waitlist.split('router.put("/resetChoiceForAdmin/:id"')[1] || ""
+            if (/sessions: \[\]|\$unset[^}]*sessions/.test(reset.slice(0, 3000))) problems.push("Reset choice wipes the session history")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — editing a finished Virtual Career Counselling form saves only on Save: no local draft, no save between sections, a warning on refresh",
+        run: () => {
+            const form = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Interest/InterestForm.js"), "utf8")
+            const problems = []
+            if (!/const draft = editMode \? null : readLocalDraft\(\)/.test(form)) problems.push("edit mode still reads a local draft")
+            if (!/if \(!\(editMode && isNavigating && !isFinishing\)\) await saveToServer/.test(form)) problems.push("moving between sections saves in edit mode")
+            if (!/beforeunload/.test(form)) problems.push("no warning on refresh")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 28 — focus test: a held-down key is one press, and a digit the device never showed is not scored as an error (the stimulus block is untouched)",
+        run: () => {
+            const sart = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/Sart.js"), "utf8")
+            const problems = []
+            if (!/if \(event\.repeat\) return/.test(sart)) problems.push("key auto-repeat counts as presses")
+            if (!/records\.filter\(\(record\) => !record\.dropped\)/.test(sart)) problems.push("dropped trials are still scored")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

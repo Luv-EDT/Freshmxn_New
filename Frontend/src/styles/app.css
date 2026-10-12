@@ -2918,3 +2918,17 @@ hr.story-end {
 .psych-intro p + p {
     margin-top: var(--space-3);
 }
+
+/* Round 28: a finished test's own result */
+.test-result {
+    margin: var(--space-4) 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--teal-tint);
+    border-left: 4px solid var(--teal);
+    max-width: 560px;
+}
+.test-result p { margin: 4px 0; }
+.test-result-title { font-weight: 700; color: var(--teal-dark); }
+.test-result-line { font-size: 1.1rem; }
+.test-result-note { font-size: 0.9rem; color: var(--navy-soft); }
