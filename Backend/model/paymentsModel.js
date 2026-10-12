@@ -48,12 +48,16 @@ const paymentSchema = new mongoose.Schema(
         status: {
             type: String,
             // created | paid | refund_pending | refunded | failed | reversed
+            // a failed PAYMENT (payment.failed, Round 28) is a purchase/upgrade row with status failed and amount 0 refundable
             // "reversed" = an admin overturned the grant because the money never arrived. The row
             // stays as the record that it happened; getRefundableBalance treats it as worth nothing.
             default: "paid",
         },
         failureMessage: {
-            type: String,
+            type: String,   // a failed payment: Razorpay's reason (Round 28); a failed refund: why
+        },
+        refundArn: {
+            type: String,   // Round 28: the bank's reference for a processed Razorpay refund — the student quotes it to their bank
         },
         paidAt: {
             type: Date,

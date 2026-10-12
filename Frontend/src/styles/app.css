@@ -2817,3 +2817,104 @@ hr.story-end {
     box-shadow: none;
     font-weight: 400;
 }
+
+/* ── round 28: money history lists ───────────────────────────────────────────────────────────── */
+
+.refund-request-list {
+    padding-left: 1.1em;
+    display: grid;
+    gap: var(--space-2);
+}
+
+/* ── round 28: the sort-and-filter column, the edit banner, small notes ───────────────────────── */
+
+.matches-layout {
+    display: block;
+}
+
+.report-controls {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.report-controls .sort-primaries {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.report-controls .sort-secondaries,
+.report-controls .report-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+@media (min-width: 1000px) {
+    .matches-layout {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: var(--space-5);
+        align-items: start;
+    }
+
+    .matches-side {
+        position: sticky;
+        top: 80px;
+    }
+
+    .report-controls .sort-secondaries,
+    .report-controls .report-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.info-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    min-height: 22px;
+    margin-left: 4px;
+    color: var(--teal);
+    cursor: help;
+    font-weight: 700;
+}
+
+.match-more {
+    margin-top: var(--space-4);
+}
+
+.if-edit-banner {
+    max-width: 800px;
+    margin: var(--space-3) auto;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius);
+    background: var(--teal-tint, #e6f3f4);
+    color: var(--navy);
+}
+
+.if-edit-banner.is-dirty {
+    background: var(--pink-tint);
+    border-left: 4px solid var(--pink);
+}
+
+.if-write-all {
+    background: var(--cream, #fff8e7);
+    border-radius: var(--radius);
+    padding: var(--space-2) var(--space-3);
+}
+
+.repeat-note {
+    font-size: 0.9rem;
+    color: var(--navy-soft);
+    border-left: 3px solid var(--teal);
+    padding-left: var(--space-3);
+}
+
+.psych-intro p + p {
+    margin-top: var(--space-3);
+}

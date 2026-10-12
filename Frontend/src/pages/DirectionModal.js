@@ -7,7 +7,8 @@ import { Modal } from "antd"
 // assessment again. Only "something new" restarts the 6- and 12-month follow-up, so a mistaken
 // click, or a student who just wants the improved matching, keeps their original clock
 // (Backend/utils/direction.js).
-function DirectionModal({ open, title, okText, busy, onCancel, onConfirm }) {
+// `note` (Round 28): how many of the student's own updates are left, said before they use one
+function DirectionModal({ open, title, okText, busy, onCancel, onConfirm, note }) {
     const [direction, setDirection] = useState(null)
 
     return (
@@ -21,6 +22,7 @@ function DirectionModal({ open, title, okText, busy, onCancel, onConfirm }) {
             onOk={() => onConfirm(direction)}
             destroyOnHidden
         >
+            {note && <p className="report-banner">{note}</p>}
             <p>Before we rebuild it — which is closer to where you are?</p>
             <div className="choices" role="radiogroup" aria-label="Which way are you heading">
                 <label className="choice">

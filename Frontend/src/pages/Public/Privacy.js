@@ -44,7 +44,7 @@ const SECTIONS = [
                         and a record of their permission (see <a href="#children">Children and parental consent</a>).
                     </li>
                     <li>
-                        <strong>Your answers:</strong> everything you tell us in the interest form (interests,
+                        <strong>Your answers:</strong> everything you tell us in Virtual Career Counselling (interests,
                         activities, achievements, problems you care about, beliefs, aspirations) and your
                         responses to the assessment, including written answers and task timings.
                     </li>
@@ -120,7 +120,7 @@ const SECTIONS = [
         body: (
             <>
                 <p>
-                    The interest form asks whether you have a disability and whether you or your family have been
+                    Virtual Career Counselling asks whether you have a disability and whether you or your family have been
                     through difficult or traumatic experiences. Every one of these questions has a "Prefer not to
                     say" answer, and the details box is always up to you.
                 </p>
@@ -218,7 +218,7 @@ const SECTIONS = [
                     and press "Connect me". You can ask us to withdraw this at any time.
                 </p>
                 <p>
-                    <strong>Your plans to go abroad.</strong> If you tell us in the interest form that you hope to
+                    <strong>Your plans to go abroad.</strong> If you tell us in Virtual Career Counselling that you hope to
                     study or work outside India, we use that only to show you how each of your careers
                     travels and what those countries ask first, and to offer the study-abroad partner above. It is
                     never used to rank your careers, and it is shared with no one unless you ask to be connected.

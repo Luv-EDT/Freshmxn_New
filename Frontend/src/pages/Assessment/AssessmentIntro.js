@@ -175,7 +175,7 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                 ) : note && <p className="deck-note">{note}</p>}
                 {isSkipped ? (
                     <p className="set-aside-note">
-                        Set aside because of what you told us in your interest form — <strong>not measured</strong>, never counted as low.{" "}
+                        Set aside because of what you told us in Virtual Career Counselling — <strong>not measured</strong>, never counted as low.{" "}
                         <button type="button" className="link-btn" onClick={() => onSaveAccommodations({ ...accommodations, skipped: { ...skipped, [module.key]: false } })}>I'd like to try this test anyway</button>
                     </p>
                 ) : (
@@ -223,7 +223,7 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
             {needLabels.length > 0 && setAside.length > 0 && (
                 <div className="set-aside-box">
                     <p>
-                        In your interest form you told us that <strong>{needLabels.join(", ").toLowerCase()}</strong> can
+                        In Virtual Career Counselling you told us that <strong>{needLabels.join(", ").toLowerCase()}</strong> can
                         be harder for you. So these tests are set aside — marked <strong>not measured</strong>, never
                         counted as low: {setAside.map((module) => module.title).join(", ")}.
                     </p>

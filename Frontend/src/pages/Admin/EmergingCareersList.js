@@ -15,7 +15,12 @@ const SOURCE_TAGS = {
     reports: <Tag color="green" key="reports">Reports</Tag>,
 }
 const DRAFT_STATUS = { drafting: "Drafting…", ready: "Draft ready", failed: "Draft failed", accepted: "Accepted — in Export patch", sent_back: "Sent back — redrafting" }
-const KIND = { new: "Nothing close", between: "Between two careers" }
+// Round 28: careers are compared by their names and job titles, like with like
+const kindLabel = (record) => {
+    const [first, second] = record.nearest || []
+    if (record.kind === "between" && first && second) return `Between ${first.name} and ${second.name}`
+    return "No close career"
+}
 
 function EmergingCareersList() {
     const [status, setStatus] = useState("watch")
@@ -76,8 +81,8 @@ function EmergingCareersList() {
 
     const columns = [
         { title: "Title", dataIndex: "title", render: (value, record) => <span>{value}<br />{(record.sources || []).map((source) => SOURCE_TAGS[source])}</span> },
-        { title: "Kind", dataIndex: "kind", render: (value) => KIND[value] || value },
-        { title: "Nearest careers", render: (_, record) => (record.nearest || []).map((near) => <div key={near.id}>{near.name} ({near.similarity})</div>) },
+        { title: "Kind", dataIndex: "kind", render: (_, record) => kindLabel(record) },
+        { title: "Closest careers", render: (_, record) => (record.nearest || []).map((near) => <div key={near.id}>{near.name} ({near.similarity}){near.via && near.via !== near.name ? ` · via ${near.via}` : ""}</div>) },
         { title: "Nearest job titles", render: (_, record) => (record.nearestRoles || []).map((near) => <div key={`${near.professionId}-${near.role}`}>{near.role} ({near.similarity})</div>) },
         { title: "Students", dataIndex: "aspirationCount" },
         { title: "Postings by week", render: (_, record) => latest(record) },
@@ -112,6 +117,7 @@ function EmergingCareersList() {
                 <span>
                     {record.status !== "approved_combined" && <Button size="small" onClick={() => decide(record._id, "approved_combined")}>Combined career</Button>}{" "}
                     {record.status !== "approved_new" && <Button size="small" onClick={() => decide(record._id, "approved_new")}>New career</Button>}{" "}
+                    {record.status === "dismissed" && record.adminNote && <div className="pc-small">{record.adminNote}</div>}
                     {record.status !== "dismissed" && <Button size="small" onClick={() => decide(record._id, "dismissed")}>Dismiss</Button>}{" "}
                     {record.status !== "watch" && <Button size="small" onClick={() => decide(record._id, "watch")}>Back to watch</Button>}
                 </span>
@@ -166,7 +172,7 @@ function DraftSummary({ draft }) {
                 <dt>Name</dt><dd>{record.name}</dd>
                 <dt>What it is</dt><dd>{record.oneLiner}</dd>
                 <dt>How people get there</dt><dd>{record.howToGetThere}</dd>
-                <dt>Sides</dt><dd>{record.sideA} × {record.sideB}</dd>
+                <dt>Professions</dt><dd>{record.parentA} × {record.parentB}</dd>
                 <dt>Blue-collar</dt><dd>{record.blueCollar ? "Yes" : "No"}</dd>
             </dl>
         )

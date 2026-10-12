@@ -128,6 +128,8 @@ function Sart({ alreadyTaken, onDone }) {
         const onKey = (event) => {
             if (event.code !== "Space" && event.key !== " ") return
             event.preventDefault()      // space scrolls the page otherwise, mid-block
+            // a key held down repeats by itself — that is not a press on every trial (Round 28)
+            if (event.repeat) return
             if (controls.current.respond) controls.current.respond(performance.now())
             flagCommission()
         }
@@ -321,9 +323,12 @@ function Sart({ alreadyTaken, onDone }) {
                 // they are in the file because the format has them and because a session where
                 // practice went badly and the real block went perfectly is worth being able to see
                 // later. Nothing downstream reads them.
+                // Round 28: a digit the device never showed (a dropped frame) is no answer at all —
+                // before, it went in as a miss or a wrong press and was scored as an error
+                const shown = (records) => records.filter((record) => !record.dropped)
                 const rows = [
-                    ...toPsyToolkitRows(practiceRecords.current, "training", 1),
-                    ...toPsyToolkitRows(result.records, "realtest", 1),
+                    ...toPsyToolkitRows(shown(practiceRecords.current), "training", 1),
+                    ...toPsyToolkitRows(shown(result.records), "realtest", 1),
                 ]
                 const saved = await savePsychometric({ module: "sartRaw", block: rows.join("\n") })
 

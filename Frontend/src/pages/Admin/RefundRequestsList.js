@@ -10,6 +10,8 @@ import {
 } from "../../apiCall/paymentsApi"
 import StudentEditForm from "./StudentEditForm"
 import { PLAN_NAMES } from "../plans"
+import ReasonModal from "./ReasonModal"
+import { ADMIN_REQUEST_WORDS, paymentStatusWord, trackingIds } from "../User/paymentWords"
 
 function RefundRequestsList({ dataVersion, onDataChanged }) {
     const [refundRequests, setRefundRequests] = useState([])
@@ -18,6 +20,7 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("open") // open | refunded | declined | all
     const [editingStudent, setEditingStudent] = useState(null)
+    const [declining, setDeclining] = useState(null)      // the request being declined, waiting for a reason
 
     // ─── Fetch on mount, and again whenever any tab changes student data ─────
     useEffect(() => {
@@ -66,15 +69,16 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
     }
 
     // ─── Decline ─────────────────────────────────────────────────────────────
-    const handleDecline = async (id) => {
+    const handleDecline = async (id, reason) => {
         try {
-            await declineRefundForAdmin(id, {})
-            message.success("Refund request declined")
+            const response = await declineRefundForAdmin(id, { adminNote: reason })
+            message.success(response.data.message)
             setRefundRequests((prev) =>
                 prev.map((request) =>
-                    request._id === id ? { ...request, status: "declined" } : request
+                    request._id === id ? { ...request, status: "declined", adminNote: reason } : request
                 )
             )
+            setDeclining(null)
             onDataChanged()
         } catch (error) {
             message.error(error.response?.data?.message || "Failed to decline refund request")
@@ -121,8 +125,15 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
             title: "Status",
             render: (_, record) => (
                 <>
-                    {record.status}
+                    <strong>{ADMIN_REQUEST_WORDS[record.status] || record.status}</strong>
                     {record.failureMessage && <div>{record.failureMessage}</div>}
+                    {record.status === "declined" && record.adminNote && <div>Reason: {record.adminNote}</div>}
+                    {(record.refunds || []).map((row) => (
+                        <div key={row._id} className="pc-small">
+                            ₹{row.amountInr}: {paymentStatusWord(row, true)}
+                            {trackingIds(row).map((id) => <div key={id}>{id}</div>)}
+                        </div>
+                    ))}
                 </>
             ),
         },
@@ -135,9 +146,7 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
                             <Popconfirm title={getRefundConfirmText(record)} onConfirm={() => handleRefund(record._id)}>
                                 <Button type="primary" size="small" danger>Refund</Button>
                             </Popconfirm>{" "}
-                            <Popconfirm title="Decline this refund request?" onConfirm={() => handleDecline(record._id)}>
-                                <Button size="small">Decline</Button>
-                            </Popconfirm>{" "}
+                            <Button size="small" onClick={() => setDeclining(record)}>Decline</Button>{" "}
                         </>
                     )}
                     {record.status === "refund_failed" && (
@@ -189,6 +198,13 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
                     <Table rowKey="_id" columns={failedColumns} dataSource={failedRefunds} pagination={false} />
                 </>
             )}
+
+            <ReasonModal
+                open={declining !== null}
+                title="Why are you declining this refund?"
+                onCancel={() => setDeclining(null)}
+                onSubmit={(reason) => handleDecline(declining._id, reason)}
+            />
 
             <StudentEditForm
                 visible={editingStudent !== null}

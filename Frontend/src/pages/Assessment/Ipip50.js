@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { IPIP_ITEMS, IPIP_SCALE, IPIP_STEM, IPIP_PAGE_SIZE } from "./ipip50Items"
+import { REPEAT_NOTE } from "./repeatNote"
 
 // IPIP-50 — 50 personality items plus the two embedded quality checks.
 //
@@ -57,6 +58,9 @@ function Ipip50({ answers, onChange, onDone }) {
             <hr />
 
             <p><em>{IPIP_STEM}</em></p>
+            {/* Round 28 (owner): say why some questions repeat. The check items themselves stay
+                unmarked — marking them would defeat the check */}
+            <p className="repeat-note">{REPEAT_NOTE}</p>
 
             {pageItems.map((item) => (
                 <div key={item.id}>

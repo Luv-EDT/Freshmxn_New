@@ -1,6 +1,7 @@
 const express = require("express")
 const Submission = require("../model/submissionsModel")
 const User = require("../model/userModel")
+const Report = require("../model/reportsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requireDiscovery = require("../middlewares/requireDiscovery")
 
@@ -118,9 +119,14 @@ router.post("/saveInterest", authMiddleware, requireDiscovery, async (req, res) 
             })
         }
 
+        // Round 28: saved changes to a finished form once a report exists → "Update my report"
+        if (req.user.progress.interestForm === "done" && await Report.exists({ user: req.user._id })) {
+            await User.updateOne({ _id: req.user._id }, { answersChangedAt: new Date() })
+        }
+
         return res.status(isFinished ? 201 : 200).json({
             success: true,
-            message: isFinished ? "Interest form submitted successfully" : "Progress saved",
+            message: isFinished ? "Virtual Career Counselling submitted" : "Progress saved",
             data: updatedSubmission,
         })
 
@@ -773,6 +779,14 @@ router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req,
         // A RESUBMIT says which way the student is heading (Round 11, utils/direction.js): only "new"
         // restarts the follow-up clock. The first submit starts it and asks nothing.
         const firstTime = !submission.psychometricSubmittedAt
+
+        // Round 28 (owner): once a report exists, a resubmit is one of the student's three own updates
+        const { selfUpdatesLeft, LIMIT_REACHED } = require("../utils/selfUpdates")
+        const hasReport = !firstTime && Boolean(await Report.exists({ user: req.user._id }))
+        if (hasReport && selfUpdatesLeft(req.user) === 0) {
+            return res.status(400).json({ success: false, message: LIMIT_REACHED, data: { limitReached: true } })
+        }
+
         const direction = directionUpdate({ via: "resubmit", direction: req.body.direction, firstTime })
         if (!direction) {
             return res.status(400).json({
@@ -794,6 +808,7 @@ router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req,
         await User.findByIdAndUpdate(req.user._id, {
             ...direction,
             $set: { ...(direction.$set || {}), "progress.psychometric": "done", reportFailedAt: null },
+            ...(hasReport ? { $inc: { selfUpdatesUsed: 1 } } : {}),
         })
 
         // Required here rather than at the top of the file, so this router loads without the workers

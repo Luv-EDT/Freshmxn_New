@@ -2,10 +2,12 @@ import LifeStageSection from "./LifeStageSection"
 import { ACTIVITY_REFERENCE_LISTS } from "./activityReferenceLists"
 import { PROBLEM_PROMPTS } from "./problemPrompts"
 
-// text ported unchanged from virtual-career-counselling HighSchool.jsx
+// text first ported from virtual-career-counselling HighSchool.jsx
+// Round 28 (owner): the prompts are crisp, and "noticed or praised" asks for the ACTIVITY people
+// praised, never the prize or award it led to
 const STAGE = {
     heading: "🎓 High School",
-    subtitle: "Think back to your high school years (9th-12th standard). What activities did you enjoy?",
+    subtitle: "9th to 12th standard — in class, after school, at home.",
     isSkippable: false,
     referenceList: ACTIVITY_REFERENCE_LISTS.highSchool,
     prompts: PROBLEM_PROMPTS.highSchool,
@@ -15,18 +17,18 @@ const STAGE = {
         individualInternalProblems: ["e.g., Fear of speaking in public", "e.g., Joining debate club"],
         interpersonalInternalProblems: ["e.g., Peer pressure to skip studies", "e.g., Joining study group"],
         externalProblems: ["e.g., Plastic waste in school", "e.g., Organizing clean-up drive"],
-        socialRecognition: "e.g., Winning science fair competition",
+        socialRecognition: "e.g., Explaining maths to classmates",
         effortlessEngagement: "e.g., Playing basketball with friends",
     },
     help: {
-        personalGrowth: ["Activities that helped you develop confidence, discipline, or self-awareness.", "Examples: leadership roles, overcoming fears, learning new skills.", "Write short, specific answers."],
-        curiosityDriven: ["Activities that made you ask questions or explore new things.", "Examples: science experiments, reading books, asking \"why\" questions.", "Write short, specific answers."],
+        personalGrowth: ["What you did that made you braver, more disciplined or more sure of yourself.", "Examples: student council, learning guitar, coaching juniors, preparing for an exam on your own."],
+        curiosityDriven: ["What you explored just because you were curious.", "Examples: science projects, coding small apps, debating, reading about space or history."],
         individualInternalProblems: [{ strong: "Personal challenges:", text: "Self-doubt, fear, lack of skills, or confusion." }, "Describe the problem briefly, then list activities that helped you overcome it.", "Examples: fear of public speaking → joining debate club"],
         interpersonalInternalProblems: [{ strong: "Relationship challenges:", text: "Issues with family, friends, or social pressure." }, "Describe the problem briefly, then list activities that helped you overcome it.", "Examples: peer pressure → joining positive groups"],
         externalProblems: [{ strong: "Community or environmental issues:", text: "Problems you noticed around you." }, "Describe the problem briefly, then list activities you took to help.", "Examples: plastic waste → organizing clean-up drives"],
-        socialRecognition: ["Activities where you felt appreciated, recognized, or praised by others.", "Examples: winning competitions, receiving awards, being thanked.", "Write short, specific answers."],
-        effortlessEngagement: ["Activities that felt natural, fun, and easy — where time flew by.", "Examples: playing games, drawing, reading stories.", "Don't overthink — just what felt enjoyable."],
-        additionalInterests: ["Any other activities you enjoyed that weren't covered above.", "Write the activity and briefly why you liked it.", "Keep answers short and specific."],
+        socialRecognition: ["What you DID that people noticed or praised — the activity, not the prize.", "Examples: explaining maths to friends, organising a fest stall, debating, designing the class magazine."],
+        effortlessEngagement: ["What felt easy and fun — where time flew.", "Examples: playing basketball, sketching, editing videos, cooking."],
+        additionalInterests: ["Anything else you enjoyed doing — write the activity and why.", "Examples: volunteering, photography, a part-time job."],
     },
 }
 

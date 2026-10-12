@@ -3,12 +3,11 @@ import { Link, useLocation } from "react-router-dom"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
 import ProfessionCard from "./ProfessionCard"
-import ReportSortMenu from "./ReportSortMenu"
-import ReportFilterMenu from "./ReportFilterMenu"
+import ReportControls from "./ReportControls"
 import CombinedCareers from "./CombinedCareers"
 import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
-import { groupList, SWITCH_COST_GROUP_YEARS } from "./reportFilters"
+import { groupList, splitShown, MAIN_SHOWN, SWITCH_COST_GROUP_YEARS } from "./reportFilters"
 import { abroadLines } from "./reportPlan"
 import { TOP_SHOWN, tierNameFor, buildFirstFor, BUILD_FIRST_TITLE, BUILD_FIRST_NOTE, framingFor, listOf } from "./reportFraming"
 
@@ -18,7 +17,8 @@ import { TOP_SHOWN, tierNameFor, buildFirstFor, BUILD_FIRST_TITLE, BUILD_FIRST_N
 // ordered is explained on the overview (owner, Round 24).
 //
 // ONE LIST, TWO ORDERS (owner, Round 20). The top three show first; opening the rest shows the tiers
-// as headed groups. "Best match" puts careers that would cost 2+ years to switch in a last group of
+// as headed groups — up to MAIN_SHOWN (15) of them, and anything beyond folded under "explore a few
+// more" (owner, Round 28). The sorts and filters sit open in a column beside the list (Round 28). "Best match" puts careers that would cost 2+ years to switch in a last group of
 // their own, least affected first; "Best fit, ignoring switching cost" leaves them in their tiers.
 //
 // match_confidence is already stripped by reportsRouter, and every factor slug is already
@@ -46,6 +46,8 @@ function MatchesPage() {
         [ranked, primary, secondary, details, only, excludeBlueCollar]
     )
     const ordered = useMemo(() => groups.flatMap((group) => group.entries), [groups])
+    const split = useMemo(() => splitShown(groups, MAIN_SHOWN), [groups])
+    const shownIds = useMemo(() => ordered.slice(0, MAIN_SHOWN).map((entry) => String(entry.professionId)), [ordered])
     // the first not-a-fit tier on show, which carries the "Build skills first" band
     const firstBuildTier = useMemo(() => {
         const first = groups.find((group) => !group.costly && buildFirstFor(group.tier))
@@ -94,6 +96,29 @@ function MatchesPage() {
         />
     )
 
+    // one group of the list, under its heading (the costly group folds)
+    const renderGroup = (group) => (group.costly ? (
+        <details key={group.key} className="report-details match-group is-costly">
+            <summary className="report-summary">
+                <strong>Would leave {SWITCH_COST_GROUP_YEARS}+ years behind</strong> — {group.entries.length} {group.entries.length === 1 ? "career" : "careers"}
+            </summary>
+            <p className="report-small">The least affected first. Each card says how many years of what you've done would be left behind.</p>
+            <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
+        </details>
+    ) : (
+        <section key={group.key} className="match-group">
+            {/* "Build skills first" heads the not-a-fit tiers once, above the first of them */}
+            {buildFirstFor(group.tier) && group.tier === firstBuildTier && !group.key.endsWith("-more") && (
+                <div className="match-band">
+                    <h2 className="match-band-title">{BUILD_FIRST_TITLE}</h2>
+                    <p className="report-small">{BUILD_FIRST_NOTE}</p>
+                </div>
+            )}
+            <h3 className="match-group-title">{tierNameFor(group.tier) || "Your other matches"}</h3>
+            <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
+        </section>
+    ))
+
     const gate = <ReportStatus state={state} retry={report.retry} retrying={report.retrying} />
     if (state.loading || state.error || !ready || state.data.release === "withhold") return gate
 
@@ -113,78 +138,74 @@ function MatchesPage() {
                 <Link to="/report/compare" className="btn btn-ghost btn-sm tap">Compare careers →</Link>
             </div>
             {framing.runwayNote && <p><em>{framing.runwayNote}</em></p>}
+            {data.updateAvailable && !data.rebuildFailed && (
+                <p className="report-banner">An update to your report is ready. <Link to="/report">Update it from your report page →</Link></p>
+            )}
 
             <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
 
-            <ReportSortMenu
-                primary={primary}
-                onPrimary={setPrimary}
-                secondary={secondary}
-                onSecondary={setSecondary}
-                noCostHint={framing.switchIsDistinct ? framing.switchIntro : null}
-            />
+            <div className="matches-layout">
+                <aside className="matches-side">
+                    <ReportControls
+                        primary={primary}
+                        onPrimary={setPrimary}
+                        secondary={secondary}
+                        onSecondary={setSecondary}
+                        showNoCost={framing.switchIsDistinct}
+                        excludeBlueCollar={excludeBlueCollar}
+                        onExcludeBlueCollar={setExcludeBlueCollar}
+                        only={only}
+                        onToggleOnly={toggleOnly}
+                    />
+                </aside>
 
-            {primary === "noCost" && (
-                <p className="report-small report-switch-note">
-                    Every career stays in its group, ordered by how well it fits you — nothing is moved for what
-                    switching would cost you. The years it would cost are still inside each card.
-                </p>
-            )}
+                <div className="matches-main">
+                    {primary === "noCost" && (
+                        <p className="report-small report-switch-note">
+                            Every career stays in its group, ordered by how well it fits you — nothing is moved for what
+                            switching would cost you. The years it would cost are still inside each card.
+                        </p>
+                    )}
+                    {/* said beside the list, so a filter never hides careers silently */}
+                    {hiddenCount > 0 && (
+                        <p className="report-hidden-note">
+                            {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters.{" "}
+                            <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
+                        </p>
+                    )}
 
-            {/* THE FILTERS, folded away like the sort (owner, Round 24) */}
-            <ReportFilterMenu
-                excludeBlueCollar={excludeBlueCollar}
-                onExcludeBlueCollar={setExcludeBlueCollar}
-                only={only}
-                onToggleOnly={toggleOnly}
-            />
-            {/* said outside the folded menu, so a filter never hides careers silently */}
-            {hiddenCount > 0 && (
-                <p className="report-hidden-note">
-                    {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters.{" "}
-                    <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
-                </p>
-            )}
+                    {/* THE TOP THREE; then up to fifteen in their groups; the rest folded (owner, Round 28) */}
+                    {showAllFor !== sortKey ? (
+                        <div className="match-list">
+                            {ordered.slice(0, TOP_SHOWN).map((entry) => card(entry))}
+                        </div>
+                    ) : (
+                        <>
+                            {split.shown.map(renderGroup)}
+                            {split.rest.length > 0 && (
+                                <details className="report-details match-more">
+                                    <summary className="report-summary">
+                                        <strong>Careers that suit you aren't limited to these — explore a few more</strong>
+                                        {" "}({ordered.length - MAIN_SHOWN})
+                                    </summary>
+                                    {split.rest.map(renderGroup)}
+                                </details>
+                            )}
+                        </>
+                    )}
 
-            {/* COLLAPSED: the top three of the chosen order. OPEN: every group under its heading. */}
-            {showAllFor !== sortKey ? (
-                <div className="match-list">
-                    {ordered.slice(0, TOP_SHOWN).map((entry) => card(entry))}
+                    {ordered.length > TOP_SHOWN && showAllFor !== sortKey && (
+                        <button type="button" className="btn btn-ghost show-rest" onClick={() => setShowAllFor(sortKey)}>
+                            Show {Math.min(ordered.length, MAIN_SHOWN) - TOP_SHOWN} more {Math.min(ordered.length, MAIN_SHOWN) - TOP_SHOWN === 1 ? "career" : "careers"}
+                        </button>
+                    )}
+
+                    {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
                 </div>
-            ) : (
-                groups.map((group) => (group.costly ? (
-                    <details key={group.key} className="report-details match-group is-costly">
-                        <summary className="report-summary">
-                            <strong>Would leave {SWITCH_COST_GROUP_YEARS}+ years behind</strong> — {group.entries.length} {group.entries.length === 1 ? "career" : "careers"}
-                        </summary>
-                        <p className="report-small">The least affected first. Each card says how many years of what you've done would be left behind.</p>
-                        <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
-                    </details>
-                ) : (
-                    <section key={group.key} className="match-group">
-                        {/* "Build skills first" heads the not-a-fit tiers once, above the first of them */}
-                        {buildFirstFor(group.tier) && group.tier === firstBuildTier && (
-                            <div className="match-band">
-                                <h2 className="match-band-title">{BUILD_FIRST_TITLE}</h2>
-                                <p className="report-small">{BUILD_FIRST_NOTE}</p>
-                            </div>
-                        )}
-                        <h3 className="match-group-title">{tierNameFor(group.tier) || "Your other matches"}</h3>
-                        <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
-                    </section>
-                )))
-            )}
-
-            {ordered.length > TOP_SHOWN && showAllFor !== sortKey && (
-                <button type="button" className="btn btn-ghost show-rest" onClick={() => setShowAllFor(sortKey)}>
-                    Show the other {ordered.length - TOP_SHOWN} {ordered.length - TOP_SHOWN === 1 ? "career" : "careers"}
-                </button>
-            )}
-
-            {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
+            </div>
 
             {/* COMBINED CAREERS (Round 10) — beside the list, never in it; the same card since Round 19 */}
-            <CombinedCareers combined={data.combined} journey={journey} />
+            <CombinedCareers combined={data.combined} journey={journey} shownIds={shownIds} />
 
             {/* STUDYING AND WORKING ABROAD ACROSS YOUR MATCHES (owner, Round 19; at the bottom since Round 24) —
                 each line shows only when it names something */}

@@ -12,13 +12,19 @@ import DirectionModal from "../DirectionModal"
 
 // Stage 3 — the report: A SHORT OVERVIEW SINCE ROUND 19 (owner). In the owner's order: "Your report";
 // your top three matches, with the full list, the combined careers and compare one tap away (Round 20:
-// three buttons in the one card); what seems to drive you; the five fundamentals; and what you said
-// you wanted — those three under one medium heading size, Your matches only slightly larger. The shared data and the screens shown instead of a report live in useReportData.js
+// three buttons in the one card); what seems to drive you; your psychometric analysis (its own page
+// since Round 28 — the four fundamentals and everything else measured); and what you said you wanted — those three under one medium heading size, Your matches only slightly larger. The shared data and the screens shown instead of a report live in useReportData.js
 // and ReportStatus.js; the five bands and the per-journey wording in reportFraming.js.
 //
 // THE LIST IS THE REPORT. An earlier version opened with about 1,500 words of prose and then listed
 // professions four lines at a time; a fifteen-year-old scrolled past all of it. Since Round 19 there is
 // no prose at all — everything the taxonomy knows about a profession lives one tap away inside it.
+const UPDATE_REASONS = {
+    matching: "We've improved how we match careers.",
+    profile: "Your details have changed.",
+    answers: "You've changed your answers.",
+}
+
 function ReportPage() {
     const { user } = useSelector((state) => state.user)
     const report = useReportData()
@@ -31,7 +37,14 @@ function ReportPage() {
     const { release, aspirationSignals, filtered, dominantReasons } = data
     const myTags = studentTags(dominantReasons)
     const top = (ranked || []).slice(0, 3)
-    const combined = Array.isArray(data.combined) ? data.combined : []
+    // the combined careers the matches page will show by default: both professions in the top 15
+    const topFifteen = new Set((ranked || []).slice(0, 15).map((entry) => String(entry.professionId)))
+    const combined = (Array.isArray(data.combined) ? data.combined : [])
+        .filter((career) => (career.parentIds || []).every((id) => topFifteen.has(String(id))))
+        .slice(0, 5)
+    // Round 28 (owner): a student's own changes may rebuild the report 3 times; a system update, always
+    const ownUpdate = data.updateReason === "profile" || data.updateReason === "answers"
+    const updatesLeft = typeof data.selfUpdatesLeft === "number" ? data.selfUpdatesLeft : null
 
     return (
         <div className="report-page">
@@ -55,12 +68,15 @@ function ReportPage() {
             {data.updateAvailable && !data.rebuildFailed && (
                 <div className="report-banner">
                     <p>
-                        <strong>{data.updateReason === "profile" ? "Your details have changed." : "We've improved how we match careers."}</strong>{" "}
+                        <strong>{UPDATE_REASONS[data.updateReason] || UPDATE_REASONS.matching}</strong>{" "}
                         Your report stays exactly as it is unless you choose to update it.
+                        {ownUpdate && updatesLeft === 0 && <> You've used all 3 updates from your own changes — WhatsApp us on 8882756287 if you need another.</>}
                     </p>
-                    <button type="button" className="btn btn-primary btn-sm tap" onClick={() => report.setUpdateOpen(true)}>
-                        Update my report
-                    </button>
+                    {!(ownUpdate && updatesLeft === 0) && (
+                        <button type="button" className="btn btn-primary btn-sm tap" onClick={() => report.setUpdateOpen(true)}>
+                            Update my report
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -71,6 +87,9 @@ function ReportPage() {
                 busy={report.updating}
                 onCancel={() => report.setUpdateOpen(false)}
                 onConfirm={report.startUpdate}
+                note={ownUpdate && updatesLeft !== null
+                    ? `You can update your report from your own changes 3 times in all — this will be update ${3 - updatesLeft + 1} of 3. Updates we make to how matching works never count.`
+                    : null}
             />
 
             {release === "release_with_note" && (
@@ -161,35 +180,18 @@ function ReportPage() {
                 </section>
             )}
 
-            {/* 3. THE FIVE FUNDAMENTALS (owner, Rounds 18-20) — four qualities that help in every career,
-                as words, and a fifth: the rest of your qualities, which live on the Profile, and why. */}
-            {Array.isArray(data.fundamentals) && (
-                <details className="report-details report-fundamentals">
-                    <summary className="report-summary">
-                        <strong className="report-heading-md">The five fundamentals</strong> — what helps in every career
-                    </summary>
-                    <ul className="fundamentals-list">
-                        {data.fundamentals.map((item) => (
-                            <li key={item.slug}>
-                                <strong>{item.name}</strong>{" "}
-                                <span className={`status-chip${item.level ? " is-done" : ""}`}>{item.level || "not measured yet"}</span>
-                                <br />
-                                <span className="report-small">{item.meaning}. {item.why}</span>
-                            </li>
-                        ))}
-                        <li key="the-rest">
-                            <strong>The rest of your qualities</strong> — <Link to="/profile">see them on your Profile</Link>
-                            <br />
-                            <span className="report-small">
-                                Your personality, abilities, the areas you're drawn to and how you work. They aren't
-                                here on purpose: they matter once you've chosen a profession — then we work on the
-                                ones that profession needs and you don't have yet, not the other way round.
-                            </span>
-                        </li>
-                    </ul>
-                    <p className="report-small"><em>From your own answers, not a comparison with anyone. All of them grow with practice.</em></p>
-                </details>
-            )}
+            {/* 3. YOUR PSYCHOMETRIC ANALYSIS (owner, Round 28) — the four fundamentals and everything else the
+                assessment measured, on a page of its own */}
+            <section className="report-card">
+                <h2 className="report-heading-md">Your psychometric analysis</h2>
+                <p className="report-small">
+                    The four fundamentals that help in every career, and the qualities that make you different —
+                    none of them good or bad.
+                </p>
+                <div className="report-card-actions">
+                    <Link to="/report/psychometric" className="btn btn-ghost btn-sm tap">See your psychometric analysis →</Link>
+                </div>
+            </section>
 
             {/* 4. WHAT YOU SAID YOU WANTED.
                 THE ASPIRATION SECTION IS A COLLAPSIBLE EXPLANATION, not a wall of cards. Every
@@ -301,7 +303,7 @@ function ReportPage() {
                                     <p>
                                         <em>
                                             If you want this one, the most useful thing you can do is
-                                            start doing something in it and add it to your interest form.
+                                            start doing something in it and add it to your Virtual Career Counselling answers.
                                         </em>
                                     </p>
                                 </>

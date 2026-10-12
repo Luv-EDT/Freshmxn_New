@@ -4,7 +4,7 @@
 function InterestIntro({ handleNext, hasSubmitted }) {
     return (
         <div className="if-intro">
-            <h2>Welcome to your interest questionnaire</h2>
+            <h2>Welcome to Virtual Career Counselling</h2>
 
             <p className="if-lead">
                 Your career guidance starts here. You'll go through each stage of your life — what you did,
@@ -20,6 +20,7 @@ function InterestIntro({ handleNext, hasSubmitted }) {
                 <summary className="if-chip-summary"><span className="if-q" aria-hidden="true">?</span> How to answer</summary>
                 <ul>
                     <li><strong>For each stage of your life you'll fill in two things:</strong> the activities you did, and the problems or challenges you faced.</li>
+                    <li><strong>Write down everything</strong> — even things you did once, stopped, or can't do now. A later stage asks which still feel like you.</li>
                     <li><strong>Short and specific beats long.</strong> "Played district-level cricket" says more than "sports".</li>
                     <li><strong>Stuck?</strong> Each stage has a list of activities to jog your memory, and each problem question has examples you can tap to add and then edit in your own words.</li>
                     <li><strong>"See examples"</strong> under a question explains what it is asking for.</li>
@@ -30,7 +31,7 @@ function InterestIntro({ handleNext, hasSubmitted }) {
             </details>
 
             <button type="button" className="btn btn-primary" onClick={handleNext}>
-                {hasSubmitted ? "Continue to my answers" : "Start the questionnaire"}
+                {hasSubmitted ? "Continue to my answers" : "Start"}
             </button>
         </div>
     )

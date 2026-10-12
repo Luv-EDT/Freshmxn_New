@@ -107,13 +107,6 @@ router.post("/register", registerRateLimiter, async (req, res) => {
             return res.status(201).json({ success: true, message: "Registered Successfully" })
         }
 
-        if (!(await verifyTurnstile(req.body.turnstileToken, req.ip))) {
-            return res.status(400).json({
-                success: false,
-                message: "Please complete the check that you're a person, then try again"
-            })
-        }
-
         const nameError = checkName(name)
         if (nameError) {
             return res.status(400).json({
@@ -133,6 +126,14 @@ router.post("/register", registerRateLimiter, async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Password must be at least 8 characters"
+            })
+        }
+
+        // checked last: its token works once (Round 28)
+        if (!(await verifyTurnstile(req.body.turnstileToken, req.ip))) {
+            return res.status(400).json({
+                success: false,
+                message: "Please complete the check that you're a person, then try again"
             })
         }
 

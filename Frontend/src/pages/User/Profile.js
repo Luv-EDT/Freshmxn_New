@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import ParentConsentBanner from "./ParentConsentBanner"
 import { useSelector, useDispatch } from "react-redux"
+import { Link } from "react-router-dom"
 import { Table, Collapse, message } from "antd"
 import dayjs from "dayjs"
 import { getMyPayments, getMyRefundRequests, getMyFinancialAid } from "../../apiCall/paymentsApi"
@@ -9,10 +10,10 @@ import { setUser } from "../../store/userSlice"
 import RequestRefundForm from "./RequestRefundForm"
 import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
-import PsychometricScores from "./PsychometricScores"
 import AccountEdit, { EmailChange } from "./AccountEdit"
 import { JOURNEY_OPTIONS } from "../journeyOptions"
 import { PLAN_NAMES as TIER_NAMES } from "../plans"
+import { ACTION_WORDS, paymentStatusWord, REQUEST_WORDS, AID_WORDS, trackingIds } from "./paymentWords"
 
 
 const OPEN_REFUND_STATUSES = ["pending", "refund_pending", "refund_failed"]
@@ -76,12 +77,23 @@ function Profile() {
         }
     }
 
+    // Round 28: plain words for every status, and the ids to quote to Razorpay or a bank
     const columns = [
         { title: "Date", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "What", dataIndex: "action" },
+        { title: "What", dataIndex: "action", render: (value) => ACTION_WORDS[value] || value },
         { title: "Plan after", dataIndex: "tier", render: (value) => TIER_NAMES[value] || value },
         { title: "Amount (₹)", dataIndex: "amountInr" },
-        { title: "Status", dataIndex: "status" },
+        {
+            title: "Status",
+            render: (_, row) => (
+                <>
+                    <strong>{paymentStatusWord(row)}</strong>
+                    {row.status === "failed" && row.failureMessage && <div className="pc-small">{row.failureMessage}</div>}
+                    {row.action === "refund" && row.status === "refund_pending" && <div className="pc-small">Razorpay usually takes 5–7 working days</div>}
+                    {trackingIds(row).map((id) => <div key={id} className="pc-small">{id}</div>)}
+                </>
+            ),
+        },
     ]
 
     if (!user) return null
@@ -127,7 +139,7 @@ function Profile() {
             {openRefundRequest && (
                 <p>
                     Your {openRefundRequest.refundType === "rollover" ? "move back to Career Discovery" : "refund request"}
-                    {" "}is <strong>{openRefundRequest.status}</strong> (₹{openRefundRequest.amountInr}).
+                    {" "}(₹{openRefundRequest.amountInr}): <strong>{REQUEST_WORDS[openRefundRequest.status] || openRefundRequest.status}</strong>.
                 </p>
             )}
             {user.paid && !openRefundRequest && hasCompletedTierOne && (
@@ -141,29 +153,75 @@ function Profile() {
 
     const panels = [
         { key: "account", label: "Account information", children: accountPanel },
-        // rendered only when opened (antd Collapse), so the scores are fetched on demand
-        { key: "scores", label: "Your psychometric profile", children: <PsychometricScores /> },
+        // Round 28 (owner): the whole report, and the psychometric analysis inside it, rather than the
+        // scores repeated here
+        {
+            key: "report",
+            label: "Your report",
+            children: user.progress?.report === "ready"
+                ? (
+                    <p className="report-card-actions">
+                        <Link to="/report" className="btn btn-primary btn-sm tap">Open your report →</Link>{" "}
+                        <Link to="/report/psychometric" className="btn btn-ghost btn-sm tap">Your psychometric analysis →</Link>
+                    </p>
+                )
+                : <p>Your report appears here once it's ready — finish Virtual Career Counselling and the assessment first.</p>,
+        },
         {
             key: "payments",
             label: "Payment history",
-            children: <Table rowKey="_id" loading={loading} columns={columns} dataSource={payments} pagination={false} />,
+            children: (
+                <>
+                    <div className="table-scroll"><Table rowKey="_id" loading={loading} columns={columns} dataSource={payments} pagination={false} /></div>
+                    {/* every refund request, including a declined one with our reason (Round 28) */}
+                    {refundRequests.length > 0 && (
+                        <>
+                            <h3 className="pc-section-title">Refund requests</h3>
+                            <ul className="refund-request-list">
+                                {refundRequests.map((request) => (
+                                    <li key={request._id}>
+                                        {dayjs(request.createdAt).format("DD MMM YYYY")} · ₹{request.amountInr} ·{" "}
+                                        {request.refundType === "rollover" ? "Move back to Career Discovery" : "Full refund"} ·{" "}
+                                        <strong>{REQUEST_WORDS[request.status] || request.status}</strong>
+                                        {request.status === "declined" && request.adminNote && <div>Reason: {request.adminNote}</div>}
+                                        {(request.refunds || []).flatMap(trackingIds).map((id) => <div key={id} className="pc-small">{id}</div>)}
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+                </>
+            ),
         },
     ]
 
-    // only worth a panel if they've actually asked for aid
-    if (pendingAid || approvedAid) {
+    // only worth a panel if they've actually asked for aid; every request shows, with our reason for a
+    // "no" (Round 28)
+    if (aidRequests.length > 0) {
         panels.push({
             key: "aid",
             label: "Financial aid",
-            children: approvedAid
-                ? (
-                    <p>
-                        💙 Approved: your price for Tier {approvedAid.requestedTier} is{" "}
-                        <strong>₹{approvedAid.approvedAmountInr}</strong>. Pick that tier on the plans page
-                        and it will be applied.
-                    </p>
-                )
-                : <p>💙 Your financial aid request is <strong>pending</strong> — we'll call you soon.</p>,
+            children: (
+                <>
+                    {approvedAid && (
+                        <p>
+                            💙 Approved: your price for {TIER_NAMES[approvedAid.requestedTier]} is{" "}
+                            <strong>₹{approvedAid.approvedAmountInr}</strong>. Pick that plan on the plans page
+                            and it will be applied.
+                        </p>
+                    )}
+                    {pendingAid && <p>💙 Your financial aid request is <strong>waiting</strong> — we'll call you soon.</p>}
+                    <ul className="refund-request-list">
+                        {aidRequests.map((request) => (
+                            <li key={request._id}>
+                                {dayjs(request.createdAt).format("DD MMM YYYY")} · {TIER_NAMES[request.requestedTier]} ·{" "}
+                                <strong>{AID_WORDS[request.status] || request.status}</strong>
+                                {request.status === "declined" && request.adminNote && <div>Reason: {request.adminNote}</div>}
+                            </li>
+                        ))}
+                    </ul>
+                </>
+            ),
         })
     }
 

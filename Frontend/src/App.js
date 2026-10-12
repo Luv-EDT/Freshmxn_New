@@ -23,6 +23,7 @@ import InterestForm from "./pages/Interest/InterestForm.js"
 import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
 import ReportPage from "./pages/Report/ReportPage.js"
 import ComparePage from "./pages/Report/ComparePage.js"
+import PsychometricAnalysis from "./pages/Report/PsychometricAnalysis"
 import MatchesPage from "./pages/Report/MatchesPage.js"
 import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
@@ -150,6 +151,12 @@ function App() {
                 <Route path="/report/compare" element={
                     <ProtectedRoute requirePaid={true}>
                         <ComparePage />
+                    </ProtectedRoute>
+                } />
+                {/* Round 28 (owner): the four fundamentals and everything else measured, on one page */}
+                <Route path="/report/psychometric" element={
+                    <ProtectedRoute requirePaid={true}>
+                        <PsychometricAnalysis />
                     </ProtectedRoute>
                 } />
 

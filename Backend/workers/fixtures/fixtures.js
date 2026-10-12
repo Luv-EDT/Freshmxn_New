@@ -2055,7 +2055,8 @@ const fixtures = [
 
             // the page uses it, and offers the no-cost order only where it differs
             if (!/groupList\(ranked, primary, secondary, details/.test(source)) problems.push("the page does not build its groups with groupList")
-            if (!/framing\.switchIsDistinct \? framing\.switchIntro : null/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
+            // Round 28: the controls are open in a column; "ignoring switching cost" still only where it differs
+            if (!/showNoCost=\{framing\.switchIsDistinct\}/.test(source)) problems.push("the ignoring-cost order is not gated on switchIsDistinct")
             if (!/tierNameFor\(group\.tier\)/.test(source) || !/Would leave \{SWITCH_COST_GROUP_YEARS\}\+ years behind/.test(source)) problems.push("the open list has no tier headings or no last group")
             return problems.length > 0 ? problems.join("; ") : null
         },
@@ -2166,7 +2167,8 @@ const fixtures = [
             // is one tap away — a fold, not a filter. Round 20: opened, it is the same entries in groups.
             if (!/ordered\.slice\(0, TOP_SHOWN\)\.map\(\(entry\) => card\(entry\)\)/.test(page) || !/showAllFor !== sortKey \?/.test(page)) problems.push("the rendered list is not the chosen order (top three, then all)")
             if (!/const ordered = useMemo\(\(\) => groups\.flatMap\(\(group\) => group\.entries\), \[groups\]\)/.test(page)) problems.push("the open list is not the same entries as the top three")
-            if (!/Show the other \{ordered\.length - TOP_SHOWN\}/.test(page)) problems.push("the rest of the list has no 'Show the other N' button")
+            // Round 28 (owner): three, then up to fifteen, then the rest folded under "explore a few more"
+            if (!/Show \{Math\.min\(ordered\.length, MAIN_SHOWN\) - TOP_SHOWN\} more/.test(page) || !/explore a few more/.test(page) || !/splitShown\(groups, MAIN_SHOWN\)/.test(page)) problems.push("the list does not open to fifteen with the rest folded")
             if (!/const TOP_SHOWN = 3/.test(page)) problems.push("the list does not open on three")
             if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at three")
             if (!/rank=\{ordered\.indexOf\(entry\) \+ 1\}/.test(page)) problems.push("the cards are not numbered in the order shown")
@@ -3615,8 +3617,10 @@ const fixtures = [
             })
             if (DECISION_SECTIONS.length < 10) problems.push("too few rule sections")
 
-            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "photo_film" }).blocking.length === 0) problems.push("a combined career with the same group on both sides was accepted")
-            if (validateCombined({ name: "X", sideA: "photo_film", sideB: "no_such_group" }).blocking.length === 0) problems.push("an unknown side group was accepted")
+            // Round 28 (owner): two exact professions
+            if (validateCombined({ name: "X", parentA: "med-photographer", parentB: "med-photographer" }).blocking.length === 0) problems.push("a combined career with the same profession twice was accepted")
+            if (validateCombined({ name: "X", parentA: "med-photographer", parentB: "no-such-career" }).blocking.length === 0) problems.push("an unknown profession was accepted")
+            if (validateCombined({ name: "X", parentA: "med-photographer", parentB: "env-forest-officer" }).blocking.length !== 0) problems.push("two real professions were refused")
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -4827,7 +4831,8 @@ const fixtures = [
             if (!/<AbroadWaitlist professionId=\{entry\.professionId\} \/>/.test(card)) problems.push("the abroad part has no waitlist")
             if (!/subjectRoutes/.test(card)) problems.push("the card does not show subjects per route")
             if (/journeyHeadline|mastersOptions/.test(page)) problems.push("a report-level overview is back")
-            if (!/data\.fundamentals/.test(page)) problems.push("the fundamentals are not on the report")
+            // Round 28 (owner): the fundamentals live on the psychometric analysis page, linked from the report
+            if (!/to="\/report\/psychometric"/.test(page)) problems.push("the fundamentals are not reachable from the report")
             if (!/Not a career on our list/.test(page) || !/signal\.readAs/.test(page) || !/Direct match/.test(page) || !/Indirect match/.test(page)) problems.push("the aspiration copy is not the owner's")
             const abroadCard = read("AbroadWaitlist.js")
             if (!/Join the waitlist/.test(abroadCard)) problems.push("the study-abroad help is not a waitlist")
@@ -4989,18 +4994,22 @@ const fixtures = [
             const problems = []
             if (!/path="\/report\/matches"/.test(app)) problems.push("no /report/matches route")
             if (!/className="report-title">Your report/.test(page)) problems.push("'Your report' is not the centred title")
-            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">What seems to drive you</h2>", ">The five fundamentals</strong>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
+            // Round 28 (owner): the fundamentals become "Your psychometric analysis", a page of its own
+            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">What seems to drive you</h2>", ">Your psychometric analysis</h2>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
             if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push(`the overview is not in the owner's order: ${order.join(",")}`)
             if (!/to="\/report\/matches"/.test(page)) problems.push("the overview does not open the matches page")
-            if (!/The rest of your qualities<\/strong> — <Link to="\/profile">/.test(page) || !/They aren't\s+here on purpose/.test(page)) problems.push("the fifth fundamental does not point to the Profile, and say why")
+            if (!/to="\/report\/psychometric"/.test(page) || !/path="\/report\/psychometric"/.test(app)) problems.push("the overview does not open the psychometric analysis page")
+            const psych = fs.readFileSync(path.join(REPORT_DIR, "PsychometricAnalysis.js"), "utf8")
+            if (!/four fundamentals/.test(psych) || !/doesn't make you good or bad — only different/.test(psych) || !/<PsychometricScores allOpen \/>/.test(psych)) problems.push("the psychometric analysis page does not say what the fundamentals are and that the rest only make you different")
             if (/<h2>Combined careers<\/h2>/.test(page)) problems.push("combined careers are still a card of their own")
-            const medium = ["What seems to drive you", "The five fundamentals", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
+            const medium = ["What seems to drive you", "Your psychometric analysis", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
             if (medium.length > 0) problems.push(`not in the shared medium heading: ${medium.join(", ")}`)
             if (/<ReportSortMenu|buildList\(/.test(page)) problems.push("the sort or the list is still on the overview")
-            // Round 24 (owner): the filters fold away behind "Filter your list", like the sort
-            const filterMenu = fs.readFileSync(path.join(REPORT_DIR, "ReportFilterMenu.js"), "utf8")
-            if (!/Leave out blue-collar careers\*/.test(filterMenu) || !/\* Some of the most AI-proof careers are blue-collar\./.test(filterMenu)) problems.push("the blue-collar filter has no asterisk and side note")
-            if (!/<ReportFilterMenu/.test(matches) || !/Filter your list/.test(filterMenu)) problems.push("the filters are not folded behind one button")
+            // Round 28 (owner): the sorts and filters sit open beside the list, each with an ⓘ; blue-collar
+            // is defined where the word is used
+            const controls = fs.readFileSync(path.join(REPORT_DIR, "ReportControls.js"), "utf8")
+            if (!/Leave out blue-collar careers\*/.test(controls) || !/Blue-collar careers are hands-on, skilled work that doesn't need a degree/.test(controls) || !/Some of the most AI-proof careers are blue-collar\./.test(controls)) problems.push("the blue-collar filter has no asterisk, definition and side note")
+            if (!/<ReportControls/.test(matches) || !/className="matches-side"/.test(matches) || !/<Info text=/.test(controls)) problems.push("the sorts and filters are not open in a column, each explained")
             if (/added that our main ranking leaves out/.test(matches) || !/nothing is moved for what\s+switching would cost you/.test(matches)) problems.push("'ignoring switching cost' does not say what it does")
             const combined = fs.readFileSync(path.join(REPORT_DIR, "CombinedCareers.js"), "utf8")
             if (!/<ProfessionCard[\s\S]*?combined\s/.test(combined) || !/mix two professions/.test(combined)) problems.push("combined careers are not the same card with the note")
@@ -5016,15 +5025,18 @@ const fixtures = [
             const pages = path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages")
             const read = (...parts) => fs.readFileSync(path.join(pages, ...parts), "utf8")
             const problems = []
-            ;[["Interest", "InterestForm.js"], ["Assessment", "AssessmentShell.js"], ["Report", "ReportPage.js"], ["Report", "MatchesPage.js"], ["Report", "ComparePage.js"], ["Report", "ReportStatus.js"], ["User", "Mentorship.js"]].forEach((parts) => {
+            // Round 28 (owner): the interest form's own button goes back a section — the menu has Dashboard
+            if (!/← Previous section/.test(read("Interest", "InterestForm.js"))) problems.push("the interest form has no Previous section button")
+            ;[["Assessment", "AssessmentShell.js"], ["Report", "ReportPage.js"], ["Report", "MatchesPage.js"], ["Report", "ComparePage.js"], ["Report", "ReportStatus.js"], ["User", "Mentorship.js"]].forEach((parts) => {
                 if (!/<BackToDashboard/.test(read(...parts))) problems.push(`${parts[1]} has no Dashboard button`)
             })
             ;[["Assessment", "AssessmentShell.js"], ...["ReportPage.js", "MatchesPage.js", "ReportStatus.js", "ComparePage.js"].map((name) => ["Report", name])].forEach((parts) => {
                 if (/<JourneyProgress/.test(read(...parts))) problems.push(`${parts[1]} still shows the journey bar`)
             })
             const form = read("Interest", "InterestForm.js")
-            if (!/onLeave=\{\(\) => setLeaveOpen\(true\)\}/.test(form) || !/Save and go/.test(form) || !/Leave without saving/.test(form)) problems.push("the interest form does not ask before leaving")
-            if (!/then: "\/dashboard"/.test(form)) problems.push("'Save and go' does not save first")
+            // Round 28: every link out (the menu's Dashboard included) asks, and "Save and go" saves first
+            if (!/document\.addEventListener\("click", onClick, true\)/.test(form) || !/Save and go/.test(form) || !/Leave without saving/.test(form)) problems.push("the interest form does not ask before leaving")
+            if (!/then: leaveTo/.test(form)) problems.push("'Save and go' does not save first")
             const shell = read("Assessment", "AssessmentShell.js")
             if (!/onLeave=\{\(\) => setLeaveOpen\(true\)\}/.test(shell) || !/Save and go/.test(shell)) problems.push("the assessment does not ask before leaving")
             return problems.length > 0 ? problems.join("; ") : null
@@ -5375,7 +5387,7 @@ const fixtures = [
             if (!/registerRateLimiter/.test(route.split("\n")[0])) problems.push("no rate limit")
             if (!/req\.body\.website/.test(body) || !/verifyTurnstile\(req\.body\.turnstileToken/.test(body) || !/checkName\(name\)/.test(body)) problems.push("the route lacks the hidden box, Turnstile or the name rule")
             const form = read("Frontend/src/pages/Mentor/MentorRegister.js")
-            if (!/className="hp-field"/.test(form) || !/<TurnstileBox onToken=\{onToken\} \/>/.test(form) || !/website, turnstileToken/.test(form)) problems.push("the mentor form does not render the hidden box and Turnstile, or does not send them")
+            if (!/className="hp-field"/.test(form) || !/<TurnstileBox onToken=\{onToken\}/.test(form) || !/website, turnstileToken/.test(form)) problems.push("the mentor form does not render the hidden box and Turnstile, or does not send them")
             const real = ["Krishna Iyer", "Bhagyashree Jadhav", "Shrishti Agarwal", "Brahmbhatt", "Kshitij Shrivastava", "Subramanian Swaminathan", "Simranjeet Dhillon", "Chhabra", "Rwitwik Ghosh", "Hrushikesh", "Tsering Dorjee", "Przybylski", "Schwarzschild", "Bryn Llywelyn", "Dr. A. K. O'Neil", "Mary-Jane Watson", "Mohd. Imran", "Joseph D'Souza", "Luv Goel", "Riya"]
             const wrongly = real.filter((name) => checkName(name))
             if (wrongly.length) problems.push(`real names turned away: ${wrongly.join(", ")}`)

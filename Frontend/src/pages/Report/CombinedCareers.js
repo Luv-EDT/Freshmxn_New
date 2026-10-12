@@ -8,17 +8,25 @@ import ProfessionCard from "./ProfessionCard"
 // Round 19 (owner): the same card as every other match, with a note that these mix two professions.
 // The Blue-collar tag travels as it does on every other card. There is no Core engineering tag
 // any more (owner, Round 18) — core engineering is a filter on the main list.
-function CombinedCareers({ combined, journey }) {
-    if (!Array.isArray(combined) || combined.length === 0) return null
+// Round 28 (owner): each is exactly two professions, and shows only when BOTH are among the top 15
+// the student is looking at — so the combinations follow their filters and sorts. Five at most.
+const MAX_SHOWN = 5
+
+function CombinedCareers({ combined, journey, shownIds }) {
+    const shown = new Set(shownIds || [])
+    const visible = (Array.isArray(combined) ? combined : [])
+        .filter((career) => !shownIds || (career.parentIds || []).every((id) => shown.has(String(id))))
+        .slice(0, MAX_SHOWN)
+    if (visible.length === 0) return null
 
     return (
         <section className="combined-careers" id="combined">
             <h2>Combined careers</h2>
             <p className="report-small">
-                These mix two professions, often from different sectors. Each joins two areas your own activities led to.
+                These mix two professions, often from different sectors — both of them already among your top matches.
             </p>
             <div className="match-list">
-                {combined.map((career, index) => (
+                {visible.map((career, index) => (
                     <ProfessionCard
                         key={career.combinedId}
                         entry={career}

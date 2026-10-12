@@ -20,6 +20,7 @@ function MentorRegister() {
     const [website, setWebsite] = useState("")
     const [turnstileToken, setTurnstileToken] = useState("")
     const onToken = useCallback((token) => setTurnstileToken(token), [])
+    const [attempts, setAttempts] = useState(0)     // a failed try asks Cloudflare for a fresh token
 
     const handleRegister = async (e) => {
         e.preventDefault()
@@ -34,6 +35,7 @@ function MentorRegister() {
         // success must be explicit: an HTML error page (a proxy, CORS) has no success flag at all
         if (response.data?.success !== true || !response.data.token) {
             alert(response.data?.message || "Could not create your account. Please try again.")
+            setAttempts((count) => count + 1)
             return
         }
 
@@ -60,21 +62,24 @@ function MentorRegister() {
                 <div>
                     <label>Email</label>
                     <br />
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                {/* not for people: hidden from view and from screen readers; only a bot fills it */}
-                <div className="hp-field" aria-hidden="true">
-                    <label>Website</label>
-                    <input type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                    <input type="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div>
                     <label>Password (at least 8 characters)</label>
                     <br />
-                    <Input.Password value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+                    <Input.Password name="new-password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
+                    <p className="legal-agree">Any 8 or more characters — letters, numbers or symbols.</p>
                 </div>
-                <TurnstileBox onToken={onToken} />
+                <TurnstileBox onToken={onToken} resetKey={attempts} />
 
                 <button type="submit" className="tap" disabled={turnstileOn && !turnstileToken}>Create mentor account</button>
+                {/* not for people: hidden from view and from screen readers; only a bot fills it. It sits
+                    AFTER the button (Round 28): placed just before the password, password managers took it
+                    for the username box, filled it, and the sign-up quietly went nowhere */}
+                <div className="hp-field" aria-hidden="true">
+                    <label>Leave this empty</label>
+                    <input type="text" name="hp_url" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+                </div>
             </form>
 
             <p>Already a mentor? <Link to="/mentor/login">Log in</Link></p>

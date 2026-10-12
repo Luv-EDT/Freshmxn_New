@@ -29,6 +29,18 @@ const userSchema = new mongoose.Schema(
             type: Date,
             default: null, // Round 25: stage or its details changed — the report offers "Update my report"
         },
+        // Round 28 (owner): Virtual Career Counselling answers saved after the report was built — the
+        // report then offers "Update my report", as for a changed stage
+        answersChangedAt: {
+            type: Date,
+            default: null,
+        },
+        // Round 28 (owner): how many of the three updates from the student's OWN changes are used
+        // (utils/selfUpdates.js). Updates because our matching changed never count.
+        selfUpdatesUsed: {
+            type: Number,
+            default: 0,
+        },
         googleId: {
             type: String, // leave unset (not null) for password accounts, so the sparse index skips them
         },

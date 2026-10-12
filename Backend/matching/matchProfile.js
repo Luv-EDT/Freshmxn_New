@@ -58,7 +58,7 @@ const constants = require("./constants")
 // as one year (was a two-year redo), and work years only where the experience doesn't carry over
 // (own career, a career the degree leads to, or one on related_careers.json). A second number, the
 // years to get there from now, is shown beside it and never ranks.
-const MATCHING_VERSION = "matching@2.3.0"
+const MATCHING_VERSION = "matching@2.4.0"   // Round 28: combined careers are two exact professions
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")

@@ -85,7 +85,7 @@ function AspirationalProfessions({ formData, updateFormData, handleNext, handleP
 
         // this is the last section, so Next is what completes the form — worth asking (not when
         // editing a form already sent: there it just saves the changes)
-        if (isLastContentStep && !isEditing && !window.confirm("Finish and submit your interest form? You can still come back and edit it.")) {
+        if (isLastContentStep && !isEditing && !window.confirm("Finish Virtual Career Counselling? You can still come back and edit it.")) {
             return
         }
 

@@ -9,6 +9,8 @@ import {
 import { formatCallback } from "../User/callbackOptions"
 import StudentEditForm from "./StudentEditForm"
 import { PLAN_NAMES } from "../plans"
+import ReasonModal from "./ReasonModal"
+import { AID_WORDS } from "../User/paymentWords"
 
 // You call the student, agree a figure, and type it here. From then on their paywall quotes that
 // figure for that tier — which works unchanged in manual mode (they pay you) and in Razorpay mode
@@ -19,6 +21,7 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
     const [statusFilter, setStatusFilter] = useState("pending") // pending | approved | declined | all
     const [amounts, setAmounts] = useState({})                   // { [requestId]: rupees }
     const [editingStudent, setEditingStudent] = useState(null)
+    const [declining, setDeclining] = useState(null)
 
     // fetch on mount, and again whenever any tab changes student data
     useEffect(() => {
@@ -52,15 +55,16 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
         }
     }
 
-    const handleDecline = async (id) => {
+    const handleDecline = async (id, reason) => {
         try {
-            await declineFinancialAidForAdmin(id, {})
-            message.success("Financial aid request declined")
+            const response = await declineFinancialAidForAdmin(id, { adminNote: reason })
+            message.success(response.data.message)
             setAidRequests((prev) =>
                 prev.map((request) =>
-                    request._id === id ? { ...request, status: "declined" } : request
+                    request._id === id ? { ...request, status: "declined", adminNote: reason } : request
                 )
             )
+            setDeclining(null)
             onDataChanged()
         } catch (error) {
             message.error(error.response?.data?.message || "Failed to decline request")
@@ -88,8 +92,9 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
             title: "Status",
             render: (_, record) => (
                 <>
-                    {record.status}
+                    <strong>{AID_WORDS[record.status] || record.status}</strong>
                     {record.approvedAmountInr && <div>₹{record.approvedAmountInr}</div>}
+                    {record.adminNote && <div>{record.adminNote}</div>}
                     {record.usedAt && <div>(used)</div>}
                 </>
             ),
@@ -114,9 +119,7 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
                             >
                                 <Button type="primary" size="small">Approve</Button>
                             </Popconfirm>{" "}
-                            <Popconfirm title="Decline this request?" onConfirm={() => handleDecline(record._id)}>
-                                <Button size="small" danger>Decline</Button>
-                            </Popconfirm>{" "}
+                            <Button size="small" danger onClick={() => setDeclining(record)}>Decline</Button>{" "}
                         </>
                     )}
                     {record.user && (
@@ -134,13 +137,20 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
     return (
         <div>
             <Segmented
-                options={["pending", "approved", "declined", "all"]}
+                options={["pending", "approved", "declined", "cancelled", "all"]}
                 value={statusFilter}
                 onChange={setStatusFilter}
             />{" "}
             <Button onClick={fetchAidRequests}>Refresh</Button>
 
             <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests} />
+
+            <ReasonModal
+                open={declining !== null}
+                title="Why are you declining this financial aid request?"
+                onCancel={() => setDeclining(null)}
+                onSubmit={(reason) => handleDecline(declining._id, reason)}
+            />
 
             <StudentEditForm
                 visible={editingStudent !== null}

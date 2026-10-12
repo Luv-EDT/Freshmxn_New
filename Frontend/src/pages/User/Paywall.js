@@ -151,6 +151,11 @@ function Paywall() {
                     waitForAccess()
                 },
             })
+            // Round 28: say so at once; the webhook records the failure and emails the payment id
+            checkout.on("payment.failed", (response) => {
+                const reason = response?.error?.description || "The payment didn't go through"
+                message.error(`${reason}. No money was taken — you can try again.`)
+            })
             checkout.open()
         } catch (error) {
             message.error(error.response?.data?.message || "Failed to start payment")

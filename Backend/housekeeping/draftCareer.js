@@ -273,22 +273,27 @@ const embedDocument = async (record, { apiKey = process.env.VOYAGE_API_KEY, fetc
 
 // ── a combined career ───────────────────────────────────────────────────────────────────────────
 
-const COMBINED_SYSTEM = () => `You add ONE combined career — a real job that joins two fields — to an Indian career-guidance service.
-Each combined career has two SIDES, and each side is one of these existing groups of careers:
+// Round 28 (owner): a combined career is exactly two of our professions — never groups, never job roles
+const professionList = () => require("../data/ALL-professions.json").professions.map((profession) => `${profession.id}: ${profession.profession}`).join("\n")
+const professionIds = () => new Set(require("../data/ALL-professions.json").professions.map((profession) => profession.id))
 
-${Object.entries(combinedData.groups).map(([key, group]) => `${key}: ${group.label} — ${group.careers.join(", ")}`).join("\n")}
+const COMBINED_SYSTEM = () => `You add ONE combined career — a real job that joins two fields — to an Indian career-guidance service.
+A combined career is exactly TWO of our existing professions, joined. Pick the two from this list (id: name):
+
+${professionList()}
 
 Search the allowed sources for how people in India get into this work.
 
 Reply with ONLY this JSON object:
-{"name": "...", "oneLiner": "one plain sentence", "howToGetThere": "both fields' routes, stated plainly", "sideA": "<group key>", "sideB": "<a different group key>", "blueCollar": true|false}`
+{"name": "...", "oneLiner": "one plain sentence", "howToGetThere": "both fields' routes, stated plainly", "parentA": "<profession id>", "parentB": "<a different profession id>", "blueCollar": true|false}`
 
 const validateCombined = (row) => {
     const blocking = []
     if (!row || typeof row.name !== "string") blocking.push("no name")
-    if (!combinedData.groups[row && row.sideA]) blocking.push(`sideA ${row && row.sideA} is not a known group`)
-    if (!combinedData.groups[row && row.sideB]) blocking.push(`sideB ${row && row.sideB} is not a known group`)
-    if (row && row.sideA === row.sideB) blocking.push("the two sides are the same group")
+    const ids = professionIds()
+    if (!ids.has(row && row.parentA)) blocking.push(`parentA ${row && row.parentA} is not one of our professions`)
+    if (!ids.has(row && row.parentB)) blocking.push(`parentB ${row && row.parentB} is not one of our professions`)
+    if (row && row.parentA === row.parentB) blocking.push("the two professions are the same")
     if (row && combinedData.careers.some((career) => career.name.toLowerCase() === String(row.name).toLowerCase())) blocking.push("a combined career with this name already exists")
     return { blocking, warnings: [] }
 }
@@ -322,7 +327,7 @@ const runDraftCareer = async ({ candidateId, research, embed = embedDocument } =
         if (kind === "combined") {
             const reply = await research.askJson({ system: COMBINED_SYSTEM(), user: `Combined career: ${candidate.title}\nNearest careers: ${(candidate.nearest || []).map((near) => near.name).join("; ")}${previous && previous.adminNote ? `\nThe admin's note on the last draft: ${previous.adminNote}` : ""}`, check: (json) => typeof json.name === "string", maxUses: 3 })
             if (!reply.json) throw new Error(reply.refused ? "the request was declined" : "no readable reply")
-            const row = { id: `cmb-${slugify(reply.json.name)}`, name: reply.json.name, oneLiner: reply.json.oneLiner, howToGetThere: reply.json.howToGetThere, sideA: reply.json.sideA, sideB: reply.json.sideB, blueCollar: Boolean(reply.json.blueCollar) }
+            const row = { id: `cmb-${slugify(reply.json.name)}`, name: reply.json.name, oneLiner: reply.json.oneLiner, howToGetThere: reply.json.howToGetThere, parentA: reply.json.parentA, parentB: reply.json.parentB, blueCollar: Boolean(reply.json.blueCollar) }
             const checks = validateCombined(row)
             await CareerDraft.updateOne({ candidate: candidateId }, { $set: { status: "ready", record: row, rating: null, embedding: [], warnings: [...checks.blocking.map((text) => `MUST FIX: ${text}`), ...checks.warnings] } })
             return { drafted: "combined", blocking: checks.blocking.length }

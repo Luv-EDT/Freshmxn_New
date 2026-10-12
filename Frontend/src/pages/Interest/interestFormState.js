@@ -186,7 +186,7 @@ export const ALL_STEPS = [
     { key: "college", title: "College", lifeStage: "college" },
     { key: "high-school", title: "High School", lifeStage: "highSchool" },
     { key: "pre-high-school", title: "Pre-High School", lifeStage: "preHighSchool" },
-    { key: "current-interests", title: "Current Interests" },
+    { key: "current-interests", title: "What still feels like you" },
     { key: "challenges", title: "Your Challenges" },
     { key: "background", title: "Background Information" },
     { key: "aspirations", title: "Aspirations" },

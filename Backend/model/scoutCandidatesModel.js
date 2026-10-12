@@ -38,7 +38,7 @@ const scoutCandidateSchema = new mongoose.Schema(
             required: true,
         },
         nearest: {
-            type: [{ id: String, name: String, similarity: Number }],
+            type: [{ id: String, name: String, similarity: Number, via: String }],   // via: the name or job title that was closest (Round 28)
             default: [],
         },
         nearestRoles: {

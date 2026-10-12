@@ -226,13 +226,6 @@ router.post("/register", registerRateLimiter, async (req, res) => {
             return res.status(201).json({ success: true, message: "Registered Successfully" })
         }
 
-        if (!(await verifyTurnstile(req.body.turnstileToken, req.ip))) {
-            return res.status(400).json({
-                success: false,
-                message: "Please complete the check that you're a person, then try again"
-            })
-        }
-
         const nameError = checkName(name)
         if (nameError) {
             return res.status(400).json({
@@ -287,6 +280,15 @@ router.post("/register", registerRateLimiter, async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: consentError
+            })
+        }
+
+        // Round 28: Cloudflare's check comes AFTER the cheap checks above. Its token works once, so
+        // checking it first spent it on a mistyped phone number and every retry then failed
+        if (!(await verifyTurnstile(req.body.turnstileToken, req.ip))) {
+            return res.status(400).json({
+                success: false,
+                message: "Please complete the check that you're a person, then try again"
             })
         }
 
