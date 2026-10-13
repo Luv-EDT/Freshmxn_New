@@ -119,8 +119,15 @@ reason, "no money was taken"), a refund started (**processing**, with its refund
 reference, the **ARN**, to quote to your bank — Razorpay doesn't tell anyone when the bank actually credits
 it), failed (we retry) or **declined** (the admin must write a reason, which you see), and financial aid
 approved, declined (with a reason) or **closed because you paid** for that plan anyway. Profile → Payment
-history shows the same words and ids, and every refund request you made. A coupon counts once per person,
-and only when a plan is actually granted.
+history shows the same words and ids, and every refund request you made. A coupon's uses are the paid
+purchases that carry it (Round 29) — typing it, a quote or an unpaid order never counts, and one person may
+use a code again.
+
+**Notifications** (Round 29): every email we send you about something that changed also appears as a
+notification — a bell with a count in the menu bar, a line on your dashboard, and a list at the top of your
+Profile. Clear one with ✕, or all at once; cleared ones are deleted. Emails show as from "Freshmxn". We can
+send about 90 a day on our email plan; above that only reminders wait for the next day (their notification
+still appears) — anything you are waiting on always goes.
 
 Prices are never typed into the website; it always asks the server (`GET /payments/getPricing`), so
 there is only one place to change them (`Backend/utils/plans.js`). There are three **plans**:
@@ -344,10 +351,14 @@ you wanted**. The last three share one medium heading size; Your matches is only
 **"See all" opens `/report/matches`**, the whole list: the first **three** of the order you've chosen,
 each with its **rank number** (1, 2, 3…) on the left, then **"Show 12 more careers"** up to fifteen, and
 the rest folded under **"Careers that suit you aren't limited to these — explore a few more"** (Round 28,
-owner; choosing a new order starts again at three). The cut is made after the filters and sorts. On a
-laptop the **sorts and filters sit open in a column on the left** (on a phone, open above the list), each
-with an ⓘ explaining it; a "then order by" sort only reorders careers **inside** each group, never across
-groups. Opened, the list is shown **under its tier headings**
+owner; choosing a new order starts again at three). The cut is made after the filters and sorts. Above
+the list sit two highlighted buttons, **Sort your list** and **Filter your list** (Round 29), each with one
+line saying what opening it does; inside, every choice has an ⓘ. A **"then order by"** sort orders your
+**whole** list — the best-paid first, say, whatever group it was in — under one heading; with Best match,
+careers that would leave 2+ years behind still come last. Below the list, **"Some other careers you can
+consider"** opens careers nothing you told us pointed to but which fit how you think and work (best fit
+first, up to 30, never ranked), and at the very bottom, **"How your list is ordered"**. Opened, the list is
+shown **under its tier headings**
 — two or three words each since Round 24: "Proven long-time passion", "Confident current passion",
 "Long-time interest", "Other interests"… (*proven* = you achieved at it, *confident* = you said you're sure,
 *passion* = you love it). The careers that ask for more than your profile shows today sit under one band,
@@ -413,7 +424,7 @@ assessment) asks one question: are you still heading the same way, or looking fo
 *Studying abroad helps*. All are off until you turn them on, and the page always says how many
 careers they hid, with one tap to show them again. "Sort your list" switches between **Best match** (our
 ranking) and **Best fit, ignoring switching cost** (every career stays in its tier), and can then order
-each group by pay, demand, speed, AI exposure (with its value shown) or **least switching cost** (Round 20). **"Compare careers →"** opens a page where you pick 2–3 of the careers recommended to
+the whole list by pay, demand, speed, AI exposure (with its value shown) or **least switching cost** (Rounds 20 and 29). **"Compare careers →"** opens a page where you pick 2–3 of the careers recommended to
 you (nothing is picked for you) and see them side by side, with the same plain questions, "what to work
 on" and "worth knowing".
 
@@ -448,6 +459,13 @@ activity trace.
 
 ---
 
+**When a test needs taking again** (Round 29): if a timed test didn't count, you're told why in plain words
+(for the focus test: pressing before the number appeared, or pressing on the 3s). When the admin allows a
+retake, or we improve a test and offer it to everyone who took it, you get an email and a notification — and
+updating your report afterwards is **free**: it doesn't use one of your 3 updates. A short story whose
+questions closed before you answered can be taken again with a **new** story, up to 3 times; you're reminded
+when you open it, 5 minutes before it disappears, when the questions open and 6 hours before they close.
+
 ## 6b. Jobs that run on a calendar
 
 A third back-room helper (`workers/housekeepingWorker.js`) does jobs nobody clicks for. Nothing it
@@ -459,7 +477,7 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 |---|---|---|
 | The 1st of each month, 9:00 India time | **Follow-up** (`housekeeping/followUpScan.js`) | 6 and 12 months after your latest assessment, emails you a link (`/follow-up/…`) to five quick questions: what you're doing now, which career, did a match help. One reminder, then never again. You can opt out. This is how we'll learn, one day, whether our matches really work. The clock restarts only if you told us you're looking for something new |
 | The 1st of each month | **Data refresh** (`housekeeping/dataRefresh.js`) | For up to 60 careers, checks job-board numbers (Adzuna) and asks Claude to search a few official sources (government labour survey, National Career Service, India Skills Report, Naukri, LinkedIn's published reports). Suggested changes to **demand and pay** go to the admin's **Data updates** tab. Approved ones show on the career page at once; the ranking itself is never changed by them |
-| Every Monday | **Careers scout** (`housekeeping/careerScout.js`) | (Round 28: a title is compared with our careers' **names and job titles**, short text with short text — comparing it with whole career descriptions made everything look "Nothing close"; every run also re-sorts the watch list and sets aside rows that turn out to be covered.) Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit. *The monthly refresh never picks these up — only the admin does* (Round 27): read the row → **New career** or **Combined career** (a draft is written) → **View draft → Accept** (or send back with a note) → Data updates → **Export patch** → Claude Code applies, re-embeds, runs the fixtures and commits → live with that deploy |
+| The 1st of each month, right after the data refresh (Round 29: was weekly) | **Careers scout** (`housekeeping/careerScout.js`) | (Round 28: a title is compared with our careers' **names and job titles**, short text with short text — comparing it with whole career descriptions made everything look "Nothing close"; every run also re-sorts the watch list and sets aside rows that turn out to be covered.) Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit. *The monthly refresh never picks these up — only the admin does* (Round 27): read the row → **New career** or **Combined career** (a draft is written) → **View draft → Accept** (or send back with a note) → Data updates → **Export patch** → Claude Code applies, re-embeds, runs the fixtures and commits → live with that deploy |
 | The 1st of each month — but only what's in season | **Study bot** (`housekeeping/studyRefresh.js`) | Checks things only when they can have changed (Round 13): an **exam** in the two months before its applications usually open (each on its own official site); **colleges** in September and October, after NIRF publishes (NIRF first, then other published rankings and the regulators); **master's and study-abroad answers** in January, April, July and October (government and university sites only); **closing ranks** August to October (official counselling results); **licences abroad** in January (the licensing body's own site). A month with nothing due makes no AI call. Suggested changes go to **Data updates**; nothing changes until the admin approves. The admin's **Run now** checks everything regardless of season |
 | Every hour, at :17 | **Batch collector** (`housekeeping/researchBatch.js`) | The data refresh and the study bot don't wait for Claude's answers one by one. They hand Anthropic all their questions in **one bundle at half price**. Anthropic answers the bundle in the background — usually within the hour, at most a day. This small check asks every hour "is a bundle finished?"; if so it reads the answers, runs exactly the same checks the job would have, and files the suggestions in Data updates. Any answer that came back incomplete or unreadable is asked again the normal way. With no bundle waiting it does nothing and costs nothing |
 | Only when the admin presses it | **Model comparison** (`housekeeping/modelCompare.js`) | Asks the same 20 careers of two Claude models (Opus 5.5 and Sonnet 5.5) and shows side by side what each would change, how many pages it cited and what it cost. Nothing is filed. The admin then chooses which model runs the monthly jobs |
