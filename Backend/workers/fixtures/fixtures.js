@@ -5911,6 +5911,30 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 29 — every API call the site makes has a route behind it (a route lost in an edit would break the page silently: getCurrentUser once went missing this way)",
+        run: () => {
+            const root = path.join(__dirname, "..", "..", "..")
+            const server = fs.readFileSync(path.join(root, "Backend", "server.js"), "utf8")
+            const mounts = {}
+            for (const [, prefix, variable] of server.matchAll(/app\.use\("\/(\w+)",.*?(\w+Router)\)/g)) mounts[prefix] = variable
+            const requires = {}
+            for (const [, variable, file] of server.matchAll(/const (\w+Router) = require\("\.\/Routers\/(\w+)"\)/g)) requires[variable] = file
+            const apiDir = path.join(root, "Frontend", "src", "apiCall")
+            const problems = []
+            fs.readdirSync(apiDir).filter((name) => name.endsWith(".js")).forEach((name) => {
+                const source = fs.readFileSync(path.join(apiDir, name), "utf8")
+                for (const [, method, prefix, route] of source.matchAll(/axiosInstance\.(get|post|put|delete)\([`"]\/(\w+)\/([\w-]+)/g)) {
+                    const file = requires[mounts[prefix]]
+                    if (!file) { problems.push(`${name}: /${prefix} is not mounted`); continue }
+                    const router = fs.readFileSync(path.join(root, "Backend", "Routers", `${file}.js`), "utf8")
+                    if (!new RegExp(`router\\.${method}\\(\\s*"\\/${route}["/]`).test(router)) problems.push(`${name}: ${method.toUpperCase()} /${prefix}/${route} has no route`)
+                }
+            })
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

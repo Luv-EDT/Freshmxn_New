@@ -659,6 +659,82 @@ router.post("/resendVerification", resendVerificationRateLimiter, authMiddleware
 
 
 // ========================
+// Get Current User
+// ========================
+
+router.get("/getCurrentUser", authMiddleware, async (req, res) => {
+    try {
+        return res.status(200).json({
+            success: true,
+            message: "User fetched successfully",
+            userData: req.user,
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch user",
+            error: error.message,
+        })
+    }
+})
+
+
+// ========================
+// Get Current Admin
+// ========================
+
+router.get(
+    "/getCurrentAdmin",
+    authMiddleware,
+    adminAuthMiddleware,
+    async (req, res) => {
+        try {
+            return res.status(200).json({
+                success: true,
+                message: "Admin fetched successfully",
+                userData: req.user,
+            })
+
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch admin",
+                error: error.message,
+            })
+        }
+    }
+)
+
+
+// ========================
+// Get Current Mentor
+// ========================
+
+router.get(
+    "/getCurrentMentor",
+    authMiddleware,
+    mentorAuthMiddleware,
+    async (req, res) => {
+        try {
+            return res.status(200).json({
+                success: true,
+                message: "Mentor fetched successfully",
+                userData: req.user,
+            })
+
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch mentor",
+                error: error.message,
+            })
+        }
+    }
+)
+
+
+// ========================
 // Update Profile
 // ========================
 
