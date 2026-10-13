@@ -168,6 +168,18 @@ const mentorPassFor = async (research, enabled, now) => {
     }
 }
 
+// THE CAREERS SCOUT RUNS MONTHLY, after the refresh (owner, Round 29: few new careers appear in a
+// week, and it saves credits). Its own failure never fails the refresh.
+const scoutAfter = async (enabled) => {
+    if (!enabled) return "not run"
+    try {
+        return await require("./careerScout").runCareerScout()
+    } catch (error) {
+        console.error(`data_refresh: the careers scout failed — ${error.message}`)
+        return { failed: error.message }
+    }
+}
+
 const runDataRefresh = async ({
     research,             // injected in the fixtures; otherwise built on the chosen research model
     batch,                // true / false to force; by default batched unless RESEARCH_BATCH=false
@@ -176,8 +188,10 @@ const runDataRefresh = async ({
     limit = maxCareers(),
     now = new Date(),
     mentorPass = true,    // the fixtures that drive the careers alone turn it off
+    scout,                // Round 29 (owner): the careers scout runs monthly, right after this; off in the fixtures
 } = {}) => {
     const injected = research !== undefined
+    if (scout === undefined) scout = !injected
     if (!injected) research = createResearchClient({ job: "data_refresh", model: await researchModel() })
     if (!research) return { skipped: "ANTHROPIC_API_KEY is not set" }
 
@@ -200,7 +214,7 @@ const runDataRefresh = async ({
 
     if (batch === undefined ? !injected && batchEnabled() : batch) {
         const submitted = await submitBatch({ job: "data_refresh", items, model: research.model })
-        if (submitted) return { batched: submitted.batchId, questions: submitted.items, adzuna: adzunaState, note: "answers are filed by batch_collect, usually within the hour", mentorPass: await mentorPassFor(research, mentorPass, now) }
+        if (submitted) return { batched: submitted.batchId, questions: submitted.items, adzuna: adzunaState, note: "answers are filed by batch_collect, usually within the hour", mentorPass: await mentorPassFor(research, mentorPass, now), careersScout: await scoutAfter(scout) }
     }
 
     const result = { ...newResult(), adzuna: adzunaState }
@@ -214,7 +228,7 @@ const runDataRefresh = async ({
         }
     }
 
-    return { ...result, mentorPass: await mentorPassFor(research, mentorPass, now) }
+    return { ...result, mentorPass: await mentorPassFor(research, mentorPass, now), careersScout: await scoutAfter(scout) }
 }
 
 module.exports = { runDataRefresh, handleItem, newResult, check, prepareItem, pickCareersToCheck, validateProposal, currentValues, FIELDS, SYSTEM, promptFor }

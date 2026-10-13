@@ -12,12 +12,15 @@ const router = express.Router()
 
 router.get("/getAll", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const coupons = await Coupon.find({}).sort({ createdAt: -1 })
+        const coupons = await Coupon.find({}).sort({ createdAt: -1 }).lean()
+        // "Used" is the paid payments with the code (owner, Round 29), never a counter
+        const { couponUses } = require("./paymentsRouter")
+        const withUses = await Promise.all(coupons.map(async (coupon) => ({ ...coupon, timesUsed: await couponUses(coupon.code) })))
 
         return res.status(200).json({
             success: true,
             message: "Coupons fetched successfully",
-            data: coupons,
+            data: withUses,
         })
 
     } catch (error) {

@@ -192,12 +192,12 @@ export const hasData = (ranked, details, key) => ranked.some((entry) => {
 // Round 28 (owner): every sort says exactly what it does, in an ⓘ beside it
 export const SORTS = [
     { value: "best", label: "Best match" },
-    { value: "ai", label: "Least AI-exposed", hint: "Inside each group, the careers AI is least likely to change come first." },
-    { value: "fastest", label: "Quickest to qualify", hint: "Inside each group, the careers you could get into soonest from where you are now come first." },
-    { value: "pay", label: "Highest mid-career pay", hint: "Inside each group, the best-paid careers after 5–8 years of work come first." },
-    { value: "demand", label: "Most in demand", hint: "Inside each group, the careers India needs most people for right now come first." },
+    { value: "ai", label: "Least AI-exposed", hint: "Across your whole list, the careers AI is least likely to change come first." },
+    { value: "fastest", label: "Quickest to qualify", hint: "Across your whole list, the careers you could get into soonest from where you are now come first." },
+    { value: "pay", label: "Highest mid-career pay", hint: "Across your whole list, the best-paid careers after 5–8 years of work come first." },
+    { value: "demand", label: "Most in demand", hint: "Across your whole list, the careers India needs most people for right now come first." },
     // Round 20 (owner): the switching cost as a sort of its own, under either main order
-    { value: "switchCost", label: "Least switching cost", hint: "Inside each group, the careers that would leave the fewest years of what you've already done behind come first." },
+    { value: "switchCost", label: "Least switching cost", hint: "Across your whole list (2+ years still last under Best match), the careers that would leave the fewest years of what you've already done behind come first." },
 ]
 
 const DEMAND_ORDER = { high: 0, moderate: 1, low: 2, declining: 3 }
@@ -258,8 +258,10 @@ export const sortByAiExposure = (ranked) => sortRanked(ranked, "ai")
 //   noCost   "Best fit, ignoring switching cost": every career stays in its tier. Nothing is added
 //            from outside the list (the old worth-the-switch extras went in Round 20).
 //
-// A secondary sort reorders WITHIN each group; its tiebreak is the position in the primary order,
-// so equal rows keep it. The filters the student turns on hide careers; nothing else does.
+// A secondary sort IGNORES THE TIERS (owner, Round 29): the list becomes one group ordered by it —
+// "Highest pay" means the best-paid first, whatever tier. Under "Best match" the 2+ years group still
+// comes last, ordered the same way. Its tiebreak is the position in the primary order, so equal rows
+// keep it. The filters the student turns on hide careers; nothing else does.
 // Must equal Backend/matching/constants.js SWITCH_COST_GROUP_YEARS (a fixture checks).
 export const SWITCH_COST_GROUP_YEARS = 2
 
@@ -292,6 +294,13 @@ export const groupList = (ranked, primary, secondary, details = {}, options = {}
     const costly = primary === "best" ? list.filter((entry) => (entry.wastedYears || 0) >= SWITCH_COST_GROUP_YEARS) : []
     const kept = list.filter((entry) => !costly.includes(entry))
 
+    // a "then order by" flattens the tiers into one list (owner, Round 29)
+    if (secondary) {
+        const groups = kept.length > 0 ? [{ key: "sorted", tier: null, costly: false, flat: true, entries: sortRanked(kept, secondary, details) }] : []
+        if (costly.length > 0) groups.push({ key: "costly", tier: null, costly: true, entries: sortRanked(costly, secondary, details) })
+        return groups
+    }
+
     const groups = []
     kept.forEach((entry) => {
         const key = `tier-${entry.tier ?? "other"}`
@@ -304,7 +313,7 @@ export const groupList = (ranked, primary, secondary, details = {}, options = {}
         groups.push({ key: "costly", tier: null, costly: true, entries: leastFirst.map((entry, index) => ({ ...entry, rankedPosition: index + 1 })) })
     }
 
-    return groups.map((group) => ({ ...group, entries: secondary ? sortRanked(group.entries, secondary, details) : group.entries }))
+    return groups
 }
 
 // The same list, flat — for the top three, the counts and the compare page

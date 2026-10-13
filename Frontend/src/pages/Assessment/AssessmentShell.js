@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { message, Modal } from "antd"
-import { savePsychometric, submitPsychometric, getMySubmission, getStoryState } from "../../apiCall/submissionsApi"
+import { savePsychometric, submitPsychometric, getMySubmission, getStoryState, acceptRetakeOffer } from "../../apiCall/submissionsApi"
 import { setUser } from "../../store/userSlice"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
@@ -211,6 +211,16 @@ function AssessmentShell() {
         }
     }
 
+    const handleAcceptOffer = async (module) => {
+        try {
+            const response = await acceptRetakeOffer(module)
+            await loadSaved()
+            message.success(response.data.message)
+        } catch (error) {
+            message.error(error.response?.data?.message || "Could not open the test again")
+        }
+    }
+
     const handleModuleDone = async () => {
         const saved = await saveModule()
         if (saved) navigate("/assessment/start")
@@ -318,6 +328,8 @@ function AssessmentShell() {
                     hasNewAnswers={hasNewAnswers}
                     onReadReport={() => navigate("/report")}
                     retakeGranted={psychometric.retakeGranted || {}}
+                    retakeOffers={psychometric.retakeOffers || {}}
+                    onAcceptOffer={handleAcceptOffer}
                     accommodations={psychometric.accommodations || null}
                     onSaveAccommodations={handleSaveAccommodations}
                 />
@@ -413,8 +425,9 @@ function AssessmentShell() {
             {moduleKey === "storyRecall" && (
                 <>
                     <StoryRecall onDone={handleServerSavedDone} />
-                    {/* owner, Round 28: the short story gets the same "something went wrong" as every test */}
-                    <ReportProblem moduleKey="storyRecall" />
+                    {/* owner, Round 28: the short story gets the same "something went wrong" as every test —
+                        Round 29: only while a new story can still be given */}
+                    {!(storyState && storyState.retakesLeft === 0) && <ReportProblem moduleKey="storyRecall" />}
                 </>
             )}
 

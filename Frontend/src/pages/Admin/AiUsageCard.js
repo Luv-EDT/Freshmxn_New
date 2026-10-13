@@ -48,6 +48,16 @@ function AiUsageCard() {
                 label,
                 children: (
                     <>
+                        {/* Round 29 (owner): the email budget and the database, in one line each */}
+                        {data && data.emails && (
+                            <p>Emails today: {data.emails.today} of {data.emails.cap} (reminders wait for tomorrow above the cap; anything a student is waiting on always goes)</p>
+                        )}
+                        {data && data.database && !data.database.error && (
+                            <p className={data.database.amber ? "admin-amber" : ""}>
+                                Database: {data.database.usedMb} MB of {data.database.limitMb} MB ({data.database.share}%)
+                                {data.database.biggest.length > 0 && ` · biggest: ${data.database.biggest.map((row) => `${row.name} ${row.mb} MB`).join(", ")}`}
+                            </p>
+                        )}
                         <DatePicker picker="month" value={month} onChange={(value) => value && setMonth(value)} allowClear={false} />
                         <Table rowKey="job" size="small" columns={columns} dataSource={data ? data.jobs : []} pagination={false} scroll={{ x: "max-content" }} />
                     </>

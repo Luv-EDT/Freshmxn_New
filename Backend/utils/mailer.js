@@ -24,6 +24,10 @@ const escapeHtml = (text) => String(text === undefined || text === null ? "" : t
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
 
+// THE NAME IN THE INBOX (owner, Round 29): a bare address shows as "no-reply"; we always send as
+// "Freshmxn <address>". An EMAIL_FROM that already carries a name is used as it is.
+const senderOf = (from) => (String(from || "").includes("<") ? from : `Freshmxn <${String(from || "").trim()}>`)
+
 const sendEmail = async ({ to, subject, html }) => {
     const resend = resendClient()
 
@@ -33,7 +37,7 @@ const sendEmail = async ({ to, subject, html }) => {
     }
 
     try {
-        const { error } = await resend.emails.send({ from: process.env.EMAIL_FROM, to, subject, html })
+        const { error } = await resend.emails.send({ from: senderOf(process.env.EMAIL_FROM), to, subject, html })
         if (error) {
             console.log(`Email "${subject}" failed:`, error)
             return { sent: false, error: error.message || String(error) }
@@ -52,4 +56,4 @@ const notifyAdmin = async (subject, html) => {
     return sendEmail({ to: process.env.ADMIN_EMAIL, subject: `[Freshmxn] ${subject}`, html })
 }
 
-module.exports = { sendEmail, notifyAdmin, escapeHtml }
+module.exports = { sendEmail, notifyAdmin, escapeHtml, senderOf }

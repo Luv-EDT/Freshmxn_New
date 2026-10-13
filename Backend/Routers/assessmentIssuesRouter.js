@@ -118,6 +118,75 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 // anyone checking later what happened), never scored. The module's block is cleared, so the test
 // opens fresh, and `retakeGranted` tells the student's page why. For a report failure the "retake"
 // is running the pipeline again.
+// ========================
+// Offer a retake to everyone (admin, Round 29)
+// ========================
+
+// "We've improved this test": everyone who took it may take it again, if they want to. Runs as a job,
+// so a long list never holds the request and the emails go out within the daily cap.
+router.post("/offerRetakeToAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { module } = req.body
+        const reason = typeof req.body.reason === "string" ? req.body.reason.trim().slice(0, 300) : ""
+        if (!RETAKEABLE.includes(module)) {
+            return res.status(400).json({ success: false, message: "Choose a test that can be retaken" })
+        }
+        if (reason.length < 5) {
+            return res.status(400).json({ success: false, message: "Say what improved — the students are told" })
+        }
+        await require("../workers/housekeepingWorker").runNow("retake_offer", { module, reason, testName: MODULE_NAMES[module] })
+        return res.status(202).json({ success: true, message: `Offering ${MODULE_NAMES[module]} again to everyone who took it — the students are told`, data: { module } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not offer the retake", error: error.message })
+    }
+})
+
+
+// ========================
+// SART run details (admin, Round 29)
+// ========================
+
+// What a focus run actually looked like, so the admin can tell a student pressing in a rhythm (many
+// presses under 150 ms, most 3s pressed) from a device fault (dropped trials, a low refresh rate,
+// interruptions). Read from the stored rows and the run's own meta; nothing is re-scored.
+const sartRunDetails = (rawText, meta) => {
+    const rows = String(rawText || "").trim().split(/\r?\n/)
+        .map((line) => line.split(/\t|\s{2,}/))
+        .filter((fields) => fields.length >= 7 && String(fields[0]).trim().toLowerCase() === "realtest")
+        .map((fields) => ({ isGo: fields[2] === "1", correct: fields[5] === "1", rt: Number(fields[6]) }))
+    const pressed = rows.filter((row) => (row.isGo ? row.correct : !row.correct))
+    const bucket = (low, high) => pressed.filter((row) => row.rt >= low && row.rt < high).length
+    const threes = rows.filter((row) => !row.isGo)
+    return {
+        trials: rows.length,
+        presses: pressed.length,
+        rtSpread: { under150: bucket(0, 150), from150to300: bucket(150, 300), from300to600: bucket(300, 600), over600: bucket(600, 10000) },
+        threesPressed: `${threes.filter((row) => !row.correct).length} of ${threes.length}`,
+        droppedTrials: meta && meta.sessionTiming ? meta.sessionTiming.droppedTrials : null,
+        refreshHz: meta && meta.device ? meta.device.refreshHz : null,
+        device: meta && meta.device ? (meta.device.isTouch ? "touch screen" : "keyboard / mouse") : null,
+        input: meta && meta.presses ? meta.presses : null,   // recorded from Round 29
+        interruptions: meta ? meta.interruptions || null : null,
+    }
+}
+
+router.get("/getSartRunForAdmin/:userId", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const submission = await Submission.findOne({ user: req.params.userId }).select("psychometric.sartRaw psychometric.sartMeta psychometric.history.sartRaw").lean()
+        const psychometric = (submission && submission.psychometric) || {}
+        const runs = [
+            ...((psychometric.history && psychometric.history.sartRaw) || []).map((past) => ({ when: past.replacedAt, ...sartRunDetails(past.attempt, past.meta) })),
+            ...(psychometric.sartRaw ? [{ when: psychometric.sartMeta && psychometric.sartMeta.completedAt, current: true, ...sartRunDetails(psychometric.sartRaw, psychometric.sartMeta) }] : []),
+        ]
+        return res.status(200).json({ success: true, message: "Run details", data: runs })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not read the run", error: error.message })
+    }
+})
+
+
 router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const issue = await AssessmentIssue.findById(req.params.id)
@@ -146,37 +215,15 @@ router.put("/grantRetakeForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
                 return res.status(400).json({ success: false, message: "This test cannot be retaken" })
             }
 
-            const submission = await Submission.findOne({ user: student._id }).lean()
-            const psychometric = (submission && submission.psychometric) || {}
-            const attempt = psychometric[issue.module]
+            const submission = await require("../utils/retakes").reopenModule(student._id, issue.module, issue._id)
 
-            const set = {
-                [`psychometric.retakeGranted.${issue.module}`]: { at: new Date(), issue: issue._id },
-                lastSavedAt: new Date(),
+            // Round 29 (owner): the reason in plain words, and a free update for after the retake when a
+            // report already exists — a retake we asked for never costs one of the three
+            const { retakeReasons } = require("../utils/sartReasons")
+            await notifyStudent(student, "retakeGranted", { testName: MODULE_NAMES[issue.module] || issue.module, reasons: retakeReasons(issue) })
+            if (submission && submission.psychometricSubmittedAt) {
+                await require("../utils/selfUpdates").grantFreeUpdate(student._id, `retake:${issue.module}`)
             }
-            const unset = { [`psychometric.${issue.module}`]: "" }
-
-            // the SART's diagnostics belong to the run they describe
-            if (issue.module === "sartRaw") {
-                unset["psychometric.sartMeta"] = ""
-                unset["psychometric.sartRunOpenedAt"] = ""   // the retake starts with no run left open
-            }
-
-            const update = { $set: set, $unset: unset }
-            if (attempt !== undefined) {
-                update.$push = {
-                    [`psychometric.history.${issue.module}`]: {
-                        attempt,
-                        meta: issue.module === "sartRaw" ? psychometric.sartMeta || null : null,
-                        replacedAt: new Date(),
-                        issue: issue._id,
-                    },
-                }
-            }
-
-            await Submission.updateOne({ user: student._id }, update, { upsert: true })
-
-            await notifyStudent(student, "retakeGranted", { testName: MODULE_NAMES[issue.module] || issue.module })
         }
 
         issue.status = issue.module === "report" ? "resolved" : "retake_granted"
@@ -239,4 +286,6 @@ router.put("/dismissForAdmin/:id", authMiddleware, adminAuthMiddleware, async (r
 })
 
 module.exports = router
+module.exports.sartRunDetails = sartRunDetails
 module.exports.RETAKEABLE = RETAKEABLE
+module.exports.MODULE_NAMES = MODULE_NAMES

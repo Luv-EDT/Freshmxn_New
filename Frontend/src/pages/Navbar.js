@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom"
 import { useSelector } from "react-redux"
 import logo from "../assets/brand/logo.png"
+import useNotificationCount from "./useNotificationCount"
 
 // The logged-in app header. The logo always leads to the company landing page; "Dashboard" is the
 // student's own dashboard (owner, Round 20: named for what it is, and the only page link — the
@@ -9,6 +10,7 @@ function Navbar() {
     const { user } = useSelector((state) => state.user)
 
     const navClass = ({ isActive }) => (isActive ? "nav-link active" : "nav-link")
+    const notifications = useNotificationCount(Boolean(user && user.role === "student"))
 
     return (
         <header className="app-header">
@@ -32,6 +34,13 @@ function Navbar() {
                     thing beside it. Profile.js already has it, behind the same confirm, next to the
                     account it belongs to. */}
                 {/* not for admins: /profile bounces them straight back to /admin, so it is a dead link */}
+                {/* Round 29 (owner): the bell, with how many notifications are waiting */}
+                {user && user.role === "student" && (
+                    <Link to="/profile#notifications" className="nav-bell" aria-label={`Notifications: ${notifications}`}>
+                        <span aria-hidden="true">🔔</span>
+                        {notifications > 0 && <span className="nav-bell-count">{notifications}</span>}
+                    </Link>
+                )}
                 {user && user.role !== "admin" && (
                     <Link to="/profile" className="nav-user">
                         <span className="nav-avatar" aria-hidden="true">{(user.name || "?").trim().charAt(0).toUpperCase()}</span>

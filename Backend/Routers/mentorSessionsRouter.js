@@ -22,7 +22,7 @@ const router = express.Router()
 //   → the student's review opens. At any point the student can report their mentor.
 
 const cleanText = (value, max) => (typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max) : "")
-const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null }
+const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null }
 
 
 // ========================

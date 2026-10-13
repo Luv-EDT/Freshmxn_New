@@ -70,7 +70,9 @@ the Upstash database can be deleted too.
 | `DB_URI` | Step 1 | ✅ |
 | `JWT_SECRET` | Any long random string (e.g. 64 random characters). **New** one, not your local one | ✅ server refuses to start |
 | `RESEND_API_KEY` | resend.com → API Keys | ✅ **the server crashes at boot without it** |
-| `EMAIL_FROM` | The sender you use locally, e.g. `Freshmxn <onboarding@resend.dev>` | ✅ |
+| `EMAIL_FROM` | The sender you use locally, e.g. `Freshmxn <onboarding@resend.dev>`. Round 29: a bare address is sent as `Freshmxn <address>`, so students never see "no-reply" as the name | ✅ |
+| `EMAIL_DAILY_CAP` | Round 29: emails a day before reminders wait (default 90 — Resend's free plan sends 100 a day, 3,000 a month) | optional |
+| `DB_LIMIT_MB` | Round 29: the database size the admin's line measures against (default 512, Atlas's free tier) | optional |
 | `ANTHROPIC_API_KEY` | console.anthropic.com | ✅ grading + reports |
 | `VOYAGE_API_KEY` | dash.voyageai.com — **also add a payment method there** (Billing): without one Voyage allows 3 requests a minute, and activity matching stalls | ✅ activity matching |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud → Credentials (same as local) | for Google sign-in |
@@ -344,3 +346,10 @@ If it still fails, Render → Logs shows a line starting `Google callback failed
 - **`HOUSEKEEPING_ENABLED=false`** stops the calendar jobs (follow-up scan, data refresh, scout, study
   bot, batch collect) being registered; admin "Run now" still works.
 - **Moving to paid workers later:** see the commented section at the bottom of `render.yaml`.
+- **Email budget (Round 29).** Resend's free plan: 100 emails a day, 3,000 a month. Above `EMAIL_DAILY_CAP`
+  only reminders (the short story's, system updates, "take it again" offers) wait; codes, payments,
+  retakes and mentor emails always go. Move to Resend's paid plan (50,000 a month) once there are more
+  than about 20 students a day. Admin → AI usage shows emails today.
+- **Database size (Round 29).** Atlas's free tier holds 512 MB; 13 Oct 2026: 38.5 MB. Admin → AI usage
+  shows the share and the biggest collections, amber at 70%, and emails the admin at 85%. When it nears
+  full: Atlas Flex or M10, or trim retake history and old job rows.

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Table, Button, Popconfirm, Segmented, Select, Modal, Input, message } from "antd"
 import dayjs from "dayjs"
-import { getWaitlistForAdmin, matchForAdmin, resolveForAdmin, resetChoiceForAdmin, completeSessionForAdmin } from "../../apiCall/mentorWaitlistApi"
+import { getWaitlistForAdmin, matchForAdmin, resolveForAdmin, resetChoiceForAdmin, completeSessionForAdmin, mainSessionDoneForAdmin } from "../../apiCall/mentorWaitlistApi"
 import { grantMentorSessionForAdmin } from "../../apiCall/paymentsApi"
 import { getAllMentorsForAdmin } from "../../apiCall/mentorsApi"
 import { markWhatsappInviteForAdmin } from "../../apiCall/mentorSessionsApi"
@@ -56,9 +56,20 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         }
     }
 
-    const handleDone = async (studentId) => {
+    const handleMainDone = async (studentId) => {
         try {
-            const response = await completeSessionForAdmin(studentId)
+            const response = await mainSessionDoneForAdmin(studentId)
+            message.success(response.data.message)
+            fetchAll()
+        } catch (error) {
+            message.error(error.response?.data?.message || "Failed to mark the main session")
+        }
+    }
+
+    // closes the session, with or without the follow-up (the follow-up is up to the student)
+    const handleDone = async (studentId, followUp) => {
+        try {
+            const response = await completeSessionForAdmin(studentId, { followUp })
             message.success(response.data.message)
             fetchAll()
         } catch (error) {
@@ -210,10 +221,20 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                         {record.matchStatus === "matched" && record.whatsappInvite && (
                             <><Button size="small" onClick={() => sendWhatsapp(record)}>{record.whatsappInviteAt ? "Send invite on WhatsApp again" : "Send invite on WhatsApp"}</Button>{" "}</>
                         )}
-                        {record.matchStatus === "matched" && (
-                            <Popconfirm title="Mark this student's mentor session done? It is logged and they are asked for a review." onConfirm={() => handleDone(studentId)}>
-                                <Button type="primary" size="small">Session done</Button>
+                        {record.matchStatus === "matched" && !record.mainSessionAt && (
+                            <Popconfirm title="Mark the main (1-hour) session held?" onConfirm={() => handleMainDone(studentId)}>
+                                <Button type="primary" size="small">Main session done</Button>
                             </Popconfirm>
+                        )}
+                        {record.matchStatus === "matched" && record.mainSessionAt && (
+                            <>
+                                <Popconfirm title="Follow-up held? The session is logged and the student is asked for a review." onConfirm={() => handleDone(studentId, true)}>
+                                    <Button type="primary" size="small">Follow-up done</Button>
+                                </Popconfirm>{" "}
+                                <Popconfirm title="Close without a follow-up? The session is logged and the student is asked for a review." onConfirm={() => handleDone(studentId, false)}>
+                                    <Button size="small">Close without follow-up</Button>
+                                </Popconfirm>
+                            </>
                         )}{" "}
                         {record.matchStatus === "completed" && (record.extraSessionsPaid || 0) <= (record.extraSessionsUsed || 0) && (
                             <>

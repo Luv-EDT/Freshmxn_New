@@ -65,7 +65,7 @@ const updateReasonFor = (report, recommendation, user) => {
     if (systemUpdate(report, recommendation)) return "matching"
     return changedSince(user && user.answersChangedAt, report) ? "answers" : "profile"
 }
-const { selfUpdatesLeft, LIMIT_REACHED } = require("../utils/selfUpdates")
+const { selfUpdatesLeft, freeUpdatesLeft, updatesLeft, LIMIT_REACHED, updateSpend, mergeUpdates } = require("../utils/selfUpdates")
 
 
 // ========================
@@ -252,6 +252,8 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 // their answers, and how many of their own updates are left
                 updateReason: updateReasonFor(report, recommendation, req.user),
                 selfUpdatesLeft: selfUpdatesLeft(req.user),
+                freeUpdates: freeUpdatesLeft(req.user),   // Round 29: retakes we asked for
+                selfUpdatesUsed: req.user.selfUpdatesUsed || 0,
                 rebuildFailed: failed,
                 release: report.release,
                 journey: report.journey,
@@ -264,6 +266,7 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 sections: report.sections,
                 ranked: recommendation ? recommendation.ranked_professions.map((entry) => withWorkOn(stripInternal(entry))) : [],
                 combined: recommendation ? (recommendation.combined_careers || []).map(stripInternal) : [],
+                otherCareers: recommendation ? (recommendation.other_careers || []).map(stripInternal) : [],
                 filtered: recommendation ? recommendation.filtered : [],
                 aspirationSignals: recommendation
                     ? (recommendation.aspiration_signals || []).map((signal) => ({ ...cleanSignal(signal), readAs: readAsFor(signal, recommendation.activity_readings) }))
@@ -419,7 +422,7 @@ router.post("/updateMyReport", authMiddleware, requireDiscovery, async (req, res
 
         // Round 28 (owner): an update from the student's own changes uses one of their three
         const ownChange = updateReasonFor(report, recommendation, req.user) !== "matching"
-        if (ownChange && selfUpdatesLeft(req.user) === 0) {
+        if (ownChange && updatesLeft(req.user) === 0) {
             return res.status(400).json({ success: false, message: LIMIT_REACHED })
         }
 
@@ -431,11 +434,11 @@ router.post("/updateMyReport", authMiddleware, requireDiscovery, async (req, res
         const { queueReport } = require("../workers/queueHelpers")
         await queueReport(req.user._id, "queueing the update")
 
-        await User.updateOne({ _id: req.user._id }, {
-            ...direction,
-            $set: { ...(direction.$set || {}), reportUpdateRequestedAt: new Date(), reportFailedAt: null },
-            ...(ownChange ? { $inc: { selfUpdatesUsed: 1 } } : {}),
-        })
+        await User.updateOne({ _id: req.user._id }, mergeUpdates(
+            direction,
+            { $set: { reportUpdateRequestedAt: new Date(), reportFailedAt: null } },
+            updateSpend(req.user, "update", ownChange ? "own" : "system"),
+        ))
 
         return res.status(200).json({ success: true, message: "Your report is being updated", data: { status: "generating" } })
 

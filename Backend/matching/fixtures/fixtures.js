@@ -199,6 +199,25 @@ const fixtures = [
         },
     },
     {
+        name: "SOME OTHER CAREERS (Round 29) — careers nothing pointed to but that fit how the student works are kept beside the ranking: fit at least the comfort line, best fit first, capped, never ranked",
+        run: () => matchProfile(baseInput({
+            interest: buildInterest({ persistentInterests: ["competitive programming"] }),
+        })),
+        assert: (result) => {
+            const { COMFORT_THRESHOLD, OTHER_CAREERS_MAX } = require("../constants")
+            const others = result.otherCareers || []
+            const ranked = new Set(result.ranked.map((entry) => entry.professionId))
+            if (others.map((entry) => entry.professionId).join() !== "tst-epsilon") return `expected tst-epsilon (nothing pointed to it, it fits), got ${others.map((entry) => entry.professionId).join()}`
+            if (others.some((entry) => ranked.has(entry.professionId))) return "a ranked career is also listed as another career"
+            if (others.some((entry) => entry.comfortScore < COMFORT_THRESHOLD)) return "a career below the comfort line is offered"
+            if (others.some((entry, index) => index > 0 && entry.comfortScore > others[index - 1].comfortScore)) return "not best fit first"
+            if (others.length > OTHER_CAREERS_MAX) return "more than the cap"
+            if (others.some((entry) => "match_confidence" in entry || "tier" in entry)) return "an entry carries match_confidence or a tier"
+            if (result.matching_version !== "matching@2.5.0") return `version ${result.matching_version}`
+            return null
+        },
+    },
+    {
         name: "dominant reasons are read from the life-stage sections and split BetaList",
         run: () => matchProfile(baseInput({
             interest: buildInterest({

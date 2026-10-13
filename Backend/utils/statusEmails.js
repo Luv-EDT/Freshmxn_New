@@ -1,4 +1,6 @@
 const { sendEmail, escapeHtml } = require("./mailer")
+const Notification = require("../model/notificationsModel")
+const { mayEmail } = require("./emailBudget")
 const { PRIVACY_RULES } = require("./mentorInvite")
 
 // EVERY STATUS A STUDENT IS WAITING ON GETS AN EMAIL (owner, Round 28): payments, refunds, financial
@@ -14,13 +16,40 @@ const line = (label, value) => (value ? `<p>${label}: <strong>${escapeHtml(value
 // money emails point to the payment history, where the same status and ids are shown
 const HISTORY = (link) => `<p>You can see this any time under Profile → Payment history: <a href="${link}/profile">${link}/profile</a></p>`
 
-const send = (user, subject, body, withHistory) => {
-    if (!user || !user.email) return Promise.resolve({ sent: false, error: "no email" })
+const send = async (user, subject, body, withHistory, kind) => {
+    if (!user || !user.email) return { sent: false, error: "no email" }
+    if (!(await mayEmail(kind))) return { sent: false, error: "held back by the daily email cap" }
     return sendEmail({
         to: user.email,
         subject,
         html: `<p>Hi,</p>${body}${withHistory ? HISTORY(site()) : ""}<p>— Freshmxn</p>`,
     })
+}
+
+// the same message as a notification on the student's Profile (Round 29): plain text, and the first
+// link to our own site as the place it points to
+const plainText = (html) => String(html)
+    .replace(/<a [^>]*href="([^"]*)"[^>]*>[^<]*<\/a>/g, "")
+    .replace(/<\/(p|li)>/g, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+    .replace(/\s+(?:at|from|here|in)?\s*:?\s*(?=[.,;]|$)/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*:\s*$/, "")
+    .trim()
+
+const linkIn = (html) => {
+    const found = String(html).match(/href="https?:\/\/[^/"]+(\/[^"]*)"/)
+    return found ? found[1] : null
+}
+
+const remember = async (user, kind, subject, body) => {
+    try {
+        if (!user || !user._id) return
+        await Notification.create({ user: user._id, kind, title: subject, body: plainText(body).slice(0, 600), link: linkIn(body) })
+    } catch (error) {
+        console.error(`Could not save the ${kind} notification: ${error.message}`)
+    }
 }
 
 const TEMPLATES = {
@@ -66,9 +95,37 @@ const TEMPLATES = {
         subject: "Your financial aid request is closed",
         body: `<p>You've already paid for <strong>${escapeHtml(planName)}</strong>, so we've closed your financial aid request for it. Nothing else is needed.</p>`,
     }),
-    retakeGranted: ({ testName }) => ({
-        subject: "You can take one of your Freshmxn tests again",
-        body: `<p>Your earlier attempt at <strong>${escapeHtml(testName)}</strong> had a technical problem, so we have opened it again for you — one more attempt.</p><p>Open your assessment at <a href="${site()}/assessment">${site()}/assessment</a>, take the test, then press Submit again so your report is updated.</p>`,
+    // Round 29 (owner): the reason is said plainly, and the retake never costs one of the 3 updates
+    retakeGranted: ({ testName, reasons }) => ({
+        subject: `Please take ${testName} again`,
+        body: `<p>You need to retake <strong>${escapeHtml(testName)}</strong>, because our system flagged a problem with your earlier attempt${reasons && reasons.length ? ":" : "."}</p>${reasons && reasons.length ? `<ul>${reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>` : ""}<p>Open your assessment, take the test, then press Submit again. Updating your report after a retake we asked for is free — it doesn't use one of your 3 updates: <a href="${site()}/assessment">${site()}/assessment</a></p>`,
+    }),
+    // a system improvement (owner, Round 29): the update is free
+    systemUpdate: () => ({
+        subject: "We've improved how we match careers",
+        body: `<p>We've improved how Freshmxn matches careers. Update your report to see the new version — it's free and doesn't use one of your 3 updates: <a href="${site()}/report">${site()}/report</a></p>`,
+    }),
+    // an assessment improvement that offers everyone a retake of one test (owner, Round 29)
+    assessmentRetakeOffer: ({ testName, reason }) => ({
+        subject: `You can take ${testName} again`,
+        body: `<p>We've improved <strong>${escapeHtml(testName)}</strong>${reason ? ` — ${escapeHtml(reason)}` : ""}. If you'd like, take it again and press Submit; updating your report afterwards is free: <a href="${site()}/assessment">${site()}/assessment</a></p>`,
+    }),
+    // ── the short story's clock (owner, Round 29) ──
+    storyOpened: () => ({
+        subject: "Your short story is open — it disappears in 1 hour",
+        body: `<p>You've opened your short story. Read it carefully: it disappears <strong>one hour</strong> after you opened it, and we'll ask you about it tomorrow: <a href="${site()}/assessment/storyRecall">${site()}/assessment/storyRecall</a></p>`,
+    }),
+    storyFiveMinutes: () => ({
+        subject: "5 minutes left with your story",
+        body: `<p>Your short story disappears in <strong>5 minutes</strong>. Read it once more now, for the questions tomorrow: <a href="${site()}/assessment/storyRecall">${site()}/assessment/storyRecall</a></p>`,
+    }),
+    storyRecallOpen: ({ until }) => ({
+        subject: "Your story questions are open",
+        body: `<p>The questions about your short story are open now${until ? `, until <strong>${escapeHtml(until)}</strong>` : ""}. It takes about 5 minutes: <a href="${site()}/assessment/storyRecall">${site()}/assessment/storyRecall</a></p>`,
+    }),
+    storyRecallClosing: ({ until }) => ({
+        subject: "Your story questions close in 6 hours",
+        body: `<p>Your short-story questions close in about <strong>6 hours</strong>${until ? ` (${escapeHtml(until)})` : ""}. Answer them now so this part of your report counts: <a href="${site()}/assessment/storyRecall">${site()}/assessment/storyRecall</a></p>`,
     }),
     reportRerun: () => ({
         subject: "Your report is being prepared again",
@@ -108,7 +165,8 @@ const notifyStudent = (user, kind, details = {}) => {
     const template = TEMPLATES[kind]
     if (!template) return Promise.resolve({ sent: false, error: `unknown email ${kind}` })
     const { subject, body } = template(details)
-    return send(user, subject, body, MONEY.includes(kind))
+    remember(user, kind, subject, body)
+    return send(user, subject, body, MONEY.includes(kind), kind)
 }
 
-module.exports = { notifyStudent, TEMPLATES }
+module.exports = { notifyStudent, TEMPLATES, plainText, linkIn }

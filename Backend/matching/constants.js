@@ -90,6 +90,12 @@ const WORKING_YEARS_BEFORE_SHORT_TAU = 4
 // affected first). "Best fit, ignoring switching cost" leaves them in their tiers. Judgement, tunable.
 const SWITCH_COST_GROUP_YEARS = 2
 
+// SOME OTHER CAREERS YOU CAN CONSIDER (owner, Round 29). The ranked list holds only the careers the
+// student's activities and named careers pointed to. Careers nothing pointed to, but which fit how
+// they think and work (fit at least COMFORT_THRESHOLD), are kept beside it — best fit first, at most
+// this many. Never ranked, never in the tiers. INVENTED — a length that reads on a phone.
+const OTHER_CAREERS_MAX = 30
+
 // ── The report's explanation of a match ─────────────────────────────────────────────────────────
 const EXPLAIN_FACTOR_COUNT = 3
 
@@ -119,6 +125,7 @@ module.exports = {
     TAU,
     WORKING_YEARS_BEFORE_SHORT_TAU,
     SWITCH_COST_GROUP_YEARS,
+    OTHER_CAREERS_MAX,
     EXPLAIN_FACTOR_COUNT,
     EXPLAIN_MIN_WEIGHT,
     SUPPORTING_SIMILARITY,

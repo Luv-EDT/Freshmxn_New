@@ -651,76 +651,11 @@ router.post("/resendVerification", resendVerificationRateLimiter, authMiddleware
 
 
 // ========================
-// Change Email
+// No change of email (owner, Round 29)
 // ========================
 
-// Round 25 (owner): a student can change their email after registering. The new address waits as
-// `pendingEmail` until its link is clicked; until then they still log in with the old one. The user
-// id never changes, so every payment, answer and report stays theirs.
-router.put("/changeEmail", resendVerificationRateLimiter, authMiddleware, async (req, res) => {
-    try {
-        const newEmail = typeof req.body.newEmail === "string" ? req.body.newEmail.trim().toLowerCase() : ""
-
-        if (!emailRegex.test(newEmail)) {
-            return res.status(400).json({
-                success: false,
-                message: "Please enter a valid email"
-            })
-        }
-
-        if (newEmail === req.user.email) {
-            return res.status(400).json({
-                success: false,
-                message: "That is already your email"
-            })
-        }
-
-        const taken = await User.findOne({ email: newEmail }).select("_id").lean()
-        if (taken) {
-            return res.status(400).json({
-                success: false,
-                message: "That email already has an account"
-            })
-        }
-
-        await User.findByIdAndUpdate(req.user._id, { pendingEmail: newEmail })
-        await sendVerificationEmail(req.user, newEmail)
-
-        return res.status(200).json({
-            success: true,
-            message: `We've sent a link to ${newEmail} — click it to finish the change`,
-            data: { pendingEmail: newEmail },
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to change email",
-            error: error.message,
-        })
-    }
-})
-
-router.put("/cancelEmailChange", authMiddleware, async (req, res) => {
-    try {
-        await User.findByIdAndUpdate(req.user._id, { pendingEmail: null })
-        // any link already sent for the change stops working
-        await EmailVerification.updateMany({ user: req.user._id, usedAt: null, newEmail: { $ne: null } }, { usedAt: new Date() })
-
-        return res.status(200).json({
-            success: true,
-            message: "Email change cancelled",
-            data: { pendingEmail: null },
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to cancel",
-            error: error.message,
-        })
-    }
-})
+// A student can't change their name or email themselves — the admin can (Students → Edit). The
+// verifyEmail branch above still honours a change link sent before Round 29.
 
 
 // ========================
@@ -807,20 +742,12 @@ router.get(
 router.put("/updateProfile", authMiddleware, async (req, res) => {
     try {
         // never spread req.body here — role, paid and currentTier are server-owned
-        const { name, phone, age, journey, journeyDetail, preferredLanguage, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
+        const { phone, age, journey, journeyDetail, preferredLanguage, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
 
         const updates = {}
 
-        if (name !== undefined) {
-            const nameError = checkName(name)
-            if (nameError) {
-                return res.status(400).json({
-                    success: false,
-                    message: nameError
-                })
-            }
-            updates.name = name.trim().replace(/\s+/g, " ")
-        }
+        // Round 29 (owner): the name is not the student's to change here — only the admin's; a name sent
+        // anyway is ignored
 
         // Round 25: the phone is required and editable; it can be changed, never emptied
         if (phone !== undefined) {

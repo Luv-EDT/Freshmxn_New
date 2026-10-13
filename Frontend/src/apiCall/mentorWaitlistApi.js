@@ -61,6 +61,11 @@ export async function startAnotherSession(payload) {
 }
 
 // Round 28: the admin marks a matched session done (it is logged on the student's place)
+export async function mainSessionDoneForAdmin(studentId) {
+    const response = await axiosInstance.put(`/mentorWaitlist/mainSessionDoneForAdmin/${studentId}`)
+    return response
+}
+
 export async function completeSessionForAdmin(studentId, payload) {
     const response = await axiosInstance.put(`/mentorWaitlist/completeSessionForAdmin/${studentId}`, payload || {})
     return response

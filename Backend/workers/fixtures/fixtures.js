@@ -2038,7 +2038,7 @@ const fixtures = [
                 { professionId: "e", tier: 11, comfortScore: 0.86, wastedYears: 0 },
             ]
             const ids = (list) => list.map((entry) => entry.professionId).join(",")
-            const shape = (groups) => groups.map((group) => `${group.costly ? "costly" : group.tier}:${ids(group.entries)}`).join(" | ")
+            const shape = (groups) => groups.map((group) => `${group.costly ? "costly" : group.flat ? "flat" : group.tier}:${ids(group.entries)}`).join(" | ")
 
             const best = groupList(ranked, "best", null)
             if (shape(best) !== "1:a | 5:d | 11:e | costly:c,b") problems.push(`Best match groups wrong: ${shape(best)}`)
@@ -2049,9 +2049,12 @@ const fixtures = [
             })
             if (ids(buildList(ranked, "best", null)) !== "a,d,e,c,b") problems.push("the flat list is not the groups in order")
 
-            // the switching cost as a sub-sort, inside each group, ties keeping the primary order
+            // the switching cost as a sub-sort. Round 29 (owner): a "then order by" ignores the tiers —
+            // one list ordered by it, ties keeping the primary order; under Best match the 2+ years
+            // group stays last, ordered the same way
             if (!SECONDARY_SORTS.some((option) => option.value === "switchCost" && option.label === "Least switching cost")) problems.push("no 'Least switching cost' sub-sort")
-            if (shape(groupList(ranked, "noCost", "switchCost")) !== "1:a,b | 5:d,c | 11:e") problems.push(`the switch-cost sort does not order inside each group: ${shape(groupList(ranked, "noCost", "switchCost"))}`)
+            if (shape(groupList(ranked, "noCost", "switchCost")) !== "flat:a,e,d,c,b") problems.push(`the switch-cost sort does not order across the tiers: ${shape(groupList(ranked, "noCost", "switchCost"))}`)
+            if (shape(groupList(ranked, "best", "switchCost")) !== "flat:a,e,d | costly:c,b") problems.push(`under Best match the 2+ years group is not last: ${shape(groupList(ranked, "best", "switchCost"))}`)
 
             // the page uses it, and offers the no-cost order only where it differs
             if (!/groupList\(ranked, primary, secondary, details/.test(source)) problems.push("the page does not build its groups with groupList")
@@ -2420,10 +2423,12 @@ const fixtures = [
             const { TIER_NAMES } = loadEsModule(path.join(REPORT_DIR, "reportFraming.js"))
             const source = readReportPage()
             const problems = []
-            // OWNER CHANGE (Round 24): the explanation moved to the overview ("How your list is ordered"),
-            // the labels became two or three words, and "A stretch …" became one "Build skills first" band
-            if (!/How your list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8"))) problems.push("the ordering is not explained on the overview")
-            if (/How (this|your) list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8"))) problems.push("the ordering is still explained on the matches page")
+            // OWNER CHANGE (Round 24): the labels became two or three words, and "A stretch …" became one
+            // "Build skills first" band. OWNER CHANGE (Round 29): "How your list is ordered" moved from the
+            // overview to the bottom of the matches page.
+            const matchesPage = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
+            if (/How (this|your) list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8"))) problems.push("the ordering is still explained on the overview")
+            if (!/How your list is ordered/.test(matchesPage) || matchesPage.indexOf("How your list is ordered") < matchesPage.indexOf("<CombinedCareers")) problems.push("the ordering is not explained at the bottom of the matches page")
             if (TIER_NAMES.length !== TIERS.length) problems.push(`${TIER_NAMES.length} names for ${TIERS.length} tiers`)
             TIERS.forEach((rule) => {
                 const row = TIER_NAMES.find((name) => name.tier === rule.tier)
@@ -4751,6 +4756,10 @@ const fixtures = [
             if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,positions,solving") problems.push("the groups are not in the owner's order")
             if ((GUIDE_GROUPS.find((group) => group.key === "positions") || {}).factors.join() !== "uncertainty_tolerance,firmness") problems.push("firmness and uncertainty tolerance are not grouped together")
             if (GUIDE_GROUPS.some((group) => !group.meaning)) problems.push("a group has no meaning line")
+            // Round 29 (owner): the pair is named and explained as neither good nor bad
+            const positions = GUIDE_GROUPS.find((group) => group.key === "positions") || {}
+            if (positions.title !== "Traits where no level is better" || !/neither good nor bad/.test(positions.meaning || "")) problems.push("the two traits are not explained as neither good nor bad")
+            if (FACTOR_GUIDE.uncertainty_tolerance.name !== "Comfort with uncertainty" || FACTOR_GUIDE.firmness.name !== "Holding on to a belief") problems.push("the two traits don't have the owner's names")
 
             const raw = Object.fromEntries(all.map((slug, index) => [slug, (index * 37) % 11]))
             const coverage = Object.fromEntries(all.map((slug) => [slug, 0.5]))
@@ -4995,7 +5004,8 @@ const fixtures = [
             if (!/path="\/report\/matches"/.test(app)) problems.push("no /report/matches route")
             if (!/className="report-title">Your report/.test(page)) problems.push("'Your report' is not the centred title")
             // Round 28 (owner): the fundamentals become "Your psychometric analysis", a page of its own
-            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">What seems to drive you</h2>", ">Your psychometric analysis</h2>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
+            // Round 29 (owner): the psychometric analysis comes second, before what drives you
+            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">Your psychometric analysis</h2>", ">What seems to drive you</h2>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
             if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push(`the overview is not in the owner's order: ${order.join(",")}`)
             if (!/to="\/report\/matches"/.test(page)) problems.push("the overview does not open the matches page")
             if (!/to="\/report\/psychometric"/.test(page) || !/path="\/report\/psychometric"/.test(app)) problems.push("the overview does not open the psychometric analysis page")
@@ -5005,11 +5015,15 @@ const fixtures = [
             const medium = ["What seems to drive you", "Your psychometric analysis", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
             if (medium.length > 0) problems.push(`not in the shared medium heading: ${medium.join(", ")}`)
             if (/<ReportSortMenu|buildList\(/.test(page)) problems.push("the sort or the list is still on the overview")
-            // Round 28 (owner): the sorts and filters sit open beside the list, each with an ⓘ; blue-collar
-            // is defined where the word is used
-            const controls = fs.readFileSync(path.join(REPORT_DIR, "ReportControls.js"), "utf8")
+            // Round 28 (owner): every option has an ⓘ; blue-collar is defined where the word is used.
+            // OWNER CHANGE (Round 29): the Sort and Filter buttons are back (the open column is gone),
+            // highlighted, each with one line saying what opening it does
+            const sortMenu = fs.readFileSync(path.join(REPORT_DIR, "ReportSortMenu.js"), "utf8")
+            const controls = fs.readFileSync(path.join(REPORT_DIR, "ReportFilterMenu.js"), "utf8")
             if (!/Leave out blue-collar careers\*/.test(controls) || !/Blue-collar careers are hands-on, skilled work that doesn't need a degree/.test(controls) || !/Some of the most AI-proof careers are blue-collar\./.test(controls)) problems.push("the blue-collar filter has no asterisk, definition and side note")
-            if (!/<ReportControls/.test(matches) || !/className="matches-side"/.test(matches) || !/<Info text=/.test(controls)) problems.push("the sorts and filters are not open in a column, each explained")
+            if (!/<ReportSortMenu/.test(matches) || !/<ReportFilterMenu/.test(matches) || /ReportControls|matches-side/.test(matches)) problems.push("the Sort and Filter buttons are not back, or the open column is still there")
+            if (!/is-highlighted/.test(sortMenu) || !/is-highlighted/.test(controls) || !/className="sort-hint"/.test(sortMenu) || !/className="sort-hint"/.test(controls)) problems.push("the buttons are not highlighted or have no one-line hint")
+            if (!/<Info text=/.test(sortMenu) || !/<Info text=/.test(controls)) problems.push("the options lost their ⓘ")
             if (/added that our main ranking leaves out/.test(matches) || !/nothing is moved for what\s+switching would cost you/.test(matches)) problems.push("'ignoring switching cost' does not say what it does")
             const combined = fs.readFileSync(path.join(REPORT_DIR, "CombinedCareers.js"), "utf8")
             if (!/<ProfessionCard[\s\S]*?combined\s/.test(combined) || !/mix two professions/.test(combined)) problems.push("combined careers are not the same card with the note")
@@ -5239,11 +5253,13 @@ const fixtures = [
             const router = read("Backend/Routers/userRouter.js")
             const reports = read("Backend/Routers/reportsRouter.js")
             const admin = read("Frontend/src/pages/Admin/StudentEditForm.js")
-            const change = router.split('router.put("/changeEmail"')[1].split("router.")[0]
             const verify = router.split('router.post("/verifyEmail/:token"')[1].split("router.")[0]
             const problems = []
-            if (!/pendingEmail: newEmail/.test(change) || /findByIdAndUpdate\([^)]*[{,]\s*email: newEmail/.test(change)) problems.push("changing the email moves the account before the link is clicked")
-            if (!/sendVerificationEmail\(req\.user, newEmail\)/.test(change)) problems.push("the link does not go to the new address")
+            // OWNER CHANGE (Round 29): a student can no longer change their name or email (the admin
+            // can); a change link sent before then still completes the old way
+            if (/router\.put\("\/(changeEmail|cancelEmailChange)"/.test(router)) problems.push("a student can still change their email")
+            const update = router.split('router.put("/updateProfile"')[1].split("router.")[0]
+            if (/updates\.name\s*=/.test(update)) problems.push("a student can still change their name")
             if (!/email: emailVerification\.newEmail, isEmailVerified: true, pendingEmail: null/.test(verify)) problems.push("confirming the link does not move the account to the new email")
             if (/User\.create|_id:\s*new/.test(verify)) problems.push("verifying makes a new account")
             if (!/updates\.profileChangedAt = new Date\(\)/.test(router)) problems.push("a stage change is not stamped")
@@ -5479,7 +5495,9 @@ const fixtures = [
             const problems = []
             const failed = router.split('event.event === "payment.failed"')[1] || ""
             if (!failed || !/status: "failed"/.test(failed.slice(0, 2500)) || !/failureMessage/.test(failed.slice(0, 2500))) problems.push("payment.failed does not write a failed row with its reason")
-            if (!/Payment\.exists\(\{ user: user\._id, coupon: couponCode, status: "paid" \}\)/.test(router)) problems.push("a coupon can be used twice by one person")
+            // OWNER CHANGE (Round 29): no one-per-person rule; a use is a paid payment carrying the code
+            if (/You've already used this coupon/.test(router)) problems.push("the one-per-person rule is still there")
+            if (!/const couponUses = \(code\) => Payment\.countDocuments\(\{ coupon: code, status: "paid", action: \{ \$in: \["purchase", "upgrade"\] \} \}\)/.test(router) || /timesUsed/.test(router)) problems.push("coupon uses are not counted from paid payments only")
             const grant = router.split("const grantAccess")[1] || ""
             if (!/status: "cancelled"/.test(grant.slice(0, 6000))) problems.push("a pending aid request survives a payment")
             if (!/aidCancelled/.test(grant.slice(0, 6000))) problems.push("the student is not told their aid request closed")
@@ -5542,10 +5560,13 @@ const fixtures = [
             const read = (file) => fs.readFileSync(path.join(__dirname, "../../Routers", file), "utf8")
             const problems = []
             if (SELF_UPDATE_LIMIT !== 3 || selfUpdatesLeft({}) !== 3 || selfUpdatesLeft({ selfUpdatesUsed: 2 }) !== 1 || selfUpdatesLeft({ selfUpdatesUsed: 5 }) !== 0) problems.push("the count is off")
+            // Round 29 (owner): a free update from a retake we asked for is spent first, then one of the three
             const reports = read("reportsRouter.js")
-            if (!/ownChange && selfUpdatesLeft\(req\.user\) === 0/.test(reports) || !/ownChange \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(reports)) problems.push("Update my report does not count only own changes")
+            if (!/ownChange && updatesLeft\(req\.user\) === 0/.test(reports) || !/updateSpend\(req\.user, "update", ownChange \? "own" : "system"\)/.test(reports)) problems.push("Update my report does not count only own changes")
             const submissions = read("submissionsRouter.js")
-            if (!/hasReport && selfUpdatesLeft\(req\.user\) === 0/.test(submissions) || !/hasReport \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(submissions)) problems.push("a resubmit does not count as an own update")
+            if (!/hasReport && updatesLeft\(req\.user\) === 0/.test(submissions) || !/hasReport \? updateSpend\(req\.user, "resubmit"\) : null/.test(submissions)) problems.push("a resubmit does not count as an own update")
+            const { updateSpend } = require("../../utils/selfUpdates")
+            if (!updateSpend({ freeUpdates: 1 }, "x").$inc.freeUpdates || !updateSpend({ freeUpdates: 0 }, "x").$inc.selfUpdatesUsed || updateSpend({}, "x", "system").$inc) problems.push("free updates are not spent first, or a system update counts")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
@@ -5711,6 +5732,205 @@ const fixtures = [
             const sessions = history.rows[0].sessions
             if (sessions[0].mentorName !== "Removed mentor" || sessions[1].mentorName !== "Ravi") problems.push("the session history still names the deleted mentor, or renamed someone else")
             if (reviews.rows[0].mentorName !== "Removed mentor" || reviews.rows[0].user !== "s1") problems.push("a student's review still names the deleted mentor, or was lost")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — a focus run that didn't count tells the student what actually happened (pressing before the number, pressing on 3s), never the generic \"few presses came through\"",
+        run: async () => {
+            const { sartReasonWords, retakeReasons } = require("../../utils/sartReasons")
+            const problems = []
+            const hers = sartReasonWords(["anticipatory responses 42% (limit 15%) - responding before reading", "commission errors 88% (limit 60%) - not withholding on 3"])
+            if (hers.length !== 2 || !/before the number/.test(hers[0]) || !/3s/.test(hers[1])) problems.push(`her two reasons read: ${JSON.stringify(hers)}`)
+            if (hers.some((line) => /very few/i.test(line))) problems.push("she is still told few presses came through")
+            if (sartReasonWords([]).length !== 1) problems.push("an unknown reason gives no guidance")
+            if (!/told us/.test(retakeReasons({ kind: "student_reported", raisedBy: "student" })[0] || "")) problems.push("a student's own request has no reason line")
+            if (retakeReasons({ kind: "sart_invalid", detail: "anticipatory responses 30%, commission errors 70%" }).length !== 2) problems.push("an invalid-run issue's detail is not turned into reasons")
+            const sart = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/Sart.js"), "utf8")
+            if (!/retakeReasons/.test(sart) || !/practice round comes first again/i.test(sart)) problems.push("the retry screen doesn't show the reasons or ask for practice first")
+            if (!/presses\.current\.(keyboard|touch)/.test(sart)) problems.push("the input type of each press is not recorded")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/if \(keepOld\) update\.\$push = \{ \[`psychometric\.history\.\$\{module\}`\]: keepOld \}/.test(router)) problems.push("a replaced run is overwritten instead of kept in history")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — every status email also leaves a notification the student can clear (cleared ones are deleted), and email goes out as \"Freshmxn\"",
+        run: async () => {
+            const problems = []
+            const { senderOf } = require("../../utils/mailer")
+            if (senderOf("no-reply@freshmxn.com") !== "Freshmxn <no-reply@freshmxn.com>") problems.push("a bare sender address is not named Freshmxn")
+            if (senderOf("Team <a@b.com>") !== "Team <a@b.com>") problems.push("a named sender is rewritten")
+            const emails = fs.readFileSync(path.join(__dirname, "../../utils/statusEmails.js"), "utf8")
+            if (!/Notification\.create/.test(emails)) problems.push("notifyStudent leaves no notification")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/notificationsRouter.js"), "utf8")
+            if (!/Notification\.deleteOne\(\{ _id: req\.params\.id, user: req\.user\._id \}\)/.test(router)) problems.push("clearing one notification does not delete only the student's own row")
+            if (!/Notification\.deleteMany\(\{ user: req\.user\._id \}\)/.test(router)) problems.push("clear all does not delete the rows")
+            const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
+            if (!/app\.use\("\/notifications"/.test(server)) problems.push("the notifications router is not mounted")
+            const { USER_COLLECTIONS } = require("../../utils/deleteAccount")
+            if (!USER_COLLECTIONS.some(([name]) => name === "notifications")) problems.push("deleting an account leaves its notifications")
+            const { REMINDERS } = require("../../utils/emailBudget")
+            ;["retakeGranted", "paymentSucceeded", "mentorInvite"].forEach((kind) => { if (REMINDERS.includes(kind)) problems.push(`${kind} could be held back by the daily cap`) })
+            ;["storyFiveMinutes", "systemUpdate"].forEach((kind) => { if (!REMINDERS.includes(kind)) problems.push(`${kind} is not counted as a reminder`) })
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — a retake we ask for (admin grant, the automatic focus retry, a test we improved) gives a free report update; the student's own 3 are untouched",
+        run: async () => {
+            const problems = []
+            const { updatesLeft, updateSpend, freeUpdatesLeft } = require("../../utils/selfUpdates")
+            const user = { selfUpdatesUsed: 3, freeUpdates: 1 }
+            if (updatesLeft(user) !== 1) problems.push("a free update is not counted when the own three are used")
+            const spend = updateSpend(user, "resubmit")
+            if (!spend.$inc || spend.$inc.freeUpdates !== -1 || spend.$inc.selfUpdatesUsed) problems.push("a free update is not spent first")
+            if (freeUpdatesLeft({ freeUpdates: -2 }) !== 0) problems.push("a negative credit counts")
+            const issues = fs.readFileSync(path.join(__dirname, "../../Routers/assessmentIssuesRouter.js"), "utf8")
+            const grant = issues.split('router.put("/grantRetakeForAdmin/:id"')[1] || ""
+            if (!/grantFreeUpdate/.test(grant) || !/"retakeGranted"/.test(grant) || !/retakeReasons\(issue\)/.test(grant)) problems.push("an admin retake is not free, or the student isn't told why")
+            const subs = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/grantFreeUpdate/.test(subs.split('router.post("/acceptRetakeOffer"')[1] || "")) problems.push("taking an offered retake is not free")
+            const { versionsChanged } = require("../../utils/versionNotices")
+            if (versionsChanged(null, { matching: "a", scoring: "b" })) problems.push("the first start tells everyone about old changes")
+            if (!versionsChanged({ matching: "a", scoring: "b" }, { matching: "a2", scoring: "b" })) problems.push("a new matching version is not announced")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — the admin sees each student's mentorship stage in words (with the cycle number from the second session), and a session closes in two steps: main session, then follow-up or close without one",
+        run: async () => {
+            const { mentorStage } = require("../../utils/mentorStage")
+            const problems = []
+            const now = new Date("2026-10-13T10:00:00")
+            const cases = [
+                [{ tier: 1, row: null }, "NA"],
+                [{ tier: 2, row: null }, "not started"],
+                [{ tier: 3, row: { matchStatus: "awaiting_choice" } }, "not started"],
+                [{ tier: 2, row: { matchStatus: "matching" }, dueBy: new Date("2026-10-20T00:00:00"), now }, "20-day wait · 5 days left"],
+                [{ tier: 2, row: { matchStatus: "matched" } }, "found mentor — waiting for mentor to reply"],
+                [{ tier: 2, row: { matchStatus: "matched", bookingLinkSentAt: now } }, "booking link sent"],
+                [{ tier: 2, row: { matchStatus: "matched", bookingLinkSentAt: now, mainSessionAt: now } }, "main session taken"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{ followUp: true }] } }, "follow-up taken"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{ followUp: false }] }, reviewed: [0] }, "review given"],
+                [{ tier: 2, row: { matchStatus: "matching", sessions: [{ followUp: true }] } }, "2 · 20-day wait"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{}, { followUp: true }] } }, "2 · follow-up taken"],
+                [{ tier: 2, row: { matchStatus: "unmatchable", resolution: "refunded" } }, "closed"],
+            ]
+            cases.forEach(([input, expected]) => {
+                const got = mentorStage(input)
+                if (got !== expected) problems.push(`${JSON.stringify(input.row)} → "${got}", expected "${expected}"`)
+            })
+            const waitlist = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
+            const complete = waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || ""
+            if (!/!row\.mainSessionAt/.test(complete)) problems.push("a session can close before the main session is marked held")
+            if (!/followUp: req\.body\.followUp === true/.test(complete)) problems.push("whether the follow-up was held is not recorded")
+            if (!/router\.put\("\/mainSessionDoneForAdmin\/:id"/.test(waitlist)) problems.push("there is no main-session step")
+            const students = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/StudentsList.js"), "utf8")
+            ;["Assessment", "Mentorship", "Report updates"].forEach((title) => { if (!students.includes(`title: "${title}"`)) problems.push(`the Students tab has no "${title}" column`) })
+            if (!/sectionsDone\(/.test(students)) problems.push("the admin's assessment count is not the student's own")
+            const subs = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            const admin = subs.split('router.get("/getProgressForAdmin"')[1] || ""
+            if (!/adminAuthMiddleware/.test(admin.slice(0, 80)) || !/forStudent\(submission\)/.test(admin) || !/sartRaw = "recorded"/.test(admin)) problems.push("the admin progress is not admin-only, or sends answer keys or the raw focus rows")
+            const report = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Report/ReportPage.js"), "utf8")
+            if (!/of your 3 report updates from your own changes/.test(report)) problems.push("the student doesn't see how many updates they've used")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — \"Some other careers you can consider\": careers nothing pointed to that fit the student are stored, served without internal fields, and shown behind one button on the matches page",
+        run: async () => {
+            const problems = []
+            const worker = fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8")
+            if (!/other_careers: match\.otherCareers/.test(worker)) problems.push("the worker doesn't store the other careers")
+            const reports = fs.readFileSync(path.join(__dirname, "../../Routers/reportsRouter.js"), "utf8")
+            if (!/otherCareers: recommendation \? \(recommendation\.other_careers \|\| \[\]\)\.map\(stripInternal\)/.test(reports)) problems.push("the other careers go out without stripInternal")
+            const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
+            const others = fs.readFileSync(path.join(REPORT_DIR, "OtherCareers.js"), "utf8")
+            if (!/<OtherCareers careers=\{data\.otherCareers\}/.test(matches)) problems.push("the matches page doesn't show them")
+            if (!/<summary[\s\S]*Some other careers you can consider/.test(others)) problems.push("they are not behind the owner's button")
+            if (/comfortScore|rank=|tierNameFor/.test(others)) problems.push("the list shows a fit number, a rank or a tier")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — the short story: a missed one can be taken again with a NEW story three times (four at most), each a free update; \"Something went wrong\" shows only while a new story can still be given; the reminders are skipped once answered or replaced",
+        run: async () => {
+            const problems = []
+            const { STORY_RETAKES_MAX, retakesLeft } = require("../../Routers/storyRouter")
+            if (STORY_RETAKES_MAX !== 3) problems.push(`${STORY_RETAKES_MAX} retakes, the owner chose 3`)
+            if (retakesLeft({}) !== 3 || retakesLeft({ storyRetakes: 3 }) !== 0 || retakesLeft({ storyRetakes: 5 }) !== 0) problems.push("retakes left is miscounted")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/storyRouter.js"), "utf8")
+            const retake = router.split('router.post("/retakeStory"')[1] || ""
+            if (!/phase !== "expired"/.test(retake) || !/retakesLeft\(psychometric\) === 0/.test(retake)) problems.push("a story can be swapped before it closes, or past the limit")
+            if (!/reopenModule\(req\.user\._id, "storyRecall"\)/.test(retake) || !/grantFreeUpdate/.test(retake)) problems.push("the old story is not kept, or the update is not free")
+            if (!/scheduleStoryNotices\(req\.user, openedAt\)/.test(router)) problems.push("opening a story schedules no reminders")
+            const retakes = fs.readFileSync(path.join(__dirname, "../../utils/retakes.js"), "utf8")
+            if (!/module === "storyRecall"\) update\.\$inc = \{ "psychometric\.storyRetakes": 1 \}/.test(retakes)) problems.push("a granted story retake doesn't count towards the three")
+            const shell = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentShell.js"), "utf8")
+            if (!/storyState\.retakesLeft === 0\) && <ReportProblem moduleKey="storyRecall"/.test(shell)) problems.push("\"Something went wrong\" shows on the story when no new story is left")
+            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/StoryRecall.js"), "utf8")
+            if (!/Take it again with a new story/.test(page)) problems.push("the expired story offers no new one")
+            const { stillDue, NOTICES } = require("../../housekeeping/storyNotices")
+            const opened = "2026-10-13T10:00:00.000Z"
+            if (NOTICES.map((notice) => `${notice.kind}@${notice.afterMs / 60000}`).join() !== "storyFiveMinutes@55,storyRecallOpen@1440,storyRecallClosing@3960") problems.push("the reminders are not at 55 min, 24 h and 66 h")
+            if (!stillDue({ storyOpenedAt: opened }, "storyRecallOpen", opened)) problems.push("a due reminder is skipped")
+            if (stillDue({ storyOpenedAt: opened, submittedAt: opened }, "storyRecallClosing", opened)) problems.push("a reminder goes out after the story was answered")
+            if (stillDue({ storyOpenedAt: "2026-10-14T10:00:00.000Z" }, "storyRecallOpen", opened)) problems.push("a reminder for a replaced story goes out")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — small ones: the email cap holds back only reminders, the database line warns at 70% and emails at 85%, the scout runs monthly with the data refresh, and the assessment page shows sections done with the factor count in \"Why we do this\"",
+        run: async () => {
+            const problems = []
+            const { dbLevel } = require("../../utils/dbStats")
+            const low = dbLevel(38.5, 512)
+            const amber = dbLevel(360, 512)
+            const alert = dbLevel(440, 512)
+            if (low.amber || low.alert || low.share !== 7.5) problems.push(`38.5 MB of 512 reads ${JSON.stringify(low)}`)
+            if (!amber.amber || amber.alert) problems.push("70% is not amber")
+            if (!alert.alert) problems.push("85% does not alert")
+            const worker = fs.readFileSync(path.join(__dirname, "..", "housekeepingWorker.js"), "utf8")
+            const schedules = worker.split("const SCHEDULES")[1] ? worker.split("const SCHEDULES")[1].split("}")[0] : ""
+            if (/career_scout/.test(schedules)) problems.push("the scout still has its own weekly schedule")
+            const refresh = fs.readFileSync(path.join(__dirname, "../../housekeeping/dataRefresh.js"), "utf8")
+            if (!/careersScout: await scoutAfter\(scout\)/.test(refresh)) problems.push("the data refresh does not run the scout")
+            const usage = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/emails: \{ today: await sentToday\(\), cap: dailyCap\(\) \}/.test(usage) || !/dbStats\(\)/.test(usage)) problems.push("the admin can't see the email budget or the database")
+            const intro = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentIntro.js"), "utf8")
+            if (!/sections done — \{sectionsPct\}%/.test(intro) || /coverage\.count\} of \{coverage\.total\} factors/.test(intro) || !/<ResearchBox measured=\{coverage\.count\} \/>/.test(intro)) problems.push("the assessment line is not \"x of 10 sections done — y%\" with the factors in Why we do this")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — every API call the site makes has a route behind it (a route lost in an edit would break the page silently: getCurrentUser once went missing this way)",
+        run: () => {
+            const root = path.join(__dirname, "..", "..", "..")
+            const server = fs.readFileSync(path.join(root, "Backend", "server.js"), "utf8")
+            const mounts = {}
+            for (const [, prefix, variable] of server.matchAll(/app\.use\("\/(\w+)",.*?(\w+Router)\)/g)) mounts[prefix] = variable
+            const requires = {}
+            for (const [, variable, file] of server.matchAll(/const (\w+Router) = require\("\.\/Routers\/(\w+)"\)/g)) requires[variable] = file
+            const apiDir = path.join(root, "Frontend", "src", "apiCall")
+            const problems = []
+            fs.readdirSync(apiDir).filter((name) => name.endsWith(".js")).forEach((name) => {
+                const source = fs.readFileSync(path.join(apiDir, name), "utf8")
+                for (const [, method, prefix, route] of source.matchAll(/axiosInstance\.(get|post|put|delete)\([`"]\/(\w+)\/([\w-]+)/g)) {
+                    const file = requires[mounts[prefix]]
+                    if (!file) { problems.push(`${name}: /${prefix} is not mounted`); continue }
+                    const router = fs.readFileSync(path.join(root, "Backend", "Routers", `${file}.js`), "utf8")
+                    if (!new RegExp(`router\\.${method}\\(\\s*"\\/${route}["/]`).test(router)) problems.push(`${name}: ${method.toUpperCase()} /${prefix}/${route} has no route`)
+                }
+            })
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
