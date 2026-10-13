@@ -90,6 +90,7 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
     const needLabels = ((accommodations && accommodations.needs) || []).map((id) => (NEEDS.find((need) => need.id === id) || {}).label).filter(Boolean)
     const setAside = built.filter((module) => skipped[module.key])
     const doneCount = built.filter((module) => completed.includes(module.key)).length
+    const sectionsPct = built.length ? Math.round((doneCount / built.length) * 100) : 0
     const storyPhase = storyState ? storyState.phase : null
 
     // the deck opens on the first section still to do. The story steps aside once it has been read —
@@ -198,7 +199,7 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                 ) : (
                     <button type="button" className={isDone ? "btn btn-ghost" : "btn btn-primary"} onClick={() => onOpen(module.key)}>{label}</button>
                 )}
-                {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && <ReportProblem moduleKey={module.key} />}
+                {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && !(module.key === "storyRecall" && storyState && storyState.retakesLeft === 0) && <ReportProblem moduleKey={module.key} />}
                 <div className="deck-nav">
                     <button type="button" className="deck-arrow" onClick={() => move(-1)} disabled={index === 0} aria-label="Previous section">‹</button>
                     <button type="button" className="deck-arrow" onClick={() => move(1)} disabled={index === built.length - 1} aria-label="Next section">›</button>
@@ -221,20 +222,16 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
 
             <p>
                 It measures how you think and work. It is not an exam and there is nothing to revise for.
-                Do it in as many sittings as you like — every section saves when you leave it.
+                It takes <strong>about 2 hours</strong> in all, plus a 5-minute task a day later (to measure
+                long-term memory). Do it in as many sittings as you like — every section saves when you leave it.
             </p>
 
+            {/* how far through the student is (owner, Round 29: sections, with the share of the whole; the
+                factor count moved into "Why we do this") */}
             <p className="assess-meta">
-                <strong>{doneCount} of {built.length} done</strong> · <strong>about 2 hours</strong> in all, plus a
-                5-minute task a day later (to measure long-term memory)
+                <strong>{doneCount} of {built.length} sections done — {sectionsPct}%</strong>
             </p>
-
-            {/* how much of the picture the finished sections already measure (owner, Round 10) */}
-            <p className="coverage-line">
-                <strong>{coverage.count} of {coverage.total} factors</strong> can be measured from what you have
-                finished — {coverage.pct}%.
-            </p>
-            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${coverage.pct}%` }} /></div>
+            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${sectionsPct}%` }} /></div>
 
             {/* Round 13: what the student told us in the interest form decides which tests are set aside */}
             {needLabels.length > 0 && setAside.length > 0 && (
@@ -280,7 +277,7 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                 })}
             </ol>}
 
-            <ResearchBox />
+            <ResearchBox measured={coverage.count} />
 
             {comingSoon.length > 0 && (
                 <>

@@ -10,10 +10,10 @@ import {
 // whoever wants it.
 
 // "Why we do this" — the box at the top of the page.
-export function ResearchBox() {
+export function ResearchBox({ measured = null }) {
     return (
         <details className="faq-item research-box">
-            <summary>Why we do this — {FACTOR_COUNT} research-backed factors</summary>
+            <summary>Why we do this — {FACTOR_COUNT} research-backed factors{measured !== null ? ` · ${measured} measured so far` : ""}</summary>
             <div className="research-body">
                 {WHY_WE_DO_THIS.map((paragraph) => <p key={paragraph.slice(0, 24)}>{paragraph}</p>)}
 

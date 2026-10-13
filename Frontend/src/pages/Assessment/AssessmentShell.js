@@ -425,8 +425,9 @@ function AssessmentShell() {
             {moduleKey === "storyRecall" && (
                 <>
                     <StoryRecall onDone={handleServerSavedDone} />
-                    {/* owner, Round 28: the short story gets the same "something went wrong" as every test */}
-                    <ReportProblem moduleKey="storyRecall" />
+                    {/* owner, Round 28: the short story gets the same "something went wrong" as every test —
+                        Round 29: only while a new story can still be given */}
+                    {!(storyState && storyState.retakesLeft === 0) && <ReportProblem moduleKey="storyRecall" />}
                 </>
             )}
 

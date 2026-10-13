@@ -21,6 +21,8 @@ const reopenModule = async (userId, module, issueId = null) => {
     }
 
     const update = { $set: set, $unset: unset }
+    // every new short story counts towards the three a student may have after the first (Round 29)
+    if (module === "storyRecall") update.$inc = { "psychometric.storyRetakes": 1 }
     if (attempt !== undefined) {
         update.$push = {
             [`psychometric.history.${module}`]: {

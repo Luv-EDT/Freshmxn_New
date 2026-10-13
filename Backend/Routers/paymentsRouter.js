@@ -60,6 +60,11 @@ const CALLBACK_SLOTS = ["morning", "afternoon", "evening"]
 // ========================
 
 // every money route calls this; none of them trust an amount from req.body
+// HOW MANY TIMES A COUPON HAS BEEN USED (owner, Round 29): the paid purchases and upgrades that carry
+// it. Counted from the payments themselves, so it can never drift — an overturned grant is "reversed"
+// and drops out by itself.
+const couponUses = (code) => Payment.countDocuments({ coupon: code, status: "paid", action: { $in: ["purchase", "upgrade"] } })
+
 const calculateQuote = async (user, tier, coupon) => {
     const requestedTier = Number(tier)
 
@@ -84,20 +89,16 @@ const calculateQuote = async (user, tier, coupon) => {
 
         const existingCoupon = await Coupon.findOne({ code: couponCode })
 
+        // a code's uses are its PAID payments (owner, Round 29) — typing, quoting or an order never
+        // paid for counts for nothing; one person may use a code more than once
         const isCouponUsable = existingCoupon
             && existingCoupon.isActive
             && (!existingCoupon.expiresAt || existingCoupon.expiresAt > new Date())
-            && (existingCoupon.usageLimit === 0 || existingCoupon.timesUsed < existingCoupon.usageLimit)
+            && (existingCoupon.usageLimit === 0 || (await couponUses(couponCode)) < existingCoupon.usageLimit)
 
         // never a silent 0% — a student who typed a code must know it didn't work
         if (!isCouponUsable) {
             return { error: "Invalid coupon" }
-        }
-
-        // one use per person (owner, Round 28): applying it again after a paid use is refused, so a
-        // code can never be counted twice for the same student
-        if (await Payment.exists({ user: user._id, coupon: couponCode, status: "paid" })) {
-            return { error: "You've already used this coupon" }
         }
 
         discountPct = existingCoupon.discountPct
@@ -196,12 +197,6 @@ const grantAccess = async (userId, tier, amountInr, coupon, options = {}) => {
         { returnDocument: "after" }
     ).lean()
     const { password, ...updatedUser } = updated
-
-    // a coupon counts as used only here, when a plan is actually granted with it — never when it is
-    // typed or quoted (owner, Round 28)
-    if (coupon) {
-        await Coupon.updateOne({ code: coupon }, { $inc: { timesUsed: 1 } })
-    }
 
     // a subsidised rate is spent once — the next purchase is back at list price unless re-approved
     await FinancialAidRequest.findOneAndUpdate(
@@ -1216,10 +1211,7 @@ router.put("/overturnGrantForAdmin/:id", express.json(), authMiddleware, adminAu
 
         await Payment.findByIdAndUpdate(grantPayment._id, { status: "reversed" })
 
-        // give back whatever the grant spent, so a student who really pays later is not penalised
-        if (grantPayment.coupon) {
-            await Coupon.updateOne({ code: grantPayment.coupon }, { $inc: { timesUsed: -1 } })
-        }
+        // the coupon gives its use back by itself: a reversed payment no longer counts (couponUses)
 
         await FinancialAidRequest.findOneAndUpdate(
             { user: grantPayment.user, requestedTier: accessRequest.requestedTier, status: "approved" },
@@ -2170,3 +2162,4 @@ router.post(
 )
 
 module.exports = router
+module.exports.couponUses = couponUses

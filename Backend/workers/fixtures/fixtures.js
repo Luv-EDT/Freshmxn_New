@@ -5253,11 +5253,13 @@ const fixtures = [
             const router = read("Backend/Routers/userRouter.js")
             const reports = read("Backend/Routers/reportsRouter.js")
             const admin = read("Frontend/src/pages/Admin/StudentEditForm.js")
-            const change = router.split('router.put("/changeEmail"')[1].split("router.")[0]
             const verify = router.split('router.post("/verifyEmail/:token"')[1].split("router.")[0]
             const problems = []
-            if (!/pendingEmail: newEmail/.test(change) || /findByIdAndUpdate\([^)]*[{,]\s*email: newEmail/.test(change)) problems.push("changing the email moves the account before the link is clicked")
-            if (!/sendVerificationEmail\(req\.user, newEmail\)/.test(change)) problems.push("the link does not go to the new address")
+            // OWNER CHANGE (Round 29): a student can no longer change their name or email (the admin
+            // can); a change link sent before then still completes the old way
+            if (/router\.put\("\/(changeEmail|cancelEmailChange)"/.test(router)) problems.push("a student can still change their email")
+            const update = router.split('router.put("/updateProfile"')[1].split("router.")[0]
+            if (/updates\.name\s*=/.test(update)) problems.push("a student can still change their name")
             if (!/email: emailVerification\.newEmail, isEmailVerified: true, pendingEmail: null/.test(verify)) problems.push("confirming the link does not move the account to the new email")
             if (/User\.create|_id:\s*new/.test(verify)) problems.push("verifying makes a new account")
             if (!/updates\.profileChangedAt = new Date\(\)/.test(router)) problems.push("a stage change is not stamped")
@@ -5493,7 +5495,9 @@ const fixtures = [
             const problems = []
             const failed = router.split('event.event === "payment.failed"')[1] || ""
             if (!failed || !/status: "failed"/.test(failed.slice(0, 2500)) || !/failureMessage/.test(failed.slice(0, 2500))) problems.push("payment.failed does not write a failed row with its reason")
-            if (!/Payment\.exists\(\{ user: user\._id, coupon: couponCode, status: "paid" \}\)/.test(router)) problems.push("a coupon can be used twice by one person")
+            // OWNER CHANGE (Round 29): no one-per-person rule; a use is a paid payment carrying the code
+            if (/You've already used this coupon/.test(router)) problems.push("the one-per-person rule is still there")
+            if (!/const couponUses = \(code\) => Payment\.countDocuments\(\{ coupon: code, status: "paid", action: \{ \$in: \["purchase", "upgrade"\] \} \}\)/.test(router) || /timesUsed/.test(router)) problems.push("coupon uses are not counted from paid payments only")
             const grant = router.split("const grantAccess")[1] || ""
             if (!/status: "cancelled"/.test(grant.slice(0, 6000))) problems.push("a pending aid request survives a payment")
             if (!/aidCancelled/.test(grant.slice(0, 6000))) problems.push("the student is not told their aid request closed")
@@ -5851,6 +5855,58 @@ const fixtures = [
             if (!/<OtherCareers careers=\{data\.otherCareers\}/.test(matches)) problems.push("the matches page doesn't show them")
             if (!/<summary[\s\S]*Some other careers you can consider/.test(others)) problems.push("they are not behind the owner's button")
             if (/comfortScore|rank=|tierNameFor/.test(others)) problems.push("the list shows a fit number, a rank or a tier")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — the short story: a missed one can be taken again with a NEW story three times (four at most), each a free update; \"Something went wrong\" shows only while a new story can still be given; the reminders are skipped once answered or replaced",
+        run: async () => {
+            const problems = []
+            const { STORY_RETAKES_MAX, retakesLeft } = require("../../Routers/storyRouter")
+            if (STORY_RETAKES_MAX !== 3) problems.push(`${STORY_RETAKES_MAX} retakes, the owner chose 3`)
+            if (retakesLeft({}) !== 3 || retakesLeft({ storyRetakes: 3 }) !== 0 || retakesLeft({ storyRetakes: 5 }) !== 0) problems.push("retakes left is miscounted")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/storyRouter.js"), "utf8")
+            const retake = router.split('router.post("/retakeStory"')[1] || ""
+            if (!/phase !== "expired"/.test(retake) || !/retakesLeft\(psychometric\) === 0/.test(retake)) problems.push("a story can be swapped before it closes, or past the limit")
+            if (!/reopenModule\(req\.user\._id, "storyRecall"\)/.test(retake) || !/grantFreeUpdate/.test(retake)) problems.push("the old story is not kept, or the update is not free")
+            if (!/scheduleStoryNotices\(req\.user, openedAt\)/.test(router)) problems.push("opening a story schedules no reminders")
+            const retakes = fs.readFileSync(path.join(__dirname, "../../utils/retakes.js"), "utf8")
+            if (!/module === "storyRecall"\) update\.\$inc = \{ "psychometric\.storyRetakes": 1 \}/.test(retakes)) problems.push("a granted story retake doesn't count towards the three")
+            const shell = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentShell.js"), "utf8")
+            if (!/storyState\.retakesLeft === 0\) && <ReportProblem moduleKey="storyRecall"/.test(shell)) problems.push("\"Something went wrong\" shows on the story when no new story is left")
+            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/StoryRecall.js"), "utf8")
+            if (!/Take it again with a new story/.test(page)) problems.push("the expired story offers no new one")
+            const { stillDue, NOTICES } = require("../../housekeeping/storyNotices")
+            const opened = "2026-10-13T10:00:00.000Z"
+            if (NOTICES.map((notice) => `${notice.kind}@${notice.afterMs / 60000}`).join() !== "storyFiveMinutes@55,storyRecallOpen@1440,storyRecallClosing@3960") problems.push("the reminders are not at 55 min, 24 h and 66 h")
+            if (!stillDue({ storyOpenedAt: opened }, "storyRecallOpen", opened)) problems.push("a due reminder is skipped")
+            if (stillDue({ storyOpenedAt: opened, submittedAt: opened }, "storyRecallClosing", opened)) problems.push("a reminder goes out after the story was answered")
+            if (stillDue({ storyOpenedAt: "2026-10-14T10:00:00.000Z" }, "storyRecallOpen", opened)) problems.push("a reminder for a replaced story goes out")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — small ones: the email cap holds back only reminders, the database line warns at 70% and emails at 85%, the scout runs monthly with the data refresh, and the assessment page shows sections done with the factor count in \"Why we do this\"",
+        run: async () => {
+            const problems = []
+            const { dbLevel } = require("../../utils/dbStats")
+            const low = dbLevel(38.5, 512)
+            const amber = dbLevel(360, 512)
+            const alert = dbLevel(440, 512)
+            if (low.amber || low.alert || low.share !== 7.5) problems.push(`38.5 MB of 512 reads ${JSON.stringify(low)}`)
+            if (!amber.amber || amber.alert) problems.push("70% is not amber")
+            if (!alert.alert) problems.push("85% does not alert")
+            const worker = fs.readFileSync(path.join(__dirname, "..", "housekeepingWorker.js"), "utf8")
+            const schedules = worker.split("const SCHEDULES")[1] ? worker.split("const SCHEDULES")[1].split("}")[0] : ""
+            if (/career_scout/.test(schedules)) problems.push("the scout still has its own weekly schedule")
+            const refresh = fs.readFileSync(path.join(__dirname, "../../housekeeping/dataRefresh.js"), "utf8")
+            if (!/careersScout: await scoutAfter\(scout\)/.test(refresh)) problems.push("the data refresh does not run the scout")
+            const usage = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/emails: \{ today: await sentToday\(\), cap: dailyCap\(\) \}/.test(usage) || !/dbStats\(\)/.test(usage)) problems.push("the admin can't see the email budget or the database")
+            const intro = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentIntro.js"), "utf8")
+            if (!/sections done — \{sectionsPct\}%/.test(intro) || /coverage\.count\} of \{coverage\.total\} factors/.test(intro) || !/<ResearchBox measured=\{coverage\.count\} \/>/.test(intro)) problems.push("the assessment line is not \"x of 10 sections done — y%\" with the factors in Why we do this")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

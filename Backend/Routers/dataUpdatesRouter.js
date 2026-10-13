@@ -502,10 +502,26 @@ router.get("/getAiUsageForAdmin", authMiddleware, adminAuthMiddleware, async (re
             byJob.set(row.job, job)
         })
 
+        // Round 29 (owner): the email budget today, and how full the database is
+        const { sentToday, dailyCap } = require("../utils/emailBudget")
+        let database = null
+        try {
+            database = await require("../utils/dbStats").dbStats()
+        } catch (error) {
+            database = { error: error.message }
+        }
+
         return res.status(200).json({
             success: true,
             message: "Usage fetched",
-            data: { month, jobs: [...byJob.values()].sort((left, right) => right.cost - left.cost), totalCost: Math.round(total * 100) / 100, unpriced },
+            data: {
+                month,
+                jobs: [...byJob.values()].sort((left, right) => right.cost - left.cost),
+                totalCost: Math.round(total * 100) / 100,
+                unpriced,
+                emails: { today: await sentToday(), cap: dailyCap() },
+                database,
+            },
         })
 
     } catch (error) {

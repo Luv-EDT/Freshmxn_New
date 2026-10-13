@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import VoiceInput from "../VoiceInput"
 import { message } from "antd"
-import { openStory, getStoryState, submitStoryRecall } from "../../apiCall/submissionsApi"
+import { openStory, getStoryState, submitStoryRecall, retakeStory } from "../../apiCall/submissionsApi"
 
 // Delayed story recall. Five phases, all decided by the SERVER from a stored timestamp:
 //
@@ -51,6 +51,19 @@ function StoryRecall({ onDone }) {
             await load()
         } catch (error) {
             message.error("Could not open the story")
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    const handleRetake = async () => {
+        setBusy(true)
+        try {
+            const response = await retakeStory()
+            message.success(response.data.message)
+            await load()
+        } catch (error) {
+            message.error(error?.response?.data?.message || "Could not start a new story")
         } finally {
             setBusy(false)
         }
@@ -161,6 +174,20 @@ function StoryRecall({ onDone }) {
                     <em>Nothing else is affected — the rest of your assessment releases normally, and
                     this section is simply left out rather than counted against you.</em>
                 </p>
+                {/* Round 29 (owner): a missed story can be taken again with a NEW story, three times */}
+                {state.retakesLeft > 0 ? (
+                    <div className="retake-note">
+                        <p>
+                            <strong>You can take it again with a new story.</strong> It starts a new hour to read and a new
+                            day to wait. {state.retakesLeft === 1 ? "This is your last new story." : `You can do this ${state.retakesLeft} more times.`}
+                        </p>
+                        <button type="button" className="btn btn-primary" onClick={handleRetake} disabled={busy}>
+                            {busy ? "Getting it ready…" : "Take it again with a new story"}
+                        </button>
+                    </div>
+                ) : (
+                    <p>You've had every new story we can give — WhatsApp us on 8882756287 if something went wrong.</p>
+                )}
                 <button type="button" onClick={() => onDone()}>Back to the assessment</button>
             </div>
         )

@@ -38,6 +38,12 @@ const READ_WINDOW_MINUTES = 60
 const RECALL_OPENS_HOURS = 24
 const RECALL_CLOSES_HOURS = 72
 const OPTION_COUNT = 5
+// A MISSED OR BROKEN STORY CAN BE TAKEN AGAIN, WITH A NEW STORY, THREE TIMES (owner, Round 29) — four
+// stories at most out of the bank's eight, and storiesSeen keeps any from coming back. Each retake
+// moves the earlier attempt to history and is a free report update.
+const STORY_RETAKES_MAX = 3
+
+const retakesLeft = (psychometric) => Math.max(0, STORY_RETAKES_MAX - ((psychometric && psychometric.storyRetakes) || 0))
 
 const storyById = (id) => storyBank.stories.find((story) => story.id === id) || null
 
@@ -117,6 +123,10 @@ router.post("/openStory", authMiddleware, requireDiscovery, async (req, res) => 
 
         await User.findByIdAndUpdate(req.user._id, { $addToSet: { storiesSeen: story.id } })
 
+        // the email and notification now, and one for each later moment (Round 29)
+        require("../housekeeping/storyNotices").scheduleStoryNotices(req.user, openedAt)
+            .catch((error) => console.error(`story notices for ${req.user._id} not scheduled: ${error.message}`))
+
         if (req.user.progress.psychometric === "not_started") {
             await User.findByIdAndUpdate(req.user._id, { "progress.psychometric": "in_progress" })
         }
@@ -146,6 +156,7 @@ router.get("/storyState", authMiddleware, requireDiscovery, async (req, res) => 
 
         const data = {
             phase: state.phase,
+            retakesLeft: retakesLeft(submission && submission.psychometric),
             hoursElapsed: state.hours === undefined ? null : Math.round(state.hours * 100) / 100,
             recallOpensHours: RECALL_OPENS_HOURS,
             recallClosesHours: RECALL_CLOSES_HOURS,
@@ -176,6 +187,36 @@ router.get("/storyState", authMiddleware, requireDiscovery, async (req, res) => 
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Could not read the story state", error: error.message })
+    }
+})
+
+
+// ========================
+// Take it again with a new story (Round 29)
+// ========================
+
+// Only once the questions have closed unanswered — a story still running can't be swapped for an
+// easier one. The earlier attempt is kept in history; the next openStory picks a story not yet seen.
+router.post("/retakeStory", authMiddleware, requireDiscovery, async (req, res) => {
+    try {
+        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const psychometric = (submission && submission.psychometric) || {}
+
+        if (stateOf(psychometric.storyRecall).phase !== "expired") {
+            return res.status(400).json({ success: false, message: "You can take a new story once the questions on this one have closed" })
+        }
+        if (retakesLeft(psychometric) === 0) {
+            return res.status(400).json({ success: false, message: `You've had ${STORY_RETAKES_MAX} new stories already — WhatsApp us on 8882756287 if something went wrong` })
+        }
+
+        await require("../utils/retakes").reopenModule(req.user._id, "storyRecall")
+        if (submission.psychometricSubmittedAt) {
+            await require("../utils/selfUpdates").grantFreeUpdate(req.user._id, "retake:storyRecall")
+        }
+        return res.status(200).json({ success: true, message: "Ready for a new story — open it when you have an hour to read", data: { retakesLeft: retakesLeft(psychometric) - 1 } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not start a new story", error: error.message })
     }
 })
 
@@ -246,3 +287,5 @@ router.post("/submitStoryRecall", authMiddleware, requireDiscovery, async (req, 
 })
 
 module.exports = router
+module.exports.STORY_RETAKES_MAX = STORY_RETAKES_MAX
+module.exports.retakesLeft = retakesLeft

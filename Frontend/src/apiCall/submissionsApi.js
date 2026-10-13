@@ -105,3 +105,8 @@ export async function getProgressForAdmin() {
     const response = await axiosInstance.get("/submissions/getProgressForAdmin")
     return response
 }
+
+export async function retakeStory() {
+    const response = await axiosInstance.post("/story/retakeStory", {})
+    return response
+}

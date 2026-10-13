@@ -13,7 +13,7 @@ import RequestRefundForm from "./RequestRefundForm"
 import Notifications from "./Notifications"
 import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
-import AccountEdit, { EmailChange } from "./AccountEdit"
+import AccountEdit from "./AccountEdit"
 import { JOURNEY_OPTIONS } from "../journeyOptions"
 import { PLAN_NAMES as TIER_NAMES } from "../plans"
 import { ACTION_WORDS, paymentStatusWord, REQUEST_WORDS, AID_WORDS, trackingIds } from "./paymentWords"
@@ -136,7 +136,6 @@ function Profile() {
                         </>
                     )}
             </p>
-            <EmailChange user={user} />
             <p>Phone: <strong>{user.phone || "not added yet"}</strong></p>
             <p>Age: <strong>{user.age}</strong></p>
             <p>Stage: <strong>{journeyLabel ? journeyLabel.label : user.journey}</strong></p>
