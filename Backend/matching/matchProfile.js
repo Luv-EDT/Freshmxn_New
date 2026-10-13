@@ -58,7 +58,27 @@ const constants = require("./constants")
 // as one year (was a two-year redo), and work years only where the experience doesn't carry over
 // (own career, a career the degree leads to, or one on related_careers.json). A second number, the
 // years to get there from now, is shown beside it and never ranks.
-const MATCHING_VERSION = "matching@2.4.0"   // Round 28: combined careers are two exact professions
+// 2.4.0 (Round 28): combined careers are two exact professions.
+// 2.5.0 (Round 29, owner): careers nothing pointed to but which fit how the student thinks and works
+// are kept as "Some other careers you can consider" — the ranking itself is unchanged.
+const MATCHING_VERSION = "matching@2.5.0"
+
+// careers not in the ranking whose fit clears the comfort line, best fit first (owner, Round 29)
+const otherCareersFrom = (universe, ranked) => {
+    const inList = new Set((ranked || []).map((entry) => entry.professionId))
+    return (universe || [])
+        .filter((entry) => !inList.has(entry.professionId) && entry.comfortScore !== null && entry.comfortScore >= constants.COMFORT_THRESHOLD)
+        .sort((left, right) => right.comfortScore - left.comfortScore || String(left.professionId).localeCompare(String(right.professionId)))
+        .slice(0, constants.OTHER_CAREERS_MAX)
+        .map((entry) => ({
+            professionId: entry.professionId,
+            profession: entry.profession,
+            comfortScore: entry.comfortScore,
+            wastedYears: entry.wastedYears,
+            yearsToGetThere: entry.yearsToGetThere,
+            supportingFactors: (entry.supportingFactors || []).slice(0, 3),
+        }))
+}
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")
@@ -131,6 +151,10 @@ const matchProfile = ({ profile, interest, user, professions, baseline, resolved
 
         // Careers that join two of the student's areas (combined.js) — beside the ranking, never in it.
         combined: findCombined({ ranked, universe: programThree.universe, data: combinedCareers }),
+
+        // Careers nothing pointed to that still fit how the student works (owner, Round 29) — slim,
+        // best fit first, beside the ranking and never in it
+        otherCareers: otherCareersFrom(programThree.universe, ranked),
 
         // Removed because entry is genuinely impossible, not because it ranked badly.
         filtered: programThree.filtered,

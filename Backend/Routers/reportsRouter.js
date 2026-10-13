@@ -266,6 +266,7 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 sections: report.sections,
                 ranked: recommendation ? recommendation.ranked_professions.map((entry) => withWorkOn(stripInternal(entry))) : [],
                 combined: recommendation ? (recommendation.combined_careers || []).map(stripInternal) : [],
+                otherCareers: recommendation ? (recommendation.other_careers || []).map(stripInternal) : [],
                 filtered: recommendation ? recommendation.filtered : [],
                 aspirationSignals: recommendation
                     ? (recommendation.aspiration_signals || []).map((signal) => ({ ...cleanSignal(signal), readAs: readAsFor(signal, recommendation.activity_readings) }))

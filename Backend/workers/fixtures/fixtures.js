@@ -2038,7 +2038,7 @@ const fixtures = [
                 { professionId: "e", tier: 11, comfortScore: 0.86, wastedYears: 0 },
             ]
             const ids = (list) => list.map((entry) => entry.professionId).join(",")
-            const shape = (groups) => groups.map((group) => `${group.costly ? "costly" : group.tier}:${ids(group.entries)}`).join(" | ")
+            const shape = (groups) => groups.map((group) => `${group.costly ? "costly" : group.flat ? "flat" : group.tier}:${ids(group.entries)}`).join(" | ")
 
             const best = groupList(ranked, "best", null)
             if (shape(best) !== "1:a | 5:d | 11:e | costly:c,b") problems.push(`Best match groups wrong: ${shape(best)}`)
@@ -2049,9 +2049,12 @@ const fixtures = [
             })
             if (ids(buildList(ranked, "best", null)) !== "a,d,e,c,b") problems.push("the flat list is not the groups in order")
 
-            // the switching cost as a sub-sort, inside each group, ties keeping the primary order
+            // the switching cost as a sub-sort. Round 29 (owner): a "then order by" ignores the tiers —
+            // one list ordered by it, ties keeping the primary order; under Best match the 2+ years
+            // group stays last, ordered the same way
             if (!SECONDARY_SORTS.some((option) => option.value === "switchCost" && option.label === "Least switching cost")) problems.push("no 'Least switching cost' sub-sort")
-            if (shape(groupList(ranked, "noCost", "switchCost")) !== "1:a,b | 5:d,c | 11:e") problems.push(`the switch-cost sort does not order inside each group: ${shape(groupList(ranked, "noCost", "switchCost"))}`)
+            if (shape(groupList(ranked, "noCost", "switchCost")) !== "flat:a,e,d,c,b") problems.push(`the switch-cost sort does not order across the tiers: ${shape(groupList(ranked, "noCost", "switchCost"))}`)
+            if (shape(groupList(ranked, "best", "switchCost")) !== "flat:a,e,d | costly:c,b") problems.push(`under Best match the 2+ years group is not last: ${shape(groupList(ranked, "best", "switchCost"))}`)
 
             // the page uses it, and offers the no-cost order only where it differs
             if (!/groupList\(ranked, primary, secondary, details/.test(source)) problems.push("the page does not build its groups with groupList")
@@ -2420,10 +2423,12 @@ const fixtures = [
             const { TIER_NAMES } = loadEsModule(path.join(REPORT_DIR, "reportFraming.js"))
             const source = readReportPage()
             const problems = []
-            // OWNER CHANGE (Round 24): the explanation moved to the overview ("How your list is ordered"),
-            // the labels became two or three words, and "A stretch …" became one "Build skills first" band
-            if (!/How your list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8"))) problems.push("the ordering is not explained on the overview")
-            if (/How (this|your) list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8"))) problems.push("the ordering is still explained on the matches page")
+            // OWNER CHANGE (Round 24): the labels became two or three words, and "A stretch …" became one
+            // "Build skills first" band. OWNER CHANGE (Round 29): "How your list is ordered" moved from the
+            // overview to the bottom of the matches page.
+            const matchesPage = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
+            if (/How (this|your) list is ordered/.test(fs.readFileSync(path.join(REPORT_DIR, "ReportPage.js"), "utf8"))) problems.push("the ordering is still explained on the overview")
+            if (!/How your list is ordered/.test(matchesPage) || matchesPage.indexOf("How your list is ordered") < matchesPage.indexOf("<CombinedCareers")) problems.push("the ordering is not explained at the bottom of the matches page")
             if (TIER_NAMES.length !== TIERS.length) problems.push(`${TIER_NAMES.length} names for ${TIERS.length} tiers`)
             TIERS.forEach((rule) => {
                 const row = TIER_NAMES.find((name) => name.tier === rule.tier)
@@ -4751,6 +4756,10 @@ const fixtures = [
             if (GUIDE_GROUPS.map((group) => group.key).join() !== "universals,personality,cognitive,drawn_to,positions,solving") problems.push("the groups are not in the owner's order")
             if ((GUIDE_GROUPS.find((group) => group.key === "positions") || {}).factors.join() !== "uncertainty_tolerance,firmness") problems.push("firmness and uncertainty tolerance are not grouped together")
             if (GUIDE_GROUPS.some((group) => !group.meaning)) problems.push("a group has no meaning line")
+            // Round 29 (owner): the pair is named and explained as neither good nor bad
+            const positions = GUIDE_GROUPS.find((group) => group.key === "positions") || {}
+            if (positions.title !== "Traits where no level is better" || !/neither good nor bad/.test(positions.meaning || "")) problems.push("the two traits are not explained as neither good nor bad")
+            if (FACTOR_GUIDE.uncertainty_tolerance.name !== "Comfort with uncertainty" || FACTOR_GUIDE.firmness.name !== "Holding on to a belief") problems.push("the two traits don't have the owner's names")
 
             const raw = Object.fromEntries(all.map((slug, index) => [slug, (index * 37) % 11]))
             const coverage = Object.fromEntries(all.map((slug) => [slug, 0.5]))
@@ -4995,7 +5004,8 @@ const fixtures = [
             if (!/path="\/report\/matches"/.test(app)) problems.push("no /report/matches route")
             if (!/className="report-title">Your report/.test(page)) problems.push("'Your report' is not the centred title")
             // Round 28 (owner): the fundamentals become "Your psychometric analysis", a page of its own
-            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">What seems to drive you</h2>", ">Your psychometric analysis</h2>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
+            // Round 29 (owner): the psychometric analysis comes second, before what drives you
+            const order = [">Your matches</h2>", "Combined careers ({combined.length})", ">Your psychometric analysis</h2>", ">What seems to drive you</h2>", ">What you said you wanted</strong>"].map((marker) => page.indexOf(marker))
             if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push(`the overview is not in the owner's order: ${order.join(",")}`)
             if (!/to="\/report\/matches"/.test(page)) problems.push("the overview does not open the matches page")
             if (!/to="\/report\/psychometric"/.test(page) || !/path="\/report\/psychometric"/.test(app)) problems.push("the overview does not open the psychometric analysis page")
@@ -5005,11 +5015,15 @@ const fixtures = [
             const medium = ["What seems to drive you", "Your psychometric analysis", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
             if (medium.length > 0) problems.push(`not in the shared medium heading: ${medium.join(", ")}`)
             if (/<ReportSortMenu|buildList\(/.test(page)) problems.push("the sort or the list is still on the overview")
-            // Round 28 (owner): the sorts and filters sit open beside the list, each with an ⓘ; blue-collar
-            // is defined where the word is used
-            const controls = fs.readFileSync(path.join(REPORT_DIR, "ReportControls.js"), "utf8")
+            // Round 28 (owner): every option has an ⓘ; blue-collar is defined where the word is used.
+            // OWNER CHANGE (Round 29): the Sort and Filter buttons are back (the open column is gone),
+            // highlighted, each with one line saying what opening it does
+            const sortMenu = fs.readFileSync(path.join(REPORT_DIR, "ReportSortMenu.js"), "utf8")
+            const controls = fs.readFileSync(path.join(REPORT_DIR, "ReportFilterMenu.js"), "utf8")
             if (!/Leave out blue-collar careers\*/.test(controls) || !/Blue-collar careers are hands-on, skilled work that doesn't need a degree/.test(controls) || !/Some of the most AI-proof careers are blue-collar\./.test(controls)) problems.push("the blue-collar filter has no asterisk, definition and side note")
-            if (!/<ReportControls/.test(matches) || !/className="matches-side"/.test(matches) || !/<Info text=/.test(controls)) problems.push("the sorts and filters are not open in a column, each explained")
+            if (!/<ReportSortMenu/.test(matches) || !/<ReportFilterMenu/.test(matches) || /ReportControls|matches-side/.test(matches)) problems.push("the Sort and Filter buttons are not back, or the open column is still there")
+            if (!/is-highlighted/.test(sortMenu) || !/is-highlighted/.test(controls) || !/className="sort-hint"/.test(sortMenu) || !/className="sort-hint"/.test(controls)) problems.push("the buttons are not highlighted or have no one-line hint")
+            if (!/<Info text=/.test(sortMenu) || !/<Info text=/.test(controls)) problems.push("the options lost their ⓘ")
             if (/added that our main ranking leaves out/.test(matches) || !/nothing is moved for what\s+switching would cost you/.test(matches)) problems.push("'ignoring switching cost' does not say what it does")
             const combined = fs.readFileSync(path.join(REPORT_DIR, "CombinedCareers.js"), "utf8")
             if (!/<ProfessionCard[\s\S]*?combined\s/.test(combined) || !/mix two professions/.test(combined)) problems.push("combined careers are not the same card with the note")
@@ -5820,6 +5834,23 @@ const fixtures = [
             if (!/adminAuthMiddleware/.test(admin.slice(0, 80)) || !/forStudent\(submission\)/.test(admin) || !/sartRaw = "recorded"/.test(admin)) problems.push("the admin progress is not admin-only, or sends answer keys or the raw focus rows")
             const report = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Report/ReportPage.js"), "utf8")
             if (!/of your 3 report updates from your own changes/.test(report)) problems.push("the student doesn't see how many updates they've used")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — \"Some other careers you can consider\": careers nothing pointed to that fit the student are stored, served without internal fields, and shown behind one button on the matches page",
+        run: async () => {
+            const problems = []
+            const worker = fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8")
+            if (!/other_careers: match\.otherCareers/.test(worker)) problems.push("the worker doesn't store the other careers")
+            const reports = fs.readFileSync(path.join(__dirname, "../../Routers/reportsRouter.js"), "utf8")
+            if (!/otherCareers: recommendation \? \(recommendation\.other_careers \|\| \[\]\)\.map\(stripInternal\)/.test(reports)) problems.push("the other careers go out without stripInternal")
+            const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
+            const others = fs.readFileSync(path.join(REPORT_DIR, "OtherCareers.js"), "utf8")
+            if (!/<OtherCareers careers=\{data\.otherCareers\}/.test(matches)) problems.push("the matches page doesn't show them")
+            if (!/<summary[\s\S]*Some other careers you can consider/.test(others)) problems.push("they are not behind the owner's button")
+            if (/comfortScore|rank=|tierNameFor/.test(others)) problems.push("the list shows a fit number, a rank or a tier")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

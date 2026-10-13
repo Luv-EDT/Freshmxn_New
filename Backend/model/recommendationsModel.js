@@ -62,6 +62,10 @@ const recommendationSchema = new mongoose.Schema(
             type: Array,
             default: [], // hand-checked careers joining two of the student's areas (combined_careers.json) — shown beside the list, never ranked into it
         },
+        other_careers: {
+            type: Array,
+            default: [], // Round 29 (owner): careers nothing pointed to that still fit how the student works — "Some other careers you can consider", never ranked
+        },
         filtered: {
             type: Array,
             default: [], // professions removed because entry is genuinely impossible, with the reason

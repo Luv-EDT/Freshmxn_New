@@ -2708,11 +2708,6 @@ hr.story-end {
     margin: 0 0 4px;
 }
 
-/* the filter menu sits right under the sort menu, the same shape */
-.report-page .filter-menu {
-    margin-top: calc(-1 * var(--space-2));
-}
-
 .report-page .filter-menu .sort-panel .report-filters {
     flex-direction: column;
 }
@@ -2826,50 +2821,51 @@ hr.story-end {
     gap: var(--space-2);
 }
 
-/* ── round 28: the sort-and-filter column, the edit banner, small notes ───────────────────────── */
+/* ── round 28: small notes; round 29: the Sort and Filter buttons back, highlighted ─────────────── */
 
-.matches-layout {
-    display: block;
-}
-
-.report-controls {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    padding: var(--space-4);
-    margin-bottom: var(--space-4);
-}
-
-.report-controls .sort-primaries {
+.report-menus {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-3);
+    margin: var(--space-4) 0;
 }
 
-.report-controls .sort-secondaries,
-.report-controls .report-filters {
+@media (min-width: 900px) {
+    .report-menus {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+}
+
+.report-menus .sort-menu {
+    margin: 0;
+}
+
+.sort-menu.is-highlighted button.sort-toggle {
+    background: var(--teal-tint);
+    border: 2px solid var(--teal);
+    box-shadow: 0 2px 10px rgba(0, 117, 130, 0.15);
+}
+
+.sort-menu.is-highlighted button.sort-toggle:hover:not(:disabled) {
+    background: var(--teal-tint);
+    border-color: var(--teal-dark);
+}
+
+.sort-menu.is-highlighted .sort-panel {
+    border-width: 2px;
+}
+
+.sort-hint {
+    margin: 6px 4px 0;
+    font-size: 0.9rem;
+    color: var(--navy-soft);
+}
+
+.sort-panel .sort-secondaries,
+.sort-panel .report-filters {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
-}
-
-@media (min-width: 1000px) {
-    .matches-layout {
-        display: grid;
-        grid-template-columns: 280px minmax(0, 1fr);
-        gap: var(--space-5);
-        align-items: start;
-    }
-
-    .matches-side {
-        position: sticky;
-        top: 80px;
-    }
-
-    .report-controls .sort-secondaries,
-    .report-controls .report-filters {
-        flex-direction: column;
-        align-items: stretch;
-    }
 }
 
 .info-dot {
@@ -2966,3 +2962,4 @@ hr.story-end {
 .admin-offer h3 { margin-top: 0; }
 .admin-run ul { margin: 6px 0 var(--space-3) 18px; }
 .admin-log { margin: 6px 0 0 16px; padding: 0; font-size: 0.85rem; }
+.other-careers-list { margin: var(--space-2) 0 0 18px; padding: 0; display: grid; gap: 8px; }

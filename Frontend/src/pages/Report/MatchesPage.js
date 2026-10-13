@@ -3,23 +3,27 @@ import { Link, useLocation } from "react-router-dom"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
 import ProfessionCard from "./ProfessionCard"
-import ReportControls from "./ReportControls"
+import ReportSortMenu from "./ReportSortMenu"
+import ReportFilterMenu from "./ReportFilterMenu"
 import CombinedCareers from "./CombinedCareers"
+import OtherCareers from "./OtherCareers"
 import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
-import { groupList, splitShown, MAIN_SHOWN, SWITCH_COST_GROUP_YEARS } from "./reportFilters"
+import { groupList, splitShown, MAIN_SHOWN, SWITCH_COST_GROUP_YEARS, SECONDARY_SORTS } from "./reportFilters"
 import { abroadLines } from "./reportPlan"
 import { TOP_SHOWN, tierNameFor, buildFirstFor, BUILD_FIRST_TITLE, BUILD_FIRST_NOTE, framingFor, listOf } from "./reportFraming"
 
 // "YOUR MATCHES" — the whole list on its own page (owner, Round 19, /report/matches). The report
 // itself is a short overview with the top three; this page holds every match with the sort, the
-// filters, the combined careers and, last, the studying- and working-abroad lines. How the list is
-// ordered is explained on the overview (owner, Round 24).
+// filters, the combined careers, the studying- and working-abroad lines and, last, how the list is
+// ordered (owner, Round 29: moved here from the overview).
 //
 // ONE LIST, TWO ORDERS (owner, Round 20). The top three show first; opening the rest shows the tiers
 // as headed groups — up to MAIN_SHOWN (15) of them, and anything beyond folded under "explore a few
-// more" (owner, Round 28). The sorts and filters sit open in a column beside the list (Round 28). "Best match" puts careers that would cost 2+ years to switch in a last group of
-// their own, least affected first; "Best fit, ignoring switching cost" leaves them in their tiers.
+// more" (owner, Round 28). The sort and the filters are two highlighted buttons above the list, each
+// with one line saying what it does (owner, Round 29). "Best match" puts careers that would cost 2+
+// years to switch in a last group of their own, least affected first; "Best fit, ignoring switching
+// cost" leaves them in their tiers. A "then order by" orders the whole list, across the tiers.
 //
 // match_confidence is already stripped by reportsRouter, and every factor slug is already
 // translated there. Nothing here needs to know either exists.
@@ -55,6 +59,8 @@ function MatchesPage() {
     }, [groups])
 
     const sortKey = [primary, secondary, only.join("+"), excludeBlueCollar].join("|")
+    // a "then order by" turns the list into one group, headed by what it is ordered by (Round 29)
+    const secondaryLabel = secondary ? (SECONDARY_SORTS.find((option) => option.value === secondary) || {}).label || "" : ""
 
     // How many the filters hid, so the page can say so — a filter that hides silently is the thing
     // this report was rebuilt to avoid.
@@ -114,7 +120,7 @@ function MatchesPage() {
                     <p className="report-small">{BUILD_FIRST_NOTE}</p>
                 </div>
             )}
-            <h3 className="match-group-title">{tierNameFor(group.tier) || "Your other matches"}</h3>
+            <h3 className="match-group-title">{group.flat ? `All your matches — ${secondaryLabel.toLowerCase().replace("ai-", "AI-")} first` : tierNameFor(group.tier) || "Your other matches"}</h3>
             <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
         </section>
     ))
@@ -144,65 +150,68 @@ function MatchesPage() {
 
             <p className="report-small"><em>Tap any career to see what it is, how you get there, and what it pays.</em></p>
 
-            <div className="matches-layout">
-                <aside className="matches-side">
-                    <ReportControls
-                        primary={primary}
-                        onPrimary={setPrimary}
-                        secondary={secondary}
-                        onSecondary={setSecondary}
-                        showNoCost={framing.switchIsDistinct}
-                        excludeBlueCollar={excludeBlueCollar}
-                        onExcludeBlueCollar={setExcludeBlueCollar}
-                        only={only}
-                        onToggleOnly={toggleOnly}
-                    />
-                </aside>
-
-                <div className="matches-main">
-                    {primary === "noCost" && (
-                        <p className="report-small report-switch-note">
-                            Every career stays in its group, ordered by how well it fits you — nothing is moved for what
-                            switching would cost you. The years it would cost are still inside each card.
-                        </p>
-                    )}
-                    {/* said beside the list, so a filter never hides careers silently */}
-                    {hiddenCount > 0 && (
-                        <p className="report-hidden-note">
-                            {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters.{" "}
-                            <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
-                        </p>
-                    )}
-
-                    {/* THE TOP THREE; then up to fifteen in their groups; the rest folded (owner, Round 28) */}
-                    {showAllFor !== sortKey ? (
-                        <div className="match-list">
-                            {ordered.slice(0, TOP_SHOWN).map((entry) => card(entry))}
-                        </div>
-                    ) : (
-                        <>
-                            {split.shown.map(renderGroup)}
-                            {split.rest.length > 0 && (
-                                <details className="report-details match-more">
-                                    <summary className="report-summary">
-                                        <strong>Careers that suit you aren't limited to these — explore a few more</strong>
-                                        {" "}({ordered.length - MAIN_SHOWN})
-                                    </summary>
-                                    {split.rest.map(renderGroup)}
-                                </details>
-                            )}
-                        </>
-                    )}
-
-                    {ordered.length > TOP_SHOWN && showAllFor !== sortKey && (
-                        <button type="button" className="btn btn-ghost show-rest" onClick={() => setShowAllFor(sortKey)}>
-                            Show {Math.min(ordered.length, MAIN_SHOWN) - TOP_SHOWN} more {Math.min(ordered.length, MAIN_SHOWN) - TOP_SHOWN === 1 ? "career" : "careers"}
-                        </button>
-                    )}
-
-                    {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
-                </div>
+            <div className="report-menus">
+                <ReportSortMenu
+                    primary={primary}
+                    onPrimary={setPrimary}
+                    secondary={secondary}
+                    onSecondary={setSecondary}
+                    showNoCost={framing.switchIsDistinct}
+                />
+                <ReportFilterMenu
+                    excludeBlueCollar={excludeBlueCollar}
+                    onExcludeBlueCollar={setExcludeBlueCollar}
+                    only={only}
+                    onToggleOnly={toggleOnly}
+                />
             </div>
+
+            <div className="matches-main">
+                {primary === "noCost" && (
+                    <p className="report-small report-switch-note">
+                        Every career stays in its group, ordered by how well it fits you — nothing is moved for what
+                        switching would cost you. The years it would cost are still inside each card.
+                    </p>
+                )}
+                {/* said beside the list, so a filter never hides careers silently */}
+                {hiddenCount > 0 && (
+                    <p className="report-hidden-note">
+                        {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters.{" "}
+                        <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
+                    </p>
+                )}
+
+                {/* THE TOP THREE; then up to fifteen in their groups; the rest folded (owner, Round 28) */}
+                {showAllFor !== sortKey ? (
+                    <div className="match-list">
+                        {ordered.slice(0, TOP_SHOWN).map((entry) => card(entry))}
+                    </div>
+                ) : (
+                    <>
+                        {split.shown.map(renderGroup)}
+                        {split.rest.length > 0 && (
+                            <details className="report-details match-more">
+                                <summary className="report-summary">
+                                    <strong>Careers that suit you aren't limited to these — explore a few more</strong>
+                                    {" "}({ordered.length - MAIN_SHOWN})
+                                </summary>
+                                {split.rest.map(renderGroup)}
+                            </details>
+                        )}
+                    </>
+                )}
+
+                {ordered.length > TOP_SHOWN && showAllFor !== sortKey && (
+                    <button type="button" className="btn btn-ghost show-rest" onClick={() => setShowAllFor(sortKey)}>
+                        Show {Math.min(ordered.length, MAIN_SHOWN) - TOP_SHOWN} more {Math.min(ordered.length, MAIN_SHOWN) - TOP_SHOWN === 1 ? "career" : "careers"}
+                    </button>
+                )}
+
+                {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
+            </div>
+
+            {/* CAREERS NOTHING POINTED TO THAT STILL FIT YOU (owner, Round 29) — behind one button */}
+            <OtherCareers careers={data.otherCareers} />
 
             {/* COMBINED CAREERS (Round 10) — beside the list, never in it; the same card since Round 19 */}
             <CombinedCareers combined={data.combined} journey={journey} shownIds={shownIds} />
@@ -219,6 +228,56 @@ function MatchesPage() {
                     )}
                 </div>
             )}
+
+            {/* HOW YOUR LIST IS ORDERED (owner, Round 29: at the bottom of this page). THE RANKING EXPLAINS
+                ITSELF, in one place — a student who cannot see why one career sits above another has been
+                handed an opinion with a number on it. */}
+            <details className="report-details report-ordering">
+                <summary className="report-summary">
+                    <strong className="report-heading-md">How your list is ordered</strong> — why each career sits where it does
+                </summary>
+                <p className="report-small">Three things decide where a career sits, in this order:</p>
+                <ol className="report-small">
+                    <li>
+                        <strong>What you have actually done.</strong> Something you've kept up for years counts for
+                        more than something you do now.
+                    </li>
+                    <li>
+                        <strong>How strongly you feel about it.</strong> <em>Proven</em> (you've achieved at it) comes
+                        first, then <em>confident</em> (you said you're sure), then <em>passion</em> (you love it), then
+                        simply an <em>interest</em>.
+                    </li>
+                    <li>
+                        <strong>Whether it fits how you think and work</strong>, measured from your assessment against
+                        what the work asks. Careers that fit you now come first; the ones under <em>{BUILD_FIRST_TITLE}</em> link
+                        to what you do but ask for more than your profile shows today.
+                    </li>
+                </ol>
+                <p className="report-small">
+                    Open your full list to see each group by name — "Proven long-time passion" down to "Other
+                    interests". Inside a group, the careers that fit you best come first; a <em>Then order by</em> sort
+                    orders the whole list instead. Having more of a quality than
+                    a career asks never counts against you — except comfort with uncertainty and how firmly you hold a
+                    view, where careers can want either end.
+                </p>
+                {framing.switchIsDistinct && (
+                    <p className="report-small">
+                        <strong>Switching cost.</strong> Each career shows two numbers. <em>Years left behind</em> are the
+                        years that wouldn't count towards it — degree years, a Class 12 subject you'd add through open
+                        school, work in a different field (your own career, and work that carries over, cost nothing).
+                        <em> Time to get there</em> is the road ahead from where you are. Only the first moves a career:
+                        under <em>Best match</em>, careers that would leave {SWITCH_COST_GROUP_YEARS} or more years behind go
+                        to a last group of their own, the least affected first. On your list, choose <em>Best fit, ignoring
+                        switching cost</em> to keep them in their groups, or sort by <em>Least switching cost</em>.
+                    </p>
+                )}
+                <p className="report-small">
+                    <em>
+                        Nothing here is a verdict on what you are capable of. It is a reading of the evidence you gave
+                        us, and it moves when you give us more.
+                    </em>
+                </p>
+            </details>
         </div>
     )
 }

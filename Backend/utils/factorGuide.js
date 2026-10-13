@@ -25,7 +25,7 @@ const FACTOR_GUIDE = {
     long_term_memory: { name: "Long-term memory", meaning: "Remembering what you learned a day or more later" },
     processing_speed: { name: "Speed of response", meaning: "How fast you react and take things in" },
     focus: { name: "Sustained focus", meaning: "Keeping your attention on one task" },
-    firmness: { name: "Holding a position", meaning: "Standing by a view you have thought through" },
+    firmness: { name: "Holding on to a belief", meaning: "How firmly you keep a view you've thought through, rather than changing it when new facts come" },
 
     // areas you feel drawn to
     verbal_intelligence: { name: "Working with words", meaning: "Reading, writing, explaining and arguing" },
@@ -41,7 +41,7 @@ const FACTOR_GUIDE = {
     practical_intelligence: { name: "Making things work in practice", meaning: "Solving real, everyday problems" },
 
     // how you handle the unknown — a position, never a level
-    uncertainty_tolerance: { name: "Working without knowing the outcome", meaning: "Where you sit between wanting a clear plan and being fine not knowing" },
+    uncertainty_tolerance: { name: "Comfort with uncertainty", meaning: "How easily you act when the answer or the outcome isn't clear yet" },
 
     // ways you solve problems
     divergent_thinking: { name: "Generating many ideas", meaning: "Coming up with lots of different possibilities" },
@@ -82,10 +82,11 @@ const GUIDE_GROUPS = [
         ],
     },
     {
-        // Round 20 (owner): two positions together — careers want different amounts of each
+        // Round 20 (owner): two positions together — careers want different amounts of each.
+        // Round 29 (owner): named and explained so nobody reads them as a score
         key: "positions",
-        title: "Two traits that make you different",
-        meaning: "Each can be high or low, and different careers want different amounts. Neither end is better — nothing here is bad.",
+        title: "Traits where no level is better",
+        meaning: "Being higher or lower here is neither good nor bad — it's just different, and different careers suit different levels. We use these to choose your path.",
         factors: ["uncertainty_tolerance", "firmness"],
     },
     {
