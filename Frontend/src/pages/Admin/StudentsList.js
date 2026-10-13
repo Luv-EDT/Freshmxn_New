@@ -6,9 +6,39 @@ import { downgradeUserForAdmin, getPricing } from "../../apiCall/paymentsApi"
 import StudentEditForm from "./StudentEditForm"
 import { GiveFreeAccess, DeleteAccount } from "./StudentAccessActions"
 import { PLAN_NAMES } from "../plans"
+import { getProgressForAdmin } from "../../apiCall/submissionsApi"
+import { sectionsDone } from "../Assessment/assessmentModules"
+
+// THREE COLUMNS ON WHERE EACH STUDENT IS (owner, Round 29): the assessment (the same count the
+// student's own page shows), the mentorship stage, and the report updates with their log.
+const assessmentText = (progress) => {
+    if (!progress || Object.keys(progress.psychometric || {}).length === 0) return "not started"
+    const { pct, pending } = sectionsDone(progress.psychometric)
+    return `${pct}%${pending.length ? ` · pending: ${pending.join(", ")}` : progress.submittedAt ? " · submitted" : " · not submitted"}`
+}
+
+const UPDATE_KINDS = { own: "own change", free: "free (a retake we asked for)", system: "our improvement", granted: "free update given" }
+
+function ReportUpdates({ user }) {
+    const log = user.updateLog || []
+    const freeUsed = log.filter((entry) => entry.kind === "free").length
+    const summary = `${user.selfUpdatesUsed || 0} of 3 own · ${freeUsed} free used${user.freeUpdates > 0 ? ` · ${user.freeUpdates} free left` : ""}`
+    if (log.length === 0) return summary
+    return (
+        <details>
+            <summary>{summary}</summary>
+            <ul className="admin-log">
+                {log.slice().reverse().map((entry, index) => (
+                    <li key={index}>{dayjs(entry.at).format("DD MMM YYYY, HH:mm")} · {UPDATE_KINDS[entry.kind] || entry.kind} · {entry.via}</li>
+                ))}
+            </ul>
+        </details>
+    )
+}
 
 function StudentsList({ dataVersion, onDataChanged }) {
     const [users, setUsers] = useState([])
+    const [progress, setProgress] = useState({})
     const [loading, setLoading] = useState(false)
     const [paymentMode, setPaymentMode] = useState("manual")
     const [search, setSearch] = useState("")
@@ -22,11 +52,13 @@ function StudentsList({ dataVersion, onDataChanged }) {
     const fetchUsers = async () => {
         try {
             setLoading(true)
-            const [usersRes, pricingRes] = await Promise.all([
+            const [usersRes, pricingRes, progressRes] = await Promise.all([
                 getAllUsersForAdmin(),
                 getPricing(),
+                getProgressForAdmin(),
             ])
             setUsers(usersRes.data.data)
+            setProgress(progressRes.data.data || {})
             setPaymentMode(pricingRes.data.data.paymentMode)
         } catch (error) {
             message.error("Failed to fetch students")
@@ -79,6 +111,9 @@ function StudentsList({ dataVersion, onDataChanged }) {
         { title: "Paid", render: (_, record) => (record.paid ? "Yes" : "No") },
         { title: "Tier", dataIndex: "currentTier", render: (value) => `${value} · ${PLAN_NAMES[value] || ""}` },
         { title: "Interest form", render: (_, record) => record.progress?.interestForm || "N/A" },
+        { title: "Assessment", render: (_, record) => (record.role === "student" ? assessmentText(progress[record._id]) : "—") },
+        { title: "Mentorship", render: (_, record) => (progress[record._id] && progress[record._id].mentorship) || "—" },
+        { title: "Report updates", render: (_, record) => (record.role === "student" ? <ReportUpdates user={record} /> : "—") },
         {
             title: "Action",
             render: (_, record) => (
@@ -114,7 +149,7 @@ function StudentsList({ dataVersion, onDataChanged }) {
             <Input placeholder="Search name or email" value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: 300 }} />{" "}
             <Button onClick={fetchUsers}>Refresh</Button>
 
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleUsers} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleUsers} scroll={{ x: "max-content" }} />
 
             <StudentEditForm
                 visible={editingStudent !== null}

@@ -100,3 +100,8 @@ export async function acceptRetakeOffer(module) {
     const response = await axiosInstance.post("/submissions/acceptRetakeOffer", { module })
     return response
 }
+
+export async function getProgressForAdmin() {
+    const response = await axiosInstance.get("/submissions/getProgressForAdmin")
+    return response
+}

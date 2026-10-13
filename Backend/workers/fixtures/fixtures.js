@@ -5783,6 +5783,47 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 29 — the admin sees each student's mentorship stage in words (with the cycle number from the second session), and a session closes in two steps: main session, then follow-up or close without one",
+        run: async () => {
+            const { mentorStage } = require("../../utils/mentorStage")
+            const problems = []
+            const now = new Date("2026-10-13T10:00:00")
+            const cases = [
+                [{ tier: 1, row: null }, "NA"],
+                [{ tier: 2, row: null }, "not started"],
+                [{ tier: 3, row: { matchStatus: "awaiting_choice" } }, "not started"],
+                [{ tier: 2, row: { matchStatus: "matching" }, dueBy: new Date("2026-10-20T00:00:00"), now }, "20-day wait · 5 days left"],
+                [{ tier: 2, row: { matchStatus: "matched" } }, "found mentor — waiting for mentor to reply"],
+                [{ tier: 2, row: { matchStatus: "matched", bookingLinkSentAt: now } }, "booking link sent"],
+                [{ tier: 2, row: { matchStatus: "matched", bookingLinkSentAt: now, mainSessionAt: now } }, "main session taken"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{ followUp: true }] } }, "follow-up taken"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{ followUp: false }] }, reviewed: [0] }, "review given"],
+                [{ tier: 2, row: { matchStatus: "matching", sessions: [{ followUp: true }] } }, "2 · 20-day wait"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{}, { followUp: true }] } }, "2 · follow-up taken"],
+                [{ tier: 2, row: { matchStatus: "unmatchable", resolution: "refunded" } }, "closed"],
+            ]
+            cases.forEach(([input, expected]) => {
+                const got = mentorStage(input)
+                if (got !== expected) problems.push(`${JSON.stringify(input.row)} → "${got}", expected "${expected}"`)
+            })
+            const waitlist = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
+            const complete = waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || ""
+            if (!/!row\.mainSessionAt/.test(complete)) problems.push("a session can close before the main session is marked held")
+            if (!/followUp: req\.body\.followUp === true/.test(complete)) problems.push("whether the follow-up was held is not recorded")
+            if (!/router\.put\("\/mainSessionDoneForAdmin\/:id"/.test(waitlist)) problems.push("there is no main-session step")
+            const students = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/StudentsList.js"), "utf8")
+            ;["Assessment", "Mentorship", "Report updates"].forEach((title) => { if (!students.includes(`title: "${title}"`)) problems.push(`the Students tab has no "${title}" column`) })
+            if (!/sectionsDone\(/.test(students)) problems.push("the admin's assessment count is not the student's own")
+            const subs = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            const admin = subs.split('router.get("/getProgressForAdmin"')[1] || ""
+            if (!/adminAuthMiddleware/.test(admin.slice(0, 80)) || !/forStudent\(submission\)/.test(admin) || !/sartRaw = "recorded"/.test(admin)) problems.push("the admin progress is not admin-only, or sends answer keys or the raw focus rows")
+            const report = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Report/ReportPage.js"), "utf8")
+            if (!/of your 3 report updates from your own changes/.test(report)) problems.push("the student doesn't see how many updates they've used")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

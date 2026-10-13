@@ -4,6 +4,7 @@ const User = require("../model/userModel")
 const Report = require("../model/reportsModel")
 const authMiddleware = require("../middlewares/authMiddleware")
 const requireDiscovery = require("../middlewares/requireDiscovery")
+const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 
 const { raiseIssue } = require("../utils/assessmentIssues")
 const { directionUpdate } = require("../utils/direction")
@@ -890,6 +891,48 @@ const forStudent = (submission) => {
 
     return { ...submission, psychometric }
 }
+
+// EVERY STUDENT'S PROGRESS, FOR THE ADMIN'S STUDENTS TAB (owner, Round 29): the assessment blocks
+// the page's own module helpers count (answers trimmed the way a student's own copy is, the focus
+// run reduced to "recorded", no history), and the one-line mentorship stage. Keyed by user id.
+router.get("/getProgressForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const MentorWaitlist = require("../model/mentorWaitlistModel")
+        const SessionReview = require("../model/sessionReviewsModel")
+        const { mentorStage } = require("../utils/mentorStage")
+        const { dueByFor } = require("./mentorWaitlistRouter")
+
+        const [submissions, users, rows, reviews] = await Promise.all([
+            Submission.find({}).select("user psychometric psychometricSubmittedAt").lean(),
+            User.find({ role: "student" }).select("currentTier").lean(),
+            MentorWaitlist.find({}).lean(),
+            SessionReview.find({}).select("waitlist sessionIndex").lean(),
+        ])
+
+        const progress = {}
+        submissions.forEach((submission) => {
+            const { psychometric = {} } = forStudent(submission) || {}
+            const { history, retakeOffers, retakeGrants, sartMeta, ...blocks } = psychometric
+            if (blocks.sartRaw) blocks.sartRaw = "recorded"
+            if (blocks.perspective) blocks.perspective = { answers: blocks.perspective.answers, narrative: blocks.perspective.narrative }
+            progress[submission.user] = { psychometric: blocks, submittedAt: submission.psychometricSubmittedAt || null }
+        })
+        const rowByUser = Object.fromEntries(rows.map((row) => [String(row.user), row]))
+        users.forEach((user) => {
+            const row = rowByUser[String(user._id)] || null
+            const reviewed = row ? reviews.filter((review) => String(review.waitlist) === String(row._id)).map((review) => review.sessionIndex) : []
+            progress[user._id] = {
+                ...(progress[user._id] || { psychometric: {}, submittedAt: null }),
+                mentorship: mentorStage({ tier: user.currentTier, row, reviewed, dueBy: row && row.matchStatus === "matching" ? dueByFor(row) : null }),
+            }
+        })
+
+        return res.status(200).json({ success: true, message: "Progress fetched", data: progress })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to fetch progress", error: error.message })
+    }
+})
 
 router.get("/getMySubmission", authMiddleware, requireDiscovery, async (req, res) => {
     try {

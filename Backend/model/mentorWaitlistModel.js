@@ -87,6 +87,8 @@ const mentorWaitlistSchema = new mongoose.Schema(
                 mentor: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
                 mentorName: String,
                 matchedAt: Date,
+                mainSessionAt: Date,     // Round 29: the main (1-hour) session was held
+                followUp: Boolean,       // Round 29: the follow-up was held (it is up to the student)
                 completedAt: Date,
                 adminNote: String,
             }],
@@ -123,6 +125,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
         whatsappInviteAt: { type: Date, default: null },          // the admin sent the invite on WhatsApp
         mentorPrivacyAcceptedAt: { type: Date, default: null },   // the mentor accepted the privacy rules
         bookingLinkSentAt: { type: Date, default: null },         // the mentor sent their booking (Calendly) link
+        mainSessionAt: { type: Date, default: null },             // Round 29: the admin marked the main session held
     },
     {
         timestamps: true,

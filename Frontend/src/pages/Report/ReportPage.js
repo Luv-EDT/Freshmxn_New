@@ -371,6 +371,13 @@ function ReportPage() {
             {/* Named from the student's own top matches, so the offer is about the thing they have
                 just read rather than a generic upsell. Renders nothing for the full plan. */}
             <UpgradeToMentorship user={user} professions={top.map((entry) => entry.profession)} />
+
+            {/* REPORT UPDATES USED (owner, Round 29) — the same count the admin sees */}
+            <p className="report-small report-updates-used">
+                You've used {data.selfUpdatesUsed || 0} of your 3 report updates from your own changes. Updates
+                from our improvements, and retakes we ask for, are free.
+                {data.freeUpdates > 0 && ` You have ${data.freeUpdates} free ${data.freeUpdates === 1 ? "update" : "updates"} waiting.`}
+            </p>
         </div>
     )
 }

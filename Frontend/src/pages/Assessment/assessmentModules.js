@@ -189,3 +189,14 @@ export const canSubmit = (psychometric) => {
 }
 
 export const TOTAL_MINUTES = BUILT_MODULES.reduce((total, module) => total + module.minutes, 0)
+
+// "x of 10 sections done — y%" (owner, Round 29): the assessment page's progress line and the admin
+// Students tab's "Assessment" column, so the two never disagree. A section set aside because of the
+// interest form counts as done (it is "not measured", never pending).
+export const sectionsDone = (psychometric) => {
+    const sections = visibleModules(psychometric).filter((module) => module.built)
+    const done = completedModules(psychometric)
+    const pending = sections.filter((module) => !done.includes(module.key))
+    const count = sections.length - pending.length
+    return { done: count, total: sections.length, pct: sections.length ? Math.round((count / sections.length) * 100) : 0, pending: pending.map((module) => module.title) }
+}

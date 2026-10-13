@@ -78,7 +78,7 @@ const contactChoice = (body) => (CONTACT_VIA.includes(body.contactVia) && body.c
 const CONTACT_NEEDED = "Choose how your mentor should contact you, and tick that we may share it with them"
 
 // every new match starts its steps again
-const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null }
+const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null }
 
 // what a student may see about their assigned mentor — the profile-visible name and role only.
 // Contact details, currency and residence never leave the admin side.
@@ -613,15 +613,34 @@ router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
 // Mentor sessions (owner, Round 28)
 // ========================
 
-// The admin marks a matched session done: it is logged on the row, and the student can then book
+// A SESSION IN TWO STEPS (owner, Round 29). First the admin marks the main session held; then either
+// "Follow-up done" or "Close without follow-up" — the 20-minute follow-up is up to the student. Either
+// one closes the session: it is logged on the row, the review opens, and the student can then book
 // another (paid) — a new career or job role, or the same one with a different mentor.
+router.put("/mainSessionDoneForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const updated = await MentorWaitlist.findOneAndUpdate(
+            { user: req.params.id, matchStatus: "matched", mainSessionAt: null },   // :id is the STUDENT's user id
+            { $set: { mainSessionAt: new Date() } },
+            { returnDocument: "after" }
+        )
+        if (!updated) {
+            return res.status(400).json({ success: false, message: "Only a matched session can be marked held, once" })
+        }
+        return res.status(200).json({ success: true, message: "Main session marked held — close it after the follow-up, or without one", data: updated })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to mark the main session", error: error.message })
+    }
+})
+
 router.put("/completeSessionForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const { id } = req.params   // :id is the STUDENT's user id
         const row = await MentorWaitlist.findOne({ user: id }).lean()
 
-        if (!row || row.matchStatus !== "matched") {
-            return res.status(400).json({ success: false, message: "Only a matched session can be marked done" })
+        if (!row || row.matchStatus !== "matched" || !row.mainSessionAt) {
+            return res.status(400).json({ success: false, message: "Mark the main session held first" })
         }
 
         const mentor = await mentorSummary(row.assignedMentor)
@@ -632,6 +651,8 @@ router.put("/completeSessionForAdmin/:id", authMiddleware, adminAuthMiddleware, 
             mentor: row.assignedMentor,
             mentorName: mentor ? mentor.name : null,
             matchedAt: row.matchedAt,
+            mainSessionAt: row.mainSessionAt,
+            followUp: req.body.followUp === true,
             completedAt: new Date(),
             adminNote: cleanText(req.body.adminNote, 500) || undefined,
         }
@@ -643,7 +664,7 @@ router.put("/completeSessionForAdmin/:id", authMiddleware, adminAuthMiddleware, 
 
         notifyStudent(await User.findById(id).select("email").lean(), "reviewOpen")
 
-        return res.status(200).json({ success: true, message: "Session logged — the student has been asked for a review", data: updated })
+        return res.status(200).json({ success: true, message: `Session closed${session.followUp ? " after the follow-up" : " without a follow-up"} — the student has been asked for a review`, data: updated })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to log the session", error: error.message })
@@ -698,3 +719,4 @@ router.post("/startAnotherSession", authMiddleware, async (req, res) => {
 
 module.exports = router
 module.exports.pickerOptions = pickerOptions
+module.exports.dueByFor = dueByFor
