@@ -2950,3 +2950,18 @@ hr.story-end {
 .mentor-students { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
 .mentor-student { border: 1px solid var(--line); border-radius: 12px; padding: var(--space-3) var(--space-4); background: #fff; max-width: 680px; }
 .mentor-student ul { margin: 6px 0 var(--space-3) 18px; }
+
+/* Round 29: notifications on the profile, and the bell in the menu bar */
+.notifications { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: var(--space-3) var(--space-4); margin: 0 0 var(--space-4); max-width: 760px; }
+.notifications-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notifications-head h3 { margin: 0; }
+.notifications-count, .nav-bell-count { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 10px; background: var(--teal); color: #fff; font-size: 0.8rem; font-weight: 700; text-align: center; line-height: 20px; }
+.notification-list { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: 10px; }
+.notification { display: flex; justify-content: space-between; gap: 12px; border-left: 4px solid var(--teal); background: var(--teal-tint); border-radius: 8px; padding: 10px 12px; }
+.notification p { margin: 4px 0; }
+.notification-clear { background: none; border: 0; font-size: 1rem; cursor: pointer; min-width: 44px; min-height: 44px; color: var(--navy-soft); }
+.nav-bell { position: relative; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; padding: 6px 8px; min-height: 44px; }
+.nav-bell-count { margin-left: 2px; }
+.admin-offer { border: 1px solid var(--line); border-radius: 12px; padding: var(--space-3) var(--space-4); margin: var(--space-4) 0; background: #fff; }
+.admin-offer h3 { margin-top: 0; }
+.admin-run ul { margin: 6px 0 var(--space-3) 18px; }

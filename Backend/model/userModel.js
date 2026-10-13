@@ -41,6 +41,16 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        // Round 29 (owner): free updates from retakes we asked for, spent before the three; and a log of
+        // every update (own | free | system | granted) for the admin's Students tab and the report page
+        freeUpdates: {
+            type: Number,
+            default: 0,
+        },
+        updateLog: {
+            type: [{ _id: false, at: Date, kind: String, via: String }],
+            default: [],
+        },
         googleId: {
             type: String, // leave unset (not null) for password accounts, so the sparse index skips them
         },

@@ -2,7 +2,7 @@
 //
 //     followup_scan    the 1st of each month, 09:00 IST   housekeeping/followUpScan.js
 //     data_refresh     the 1st of each month       housekeeping/dataRefresh.js
-//     career_scout     every Monday                housekeeping/careerScout.js
+//     career_scout     with data_refresh, monthly  housekeeping/careerScout.js (Round 29; "Run now" too)
 //     study_refresh    the 1st of each month       housekeeping/studyRefresh.js — seasonal: exams before
 //                      their window, colleges Sep–Oct, facts quarterly, cut-offs Aug–Oct (Round 13)
 //     draft_career     on demand — the admin approved a scout row (housekeeping/draftCareer.js)
@@ -38,7 +38,6 @@ const QUEUE_NAME = "housekeeping"
 const SCHEDULES = [
     { name: "followup_scan", pattern: "0 9 1 * *" },   // monthly (owner, Round 11) — the scan's 45-day window covers the gap
     { name: "data_refresh", pattern: "0 4 1 * *" },
-    { name: "career_scout", pattern: "0 5 * * 1" },
     { name: "study_refresh", pattern: "0 6 1 * *" },
     { name: "batch_collect", pattern: "17 * * * *" },   // hourly (Round 12) — usually collects within the hour of the 1st
 ]
@@ -51,6 +50,10 @@ const JOBS = {
     draft_career: (data) => require("../housekeeping/draftCareer").runDraftCareer({ candidateId: data && data.candidateId }),
     batch_collect: () => require("../housekeeping/researchBatch").collectBatches(),
     model_compare: () => require("../housekeeping/modelCompare").runModelCompare(),
+    // Round 29: an assessment improvement offered to everyone who took a test, and the short story's
+    // reminders — each queued for its own time (runLater)
+    retake_offer: (data) => require("../housekeeping/retakeOffer").runRetakeOffer(data),
+    story_notice: (data) => require("../housekeeping/storyNotices").runStoryNotice(data),
 }
 
 // jobs the admin may start from "Run now" — draft_career is started only by approving a scout row
@@ -64,7 +67,17 @@ const runNow = async (name, data = {}) => {
     return jobQueue().enqueue(QUEUE_NAME, name, data, JOB_OPTIONS)
 }
 
+// A job for a set time — a story reminder in 55 minutes, say. The key keeps one per student and moment.
+const runLater = async (name, data, { runAt = new Date(), key = null } = {}) => {
+    if (!JOBS[name]) throw new Error(`unknown housekeeping job ${name}`)
+    return jobQueue().enqueue(QUEUE_NAME, name, data, { ...JOB_OPTIONS, runAt, key })
+}
+
 const registerSchedules = async () => {
+    // a schedule that was taken off the calendar (Round 29: the weekly scout, now run inside the
+    // monthly data refresh) must not keep re-queueing itself from its last waiting row
+    const Job = require("../model/jobsModel")
+    await Job.deleteMany({ queue: QUEUE_NAME, status: "waiting", repeat: { $nin: [null, ""] }, name: { $nin: SCHEDULES.map((schedule) => schedule.name) } })
     for (const schedule of SCHEDULES) {
         await jobQueue().schedule(QUEUE_NAME, schedule, JOB_OPTIONS)
     }
@@ -120,4 +133,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { QUEUE_NAME, SCHEDULES, JOBS, RUNNABLE, start, runNow, registerSchedules }
+module.exports = { QUEUE_NAME, SCHEDULES, JOBS, RUNNABLE, start, runNow, runLater, registerSchedules }

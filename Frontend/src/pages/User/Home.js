@@ -1,10 +1,11 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useSelector } from "react-redux"
 import Navbar from "../Navbar"
 import JourneyProgress, { journeyStages } from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
 import ParentConsentBanner from "./ParentConsentBanner"
 import CareerHelpBox from "./CareerHelpBox"
+import useNotificationCount from "../useNotificationCount"
 import { PLAN_NAMES as TIER_NAMES, isMentorOnly } from "../plans"
 
 
@@ -12,6 +13,7 @@ import { PLAN_NAMES as TIER_NAMES, isMentorOnly } from "../plans"
 function Home() {
     const navigate = useNavigate()
     const { user } = useSelector((state) => state.user)
+    const notifications = useNotificationCount(Boolean(user))
 
     if (!user) return null
 
@@ -47,6 +49,10 @@ function Home() {
             <section className="welcome">
                 <h1 className="page-title">Hi {user.name}</h1>
                 <p>Your plan: <span className="chip">{TIER_NAMES[user.currentTier] || TIER_NAMES[0]}</span></p>
+                {/* Round 29 (owner) */}
+                {notifications > 0 && (
+                    <p className="dashboard-notifications">🔔 You have <Link to="/profile#notifications">{notifications} {notifications === 1 ? "notification" : "notifications"}</Link></p>
+                )}
             </section>
 
             <ParentConsentBanner />

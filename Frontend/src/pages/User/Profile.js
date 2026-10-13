@@ -10,6 +10,7 @@ import { hasMentor } from "../plans"
 import { resendVerification, getCurrentUser } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 import RequestRefundForm from "./RequestRefundForm"
+import Notifications from "./Notifications"
 import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
 import AccountEdit, { EmailChange } from "./AccountEdit"
@@ -284,6 +285,8 @@ function Profile() {
 
                 {/* every section starts folded — the student opens what they came for */}
                 <ParentConsentBanner />
+                {/* Round 29 (owner): notifications first, always open */}
+                <Notifications />
                 <Collapse items={panels} />
 
                 <p>

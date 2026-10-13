@@ -195,14 +195,16 @@ const WRITE_ONCE = ["sartRaw"]
 const offerSartRetakeIfInvalid = async (userId, rawRows, submission) => {
     const scoreSart = require("../scoring/sartScoring")
     const result = scoreSart(rawRows)
-    if (!result || result.valid || result.action !== "offer_retake") return false
+    if (!result || result.valid || result.action !== "offer_retake") return { offered: false, reasons: [] }
 
     const used = (submission && submission.psychometric && submission.psychometric.sartRetakes) || 0
     const reasons = (result.invalid_reasons || result.problems || []).join(", ")
+    const { sartReasonWords } = require("../utils/sartReasons")
 
+    // Round 29 (owner): the admin is emailed — this needs a decision (allow a retake, or not)
     if (used >= 1) {
-        await raiseIssue({ user: userId, module: "sartRaw", kind: "sart_invalid", detail: `second run also invalid: ${reasons}` })
-        return false
+        await raiseIssue({ user: userId, module: "sartRaw", kind: "sart_invalid", detail: `second run also invalid: ${reasons}`, notify: true })
+        return { offered: false, reasons: sartReasonWords(result.invalid_reasons) }
     }
 
     await Submission.updateOne(
@@ -210,7 +212,10 @@ const offerSartRetakeIfInvalid = async (userId, rawRows, submission) => {
         { $set: { "psychometric.retakeGrants.sartRaw": true, "psychometric.sartRetakes": used + 1 } }
     )
     await raiseIssue({ user: userId, module: "sartRaw", kind: "sart_invalid", detail: `automatic retry offered: ${reasons}`, status: "retake_granted" })
-    return true
+    if (submission && submission.psychometricSubmittedAt) {
+        await require("../utils/selfUpdates").grantFreeUpdate(userId, "retake:sartRaw")
+    }
+    return { offered: true, reasons: sartReasonWords(result.invalid_reasons) }
 }
 
 // A focus (SART) run is saved only when it ends, so a refresh in the middle would quietly hand the
@@ -226,7 +231,7 @@ router.post("/markTestStarted", authMiddleware, requireDiscovery, async (req, re
         const psychometric = (submission && submission.psychometric) || {}
         const interrupted = Boolean(psychometric.sartRunOpenedAt) && !psychometric.sartRaw
         if (interrupted) {
-            await raiseIssue({ user: req.user._id, module: "sartRaw", kind: "left_mid_test", detail: "a focus run was started and never finished — the page was left or refreshed mid-run" })
+            await raiseIssue({ user: req.user._id, module: "sartRaw", kind: "left_mid_test", detail: "a focus run was started and never finished — the page was left or refreshed mid-run", notify: true })
         }
         await Submission.findOneAndUpdate({ user: req.user._id }, { $set: { "psychometric.sartRunOpenedAt": new Date() } }, { upsert: true })
         return res.status(200).json({ success: true, message: "Run started", data: { interrupted } })
@@ -261,9 +266,10 @@ router.post("/savePsychometric", authMiddleware, requireDiscovery, async (req, r
 
         const changes = { lastSavedAt: new Date() }
         const unset = {}
+        let keepOld = null   // Round 29: a replaced run is kept in history, so the admin can still see it
 
         if (WRITE_ONCE.includes(module)) {
-            const existing = await Submission.findOne({ user: req.user._id }).select(`psychometric.${module} psychometric.retakeGrants`).lean()
+            const existing = await Submission.findOne({ user: req.user._id }).select(`psychometric.${module} psychometric.retakeGrants psychometric.sartMeta`).lean()
             const psychometric = (existing && existing.psychometric) || {}
             const already = psychometric[module]
             const granted = psychometric.retakeGrants && psychometric.retakeGrants[module]
@@ -272,6 +278,7 @@ router.post("/savePsychometric", authMiddleware, requireDiscovery, async (req, r
                 return res.status(409).json({ success: false, message: "This test has already been recorded" })
             }
             if (granted) unset[`psychometric.retakeGrants.${module}`] = ""
+            if (already && granted) keepOld = { attempt: already, meta: module === "sartRaw" ? psychometric.sartMeta || null : null, replacedAt: new Date(), issue: null }
         }
         // a recorded focus run closes the run opened by /markTestStarted
         if (module === "sartRaw") unset["psychometric.sartRunOpenedAt"] = ""
@@ -286,6 +293,7 @@ router.post("/savePsychometric", authMiddleware, requireDiscovery, async (req, r
 
         const update = { $set: changes }
         if (Object.keys(unset).length > 0) update.$unset = unset
+        if (keepOld) update.$push = { [`psychometric.history.${module}`]: keepOld }
 
         const updatedSubmission = await Submission.findOneAndUpdate(
             { user: req.user._id },
@@ -302,14 +310,17 @@ router.post("/savePsychometric", authMiddleware, requireDiscovery, async (req, r
         // never really ran) — and until now nothing read that answer, so the run was simply lost.
         // Once only: a second invalid run is recorded as it is, and the admin sees both.
         let retakeOffered = false
+        let retakeReasons = []
         if (module === "sartRaw") {
-            retakeOffered = await offerSartRetakeIfInvalid(req.user._id, block, updatedSubmission)
+            const retake = await offerSartRetakeIfInvalid(req.user._id, block, updatedSubmission)
+            retakeOffered = retake.offered
+            retakeReasons = retake.reasons
         }
 
         return res.status(200).json({
             success: true,
             message: retakeOffered ? "That run did not record properly — you can take it once more" : "Progress saved",
-            data: { module, savedAt: updatedSubmission.lastSavedAt, retakeOffered },
+            data: { module, savedAt: updatedSubmission.lastSavedAt, retakeOffered, retakeReasons },
         })
 
     } catch (error) {
@@ -781,9 +792,9 @@ router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req,
         const firstTime = !submission.psychometricSubmittedAt
 
         // Round 28 (owner): once a report exists, a resubmit is one of the student's three own updates
-        const { selfUpdatesLeft, LIMIT_REACHED } = require("../utils/selfUpdates")
+        const { updatesLeft, LIMIT_REACHED, updateSpend, mergeUpdates } = require("../utils/selfUpdates")
         const hasReport = !firstTime && Boolean(await Report.exists({ user: req.user._id }))
-        if (hasReport && selfUpdatesLeft(req.user) === 0) {
+        if (hasReport && updatesLeft(req.user) === 0) {
             return res.status(400).json({ success: false, message: LIMIT_REACHED, data: { limitReached: true } })
         }
 
@@ -805,11 +816,11 @@ router.post("/submitPsychometric", authMiddleware, requireDiscovery, async (req,
         )
 
         // A new submit starts a fresh attempt, so any earlier "your report failed" is cleared.
-        await User.findByIdAndUpdate(req.user._id, {
-            ...direction,
-            $set: { ...(direction.$set || {}), "progress.psychometric": "done", reportFailedAt: null },
-            ...(hasReport ? { $inc: { selfUpdatesUsed: 1 } } : {}),
-        })
+        await User.findByIdAndUpdate(req.user._id, mergeUpdates(
+            direction,
+            { $set: { "progress.psychometric": "done", reportFailedAt: null } },
+            hasReport ? updateSpend(req.user, "resubmit") : null,
+        ))
 
         // Required here rather than at the top of the file, so this router loads without the workers
         const { queueReport } = require("../workers/queueHelpers")
@@ -959,6 +970,27 @@ const testResultsFor = (psychometric) => {
 
     return results
 }
+
+// The student accepts "You can take this again" (Round 29): the earlier attempt moves to history,
+// the test opens, and the update afterwards is free. Only for a test offered to them.
+router.post("/acceptRetakeOffer", authMiddleware, requireDiscovery, async (req, res) => {
+    try {
+        const { module } = req.body
+        const submission = await Submission.findOne({ user: req.user._id }).select(`psychometric.retakeOffers psychometricSubmittedAt`).lean()
+        const offers = (submission && submission.psychometric && submission.psychometric.retakeOffers) || {}
+        if (!module || !offers[module]) {
+            return res.status(400).json({ success: false, message: "This test isn't open to take again" })
+        }
+        await require("../utils/retakes").reopenModule(req.user._id, module)
+        if (submission.psychometricSubmittedAt) {
+            await require("../utils/selfUpdates").grantFreeUpdate(req.user._id, `retake:${module}`)
+        }
+        return res.status(200).json({ success: true, message: "The test is open again — your earlier attempt is kept aside", data: { module } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not open the test again", error: error.message })
+    }
+})
 
 router.get("/getMyTestResults", authMiddleware, requireDiscovery, async (req, res) => {
     try {

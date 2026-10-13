@@ -5542,10 +5542,13 @@ const fixtures = [
             const read = (file) => fs.readFileSync(path.join(__dirname, "../../Routers", file), "utf8")
             const problems = []
             if (SELF_UPDATE_LIMIT !== 3 || selfUpdatesLeft({}) !== 3 || selfUpdatesLeft({ selfUpdatesUsed: 2 }) !== 1 || selfUpdatesLeft({ selfUpdatesUsed: 5 }) !== 0) problems.push("the count is off")
+            // Round 29 (owner): a free update from a retake we asked for is spent first, then one of the three
             const reports = read("reportsRouter.js")
-            if (!/ownChange && selfUpdatesLeft\(req\.user\) === 0/.test(reports) || !/ownChange \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(reports)) problems.push("Update my report does not count only own changes")
+            if (!/ownChange && updatesLeft\(req\.user\) === 0/.test(reports) || !/updateSpend\(req\.user, "update", ownChange \? "own" : "system"\)/.test(reports)) problems.push("Update my report does not count only own changes")
             const submissions = read("submissionsRouter.js")
-            if (!/hasReport && selfUpdatesLeft\(req\.user\) === 0/.test(submissions) || !/hasReport \? \{ \$inc: \{ selfUpdatesUsed: 1 \} \}/.test(submissions)) problems.push("a resubmit does not count as an own update")
+            if (!/hasReport && updatesLeft\(req\.user\) === 0/.test(submissions) || !/hasReport \? updateSpend\(req\.user, "resubmit"\) : null/.test(submissions)) problems.push("a resubmit does not count as an own update")
+            const { updateSpend } = require("../../utils/selfUpdates")
+            if (!updateSpend({ freeUpdates: 1 }, "x").$inc.freeUpdates || !updateSpend({ freeUpdates: 0 }, "x").$inc.selfUpdatesUsed || updateSpend({}, "x", "system").$inc) problems.push("free updates are not spent first, or a system update counts")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
@@ -5711,6 +5714,71 @@ const fixtures = [
             const sessions = history.rows[0].sessions
             if (sessions[0].mentorName !== "Removed mentor" || sessions[1].mentorName !== "Ravi") problems.push("the session history still names the deleted mentor, or renamed someone else")
             if (reviews.rows[0].mentorName !== "Removed mentor" || reviews.rows[0].user !== "s1") problems.push("a student's review still names the deleted mentor, or was lost")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — a focus run that didn't count tells the student what actually happened (pressing before the number, pressing on 3s), never the generic \"few presses came through\"",
+        run: async () => {
+            const { sartReasonWords, retakeReasons } = require("../../utils/sartReasons")
+            const problems = []
+            const hers = sartReasonWords(["anticipatory responses 42% (limit 15%) - responding before reading", "commission errors 88% (limit 60%) - not withholding on 3"])
+            if (hers.length !== 2 || !/before the number/.test(hers[0]) || !/3s/.test(hers[1])) problems.push(`her two reasons read: ${JSON.stringify(hers)}`)
+            if (hers.some((line) => /very few/i.test(line))) problems.push("she is still told few presses came through")
+            if (sartReasonWords([]).length !== 1) problems.push("an unknown reason gives no guidance")
+            if (!/told us/.test(retakeReasons({ kind: "student_reported", raisedBy: "student" })[0] || "")) problems.push("a student's own request has no reason line")
+            if (retakeReasons({ kind: "sart_invalid", detail: "anticipatory responses 30%, commission errors 70%" }).length !== 2) problems.push("an invalid-run issue's detail is not turned into reasons")
+            const sart = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/Sart.js"), "utf8")
+            if (!/retakeReasons/.test(sart) || !/practice round comes first again/i.test(sart)) problems.push("the retry screen doesn't show the reasons or ask for practice first")
+            if (!/presses\.current\.(keyboard|touch)/.test(sart)) problems.push("the input type of each press is not recorded")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/if \(keepOld\) update\.\$push = \{ \[`psychometric\.history\.\$\{module\}`\]: keepOld \}/.test(router)) problems.push("a replaced run is overwritten instead of kept in history")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — every status email also leaves a notification the student can clear (cleared ones are deleted), and email goes out as \"Freshmxn\"",
+        run: async () => {
+            const problems = []
+            const { senderOf } = require("../../utils/mailer")
+            if (senderOf("no-reply@freshmxn.com") !== "Freshmxn <no-reply@freshmxn.com>") problems.push("a bare sender address is not named Freshmxn")
+            if (senderOf("Team <a@b.com>") !== "Team <a@b.com>") problems.push("a named sender is rewritten")
+            const emails = fs.readFileSync(path.join(__dirname, "../../utils/statusEmails.js"), "utf8")
+            if (!/Notification\.create/.test(emails)) problems.push("notifyStudent leaves no notification")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/notificationsRouter.js"), "utf8")
+            if (!/Notification\.deleteOne\(\{ _id: req\.params\.id, user: req\.user\._id \}\)/.test(router)) problems.push("clearing one notification does not delete only the student's own row")
+            if (!/Notification\.deleteMany\(\{ user: req\.user\._id \}\)/.test(router)) problems.push("clear all does not delete the rows")
+            const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
+            if (!/app\.use\("\/notifications"/.test(server)) problems.push("the notifications router is not mounted")
+            const { USER_COLLECTIONS } = require("../../utils/deleteAccount")
+            if (!USER_COLLECTIONS.some(([name]) => name === "notifications")) problems.push("deleting an account leaves its notifications")
+            const { REMINDERS } = require("../../utils/emailBudget")
+            ;["retakeGranted", "paymentSucceeded", "mentorInvite"].forEach((kind) => { if (REMINDERS.includes(kind)) problems.push(`${kind} could be held back by the daily cap`) })
+            ;["storyFiveMinutes", "systemUpdate"].forEach((kind) => { if (!REMINDERS.includes(kind)) problems.push(`${kind} is not counted as a reminder`) })
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 29 — a retake we ask for (admin grant, the automatic focus retry, a test we improved) gives a free report update; the student's own 3 are untouched",
+        run: async () => {
+            const problems = []
+            const { updatesLeft, updateSpend, freeUpdatesLeft } = require("../../utils/selfUpdates")
+            const user = { selfUpdatesUsed: 3, freeUpdates: 1 }
+            if (updatesLeft(user) !== 1) problems.push("a free update is not counted when the own three are used")
+            const spend = updateSpend(user, "resubmit")
+            if (!spend.$inc || spend.$inc.freeUpdates !== -1 || spend.$inc.selfUpdatesUsed) problems.push("a free update is not spent first")
+            if (freeUpdatesLeft({ freeUpdates: -2 }) !== 0) problems.push("a negative credit counts")
+            const issues = fs.readFileSync(path.join(__dirname, "../../Routers/assessmentIssuesRouter.js"), "utf8")
+            const grant = issues.split('router.put("/grantRetakeForAdmin/:id"')[1] || ""
+            if (!/grantFreeUpdate/.test(grant) || !/"retakeGranted"/.test(grant) || !/retakeReasons\(issue\)/.test(grant)) problems.push("an admin retake is not free, or the student isn't told why")
+            const subs = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/grantFreeUpdate/.test(subs.split('router.post("/acceptRetakeOffer"')[1] || "")) problems.push("taking an offered retake is not free")
+            const { versionsChanged } = require("../../utils/versionNotices")
+            if (versionsChanged(null, { matching: "a", scoring: "b" })) problems.push("the first start tells everyone about old changes")
+            if (!versionsChanged({ matching: "a", scoring: "b" }, { matching: "a2", scoring: "b" })) problems.push("a new matching version is not announced")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

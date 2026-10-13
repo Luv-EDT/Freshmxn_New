@@ -80,7 +80,7 @@ const untilText = (hoursLeft) => new Date(Date.now() + hoursLeft * 3600 * 1000)
 // THE PAGE IS A DECK (Round 13, owner): one big card for the section in hand, arrows (or a swipe) to
 // move between them, and a strip of small cards underneath showing every section's state at a
 // glance. Story questions that are waiting on the student come first, in bold, above everything.
-function AssessmentIntro({ modules, completed, started, progress = {}, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, accommodations = null, onSaveAccommodations }) {
+function AssessmentIntro({ modules, completed, started, progress = {}, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, retakeOffers = {}, onAcceptOffer, accommodations = null, onSaveAccommodations }) {
     const built = modules.filter((module) => module.built)
     const comingSoon = modules.filter((module) => !module.built)
     const unfinished = built.filter((module) => !completed.includes(module.key))
@@ -143,6 +143,8 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
 
         // an admin reopened this test after a technical problem, and it has not been taken again yet
         const reopened = Boolean(retakeGranted[module.key]) && !isDone
+        // we improved this test and offered everyone who took it another go (Round 29); their choice
+        const offered = isDone && retakeOffers[module.key]
 
         return (
             <div
@@ -167,6 +169,21 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                         <strong>Retake available</strong> — your earlier attempt had a technical problem, so this is open
                         again for one more try. Press Submit again afterwards so your report is updated.
                     </p>
+                )}
+                {offered && (
+                    <div className="retake-note">
+                        <p>
+                            <strong>You can take this again</strong>{offered.reason ? ` — ${offered.reason}` : ""}. Your
+                            earlier attempt is kept aside, and updating your report afterwards is free.
+                        </p>
+                        <button
+                            type="button"
+                            className="btn btn-ghost"
+                            onClick={() => window.confirm("Open this test again? Your earlier result stops counting once you take it.") && onAcceptOffer(module.key)}
+                        >
+                            Take it again
+                        </button>
+                    </div>
                 )}
                 {storyFresh ? (
                     <ul className="story-steps">

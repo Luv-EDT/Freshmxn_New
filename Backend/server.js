@@ -34,6 +34,7 @@ const studyAbroadRouter = require("./Routers/studyAbroadRouter")
 const careerHelpRouter = require("./Routers/careerHelpRouter")
 const mentorReviewsRouter = require("./Routers/mentorReviewsRouter")
 const mentorSessionsRouter = require("./Routers/mentorSessionsRouter")
+const notificationsRouter = require("./Routers/notificationsRouter")
 
 const cors = require("cors")
 const path = require("path")
@@ -97,7 +98,8 @@ app.use("/dataUpdates", dataUpdatesRouter)
 app.use("/studyAbroad", studyAbroadRouter)
 app.use("/careerHelp", careerHelpRouter)
 app.use("/mentorReviews", mentorReviewsRouter)
-app.use("/mentorSessions", mentorSessionsRouter)   // Round 28: invite steps, reviews, reports (pages are /mentor and /mentorship)
+app.use("/mentorSessions", mentorSessionsRouter)
+app.use("/notifications", notificationsRouter)   // Round 29: shown on /profile   // Round 28: invite steps, reviews, reports (pages are /mentor and /mentorship)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")
@@ -137,10 +139,15 @@ if (process.env.RUN_WORKERS_IN_WEB === "true") {
     Promise.all([
         require("./workers/scoreProfileWorker").start(),
         require("./workers/generateReportWorker").start(),
-        // Round 10: the calendar jobs — follow-up emails, the monthly data refresh, the weekly scout
+        // Round 10: the calendar jobs — follow-up emails, the monthly data refresh (and since Round 29
+        // the careers scout with it), the study bot, the short story's reminders
         require("./workers/housekeepingWorker").start(),
     ])
-        .then((started) => workers.push(...started))
+        .then((started) => {
+            workers.push(...started)
+            // Round 29 (owner): a new matching or scoring version is announced to every student once
+            require("./utils/versionNotices").announceVersionChanges()
+        })
         .catch((error) => console.log("Workers failed to start inside the web process:", error.message))
 }
 

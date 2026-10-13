@@ -38,7 +38,7 @@ function Sart({ alreadyTaken, onDone }) {
     const [phase, setPhase] = useState(alreadyTaken ? "alreadyTaken" : "intro")
     // a run in progress can't be restarted for free — leaving is warned about (Round 17)
     useLeaveWarning(phase === "test")
-    const [retakeNotice, setRetakeNotice] = useState(false)
+    const [retakeNotice, setRetakeNotice] = useState(null)   // Round 29: the reasons, in plain words
     const [check, setCheck] = useState(null)        // the timing-check result
     const [refresh, setRefresh] = useState(null)
     const [checkProgress, setCheckProgress] = useState(0)
@@ -54,6 +54,7 @@ function Sart({ alreadyTaken, onDone }) {
     const controls = useRef({})             // filled in by runBlock
     const practiceRecords = useRef([])      // kept so they can go into the file as "training" rows
     const interruptions = useRef({ blur: 0, hidden: 0, fullscreenExits: 0 })
+    const presses = useRef({ keyboard: 0, touch: 0 })   // Round 29: which input the presses came from
     const visible = useRef(null)            // which frame element is currently shown
     const currentTrial = useRef(null)       // what is on screen, for the practice error feedback
     const feedbackOn = useRef(false)        // the written "missed one" line — practice only
@@ -132,6 +133,7 @@ function Sart({ alreadyTaken, onDone }) {
             event.preventDefault()      // space scrolls the page otherwise, mid-block
             // a key held down repeats by itself — that is not a press on every trial (Round 28)
             if (event.repeat) return
+            presses.current.keyboard += 1
             if (controls.current.respond) controls.current.respond(performance.now())
             flagCommission()
         }
@@ -247,6 +249,7 @@ function Sart({ alreadyTaken, onDone }) {
     const runTest = async () => {
         setPhase("test")
         setTrialCount(0)
+        presses.current = { keyboard: 0, touch: 0 }   // count the scored block only
         // the server notes the start, so a run left mid-way is flagged for the admin (Round 17)
         markTestStarted("sartRaw").catch(() => {})
         await requestFullscreen()
@@ -305,6 +308,7 @@ function Sart({ alreadyTaken, onDone }) {
                 passed: timingOk,
             },
             interruptions: { ...interruptions.current },
+            presses: { ...presses.current },
             scored: timingOk,
             // Recorded on every session because it changes what the reaction times mean. §6's
             // no-feedback design is what published SART norms assume; this cohort departs from it.
@@ -338,7 +342,7 @@ function Sart({ alreadyTaken, onDone }) {
                 // server has opened it once more — see submissionsRouter offerSartRetakeIfInvalid.
                 // Back to the start screen with the reason, rather than a "done" that hides it.
                 if (saved && saved.data && saved.data.data && saved.data.data.retakeOffered) {
-                    setRetakeNotice(true)
+                    setRetakeNotice(saved.data.data.retakeReasons || [])
                     setPhase("ready")
                     return
                 }
@@ -362,6 +366,7 @@ function Sart({ alreadyTaken, onDone }) {
             ref={stageRef}
             onPointerDown={(event) => {
                 event.preventDefault()
+                presses.current.touch += 1
                 if (controls.current.respond) controls.current.respond(performance.now())
                 flagCommission()
             }}
@@ -586,12 +591,14 @@ function Sart({ alreadyTaken, onDone }) {
     if (phase === "ready") {
         return wrap(
             <>
+                {/* Round 29 (owner): say what actually went wrong — a student was once told "too few
+                    presses" when the trouble was pressing too early and on 3s, and repeated it */}
                 {retakeNotice && (
-                    <p className="retake-note">
-                        <strong>That run did not record properly</strong> — for example, very few key presses
-                        came through. You can take it once more. Keep your eyes on the digits and press for
-                        every one except 3.
-                    </p>
+                    <div className="retake-note">
+                        <p><strong>That run couldn't be scored, so you can take it once more.</strong> What happened:</p>
+                        <ul>{retakeNotice.map((reason) => <li key={reason}>{reason}</li>)}</ul>
+                        <p>Watch each number appear, then press — for every number except 3. The practice round comes first again.</p>
+                    </div>
                 )}
                 <h2>Your screen is fine</h2>
                 <p>

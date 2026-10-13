@@ -26,6 +26,7 @@ const USER_COLLECTIONS = [
     ["careerHelp", "../model/careerHelpModel"],
     ["sessionReviews", "../model/sessionReviewsModel"],
     ["mentorReports", "../model/mentorReportsModel"],
+    ["notifications", "../model/notificationsModel"],
     ["mentors", "../model/mentorsModel"],
 ]
 

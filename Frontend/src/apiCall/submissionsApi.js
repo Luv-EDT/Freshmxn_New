@@ -95,3 +95,8 @@ export async function getMyTestResults() {
     const response = await axiosInstance.get("/submissions/getMyTestResults")
     return response
 }
+
+export async function acceptRetakeOffer(module) {
+    const response = await axiosInstance.post("/submissions/acceptRetakeOffer", { module })
+    return response
+}
