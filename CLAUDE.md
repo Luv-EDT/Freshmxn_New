@@ -23,7 +23,8 @@ Redis since Round 22). One free Render web service runs the API, the built site 
 - Nothing from the data refresh or the careers scout changes the product without an admin approval,
   and matching never reads the overrides.
 - The word "optional" never appears in student-facing assessment code.
-- Don't touch SART stimulus rendering (`Sart.js` stimulus block, `FONT_SIZES`, `sartTask.js`).
+- Don't touch SART stimulus rendering (`Sart.js` stimulus block, `FONT_SIZES`, `sartTask.js`). One owner
+  exception (Round 30): where a reaction time is measured from (the frame after the digit is drawn).
 - Prices come from the server (`GET /payments/getPricing`), never from copy.
 - An API prefix must never equal a page URL (a page refresh would 404).
 - A failed report is `User.reportFailedAt`, never a `progress.report` value.
@@ -43,7 +44,7 @@ Then run the fixtures and commit. If `profession_embeddings.json` lists `pending
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 72/72
-node Backend/workers/fixtures/runFixtures.js     # 224/224
+node Backend/workers/fixtures/runFixtures.js     # 226/226
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 
