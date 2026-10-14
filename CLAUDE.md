@@ -28,6 +28,9 @@ Redis since Round 22). One free Render web service runs the API, the built site 
 - Prices come from the server (`GET /payments/getPricing`), never from copy.
 - An API prefix must never equal a page URL (a page refresh would 404).
 - A failed report is `User.reportFailedAt`, never a `progress.report` value.
+- Any change to how a one-attempt test is shown, timed or marked bumps its version in
+  `Backend/assessment/testVersions.js` (with an `isCurrent` check) — that is what tells the students who took the
+  old one and frees their next update (owner, Round 31).
 - The fixtures read some frontend files and two docs **as text** — if one fails after an edit, fix
   the code, don't weaken the fixture (unless the owner changed the product; then say so).
 - Never commit `.env` or keys. Never publish the company PAN/TAN.
@@ -44,7 +47,7 @@ Then run the fixtures and commit. If `profession_embeddings.json` lists `pending
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 72/72
-node Backend/workers/fixtures/runFixtures.js     # 226/226
+node Backend/workers/fixtures/runFixtures.js     # 228/228
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 
