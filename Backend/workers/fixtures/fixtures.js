@@ -2170,8 +2170,8 @@ const fixtures = [
             // is one tap away — a fold, not a filter. Round 20: opened, it is the same entries in groups.
             if (!/ordered\.slice\(0, TOP_SHOWN\)\.map\(\(entry\) => card\(entry\)\)/.test(page) || !/showAllFor !== sortKey \?/.test(page)) problems.push("the rendered list is not the chosen order (top three, then all)")
             if (!/const ordered = useMemo\(\(\) => groups\.flatMap\(\(group\) => group\.entries\), \[groups\]\)/.test(page)) problems.push("the open list is not the same entries as the top three")
-            // Round 28 (owner): three, then up to fifteen, then the rest folded under "explore a few more"
-            if (!/Show \{Math\.min\(ordered\.length, MAIN_SHOWN\) - TOP_SHOWN\} more/.test(page) || !/explore a few more/.test(page) || !/splitShown\(groups, MAIN_SHOWN\)/.test(page)) problems.push("the list does not open to fifteen with the rest folded")
+            // Round 28 (owner): three, then up to fifteen, then the rest folded (Round 31: "Some other careers you can consider")
+            if (!/Show \{Math\.min\(ordered\.length, MAIN_SHOWN\) - TOP_SHOWN\} more/.test(page) || !/Some other careers you can consider/.test(page) || !/splitShown\(groups, MAIN_SHOWN\)/.test(page)) problems.push("the list does not open to fifteen with the rest folded")
             if (!/const TOP_SHOWN = 3/.test(page)) problems.push("the list does not open on three")
             if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at three")
             if (!/rank=\{ordered\.indexOf\(entry\) \+ 1\}/.test(page)) problems.push("the cards are not numbered in the order shown")
@@ -2415,7 +2415,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "TIERS — every one of the sixteen tiers has a crisp label (at most four words), and 'Build fundamentals first' marks exactly the engine's not-a-fit tiers",
+        name: "TIERS — every one of the sixteen tiers has a crisp label (at most four words), and 'Build fundamentals/factors first' marks exactly the engine's not-a-fit tiers",
         // REPLACES the five-band check (owner, Round 20): the open list now shows the engine's tiers
         // themselves as headings, so the names must line up with tiers.js one for one.
         run: () => {
@@ -2445,7 +2445,8 @@ const fixtures = [
             // OWNER CHANGE (Round 30): "fundamentals", not "skills"; the vague interest headings got clearer
             // names and a line under each
             const framing = loadEsModule(path.join(REPORT_DIR, "reportFraming.js"))
-            if (framing.BUILD_FIRST_TITLE !== "Build fundamentals first" || !/psychometric analysis/.test(framing.BUILD_FIRST_NOTE)) problems.push("the band is not 'Build fundamentals first' with what fundamentals are")
+            // Round 31 (owner): "/factors", so fundamentals = factors is plain
+            if (framing.BUILD_FIRST_TITLE !== "Build fundamentals/factors first" || !/factors in your psychometric analysis/.test(framing.BUILD_FIRST_NOTE)) problems.push("the band is not 'Build fundamentals/factors first' with what fundamentals are")
             if (TIER_NAMES.some((row) => /interests?$/i.test(row.name))) problems.push("a tier is still called '… interest(s)'")
             ;[9, 10, 11, 14, 15, 16].forEach((tier) => { if (!framing.tierWhyFor(tier)) problems.push(`tier ${tier} has no line saying what pointed there`) })
             return problems.length > 0 ? problems.join("; ") : null
@@ -5855,18 +5856,16 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 29 — \"Some other careers you can consider\": careers nothing pointed to that fit the student are stored, served without internal fields, and shown behind one button on the matches page",
+        name: "ROUND 31 — no career reaches a student on fit alone: the worker stores no \"other careers\", the route sends none, and the matches page folds only its own careers after the first fifteen under \"Some other careers you can consider\" (owner change from Round 29)",
         run: async () => {
             const problems = []
             const worker = fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8")
-            if (!/other_careers: match\.otherCareers/.test(worker)) problems.push("the worker doesn't store the other careers")
+            if (/other_careers:/.test(worker)) problems.push("the worker still stores other careers")
             const reports = fs.readFileSync(path.join(__dirname, "../../Routers/reportsRouter.js"), "utf8")
-            if (!/otherCareers: recommendation \? \(recommendation\.other_careers \|\| \[\]\)\.map\(stripInternal\)/.test(reports)) problems.push("the other careers go out without stripInternal")
+            if (/otherCareers:/.test(reports)) problems.push("the report route still sends other careers")
             const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
-            const others = fs.readFileSync(path.join(REPORT_DIR, "OtherCareers.js"), "utf8")
-            if (!/<OtherCareers careers=\{data\.otherCareers\}/.test(matches)) problems.push("the matches page doesn't show them")
-            if (!/<summary[\s\S]*Some other careers you can consider/.test(others)) problems.push("they are not behind the owner's button")
-            if (/comfortScore|rank=|tierNameFor/.test(others)) problems.push("the list shows a fit number, a rank or a tier")
+            if (/OtherCareers/.test(matches) || fs.existsSync(path.join(REPORT_DIR, "OtherCareers.js"))) problems.push("the page still shows the old block")
+            if (!/split\.rest\.length > 0[\s\S]{0,200}<summary[\s\S]{0,120}Some other careers you can consider[\s\S]{0,200}split\.rest\.map\(renderGroup\)/.test(matches)) problems.push("the careers after the first fifteen are not folded, under their tiers, behind \"Some other careers you can consider\"")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

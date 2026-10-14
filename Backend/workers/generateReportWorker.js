@@ -147,7 +147,6 @@ const runOne = async (userId) => {
                 matching_version: match.matching_version,
                 ranked_professions: match.ranked,
                 combined_careers: match.combined || [],
-                other_careers: match.otherCareers || [],   // Round 29 (owner)
                 filtered: match.filtered,
                 aspiration_signals: match.aspirationSignals,
                 readiness_layer: {
