@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Table, Button, Select, Checkbox, Input, Modal, message } from "antd"
 import dayjs from "dayjs"
 import { getMentorFeedbackForAdmin, resolveMentorReportForAdmin } from "../../apiCall/mentorSessionsApi"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // MENTOR SESSION FEEDBACK (owner, Round 28): students' reports about their mentor (open first) and
 // their reviews after a session, with each mentor's average out of 10.
@@ -13,6 +14,7 @@ const OUTCOME_NAMES = { new_mentor: "Another mentor", refund: "Refund", no_actio
 
 function SessionFeedbackList() {
     const [data, setData] = useState({ reviews: [], reports: [], averages: [] })
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [loading, setLoading] = useState(false)
 
     const fetchAll = useCallback(async () => {
@@ -85,12 +87,13 @@ function SessionFeedbackList() {
 
     return (
         <div>
+            <StudentSearch value={search} onChange={setSearch} />
             <h3>Reports about mentors</h3>
-            <Table rowKey="_id" loading={loading} columns={reportColumns} dataSource={data.reports} scroll={{ x: "max-content" }} />
+            <Table rowKey="_id" loading={loading} columns={reportColumns} dataSource={data.reports.filter((row) => matchesStudent(row.user, search))} scroll={{ x: "max-content" }} />
             <h3>Each mentor's rating</h3>
             <Table rowKey={(record) => String(record.mentor)} loading={loading} columns={averageColumns} dataSource={data.averages} pagination={false} scroll={{ x: "max-content" }} />
             <h3>Reviews after sessions</h3>
-            <Table rowKey="_id" loading={loading} columns={reviewColumns} dataSource={data.reviews} scroll={{ x: "max-content" }} />
+            <Table rowKey="_id" loading={loading} columns={reviewColumns} dataSource={data.reviews.filter((row) => matchesStudent(row.user, search))} scroll={{ x: "max-content" }} />
         </div>
     )
 }

@@ -8,6 +8,7 @@ import { GiveFreeAccess, DeleteAccount } from "./StudentAccessActions"
 import { PLAN_NAMES } from "../plans"
 import { getProgressForAdmin } from "../../apiCall/submissionsApi"
 import { sectionsDone } from "../Assessment/assessmentModules"
+import { matchesStudent } from "./StudentSearch"
 
 // THREE COLUMNS ON WHERE EACH STUDENT IS (owner, Round 29): the assessment (the same count the
 // student's own page shows), the mentorship stage, and the report updates with their log.
@@ -139,10 +140,7 @@ function StudentsList({ dataVersion, onDataChanged }) {
         },
     ]
 
-    const searchText = search.trim().toLowerCase()
-    const visibleUsers = users.filter((user) =>
-        !searchText || user.name.toLowerCase().includes(searchText) || user.email.toLowerCase().includes(searchText)
-    )
+    const visibleUsers = users.filter((user) => matchesStudent(user, search))
 
     return (
         <div>

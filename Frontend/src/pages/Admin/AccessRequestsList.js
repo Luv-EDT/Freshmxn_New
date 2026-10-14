@@ -10,9 +10,11 @@ import {
 import { formatCallback } from "../User/callbackOptions"
 import StudentEditForm from "./StudentEditForm"
 import { PLAN_NAMES } from "../plans"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 function AccessRequestsList({ dataVersion, onDataChanged }) {
     const [accessRequests, setAccessRequests] = useState([])
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("pending") // pending | granted | declined | all
     const [editingStudent, setEditingStudent] = useState(null)
@@ -156,7 +158,8 @@ function AccessRequestsList({ dataVersion, onDataChanged }) {
             />{" "}
             <Button onClick={fetchAccessRequests}>Refresh</Button>
 
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests.filter((row) => matchesStudent(row.user, search))} />
 
             <StudentEditForm
                 visible={editingStudent !== null}

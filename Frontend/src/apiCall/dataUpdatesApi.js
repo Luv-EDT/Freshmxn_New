@@ -55,8 +55,9 @@ export async function splitActivityFoldForAdmin(rowId, text) {
     return response
 }
 
-export async function getActivityReadingsForAdmin(email) {
-    const response = await axiosInstance.get("/dataUpdates/getActivityReadingsForAdmin", { params: { email } })
+// Round 31: a name or an email (several matches come back as `choices`)
+export async function getActivityReadingsForAdmin(q) {
+    const response = await axiosInstance.get("/dataUpdates/getActivityReadingsForAdmin", { params: { q } })
     return response
 }
 

@@ -12,9 +12,11 @@ import StudentEditForm from "./StudentEditForm"
 import { PLAN_NAMES } from "../plans"
 import ReasonModal from "./ReasonModal"
 import { ADMIN_REQUEST_WORDS, paymentStatusWord, trackingIds } from "../User/paymentWords"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 function RefundRequestsList({ dataVersion, onDataChanged }) {
     const [refundRequests, setRefundRequests] = useState([])
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [failedRefunds, setFailedRefunds] = useState([])
     const [paymentMode, setPaymentMode] = useState("manual")
     const [loading, setLoading] = useState(false)
@@ -189,13 +191,14 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
             />{" "}
             <Button onClick={fetchRefunds}>Refresh</Button>
 
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests.filter((row) => matchesStudent(row.user, search))} />
 
             {failedRefunds.length > 0 && (
                 <>
                     <h3>Failed Razorpay refunds</h3>
                     <p>A downgrade whose refund failed can be retried by clicking Downgrade again on the Students tab.</p>
-                    <Table rowKey="_id" columns={failedColumns} dataSource={failedRefunds} pagination={false} />
+                    <Table rowKey="_id" columns={failedColumns} dataSource={failedRefunds.filter((row) => matchesStudent(row.user, search))} pagination={false} />
                 </>
             )}
 

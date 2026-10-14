@@ -12,12 +12,14 @@ import StudentEditForm from "./StudentEditForm"
 import { PLAN_NAMES } from "../plans"
 import ReasonModal from "./ReasonModal"
 import { AID_WORDS } from "../User/paymentWords"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // You call the student, agree a figure, and type it here. From then on their paywall quotes that
 // figure for that tier — which works unchanged in manual mode (they pay you) and in Razorpay mode
 // (the Pay button charges the approved amount).
 function FinancialAidList({ dataVersion, onDataChanged }) {
     const [aidRequests, setAidRequests] = useState([])
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("pending") // pending | approved | declined | all
     const [amounts, setAmounts] = useState({})                   // { [requestId]: rupees }
@@ -161,7 +163,8 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
             />{" "}
             <Button onClick={fetchAidRequests}>Refresh</Button>
 
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests.filter((row) => matchesStudent(row.user, search))} />
 
             <ReasonModal
                 open={declining !== null}

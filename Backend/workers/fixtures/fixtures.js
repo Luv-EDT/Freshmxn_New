@@ -6037,6 +6037,29 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 31 — every admin tab that lists students has one name-or-email search, and Activity matches looks a student up by name too",
+        run: () => {
+            const ADMIN = path.join(__dirname, "../../../Frontend/src/pages/Admin")
+            const problems = []
+            // the helper sits beside its antd box; read just the pure function
+            const helper = fs.readFileSync(path.join(ADMIN, "StudentSearch.js"), "utf8").match(/export const matchesStudent = [\s\S]*?\n\}/)[0]
+            // eslint-disable-next-line no-new-func
+            const matchesStudent = new Function(`${helper.replace("export const", "const")}\nreturn matchesStudent`)()
+            const riya = { name: "Riya Sharma", email: "riya.s@gmail.com" }
+            if (!matchesStudent(riya, "") || !matchesStudent(riya, "SHARMA") || !matchesStudent(riya, "riya gmail") || matchesStudent(riya, "riya yahoo")) problems.push("the name/email match is wrong")
+            if (matchesStudent(null, "riya") || !matchesStudent(null, "  ")) problems.push("a deleted student's row is mishandled")
+            ;["AccessRequestsList", "RefundRequestsList", "FinancialAidList", "MentorMatchesList", "SessionFeedbackList", "AssessmentIssuesList", "FollowUpsList", "StudyAbroadList", "CareerHelpList"].forEach((name) => {
+                const source = fs.readFileSync(path.join(ADMIN, `${name}.js`), "utf8")
+                if (!/<StudentSearch value=\{search\} onChange=\{setSearch\} \/>/.test(source) || !/matchesStudent\(row\.(user|student), search\)/.test(source)) problems.push(`${name} has no student search`)
+            })
+            if (!/matchesStudent\(user, search\)/.test(fs.readFileSync(path.join(ADMIN, "StudentsList.js"), "utf8"))) problems.push("Students doesn't use the shared search")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/req\.query\.q/.test(router) || !/choices: found\.map/.test(router)) problems.push("Activity matches can't look a student up by name")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures
