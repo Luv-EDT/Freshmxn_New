@@ -101,6 +101,12 @@ export async function acceptRetakeOffer(module) {
     return response
 }
 
+// Round 31: put back the earlier result of a test taken up again but not finished
+export async function keepEarlierResult(module) {
+    const response = await axiosInstance.post("/submissions/keepEarlierResult", { module })
+    return response
+}
+
 export async function getProgressForAdmin() {
     const response = await axiosInstance.get("/submissions/getProgressForAdmin")
     return response

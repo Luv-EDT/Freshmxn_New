@@ -12,3 +12,10 @@ export const reviewLabel = (module) => {
     if (module.external) return "Review scores"
     return "Review answers"
 }
+
+// A TEST WE'VE IMPROVED COMES FIRST (owner, Round 31): a test offered again, or one the student took up
+// and hasn't finished, leads the deck; everything else keeps its order.
+export const deckOrder = (modules, offers = {}, keptEarlier = {}) => {
+    const first = (module) => Boolean(offers[module.key] || keptEarlier[module.key])
+    return [...modules.filter(first), ...modules.filter((module) => !first(module))]
+}

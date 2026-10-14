@@ -887,6 +887,10 @@ const forStudent = (submission) => {
         const { seed, pending, trials, ...words } = psychometric.wordRecall
         psychometric.wordRecall = { ...words, written: (trials || []).length }
     }
+    // Round 31: which tests still hold an earlier result the student can go back to
+    const { keptEarlierFor } = require("../utils/retakes")
+    const kept = Object.keys(psychometric.history || {}).filter((module) => keptEarlierFor(submission.psychometric, module))
+    if (kept.length) psychometric.keptEarlier = Object.fromEntries(kept.map((module) => [module, true]))
     delete psychometric.history
 
     return { ...submission, psychometric }
@@ -902,27 +906,38 @@ router.get("/getProgressForAdmin", authMiddleware, adminAuthMiddleware, async (r
         const { mentorStage } = require("../utils/mentorStage")
         const { dueByFor } = require("./mentorWaitlistRouter")
 
-        const [submissions, users, rows, reviews] = await Promise.all([
+        const Report = require("../model/reportsModel")
+        const { systemUpdate } = require("./reportsRouter")
+        const [submissions, users, rows, reviews, reports] = await Promise.all([
             Submission.find({}).select("user psychometric psychometricSubmittedAt").lean(),
             User.find({ role: "student" }).select("currentTier").lean(),
             MentorWaitlist.find({}).lean(),
             SessionReview.find({}).select("waitlist sessionIndex").lean(),
+            Report.find({}).select("user scoring_version matching_version").lean(),
         ])
+        // Round 31 (owner): a report on older scoring or matching has a free update waiting too
+        const staleReport = new Set(reports.filter((report) => systemUpdate(report)).map((report) => String(report.user)))
 
         const progress = {}
         submissions.forEach((submission) => {
             const { psychometric = {} } = forStudent(submission) || {}
-            const { history, retakeOffers, retakeGrants, sartMeta, ...blocks } = psychometric
+            const { history, retakeOffers, retakeGrants, sartMeta, keptEarlier, ...blocks } = psychometric
             if (blocks.sartRaw) blocks.sartRaw = "recorded"
             if (blocks.perspective) blocks.perspective = { answers: blocks.perspective.answers, narrative: blocks.perspective.narrative }
-            progress[submission.user] = { psychometric: blocks, submittedAt: submission.psychometricSubmittedAt || null }
+            progress[submission.user] = {
+                psychometric: blocks,
+                submittedAt: submission.psychometricSubmittedAt || null,
+                // tests offered again to this student (Round 31)
+                offers: Object.keys((submission.psychometric && submission.psychometric.retakeOffers) || {}),
+            }
         })
         const rowByUser = Object.fromEntries(rows.map((row) => [String(row.user), row]))
         users.forEach((user) => {
             const row = rowByUser[String(user._id)] || null
             const reviewed = row ? reviews.filter((review) => String(review.waitlist) === String(row._id)).map((review) => review.sessionIndex) : []
             progress[user._id] = {
-                ...(progress[user._id] || { psychometric: {}, submittedAt: null }),
+                ...(progress[user._id] || { psychometric: {}, submittedAt: null, offers: [] }),
+                systemUpdate: staleReport.has(String(user._id)),
                 mentorship: mentorStage({ tier: user.currentTier, row, reviewed, dueBy: row && row.matchStatus === "matching" ? dueByFor(row) : null }),
             }
         })
@@ -1025,14 +1040,43 @@ router.post("/acceptRetakeOffer", authMiddleware, requireDiscovery, async (req, 
         if (!module || !offers[module]) {
             return res.status(400).json({ success: false, message: "This test isn't open to take again" })
         }
-        await require("../utils/retakes").reopenModule(req.user._id, module)
-        if (submission.psychometricSubmittedAt) {
+        await require("../utils/retakes").reopenModule(req.user._id, module, null, { fromOffer: true })
+        // an offer since Round 31 already made the next update free; one from before it does it now
+        if (submission.psychometricSubmittedAt && !(req.user.freeUpdates > 0)) {
             await require("../utils/selfUpdates").grantFreeUpdate(req.user._id, `retake:${module}`)
         }
-        return res.status(200).json({ success: true, message: "The test is open again — your earlier attempt is kept aside", data: { module } })
+        return res.status(200).json({ success: true, message: "The test is open again — your earlier result is kept until you finish this one", data: { module } })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Could not open the test again", error: error.message })
+    }
+})
+
+// GO BACK TO MY EARLIER RESULT (owner, Round 31: "their previous score will be intact — it's just an
+// option"). A student who took up an offer but hasn't finished the new attempt puts the earlier one
+// back exactly as it was; the offer closes. A finished new attempt is theirs and can't be undone here.
+router.post("/keepEarlierResult", authMiddleware, requireDiscovery, async (req, res) => {
+    try {
+        const { module } = req.body
+        const { keptEarlierFor } = require("../utils/retakes")
+        const submission = await Submission.findOne({ user: req.user._id }).select("psychometric").lean()
+        const kept = module && submission ? keptEarlierFor(submission.psychometric, module) : null
+        if (!kept) {
+            return res.status(400).json({ success: false, message: "There's no earlier result to go back to for this test" })
+        }
+
+        const set = { [`psychometric.${module}`]: kept.attempt, lastSavedAt: new Date() }
+        set[`psychometric.history.${module}`] = submission.psychometric.history[module].slice(0, -1)
+        const unset = { [`psychometric.retakeGranted.${module}`]: "", [`psychometric.retakeOffers.${module}`]: "" }
+        if (module === "sartRaw") {
+            if (kept.meta) set["psychometric.sartMeta"] = kept.meta
+            unset["psychometric.sartRunOpenedAt"] = ""   // a new run left open is dropped with it
+        }
+        await Submission.updateOne({ _id: submission._id }, { $set: set, $unset: unset })
+        return res.status(200).json({ success: true, message: "Your earlier result is back", data: { module } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not bring your earlier result back", error: error.message })
     }
 })
 

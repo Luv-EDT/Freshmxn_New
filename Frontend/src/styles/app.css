@@ -1411,6 +1411,11 @@ button.link-button:hover:not(:disabled) {
     padding: var(--space-3);
 }
 
+/* Round 31 (owner): a test we've improved, on top of the deck */
+.retake-note.is-improved {
+    border-left: 4px solid var(--teal);
+}
+
 .report-problem {
     margin-top: var(--space-2);
     font-size: 0.9rem;

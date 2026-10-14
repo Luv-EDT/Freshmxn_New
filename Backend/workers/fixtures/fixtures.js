@@ -6060,6 +6060,39 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 31 — a test we change is offered again automatically: its version moves, students on the older one are told and get a free next update, it comes first on their page, and their earlier result stays until they finish the new one",
+        run: () => {
+            const problems = []
+            const { TEST_VERSIONS, testsChanged } = require("../../assessment/testVersions")
+            ;["sartRaw", "digitSpan", "wordRecall", "reasoning", "storyRecall"].forEach((module) => {
+                if (!TEST_VERSIONS[module] || typeof TEST_VERSIONS[module].isCurrent !== "function") problems.push(`${module} has no version`)
+            })
+            if (testsChanged(undefined).join() !== "sartRaw" || testsChanged({ sartRaw: 2 }).length !== 0) problems.push("the changed-test check is wrong (SART moved to 2 in Round 30)")
+            if (TEST_VERSIONS.sartRaw.isCurrent({ sartMeta: {} }) || !TEST_VERSIONS.sartRaw.isCurrent({ sartMeta: { correctPressFeedback: true } })) problems.push("a SART run's version is misread")
+
+            const notices = fs.readFileSync(path.join(__dirname, "../../utils/versionNotices.js"), "utf8")
+            if (!/testsChanged\(announced\.tests\)/.test(notices) || !/runNow\("retake_offer", \{[^}]*olderOnly: true/.test(notices)) problems.push("a changed test is not offered on start")
+            const offer = fs.readFileSync(path.join(__dirname, "../../housekeeping/retakeOffer.js"), "utf8")
+            if (!/if \(submission\.psychometricSubmittedAt\) await grantFreeUpdate/.test(offer) || !/isCurrent\(psychometric\)/.test(offer)) problems.push("the offer doesn't free the next update, or reaches students already on the new version")
+
+            const { keptEarlierFor } = require("../../utils/retakes")
+            const history = { sartRaw: [{ attempt: "old rows", fromOffer: true }] }
+            if (!keptEarlierFor({ history }, "sartRaw") || keptEarlierFor({ history, sartRaw: "new rows" }, "sartRaw")) problems.push("the earlier result isn't kept until the new one is finished")
+            if (keptEarlierFor({ history: { sartRaw: [{ attempt: "x" }] } }, "sartRaw")) problems.push("an admin retake is mistaken for an offer")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/router\.post\("\/keepEarlierResult"/.test(router) || !/psychometric\.keptEarlier = /.test(router) || !/reopenModule\(req\.user\._id, module, null, \{ fromOffer: true \}\)/.test(router)) problems.push("the student can't go back to their earlier result")
+            if (!/systemUpdate: staleReport\.has/.test(router)) problems.push("the admin doesn't see a free update from our own improvements")
+
+            const { deckOrder } = loadEsModule(path.join(ASSESSMENT_DIR, "moduleLabels.js"))
+            const deck = deckOrder([{ key: "ipip50" }, { key: "sartRaw" }, { key: "mi" }], { sartRaw: { reason: "x" } })
+            if (deck.map((module) => module.key).join() !== "sartRaw,ipip50,mi") problems.push("the improved test isn't first on the deck")
+            const intro = fs.readFileSync(path.join(ASSESSMENT_DIR, "AssessmentIntro.js"), "utf8")
+            if (!/Keep my earlier result/.test(intro) || !/earlier result stays unless you finish the new one/.test(intro)) problems.push("the page doesn't say the earlier result stays")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

@@ -7,7 +7,7 @@ import StudentEditForm from "./StudentEditForm"
 import { GiveFreeAccess, DeleteAccount } from "./StudentAccessActions"
 import { PLAN_NAMES } from "../plans"
 import { getProgressForAdmin } from "../../apiCall/submissionsApi"
-import { sectionsDone } from "../Assessment/assessmentModules"
+import { sectionsDone, ASSESSMENT_MODULES } from "../Assessment/assessmentModules"
 import { matchesStudent } from "./StudentSearch"
 
 // THREE COLUMNS ON WHERE EACH STUDENT IS (owner, Round 29): the assessment (the same count the
@@ -20,11 +20,18 @@ const assessmentText = (progress) => {
 
 const UPDATE_KINDS = { own: "own change", free: "free (a retake we asked for)", system: "our improvement", granted: "free update given" }
 
-function ReportUpdates({ user }) {
+const testTitle = (key) => (ASSESSMENT_MODULES.find((module) => module.key === key) || { title: key }).title
+
+function ReportUpdates({ user, progress }) {
     const log = user.updateLog || []
-    // Round 30: a retake we asked for makes the NEXT update free (never more than one waiting)
+    // Round 30: a retake we asked for makes the NEXT update free (never more than one waiting). Round 31
+    // (owner): so does a report on our older scoring or matching, and a test we've offered again
     const freeUsed = log.filter((entry) => entry.kind === "free").length
-    const summary = `Own: ${user.selfUpdatesUsed || 0} of 3 used · ${user.freeUpdates > 0 ? "next update free" : "no free update waiting"}${freeUsed ? ` · ${freeUsed} free used so far` : ""}`
+    const waiting = user.freeUpdates > 0 ? "next update free"
+        : progress && progress.systemUpdate ? "free update waiting — our improvement"
+            : "no free update waiting"
+    const offers = (progress && progress.offers) || []
+    const summary = `Own: ${user.selfUpdatesUsed || 0} of 3 used · ${waiting}${offers.length ? ` · offered again: ${offers.map(testTitle).join(", ")}` : ""}${freeUsed ? ` · ${freeUsed} free used so far` : ""}`
     if (log.length === 0) return summary
     return (
         <details>
@@ -115,7 +122,7 @@ function StudentsList({ dataVersion, onDataChanged }) {
         { title: "Interest form", render: (_, record) => record.progress?.interestForm || "N/A" },
         { title: "Assessment", render: (_, record) => (record.role === "student" ? assessmentText(progress[record._id]) : "—") },
         { title: "Mentorship", render: (_, record) => (progress[record._id] && progress[record._id].mentorship) || "—" },
-        { title: "Report updates", render: (_, record) => (record.role === "student" ? <ReportUpdates user={record} /> : "—") },
+        { title: "Report updates", render: (_, record) => (record.role === "student" ? <ReportUpdates user={record} progress={progress[record._id]} /> : "—") },
         {
             title: "Action",
             render: (_, record) => (

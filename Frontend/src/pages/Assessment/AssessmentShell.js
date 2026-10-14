@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { message, Modal } from "antd"
-import { savePsychometric, submitPsychometric, getMySubmission, getStoryState, acceptRetakeOffer } from "../../apiCall/submissionsApi"
+import { savePsychometric, submitPsychometric, getMySubmission, getStoryState, acceptRetakeOffer, keepEarlierResult } from "../../apiCall/submissionsApi"
 import { setUser } from "../../store/userSlice"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
@@ -220,6 +220,17 @@ function AssessmentShell() {
         }
     }
 
+    // Round 31: go back to the earlier result of a test taken up again and not finished
+    const handleKeepEarlier = async (module) => {
+        try {
+            const response = await keepEarlierResult(module)
+            await loadSaved()
+            message.success(response.data.message)
+        } catch (error) {
+            message.error(error.response?.data?.message || "Could not bring your earlier result back")
+        }
+    }
+
     const handleModuleDone = async () => {
         const saved = await saveModule()
         if (saved) navigate("/assessment/start")
@@ -329,6 +340,8 @@ function AssessmentShell() {
                     retakeGranted={psychometric.retakeGranted || {}}
                     retakeOffers={psychometric.retakeOffers || {}}
                     onAcceptOffer={handleAcceptOffer}
+                    keptEarlier={psychometric.keptEarlier || {}}
+                    onKeepEarlier={handleKeepEarlier}
                     accommodations={psychometric.accommodations || null}
                     onSaveAccommodations={handleSaveAccommodations}
                 />

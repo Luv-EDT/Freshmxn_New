@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { reviewLabel } from "./moduleLabels"
+import { reviewLabel, deckOrder } from "./moduleLabels"
 import { factorCoverage } from "./factorFeeds"
 import { ResearchBox, ModuleWhy, ReportProblem } from "./ResearchBox"
 import { NEEDS } from "./accommodations"
@@ -80,8 +80,8 @@ const untilText = (hoursLeft) => new Date(Date.now() + hoursLeft * 3600 * 1000)
 // THE PAGE IS A DECK (Round 13, owner): one big card for the section in hand, arrows (or a swipe) to
 // move between them, and a strip of small cards underneath showing every section's state at a
 // glance. Story questions that are waiting on the student come first, in bold, above everything.
-function AssessmentIntro({ modules, completed, started, progress = {}, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, retakeOffers = {}, onAcceptOffer, accommodations = null, onSaveAccommodations }) {
-    const built = modules.filter((module) => module.built)
+function AssessmentIntro({ modules, completed, started, progress = {}, storyState, onOpen, onSubmit, canSubmit, isSubmitting, alreadySubmitted, hasNewAnswers, onReadReport, retakeGranted = {}, retakeOffers = {}, onAcceptOffer, keptEarlier = {}, onKeepEarlier, accommodations = null, onSaveAccommodations }) {
+    const built = deckOrder(modules.filter((module) => module.built), retakeOffers, keptEarlier)
     const comingSoon = modules.filter((module) => !module.built)
     const unfinished = built.filter((module) => !completed.includes(module.key))
     // a section skipped for a declared difficulty is finished, but it measured nothing
@@ -104,7 +104,9 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
     const [picked, setIndex] = useState(null)
     // the strip of every test stays folded until asked for (owner, Round 15) — the card in hand is the page
     const [showAll, setShowAll] = useState(false)
-    const index = picked === null ? Math.max(firstOpen, 0) : picked
+    // an improved test offered again (or taken up and not finished) is first, and the deck opens on it
+    const offeredFirst = built.length > 0 && Boolean(retakeOffers[built[0].key] || keptEarlier[built[0].key])
+    const index = picked === null ? (offeredFirst ? 0 : Math.max(firstOpen, 0)) : picked
     const touchX = useRef(null)
     const move = (step) => setIndex(Math.min(built.length - 1, Math.max(0, index + step)))
 
@@ -145,8 +147,10 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
         // story, whose own offer below shows only once its questions closed unanswered)
         const reopened = Boolean(retakeGranted[module.key]) && !isDone && !isStarted && module.key !== "storyRecall"
         const storyOffer = module.key === "storyRecall" && storyState && storyState.phase === "expired" && storyState.retakesLeft > 0
-        // we improved this test and offered everyone who took it another go (Round 29); their choice
+        // we improved this test and offered everyone who took it another go (Round 29); their choice.
+        // Round 31: taken up but not finished, their earlier result is still there to go back to
         const offered = isDone && retakeOffers[module.key]
+        const kept = !isDone && keptEarlier[module.key]
 
         return (
             <div
@@ -177,17 +181,32 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                     </p>
                 )}
                 {offered && (
-                    <div className="retake-note">
+                    <div className="retake-note is-improved">
                         <p>
-                            <strong>You can take this again</strong>{offered.reason ? ` — ${offered.reason}` : ""}. Your
-                            earlier attempt is kept aside, and updating your report afterwards is free.
+                            <strong>Improved — you can take this again</strong>{offered.reason ? `: ${offered.reason}` : ""}. Your
+                            earlier result stays unless you finish the new one, and updating your report afterwards is free.
                         </p>
                         <button
                             type="button"
                             className="btn btn-ghost"
-                            onClick={() => window.confirm("Open this test again? Your earlier result stops counting once you take it.") && onAcceptOffer(module.key)}
+                            onClick={() => window.confirm("Open this test again? Your earlier result stays until you finish the new attempt.") && onAcceptOffer(module.key)}
                         >
                             Take it again
+                        </button>
+                    </div>
+                )}
+                {kept && (
+                    <div className="retake-note">
+                        <p>
+                            <strong>You're taking this again.</strong> Your earlier result is kept until you finish — changed
+                            your mind? Go back to it.
+                        </p>
+                        <button
+                            type="button"
+                            className="btn btn-ghost"
+                            onClick={() => window.confirm("Go back to your earlier result? This attempt is dropped.") && onKeepEarlier(module.key)}
+                        >
+                            Keep my earlier result
                         </button>
                     </div>
                 )}
