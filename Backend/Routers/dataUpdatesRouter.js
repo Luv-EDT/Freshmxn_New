@@ -665,14 +665,25 @@ router.get("/getActivityReadingsForAdmin", authMiddleware, adminAuthMiddleware, 
         const User = require("../model/userModel")
         const Submission = require("../model/submissionsModel")
         const Recommendation = require("../model/recommendationsModel")
-        const email = typeof req.query.email === "string" ? req.query.email.trim().toLowerCase() : ""
-        if (!email) {
-            return res.status(400).json({ success: false, message: "Enter the student's email" })
+        // Round 31 (owner): a name or an email. An exact email goes straight to that student; anything
+        // else lists up to ten whose name or email contains it, and one match is looked up at once.
+        const raw = typeof req.query.q === "string" ? req.query.q : (typeof req.query.email === "string" ? req.query.email : "")
+        const text = raw.trim()
+        if (!text) {
+            return res.status(400).json({ success: false, message: "Enter the student's name or email" })
         }
 
-        const student = await User.findOne({ email }).select("name email").lean()
+        let student = await User.findOne({ email: text.toLowerCase() }).select("name email").lean()
         if (!student) {
-            return res.status(404).json({ success: false, message: "No student with that email" })
+            const pattern = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+            const found = await User.find({ role: "student", $or: [{ name: pattern }, { email: pattern }] }).select("name email").limit(10).lean()
+            if (found.length === 0) {
+                return res.status(404).json({ success: false, message: "No student with that name or email" })
+            }
+            if (found.length > 1) {
+                return res.status(200).json({ success: true, message: "Several students match", data: { choices: found.map((user) => ({ name: user.name, email: user.email })) } })
+            }
+            student = found[0]
         }
 
         const [submission, recommendation] = await Promise.all([

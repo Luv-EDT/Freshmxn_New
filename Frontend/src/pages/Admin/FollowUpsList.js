@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Table, Button, message } from "antd"
 import dayjs from "dayjs"
 import { getAllFollowUpsForAdmin, runHousekeepingForAdmin } from "../../apiCall/followUpsApi"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // The 6- and 12-month follow-ups (Round 10): who was asked, who answered, and what they said. The
 // daily scan runs by itself; "Run the scan now" is for checking it after a deploy.
@@ -9,6 +10,7 @@ const DOING = { studying: "Studying", working: "Working", preparing_for_exam: "P
 
 function FollowUpsList({ dataVersion }) {
     const [data, setData] = useState({ followUps: [], summary: { sent: 0, answered: 0 } })
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [loading, setLoading] = useState(false)
 
     const fetchAll = useCallback(async () => {
@@ -52,7 +54,8 @@ function FollowUpsList({ dataVersion }) {
                 {data.summary.sent} asked · {data.summary.answered} answered{" "}
                 <Button onClick={runScan}>Run the scan now</Button> <Button onClick={fetchAll}>Refresh</Button>
             </p>
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={data.followUps} scroll={{ x: "max-content" }} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={data.followUps.filter((row) => matchesStudent(row.user, search))} scroll={{ x: "max-content" }} />
         </div>
     )
 }

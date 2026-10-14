@@ -5,6 +5,7 @@ import { getWaitlistForAdmin, matchForAdmin, resolveForAdmin, resetChoiceForAdmi
 import { grantMentorSessionForAdmin } from "../../apiCall/paymentsApi"
 import { getAllMentorsForAdmin } from "../../apiCall/mentorsApi"
 import { markWhatsappInviteForAdmin } from "../../apiCall/mentorSessionsApi"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // Every Tier-2 student and where their mentor match stands. The 20-business-day clock runs from the
 // student's CHOICE, not their payment. Actions are keyed on the student's user id.
@@ -34,6 +35,7 @@ const businessDaysLeft = (dueBy) => {
 
 function MentorMatchesList({ dataVersion, onDataChanged }) {
     const [rows, setRows] = useState([])
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [mentors, setMentors] = useState([])
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("matching") // awaiting_choice | matching | matched | unmatchable | all
@@ -272,7 +274,8 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
             />{" "}
             <Button onClick={fetchAll}>Refresh</Button>
 
-            <Table rowKey={(record) => record.student?._id} loading={loading} columns={columns} dataSource={visibleRows} scroll={{ x: "max-content" }} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey={(record) => record.student?._id} loading={loading} columns={columns} dataSource={visibleRows.filter((row) => matchesStudent(row.student, search))} scroll={{ x: "max-content" }} />
         </div>
     )
 }

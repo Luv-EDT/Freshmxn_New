@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Table, Button, Select, message } from "antd"
 import dayjs from "dayjs"
 import { getLeadsForAdmin, updateLeadForAdmin } from "../../apiCall/studyAbroadApi"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // Students who asked to be connected with the study-abroad partner (Round 11). Every row was made
 // with the consent box ticked; the consent date and policy version are shown. Share the details with
@@ -10,6 +11,7 @@ const STATUS_NAMES = { new: "New", shared: "Shared with partner", closed: "Close
 
 function StudyAbroadList() {
     const [leads, setLeads] = useState([])
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [loading, setLoading] = useState(false)
 
     const fetchAll = useCallback(async () => {
@@ -64,7 +66,8 @@ function StudyAbroadList() {
                 {leads.filter((lead) => lead.status === "new").length} new · {leads.length} in all{" "}
                 <Button onClick={fetchAll}>Refresh</Button>
             </p>
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={leads} scroll={{ x: "max-content" }} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={leads.filter((row) => matchesStudent(row.user, search))} scroll={{ x: "max-content" }} />
         </div>
     )
 }

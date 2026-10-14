@@ -61,33 +61,105 @@ export const whyChosen = (entry) => {
 
 // ── the road from where the student stands ──────────────────────────────────────────────────────
 //
-// A COLLEGE OR WORKING STUDENT IS PAST SCHOOL AND IN (OR PAST) A DEGREE (owner, Round 19: "I am
-// already in college, and it still recommends bachelor's degrees"). Their road leaves out the school
-// steps, and their next step is the one AFTER the first degree — unless this career needs its own
-// degree from the start (restart_undergrad), which is then honestly their next step.
+// EVERY STEP OF THE PATH, FOR THIS PERSON (owner, Round 31: "the next step should be relevant to the
+// student, not in general"). Each step is behind them ("done", with a word on why), where they are
+// ("now"), or still to do ("ahead" — shown bold). Their next step is the first one ahead.
 //
-// `allSteps` is the career's path already levelled by the card's levelPath (0 school … 2 degree …);
-// `studentLevel` is where the journey puts the student. Returns the steps to show and the index of the
-// next one (-1 when there is none).
-const DEGREE_STAGES = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+// School students walk the whole path. Past school, the school steps are never shown (Round 19), and
+// the rest depends on the door the career opens to someone already in or past a degree:
+//   · their own career — the steps up to the work are behind them;
+//   · their degree is one this career names (`entry.degreeLeads`, degree_families.json) — the
+//     entrance and the degree are theirs;
+//   · it takes anyone ("open") or any graduate ("after_any_degree") — the first-degree entrance is
+//     not for them, and a degree step asking only for "any bachelor's" is covered by theirs; a named
+//     degree they don't have (the LLB) is still ahead;
+//   · it needs its own degree from the start ("restart_undergrad") — everything is ahead, and the card
+//     says plainly that this is a switch, never "your next step: JEE" as if it were routine.
+// A student about to start college (pre-admission) is past school but not yet in a degree: the
+// entrance and the degree are honestly next.
+//
+// `allSteps` is the path levelled by the card's levelPath; `you` comes from reportsRouter (youFor).
+const UG_ENTRANCE = ["entrance_exam", "entrance"]
+const UG_DEGREE = ["degree", "undergrad", "diploma"]
+const WORK_STAGES = ["work", "employment", "practice", "independence", "service", "recruitment", "entry"]
+const ANY_DEGREE = /^\s*any (bachelor|graduate|degree|undergraduate|stream|discipline)/i
+const isSchoolStep = (step) => /^class_/.test(String(step.stage || ""))
 
-export const roadFrom = (allSteps, journey, studentLevel, midStreamEntry) => {
+export const personalRoad = ({ steps: allSteps = [], entry = {}, detail = {}, journey, you = {} }) => {
     const pastSchool = journey === "college" || journey === "early_professional"
-    const restart = midStreamEntry === "restart_undergrad"
-    const steps = pastSchool ? allSteps.filter((step) => step.level >= 2) : allSteps
-    const lastDegree = steps.reduce((found, step, index) => (DEGREE_STAGES.includes(step.stage) ? index : found), -1)
+    const mark = (step, status, note = null) => ({ ...step, status, note })
 
-    // The first step at or beyond where the student is — what they do next.
-    const nextIndex = studentLevel === undefined
-        ? -1
-        : pastSchool && !restart && lastDegree >= 0
-            ? (lastDegree + 1 < steps.length ? lastDegree + 1 : -1)
-            // A class 11-12 student is already IN the school step: their next step is the first after it
-            : journey === "class11_12"
-                ? steps.findIndex((step) => step.level > studentLevel)
-                : steps.findIndex((step) => step.level >= Math.min(studentLevel, 2))
+    if (!pastSchool) {
+        // a class 11-12 student is IN the Class 11-12 step: the next is the first after it
+        const steps = allSteps.map((step) => (journey === "class11_12" && step.level <= 1 ? mark(step, step.level < 1 ? "done" : "now") : mark(step, "ahead")))
+        return { steps, nextIndex: steps.findIndex((step) => step.status === "ahead"), situation: "school" }
+    }
 
-    return { steps, nextIndex }
+    const shown = allSteps.filter((step) => !isSchoolStep(step))
+    const lastUg = shown.reduce((found, step, index) => (UG_DEGREE.includes(step.stage) ? index : found), -1)
+    // the first-degree part of the road: its entrance (before the degree) and the degree itself
+    const isUg = (step, index) => (UG_DEGREE.includes(step.stage) && index <= lastUg) || (UG_ENTRANCE.includes(step.stage) && (lastUg === -1 || index < lastUg))
+    const inDegree = journey === "college" && !you.preAdmission && you.degreeYearsLeft > 0
+    let situation
+    let steps
+
+    if (you.preAdmission) {
+        situation = "pre_admission"
+        steps = shown.map((step) => mark(step, "ahead"))
+    } else if (entry.ownCareer) {
+        situation = "own"
+        const work = shown.findIndex((step) => WORK_STAGES.includes(step.stage))
+        steps = shown.map((step, index) => (work === -1 || index <= work ? mark(step, "done", "behind you") : mark(step, "ahead")))
+    } else if (entry.degreeLeads) {
+        situation = "degree_counts"
+        steps = shown.map((step, index) => {
+            if (!isUg(step, index)) return mark(step, "ahead")
+            if (UG_DEGREE.includes(step.stage) && inDegree) return mark(step, "now", "your degree — finish it")
+            return mark(step, "done", UG_DEGREE.includes(step.stage) ? "your degree covers this" : "behind you")
+        })
+    } else if (detail.midStreamEntry === "open" || detail.midStreamEntry === "after_any_degree") {
+        situation = "covered"
+        const open = detail.midStreamEntry === "open"
+        steps = shown.map((step, index) => {
+            if (!isUg(step, index)) return mark(step, "ahead")
+            if (UG_ENTRANCE.includes(step.stage)) return mark(step, "done", "not needed for you")
+            if (open) return mark(step, "done", "not needed for you — you can move in without starting this")
+            if (ANY_DEGREE.test(step.requirement || "") && you.hasDegree) return mark(step, inDegree ? "now" : "done", inDegree ? "your degree — finish it" : "your degree covers this")
+            return mark(step, "ahead")
+        })
+    } else if (detail.midStreamEntry === "restart_undergrad") {
+        situation = entry.entryClosed ? "switch_closed" : "switch"
+        // the usual entrance has closed for them (JEE, 3 years after Class 12) — it is not their next step
+        steps = shown.map((step) => mark(step, "ahead", entry.entryClosed && UG_ENTRANCE.includes(step.stage) ? "closed for you — see the other way in" : null))
+        const next = steps.findIndex((step) => !step.note)
+        return { steps, nextIndex: next, situation }
+    } else {
+        situation = null
+        steps = shown.map((step) => mark(step, "ahead"))
+    }
+
+    return { steps, nextIndex: steps.findIndex((step) => step.status === "ahead"), situation }
+}
+
+// HOW LONG FOR YOU (owner, Round 31) — the engine's own years-to-get-there (journey.js
+// yearsToGetThere, worked out from where the student stands), with a few words on why.
+// null when the report predates it — the card then shows the plain years to qualify.
+export const howLongForYou = (entry = {}, detail = {}, journey, you = {}, degreeLabel = null) => {
+    if (entry.ownCareer) return { text: "This is your work now", reason: null }
+    if (typeof entry.yearsToGetThere !== "number") return null
+    const years = entry.yearsToGetThere
+    const text = years === 0 ? "You can start now" : `About ${years} ${years === 1 ? "year" : "years"} from now`
+    const pastSchool = journey === "college" || journey === "early_professional"
+    if (!pastSchool) return { text, reason: null }
+
+    const degree = degreeLabel || "degree"
+    const reasons = []
+    if (entry.degreeLeads) reasons.push(you.degreeYearsLeft > 0 ? `finish your ${degree} and you're on your way` : `your ${degree} already counts`)
+    else if (detail.midStreamEntry === "restart_undergrad") reasons.push("this needs its own degree from the start")
+    else if (detail.midStreamEntry === "after_any_degree" && you.hasDegree) reasons.push(you.degreeYearsLeft > 0 ? "after you finish your degree" : "building on the degree you have")
+    else if (detail.midStreamEntry === "open") reasons.push("you can move in without a new degree")
+    if (entry.wasteBreakdown && entry.wasteBreakdown.class_11_12 > 0) reasons.push("plus about a year to add a Class 12 subject through open school")
+    return { text, reason: reasons.length ? reasons.join(", ") : null }
 }
 
 // ── the stream map (class 9-10) ─────────────────────────────────────────────────────────────────
@@ -200,12 +272,20 @@ const AFTER_UNDERGRAD = {
     masters_is_the_entry: "The master's degree is the way in.",
 }
 
-// At most three, each derived from the record for THIS student's stage. `nextStep` is the path step
-// the card has already worked out with levelPath (passed in so this file needs no imports).
-export const cardSteps = (entry, detail, journey, nextStep) => {
+// At most three, each derived from the record for THIS student — where they stand (`road`, from
+// personalRoad) and what the career asks. "Your next step" is only ever a step that really is theirs
+// next (owner, Round 31): a college student is never sent back to a first-degree entrance as if it
+// were routine — when a career needs its own degree, the card says that is a switch.
+export const cardSteps = (entry, detail, journey, road = null, you = {}) => {
     if (!detail) return []
 
+    const nextStep = road && road.nextIndex >= 0 ? road.steps[road.nextIndex] : null
     const next = nextStep && nextStep.requirement ? `Your next step: ${nextStep.requirement}` : null
+    const situation = road ? road.situation : null
+    // an "open" career doesn't wait for the degree, so it never says "finish it first"
+    const finish = journey === "college" && you.degreeYearsLeft > 0 && (situation === "degree_counts" || (situation === "covered" && detail.midStreamEntry !== "open"))
+        ? `Finish your degree first — about ${you.degreeYearsLeft} ${you.degreeYearsLeft === 1 ? "year" : "years"} left.`
+        : null
     let steps = []
 
     if (journey === "class9_10") {
@@ -216,15 +296,33 @@ export const cardSteps = (entry, detail, journey, nextStep) => {
                 : examLine(detail),
             planBLine(detail),
         ]
-    } else if (journey === "class11_12") {
+    } else if (journey === "class11_12" || situation === "pre_admission") {
         steps = [next, examLine(detail), planBLine(detail)]
+    } else if (situation === "own") {
+        steps = [next]
+    } else if (situation === "switch" || situation === "switch_closed") {
+        const years = typeof entry.yearsToGetThere === "number" ? entry.yearsToGetThere : detail.yearsToQualify
+        const start = nextStep && nextStep.requirement
+            ? (UG_ENTRANCE.includes(nextStep.stage) ? `The entrance for that degree: ${nextStep.requirement}` : `It starts with: ${nextStep.requirement}`)
+            : null
+        const bypass = detail.entryWindow && (detail.entryWindow.bypass || [])[0]
+        steps = [
+            typeof years === "number"
+                ? `To move into this you'd start its own degree — about ${years} ${years === 1 ? "year" : "years"} from now.`
+                : "To move into this you'd start its own degree.",
+            situation === "switch_closed"
+                ? `The usual entrance has closed for you${bypass ? ` — another way in: ${bypass}` : ""}.`
+                : start,
+        ]
     } else if (journey === "college") {
-        steps = [midStreamLine(detail), AFTER_UNDERGRAD[detail.afterUndergrad] || null, next]
+        // "finish your degree first" already says what "any graduate" would
+        const door = situation === "covered" && (detail.midStreamEntry === "open" || !finish) ? midStreamLine(detail) : null
+        steps = [door, finish, next, AFTER_UNDERGRAD[detail.afterUndergrad] || null]
     } else if (journey === "early_professional") {
         const own = detail.selfEmployment && detail.selfEmployment.likelihood === "common" && detail.selfEmployment.route
             ? `Many people do this for themselves: ${detail.selfEmployment.route}`
             : null
-        steps = [midStreamLine(detail), next, own]
+        steps = [situation === "covered" ? midStreamLine(detail) : null, next, own]
     } else {
         steps = [next, examLine(detail)]
     }

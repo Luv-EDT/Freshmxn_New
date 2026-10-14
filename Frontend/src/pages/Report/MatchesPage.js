@@ -6,7 +6,6 @@ import ProfessionCard from "./ProfessionCard"
 import ReportSortMenu from "./ReportSortMenu"
 import ReportFilterMenu from "./ReportFilterMenu"
 import CombinedCareers from "./CombinedCareers"
-import OtherCareers from "./OtherCareers"
 import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
 import { groupList, splitShown, MAIN_SHOWN, SWITCH_COST_GROUP_YEARS, SECONDARY_SORTS } from "./reportFilters"
@@ -19,8 +18,9 @@ import { TOP_SHOWN, tierNameFor, tierWhyFor, buildFirstFor, BUILD_FIRST_TITLE, B
 // ordered (owner, Round 29: moved here from the overview).
 //
 // ONE LIST, TWO ORDERS (owner, Round 20). The top three show first; opening the rest shows the tiers
-// as headed groups — up to MAIN_SHOWN (15) of them, and anything beyond folded under "explore a few
-// more" (owner, Round 28). The sort and the filters are two highlighted buttons above the list, each
+// as headed groups — up to MAIN_SHOWN (15) of them, and anything beyond folded under "Some other
+// careers you can consider", still under their tier headings (owner, Rounds 28 and 31). Every career
+// here was pointed to by the student's own answers — none reaches the list on fit alone (Round 31). The sort and the filters are two highlighted buttons above the list, each
 // with one line saying what it does (owner, Round 29). "Best match" puts careers that would cost 2+
 // years to switch in a last group of their own, least affected first; "Best fit, ignoring switching
 // cost" leaves them in their tiers. A "then order by" orders the whole list, across the tiers.
@@ -52,7 +52,7 @@ function MatchesPage() {
     const ordered = useMemo(() => groups.flatMap((group) => group.entries), [groups])
     const split = useMemo(() => splitShown(groups, MAIN_SHOWN), [groups])
     const shownIds = useMemo(() => ordered.slice(0, MAIN_SHOWN).map((entry) => String(entry.professionId)), [ordered])
-    // the first not-a-fit tier on show, which carries the "Build skills first" band
+    // the first not-a-fit tier on show, which carries the "Build fundamentals/factors first" band
     const firstBuildTier = useMemo(() => {
         const first = groups.find((group) => !group.costly && buildFirstFor(group.tier))
         return first ? first.tier : null
@@ -99,6 +99,7 @@ function MatchesPage() {
             showAi={secondary === "ai"}
             degreeLabel={(state.data && state.data.degree) || null}
             abroadPlans={(state.data && state.data.abroadPlans) || null}
+            you={(state.data && state.data.you) || {}}
         />
     )
 
@@ -113,7 +114,7 @@ function MatchesPage() {
         </details>
     ) : (
         <section key={group.key} className="match-group">
-            {/* "Build skills first" heads the not-a-fit tiers once, above the first of them */}
+            {/* "Build fundamentals/factors first" heads the not-a-fit tiers once, above the first of them */}
             {buildFirstFor(group.tier) && group.tier === firstBuildTier && !group.key.endsWith("-more") && (
                 <div className="match-band">
                     <h2 className="match-band-title">{BUILD_FIRST_TITLE}</h2>
@@ -182,7 +183,7 @@ function MatchesPage() {
                     </p>
                 )}
 
-                {/* THE TOP THREE; then up to fifteen in their groups; the rest folded (owner, Round 28) */}
+                {/* THE TOP THREE; then up to fifteen in their groups; the rest folded (owner, Rounds 28 and 31) */}
                 {showAllFor !== sortKey ? (
                     <div className="match-list">
                         {ordered.slice(0, TOP_SHOWN).map((entry) => card(entry))}
@@ -193,7 +194,7 @@ function MatchesPage() {
                         {split.rest.length > 0 && (
                             <details className="report-details match-more">
                                 <summary className="report-summary">
-                                    <strong>Careers that suit you aren't limited to these — explore a few more</strong>
+                                    <strong>Some other careers you can consider</strong>
                                     {" "}({ordered.length - MAIN_SHOWN})
                                 </summary>
                                 {split.rest.map(renderGroup)}
@@ -210,9 +211,6 @@ function MatchesPage() {
 
                 {ordered.length === 0 && hiddenCount > 0 && <p>None of your matches fit every filter you turned on.</p>}
             </div>
-
-            {/* CAREERS NOTHING POINTED TO THAT STILL FIT YOU (owner, Round 29) — behind one button */}
-            <OtherCareers careers={data.otherCareers} />
 
             {/* COMBINED CAREERS (Round 10) — beside the list, never in it; the same card since Round 19 */}
             <CombinedCareers combined={data.combined} journey={journey} shownIds={shownIds} />

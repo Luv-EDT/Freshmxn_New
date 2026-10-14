@@ -73,8 +73,9 @@ export const tierWhyFor = (tier) => {
 // the band above the not-a-fit tiers, and the one line under it. "Fundamentals" means every quality in
 // the psychometric analysis — personality, the intelligences, the thinking abilities and the habits
 // under them (owner, Round 30; the four that help in every career are the "core fundamentals")
-export const BUILD_FIRST_TITLE = "Build fundamentals first"
-export const BUILD_FIRST_NOTE = "These link to what you do, but ask for more of your fundamentals than your profile shows today — the personality, intelligences, thinking abilities and habits in your psychometric analysis. They can be built."
+// "/factors" (owner, Round 31) so nobody wonders what a fundamental is
+export const BUILD_FIRST_TITLE = "Build fundamentals/factors first"
+export const BUILD_FIRST_NOTE = "These link to what you do, but ask for more of your fundamentals (the factors in your psychometric analysis — personality, intelligences, thinking abilities and habits) than your profile shows today. They can be built."
 
 // the heading a tier is shown under, and the words "why it ranked there" uses
 export const tierNameFor = (tier) => {

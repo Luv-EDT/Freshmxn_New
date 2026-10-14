@@ -2170,8 +2170,8 @@ const fixtures = [
             // is one tap away — a fold, not a filter. Round 20: opened, it is the same entries in groups.
             if (!/ordered\.slice\(0, TOP_SHOWN\)\.map\(\(entry\) => card\(entry\)\)/.test(page) || !/showAllFor !== sortKey \?/.test(page)) problems.push("the rendered list is not the chosen order (top three, then all)")
             if (!/const ordered = useMemo\(\(\) => groups\.flatMap\(\(group\) => group\.entries\), \[groups\]\)/.test(page)) problems.push("the open list is not the same entries as the top three")
-            // Round 28 (owner): three, then up to fifteen, then the rest folded under "explore a few more"
-            if (!/Show \{Math\.min\(ordered\.length, MAIN_SHOWN\) - TOP_SHOWN\} more/.test(page) || !/explore a few more/.test(page) || !/splitShown\(groups, MAIN_SHOWN\)/.test(page)) problems.push("the list does not open to fifteen with the rest folded")
+            // Round 28 (owner): three, then up to fifteen, then the rest folded (Round 31: "Some other careers you can consider")
+            if (!/Show \{Math\.min\(ordered\.length, MAIN_SHOWN\) - TOP_SHOWN\} more/.test(page) || !/Some other careers you can consider/.test(page) || !/splitShown\(groups, MAIN_SHOWN\)/.test(page)) problems.push("the list does not open to fifteen with the rest folded")
             if (!/const TOP_SHOWN = 3/.test(page)) problems.push("the list does not open on three")
             if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at three")
             if (!/rank=\{ordered\.indexOf\(entry\) \+ 1\}/.test(page)) problems.push("the cards are not numbered in the order shown")
@@ -2415,7 +2415,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "TIERS — every one of the sixteen tiers has a crisp label (at most four words), and 'Build fundamentals first' marks exactly the engine's not-a-fit tiers",
+        name: "TIERS — every one of the sixteen tiers has a crisp label (at most four words), and 'Build fundamentals/factors first' marks exactly the engine's not-a-fit tiers",
         // REPLACES the five-band check (owner, Round 20): the open list now shows the engine's tiers
         // themselves as headings, so the names must line up with tiers.js one for one.
         run: () => {
@@ -2445,7 +2445,8 @@ const fixtures = [
             // OWNER CHANGE (Round 30): "fundamentals", not "skills"; the vague interest headings got clearer
             // names and a line under each
             const framing = loadEsModule(path.join(REPORT_DIR, "reportFraming.js"))
-            if (framing.BUILD_FIRST_TITLE !== "Build fundamentals first" || !/psychometric analysis/.test(framing.BUILD_FIRST_NOTE)) problems.push("the band is not 'Build fundamentals first' with what fundamentals are")
+            // Round 31 (owner): "/factors", so fundamentals = factors is plain
+            if (framing.BUILD_FIRST_TITLE !== "Build fundamentals/factors first" || !/factors in your psychometric analysis/.test(framing.BUILD_FIRST_NOTE)) problems.push("the band is not 'Build fundamentals/factors first' with what fundamentals are")
             if (TIER_NAMES.some((row) => /interests?$/i.test(row.name))) problems.push("a tier is still called '… interest(s)'")
             ;[9, 10, 11, 14, 15, 16].forEach((tier) => { if (!framing.tierWhyFor(tier)) problems.push(`tier ${tier} has no line saying what pointed there`) })
             return problems.length > 0 ? problems.join("; ") : null
@@ -2469,7 +2470,7 @@ const fixtures = [
             if (!/<Section title="Your next 12 months">/.test(card)) problems.push("the card has no 'Your next 12 months'")
 
             // the card's steps come from real data: its path step (levelPath) and its exams
-            if (!/levelPath\(detail\.pathToEntry/.test(card) || !/cardSteps\(entry, detail, journey, stepForPlan\)/.test(card)) {
+            if (!/levelPath\(detail\.pathToEntry/.test(card) || !/cardSteps\(entry, detail, journey, road, you\)/.test(card)) {
                 problems.push("the card's next steps no longer start from its own levelled path")
             }
             const steps = (plan.split("export const cardSteps")[1] || "").split("\n}\n")[0]
@@ -3157,7 +3158,7 @@ const fixtures = [
         // Built from data, never filler: an empty string, an "undefined" or a fourth step would all
         // be the report padding itself.
         run: () => {
-            const { cardSteps, whyFits } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { cardSteps, whyFits, personalRoad } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
             const { studentFacing } = require("../../Routers/professionsRouter")
             const professions = require("../../data/ALL-professions.json").professions
 
@@ -3165,7 +3166,10 @@ const fixtures = [
             ;["class9_10", "class11_12", "college", "early_professional"].forEach((journey) => {
                 professions.forEach((profession) => {
                     const detail = studentFacing(profession)
-                    const steps = cardSteps({ professionId: profession.id }, detail, journey, detail.pathToEntry[1] || null)
+                    const entry = { professionId: profession.id }
+                    const you = { degreeYearsLeft: journey === "college" ? 2 : null, hasDegree: journey !== "class9_10" && journey !== "class11_12" }
+                    const road = personalRoad({ steps: (detail.pathToEntry || []).map((step) => ({ ...step, level: /^class_/.test(step.stage) ? 1 : 2 })), entry, detail, journey, you })
+                    const steps = cardSteps(entry, detail, journey, road, you)
                     if (steps.length > 3) problems.push(`${profession.profession} (${journey}): ${steps.length} steps`)
                     steps.forEach((step) => {
                         if (typeof step !== "string" || step.trim() === "" || /undefined|null|NaN/.test(step)) {
@@ -4945,29 +4949,72 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 19 — a college or working student is never told to start a bachelor's (unless the career needs its own) and never sees school steps",
+        name: "ROUND 31 — every career's path is walked from where THIS student stands: steps are behind them, where they are, or ahead (bold); past school, the next step is never a first-degree entrance or degree unless the career needs its own degree (then it is said to be a switch) or they haven't started college yet (owner change from Round 19)",
         run: () => {
-            const { roadFrom } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { personalRoad, cardSteps, howLongForYou } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
             const source = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
             const anchors = source.match(/const STAGE_ANCHORS = \{[\s\S]*?\n\}/)
             // eslint-disable-next-line no-new-func
             const levelPath = new Function(`${anchors[0]}\n${source.match(/export const levelPath = [\s\S]*?\n\}/)[0].replace("export const", "const")}\nreturn levelPath`)()
-            const DEGREE = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+            const { journeyMultiplier, readJourney, degreeLeadsHere } = require("../../matching/journey")
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const FIRST_DEGREE = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+            const ORDER = { done: 0, now: 1, ahead: 2 }
+            const students = {
+                class9: [{ journey: "class9_10", journeyDetail: { class: 9 } }, {}],
+                class12: [{ journey: "class11_12", journeyDetail: { class: 12, stream: ["physics", "chemistry", "maths"] } }, {}],
+                preAdmission: [{ journey: "college", journeyDetail: { collegeStage: "pre_admission" } }, { preAdmission: true }],
+                btechCivil: [{ journey: "college", journeyDetail: { degree: "btech", subject: "civil", courseYear: 2, stream: ["physics", "chemistry", "maths"] } }, { degreeYearsLeft: 2, hasDegree: true }],
+                ba: [{ journey: "college", journeyDetail: { degree: "ba", subject: "economics", courseYear: 2 } }, { degreeYearsLeft: 1, hasDegree: true }],
+                architect: [{ journey: "early_professional", journeyDetail: { degree: "barch_bplan", experienceYears: 4, currentProfessionId: "eng-architect" } }, { hasDegree: true }],
+            }
             const problems = []
+            const looks = {}
             require("../../data/ALL-professions.json").professions.forEach((profession) => {
-                const all = levelPath(profession.path_to_entry || [])
-                ;[["college", 2], ["early_professional", 3]].forEach(([journey, level]) => {
-                    const { steps, nextIndex } = roadFrom(all, journey, level, profession.mid_stream_entry)
-                    if (steps.some((step) => step.level < 2)) problems.push(`${profession.id}: a ${journey} student is shown a school step`)
-                    const next = nextIndex >= 0 ? steps[nextIndex] : null
-                    if (next && DEGREE.includes(next.stage) && profession.mid_stream_entry !== "restart_undergrad") problems.push(`${profession.id}: a ${journey} student's next step is a first degree`)
+                const detail = studentFacing(profession)
+                Object.entries(students).forEach(([name, [user, you]]) => {
+                    const journey = readJourney(user)
+                    const cost = journeyMultiplier(profession, journey)
+                    const entry = { professionId: profession.id, ownCareer: cost.ownCareer, yearsToGetThere: cost.yearsToGetThere, entryClosed: cost.entryClosed, wasteBreakdown: cost.wasteBreakdown, degreeLeads: degreeLeadsHere(profession, journey) }
+                    const road = personalRoad({ steps: levelPath(detail.pathToEntry || []), entry, detail, journey: user.journey, you })
+                    const steps = cardSteps(entry, detail, user.journey, road, you)
+                    looks[`${name}:${profession.id}`] = { road, steps, how: howLongForYou(entry, detail, user.journey, you, "degree") }
+                    const pastSchool = user.journey === "college" || user.journey === "early_professional"
+                    if (road.steps.some((step) => !ORDER.hasOwnProperty(step.status))) problems.push(`${name}/${profession.id}: a step with no status`)
+                    // a degree a career only "helps" with can sit after a certificate — covered by theirs, it is
+                    // ticked where it stands; otherwise what is behind them always comes first
+                    if (road.situation !== "covered" && road.steps.some((step, index) => index > 0 && ORDER[step.status] < ORDER[road.steps[index - 1].status])) problems.push(`${name}/${profession.id}: a step behind them comes after one ahead`)
+                    if (pastSchool && road.steps.some((step) => /^class_/.test(step.stage))) problems.push(`${name}/${profession.id}: a school step is shown past school`)
+                    const next = road.nextIndex >= 0 ? road.steps[road.nextIndex] : null
+                    const routine = !["switch", "switch_closed", "pre_admission"].includes(road.situation)
+                    if (pastSchool && routine && next && FIRST_DEGREE.includes(next.stage) && !/^\s*(Five-year|.*LLB|.*\bafter (any|a) bachelor)/i.test(next.requirement) && entry.degreeLeads) {
+                        problems.push(`${name}/${profession.id}: their own degree leads here but the next step is "${next.requirement.slice(0, 40)}"`)
+                    }
+                    if (pastSchool && routine && next && ["entrance_exam", "entrance"].includes(next.stage) && road.steps.slice(road.nextIndex + 1).some((step) => FIRST_DEGREE.includes(step.stage))) {
+                        problems.push(`${name}/${profession.id}: a ${user.journey} student is sent to a first-degree entrance as a routine next step`)
+                    }
+                    if (steps.some((line) => /^Your next step:/.test(line)) && !routine && road.situation !== "pre_admission") problems.push(`${name}/${profession.id}: a switch is written as a routine "Your next step"`)
                 })
-                const school = roadFrom(all, "class11_12", 1, profession.mid_stream_entry)
-                if (school.steps.length !== all.length) problems.push(`${profession.id}: a school student's road lost steps`)
             })
+
+            // the owner's cases
+            const civil = looks["btechCivil:eng-civil-engineer"]
+            if (civil.road.situation !== "degree_counts" || civil.steps.some((line) => /JEE/.test(line)) || civil.road.steps.find((step) => step.stage === "degree").status !== "now") problems.push("a B.Tech Civil student viewing Civil Engineer is not walked on from their own degree")
+            const lawyer = looks["ba:law-lawyer"]
+            if (lawyer.road.steps.find((step) => step.stage === "degree").status !== "ahead") problems.push("a BA student is told the LLB is behind them")
+            const doctor = looks["ba:hlt-doctor"]
+            if (!["switch", "switch_closed"].includes(doctor.road.situation) || !doctor.steps.some((line) => /start its own degree/.test(line))) problems.push("medicine for a BA student is not said to be a switch")
+            const own = looks["architect:eng-architect"]
+            if (own.road.situation !== "own" || own.how.text !== "This is your work now") problems.push("a working architect's own career is not 'your work now'")
+            const pre = looks["preAdmission:hlt-doctor"]
+            if (pre.road.situation !== "pre_admission" || pre.road.steps[pre.road.nextIndex].stage !== "entrance_exam") problems.push("a student about to start college is not sent to the entrance")
+
+            // the card: "For you" first, the steps ahead in bold, the ones behind ticked
+            if (!/howLongForYou\(entry/.test(source) || !/For you: /.test(source)) problems.push("the path doesn't say how long for this person")
+            if (!/ahead \? <strong>\{step\.requirement\}<\/strong>/.test(source)) problems.push("the steps still ahead are not bold")
             if (!/subjects: !pastSchool/.test(source)) problems.push("college and working students still see the Class 11–12 subjects fold")
             if (!/"Usually not needed/.test(source)) problems.push("the master's line still says 'not needed'")
-            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
+            return problems.length > 0 ? problems.slice(0, 8).join("; ") : null
         },
         expect: null,
     },
@@ -5855,18 +5902,16 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 29 — \"Some other careers you can consider\": careers nothing pointed to that fit the student are stored, served without internal fields, and shown behind one button on the matches page",
+        name: "ROUND 31 — no career reaches a student on fit alone: the worker stores no \"other careers\", the route sends none, and the matches page folds only its own careers after the first fifteen under \"Some other careers you can consider\" (owner change from Round 29)",
         run: async () => {
             const problems = []
             const worker = fs.readFileSync(path.join(__dirname, "..", "generateReportWorker.js"), "utf8")
-            if (!/other_careers: match\.otherCareers/.test(worker)) problems.push("the worker doesn't store the other careers")
+            if (/other_careers:/.test(worker)) problems.push("the worker still stores other careers")
             const reports = fs.readFileSync(path.join(__dirname, "../../Routers/reportsRouter.js"), "utf8")
-            if (!/otherCareers: recommendation \? \(recommendation\.other_careers \|\| \[\]\)\.map\(stripInternal\)/.test(reports)) problems.push("the other careers go out without stripInternal")
+            if (/otherCareers:/.test(reports)) problems.push("the report route still sends other careers")
             const matches = fs.readFileSync(path.join(REPORT_DIR, "MatchesPage.js"), "utf8")
-            const others = fs.readFileSync(path.join(REPORT_DIR, "OtherCareers.js"), "utf8")
-            if (!/<OtherCareers careers=\{data\.otherCareers\}/.test(matches)) problems.push("the matches page doesn't show them")
-            if (!/<summary[\s\S]*Some other careers you can consider/.test(others)) problems.push("they are not behind the owner's button")
-            if (/comfortScore|rank=|tierNameFor/.test(others)) problems.push("the list shows a fit number, a rank or a tier")
+            if (/OtherCareers/.test(matches) || fs.existsSync(path.join(REPORT_DIR, "OtherCareers.js"))) problems.push("the page still shows the old block")
+            if (!/split\.rest\.length > 0[\s\S]{0,200}<summary[\s\S]{0,120}Some other careers you can consider[\s\S]{0,200}split\.rest\.map\(renderGroup\)/.test(matches)) problems.push("the careers after the first fifteen are not folded, under their tiers, behind \"Some other careers you can consider\"")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
@@ -5988,6 +6033,62 @@ const fixtures = [
             if (!/status: "pending"/.test(route) || !/\$unset: \{ approvedAmountInr: "" \}/.test(route) || !/decisionLog/.test(route)) problems.push("it doesn't go back to pending, keep the amount, or log why")
             const list = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/FinancialAidList.js"), "utf8")
             if (!/Undo decision/.test(list) || !/!record\.usedAt/.test(list)) problems.push("the admin has no Undo button, or it shows for a used approval")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 31 — every admin tab that lists students has one name-or-email search, and Activity matches looks a student up by name too",
+        run: () => {
+            const ADMIN = path.join(__dirname, "../../../Frontend/src/pages/Admin")
+            const problems = []
+            // the helper sits beside its antd box; read just the pure function
+            const helper = fs.readFileSync(path.join(ADMIN, "StudentSearch.js"), "utf8").match(/export const matchesStudent = [\s\S]*?\n\}/)[0]
+            // eslint-disable-next-line no-new-func
+            const matchesStudent = new Function(`${helper.replace("export const", "const")}\nreturn matchesStudent`)()
+            const riya = { name: "Riya Sharma", email: "riya.s@gmail.com" }
+            if (!matchesStudent(riya, "") || !matchesStudent(riya, "SHARMA") || !matchesStudent(riya, "riya gmail") || matchesStudent(riya, "riya yahoo")) problems.push("the name/email match is wrong")
+            if (matchesStudent(null, "riya") || !matchesStudent(null, "  ")) problems.push("a deleted student's row is mishandled")
+            ;["AccessRequestsList", "RefundRequestsList", "FinancialAidList", "MentorMatchesList", "SessionFeedbackList", "AssessmentIssuesList", "FollowUpsList", "StudyAbroadList", "CareerHelpList"].forEach((name) => {
+                const source = fs.readFileSync(path.join(ADMIN, `${name}.js`), "utf8")
+                if (!/<StudentSearch value=\{search\} onChange=\{setSearch\} \/>/.test(source) || !/matchesStudent\(row\.(user|student), search\)/.test(source)) problems.push(`${name} has no student search`)
+            })
+            if (!/matchesStudent\(user, search\)/.test(fs.readFileSync(path.join(ADMIN, "StudentsList.js"), "utf8"))) problems.push("Students doesn't use the shared search")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
+            if (!/req\.query\.q/.test(router) || !/choices: found\.map/.test(router)) problems.push("Activity matches can't look a student up by name")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 31 — a test we change is offered again automatically: its version moves, students on the older one are told and get a free next update, it comes first on their page, and their earlier result stays until they finish the new one",
+        run: () => {
+            const problems = []
+            const { TEST_VERSIONS, testsChanged } = require("../../assessment/testVersions")
+            ;["sartRaw", "digitSpan", "wordRecall", "reasoning", "storyRecall"].forEach((module) => {
+                if (!TEST_VERSIONS[module] || typeof TEST_VERSIONS[module].isCurrent !== "function") problems.push(`${module} has no version`)
+            })
+            if (testsChanged(undefined).join() !== "sartRaw" || testsChanged({ sartRaw: 2 }).length !== 0) problems.push("the changed-test check is wrong (SART moved to 2 in Round 30)")
+            if (TEST_VERSIONS.sartRaw.isCurrent({ sartMeta: {} }) || !TEST_VERSIONS.sartRaw.isCurrent({ sartMeta: { correctPressFeedback: true } })) problems.push("a SART run's version is misread")
+
+            const notices = fs.readFileSync(path.join(__dirname, "../../utils/versionNotices.js"), "utf8")
+            if (!/testsChanged\(announced\.tests\)/.test(notices) || !/runNow\("retake_offer", \{[^}]*olderOnly: true/.test(notices)) problems.push("a changed test is not offered on start")
+            const offer = fs.readFileSync(path.join(__dirname, "../../housekeeping/retakeOffer.js"), "utf8")
+            if (!/if \(submission\.psychometricSubmittedAt\) await grantFreeUpdate/.test(offer) || !/isCurrent\(psychometric\)/.test(offer)) problems.push("the offer doesn't free the next update, or reaches students already on the new version")
+
+            const { keptEarlierFor } = require("../../utils/retakes")
+            const history = { sartRaw: [{ attempt: "old rows", fromOffer: true }] }
+            if (!keptEarlierFor({ history }, "sartRaw") || keptEarlierFor({ history, sartRaw: "new rows" }, "sartRaw")) problems.push("the earlier result isn't kept until the new one is finished")
+            if (keptEarlierFor({ history: { sartRaw: [{ attempt: "x" }] } }, "sartRaw")) problems.push("an admin retake is mistaken for an offer")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
+            if (!/router\.post\("\/keepEarlierResult"/.test(router) || !/psychometric\.keptEarlier = /.test(router) || !/reopenModule\(req\.user\._id, module, null, \{ fromOffer: true \}\)/.test(router)) problems.push("the student can't go back to their earlier result")
+            if (!/systemUpdate: staleReport\.has/.test(router)) problems.push("the admin doesn't see a free update from our own improvements")
+
+            const { deckOrder } = loadEsModule(path.join(ASSESSMENT_DIR, "moduleLabels.js"))
+            const deck = deckOrder([{ key: "ipip50" }, { key: "sartRaw" }, { key: "mi" }], { sartRaw: { reason: "x" } })
+            if (deck.map((module) => module.key).join() !== "sartRaw,ipip50,mi") problems.push("the improved test isn't first on the deck")
+            const intro = fs.readFileSync(path.join(ASSESSMENT_DIR, "AssessmentIntro.js"), "utf8")
+            if (!/Keep my earlier result/.test(intro) || !/earlier result stays unless you finish the new one/.test(intro)) problems.push("the page doesn't say the earlier result stays")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

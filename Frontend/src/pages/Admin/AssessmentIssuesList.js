@@ -3,6 +3,7 @@ import { Table, Button, Popconfirm, Segmented, Tag, Modal, Select, Input, messag
 import dayjs from "dayjs"
 import ReasonModal from "./ReasonModal"
 import { getAllIssuesForAdmin, grantRetakeForAdmin, dismissIssueForAdmin, getSartRunForAdmin, offerRetakeToAllForAdmin } from "../../apiCall/assessmentIssuesApi"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // Technical problems with a student's test (owner, Round 10). Written by the code that noticed them —
 // a focus test that did not record, a number test abandoned part-way, a report that failed — or by
@@ -63,6 +64,7 @@ const queueLine = (queues) => {
 
 function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
     const [issues, setIssues] = useState([])
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [queues, setQueues] = useState(null)
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("open")   // open | retake_granted | dismissed | all
@@ -171,7 +173,8 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
             <Segmented options={["open", "retake_granted", "dismissed", "all"]} value={statusFilter} onChange={setStatusFilter} />{" "}
             <Button onClick={fetchIssues}>Refresh</Button>
 
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visible} scroll={{ x: "max-content" }} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visible.filter((row) => matchesStudent(row.user, search))} scroll={{ x: "max-content" }} />
 
             <div className="admin-offer">
                 <h3>Offer a retake to everyone who took a test</h3>

@@ -25,10 +25,10 @@ function StudentReadings() {
     const [result, setResult] = useState(null)
     const [loading, setLoading] = useState(false)
 
-    const lookUp = async () => {
+    const lookUp = async (text = email) => {
         try {
             setLoading(true)
-            const response = await getActivityReadingsForAdmin(email)
+            const response = await getActivityReadingsForAdmin(text)
             setResult(response.data.data)
         } catch (error) {
             setResult(null)
@@ -42,8 +42,17 @@ function StudentReadings() {
         <section className="section-card">
             <h3>How we read a student's activities</h3>
             <p className="report-small">Only activities ticked as ongoing in Current interests reach the matcher. Readings come from the student's latest report.</p>
-            <Input.Search placeholder="Student's email" value={email} onChange={(event) => setEmail(event.target.value)} onSearch={lookUp} enterButton="Look up" loading={loading} style={{ maxWidth: 420 }} />
-            {result && (
+            <Input.Search placeholder="Student's name or email" value={email} onChange={(event) => setEmail(event.target.value)} onSearch={() => lookUp()} enterButton="Look up" loading={loading} style={{ maxWidth: 420 }} />
+            {/* several students match a name (Round 31) — pick one */}
+            {result && result.choices && (
+                <div className="admin-choices">
+                    <p>Several students match — pick one:</p>
+                    {result.choices.map((choice) => (
+                        <Button key={choice.email} onClick={() => { setEmail(choice.email); lookUp(choice.email) }}>{choice.name} · {choice.email}</Button>
+                    ))}
+                </div>
+            )}
+            {result && !result.choices && (
                 <div>
                     <p><strong>{result.name}</strong> · {result.email}</p>
                     <p>Ticked as ongoing: {result.ticked.length > 0 ? result.ticked.join(" · ") : "none — nothing from the interest form reached the matcher"}</p>

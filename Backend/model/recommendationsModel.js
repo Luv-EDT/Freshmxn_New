@@ -64,7 +64,7 @@ const recommendationSchema = new mongoose.Schema(
         },
         other_careers: {
             type: Array,
-            default: [], // Round 29 (owner): careers nothing pointed to that still fit how the student works — "Some other careers you can consider", never ranked
+            default: [], // Round 29, no longer written (Round 31, owner: no career on fit alone) — kept readable for old rows
         },
         filtered: {
             type: Array,

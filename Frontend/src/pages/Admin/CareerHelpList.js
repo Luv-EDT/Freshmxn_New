@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Table, Button, Select, message } from "antd"
 import dayjs from "dayjs"
 import { getCareerHelpForAdmin, updateCareerHelpForAdmin } from "../../apiCall/careerHelpApi"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // "How else can we help?" (Round 25): students who joined the waitlist from the dashboard or the
 // mentor page. Every row was saved with the consent box ticked. Call them, then mark the row.
@@ -11,6 +12,7 @@ const PLAN_NAMES = { 1: "Career Discovery", 2: "Discovery + Mentor", 3: "Mentor 
 
 function CareerHelpList() {
     const [rows, setRows] = useState([])
+    const [search, setSearch] = useState("")   // Round 31: name or email
     const [loading, setLoading] = useState(false)
 
     const fetchAll = useCallback(async () => {
@@ -66,7 +68,8 @@ function CareerHelpList() {
                 {rows.filter((row) => row.status === "new").length} new · {rows.length} in all{" "}
                 <Button onClick={fetchAll}>Refresh</Button>
             </p>
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={rows} scroll={{ x: "max-content" }} />
+            <StudentSearch value={search} onChange={setSearch} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={rows.filter((row) => matchesStudent(row.user, search))} scroll={{ x: "max-content" }} />
         </div>
     )
 }

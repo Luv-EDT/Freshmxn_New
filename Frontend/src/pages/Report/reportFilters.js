@@ -336,7 +336,7 @@ export const ONLY_FILTERS = [
 ]
 
 // HOW MUCH OF THE LIST SHOWS (owner, Round 28: 40+ careers was too much). The top three; then up to
-// MAIN_SHOWN in their groups; the rest folded under "explore a few more". Cut AFTER the filters and
+// MAIN_SHOWN in their groups; the rest folded under "Some other careers you can consider" (Round 31). Cut AFTER the filters and
 // the sorts, so the top fifteen always follow what the student chose.
 export const MAIN_SHOWN = 15
 

@@ -350,21 +350,23 @@ you wanted**. The last three share one medium heading size; Your matches is only
 
 **"See all" opens `/report/matches`**, the whole list: the first **three** of the order you've chosen,
 each with its **rank number** (1, 2, 3…) on the left, then **"Show 12 more careers"** up to fifteen, and
-the rest folded under **"Careers that suit you aren't limited to these — explore a few more"** (Round 28,
-owner; choosing a new order starts again at three). The cut is made after the filters and sorts. Above
+the rest folded under **"Some other careers you can consider"** — still under their tier headings (Round 28,
+owner; renamed Round 31; choosing a new order starts again at three). It only appears when you have more than
+fifteen careers. The cut is made after the filters and sorts. Above
 the list sit two highlighted buttons, **Sort your list** and **Filter your list** (Round 29), each with one
 line saying what opening it does; inside, every choice has an ⓘ. A **"then order by"** sort orders your
 **whole** list — the best-paid first, say, whatever group it was in — under one heading; with Best match,
-careers that would leave 2+ years behind still come last. Below the list, **"Some other careers you can
-consider"** opens careers nothing you told us pointed to but which fit how you think and work (best fit
-first, up to 30, never ranked), and at the very bottom, **"How your list is ordered"**. Opened, the list is
+careers that would leave 2+ years behind still come last. **Every career in the list was pointed to by
+something you told us** — an activity, a reason, a career you named; none reaches you on psychometric fit
+alone (Round 31, owner: the 30 "other careers" from fit alone are gone). At the very bottom, **"How your list
+is ordered"**. Opened, the list is
 shown **under its tier headings**
 — two or three words each since Round 24: "Proven long-time passion", "Confident current passion",
 "Long-time activity", "Current, your reasons", "Something you do now"… each with one line saying which of
 your activities pointed there (Round 30) (*proven* = you achieved at it, *confident* = you said you're sure,
 *passion* = you love it). The careers that ask for more than your profile shows today sit under one band,
-**"Build fundamentals first"** (Round 30 — *fundamentals* means every quality in your psychometric
-analysis: personality, intelligences, thinking abilities and the habits under them). Inside a group,
+**"Build fundamentals/factors first"** (Round 30; "/factors" since Round 31 — *fundamentals* means every
+factor in your psychometric analysis: personality, intelligences, thinking abilities and the habits under them). Inside a group,
 **Best match** counts what you'd leave behind (fit × switching cost); **Best fit, ignoring switching
 cost** orders by fit alone, so the two lists differ whenever any career has a cost (Round 30). Only the groups you have are shown, numbers
 running on across them (Round 20). The **filters** fold away behind one **"Filter your list"** button, like
@@ -384,9 +386,19 @@ Tap a career to open it (Round 18 — everything about a career lives inside it,
 folded), **why we chose it for you** (one line from what put it in your list: "Something you've kept up
 for years — long distance running — leads here, and you love it; it fits how you think and work"), *why it
 fits you* (each strength named once), **what to work on** (the qualities this work leans on where you are well below
-what it asks — names only, never a number), and **your next 12 months**. A **college or working student** is never told to start a bachelor's — their
-next step is the one after the first degree, unless the career needs its own degree from the start — and
-their road leaves out the school steps and the Class 11–12 subjects (Round 19). A master's that isn't
+what it asks — names only, never a number), and **your next 12 months**. **Everything is counted from where
+you stand** (Round 31, owner): each step of the path is either behind you (ticked), where you are now, or
+still ahead (**bold**), and "your next step" is the first one ahead. If your own degree leads to the career
+(a B.Tech Civil student looking at Civil Engineer), the entrance and the degree are yours — "finish your
+degree first", then what comes after. If the career takes any graduate, the first-degree entrance isn't for
+you, and a step asking only for "any bachelor's" is covered — but a named degree you don't have (the LLB)
+is still ahead. If the career needs its own degree from the start (medicine for an engineering student),
+the card says plainly that this is a **switch** — "To move into this you'd start its own degree — about N
+years from now", and the entrance for that degree — never "your next step: NEET" as if it were routine;
+if that entrance has closed for you (JEE, 3 years after Class 12), it says so and gives the other way in.
+"How long, and the path" opens with **"For you: about N years from now"** and why, then the plain length
+from Class 12. A student about to start college is sent to the entrance and the degree, honestly next.
+The road leaves out the school steps and the Class 11–12 subjects for anyone past school (Round 19). A master's that isn't
 required reads "**usually** not needed". Then folded parts, each split
 into the questions a student asks: **the road** (how long and the path · subjects in Class 11–12 — *per
 route* where routes differ, e.g. BCA takes any stream but B.Tech needs Physics, Chemistry and Maths · do I
@@ -474,7 +486,17 @@ which other SART sites usually count — so ours reads a little slower. A retake
 **When a test needs taking again** (Round 29): if a timed test didn't count, you're told why in plain words
 (for the focus test: pressing before the number appeared, or pressing on the 3s). When the admin allows a
 retake, or we improve a test and offer it to everyone who took it, you get an email and a notification — and
-updating your report afterwards is **free**: it doesn't use one of your 3 updates. A short story whose
+updating your report afterwards is **free**: it doesn't use one of your 3 updates.
+
+**When we change a test, you hear about it automatically** (Round 31, owner). Each one-attempt test has a
+version (`Backend/assessment/testVersions.js`); any change to how it is shown, timed or marked moves it. When
+the server starts and a test's version has moved, everyone who took the older version gets a notification
+and an email, their **next update is free straight away**, and that test comes **first on their assessment
+page**, marked "Improved — you can take this again". It's their choice: the earlier result stays unless they
+finish the new attempt, and until then a **"Keep my earlier result"** button puts it back exactly as it was.
+(The first: the focus test's timing and green feedback from Round 30.) When we improve the matching or the
+scoring, students are told the same way, and the admin's Students tab shows "free update waiting — our
+improvement". A short story whose
 questions closed before you answered can be taken again with a **new** story, up to 3 times; you're reminded
 when you open it, 5 minutes before it disappears, when the questions open and 6 hours before they close.
 

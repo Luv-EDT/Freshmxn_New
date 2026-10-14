@@ -108,7 +108,7 @@ const TEMPLATES = {
     // an assessment improvement that offers everyone a retake of one test (owner, Round 29)
     assessmentRetakeOffer: ({ testName, reason }) => ({
         subject: `You can take ${testName} again`,
-        body: `<p>We've improved <strong>${escapeHtml(testName)}</strong>${reason ? ` — ${escapeHtml(reason)}` : ""}. If you'd like, take it again and press Submit; updating your report afterwards is free: <a href="${site()}/assessment">${site()}/assessment</a></p>`,
+        body: `<p>We've improved <strong>${escapeHtml(testName)}</strong>${reason ? ` — ${escapeHtml(reason)}` : ""}. If you'd like, take it again and press Submit — your earlier result stays unless you finish the new one, and updating your report afterwards is free: <a href="${site()}/assessment">${site()}/assessment</a></p>`,
     }),
     // ── the short story's clock (owner, Round 29) ──
     storyOpened: () => ({
