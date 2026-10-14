@@ -213,7 +213,7 @@ const fixtures = [
             if (others.some((entry, index) => index > 0 && entry.comfortScore > others[index - 1].comfortScore)) return "not best fit first"
             if (others.length > OTHER_CAREERS_MAX) return "more than the cap"
             if (others.some((entry) => "match_confidence" in entry || "tier" in entry)) return "an entry carries match_confidence or a tier"
-            if (result.matching_version !== "matching@2.5.0") return `version ${result.matching_version}`
+            if (!/^matching@2\.([5-9]|[1-9]\d)\./.test(result.matching_version)) return `version ${result.matching_version}`
             return null
         },
     },
@@ -641,17 +641,20 @@ const fixtures = [
         },
     },
     {
-        name: "inside a tier careers are ordered by fit — the switching cost never reorders them",
+        name: "inside a tier careers are ordered by fit × switching cost (Round 30, owner), then fit — so Best match and 'ignoring switching cost' differ",
+        // OWNER CHANGE (Round 30): Round 20 ordered by fit alone, which left the two sorts identical for
+        // almost every student; the report's "ignoring switching cost" now re-orders by fit alone
         run: () => matchProfile(baseInput({ user: buildUser("early_professional", { experienceYears: 10 }) })),
         assert: (result) => {
             for (let index = 1; index < result.ranked.length; index += 1) {
                 const before = result.ranked[index - 1]
                 const after = result.ranked[index]
-                if (before.tier === after.tier && (after.comfortScore || 0) > (before.comfortScore || 0)) {
-                    return `${after.professionId} fits better than ${before.professionId} but sits below it in tier ${after.tier}`
+                if (before.tier === after.tier && (after.score || 0) > (before.score || 0)) {
+                    return `${after.professionId} scores higher than ${before.professionId} but sits below it in tier ${after.tier}`
                 }
             }
-            if (!result.ranked.every((entry) => typeof entry.wastedYears === "number")) return "the cost must still be computed for the report to group by"
+            if (!result.ranked.every((entry) => typeof entry.wastedYears === "number" && typeof entry.score === "number")) return "the cost and the score must be on every entry"
+            if (result.matching_version !== "matching@2.6.0") return `version ${result.matching_version}`
             return null
         },
     },

@@ -160,7 +160,7 @@ function App() {
                         <ComparePage />
                     </ProtectedRoute>
                 } />
-                {/* Round 28 (owner): the four fundamentals and everything else measured, on one page */}
+                {/* Round 28 (owner): the four core fundamentals and everything else measured, on one page */}
                 <Route path="/report/psychometric" element={
                     <ProtectedRoute requirePaid={true}>
                         <PsychometricAnalysis />

@@ -42,7 +42,7 @@
 //
 // CRISP LABELS (owner, Round 24): two or three words each — "proven" = you have achieved at it,
 // "confident" = you said you are sure, "passion" = you love it. "A stretch …" told a student nothing; the
-// not-a-fit tiers now sit under one band, "Build skills first", shown once above them (`buildFirst`).
+// not-a-fit tiers now sit under one band, "Build fundamentals first" (Round 30), shown once above them (`buildFirst`).
 export const TIER_NAMES = [
     { tier: 1, name: "Proven long-time passion", buildFirst: false },
     { tier: 2, name: "Proven current passion", buildFirst: false },
@@ -52,19 +52,29 @@ export const TIER_NAMES = [
     { tier: 6, name: "Current passion", buildFirst: false },
     { tier: 7, name: "Long-time achievement", buildFirst: false },
     { tier: 8, name: "Current achievement", buildFirst: false },
-    { tier: 9, name: "Long-time interest", buildFirst: false },
-    { tier: 10, name: "Current interest", buildFirst: false },
-    { tier: 11, name: "Other interests", buildFirst: false },
-    { tier: 12, name: "Long-time favourites", buildFirst: true },
-    { tier: 13, name: "Current favourites", buildFirst: true },
-    { tier: 14, name: "Long-time interests", buildFirst: true },
-    { tier: 15, name: "Current interests", buildFirst: true },
-    { tier: 16, name: "Other interests", buildFirst: true },
+    // Round 30 (owner: "current interests" and "other interests" were vague) — each says which of your
+    // activities pointed here, with one line under the heading
+    { tier: 9, name: "Long-time activity", buildFirst: false, why: "Something you've kept up for years points here." },
+    { tier: 10, name: "Current, your reasons", buildFirst: false, why: "Something you do now, for the reasons that move you most, points here." },
+    { tier: 11, name: "Something you do now", buildFirst: false, why: "Something you do now points here, though not for your main reasons." },
+    { tier: 12, name: "Long-time favourites", buildFirst: true, why: "A long-time activity you love or achieved at points here." },
+    { tier: 13, name: "Current favourites", buildFirst: true, why: "Something you do now that you love or achieved at points here." },
+    { tier: 14, name: "Long-time activity", buildFirst: true, why: "Something you've kept up for years points here." },
+    { tier: 15, name: "Current, your reasons", buildFirst: true, why: "Something you do now, for the reasons that move you most, points here." },
+    { tier: 16, name: "Something you do now", buildFirst: true, why: "Something you do now points here, though not for your main reasons." },
 ]
 
-// the band above the not-a-fit tiers, and the one line under it
-export const BUILD_FIRST_TITLE = "Build skills first"
-export const BUILD_FIRST_NOTE = "These link to what you do, but ask for more than your profile shows today — skills you can build."
+// the line under a tier heading, where there is one
+export const tierWhyFor = (tier) => {
+    const found = TIER_NAMES.find((row) => row.tier === tier)
+    return found && found.why ? found.why : null
+}
+
+// the band above the not-a-fit tiers, and the one line under it. "Fundamentals" means every quality in
+// the psychometric analysis — personality, the intelligences, the thinking abilities and the habits
+// under them (owner, Round 30; the four that help in every career are the "core fundamentals")
+export const BUILD_FIRST_TITLE = "Build fundamentals first"
+export const BUILD_FIRST_NOTE = "These link to what you do, but ask for more of your fundamentals than your profile shows today — the personality, intelligences, thinking abilities and habits in your psychometric analysis. They can be built."
 
 // the heading a tier is shown under, and the words "why it ranked there" uses
 export const tierNameFor = (tier) => {

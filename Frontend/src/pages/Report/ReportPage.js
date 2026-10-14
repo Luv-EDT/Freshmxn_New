@@ -12,7 +12,7 @@ import DirectionModal from "../DirectionModal"
 // Stage 3 — the report: A SHORT OVERVIEW SINCE ROUND 19 (owner). In the owner's order: "Your report";
 // your top three matches, with the full list, the combined careers and compare one tap away (Round 20:
 // three buttons in the one card); what seems to drive you; your psychometric analysis (its own page
-// since Round 28 — the four fundamentals and everything else measured); and what you said you wanted — those three under one medium heading size, Your matches only slightly larger. The shared data and the screens shown instead of a report live in useReportData.js
+// since Round 28 — the four core fundamentals and everything else measured); and what you said you wanted — those three under one medium heading size, Your matches only slightly larger. The shared data and the screens shown instead of a report live in useReportData.js
 // and ReportStatus.js; the five bands and the per-journey wording in reportFraming.js.
 //
 // THE LIST IS THE REPORT. An earlier version opened with about 1,500 words of prose and then listed
@@ -122,12 +122,12 @@ function ReportPage() {
                 </div>
             </section>
 
-            {/* 2. YOUR PSYCHOMETRIC ANALYSIS (owner, Round 28; second since Round 29) — the four fundamentals and everything else the
+            {/* 2. YOUR PSYCHOMETRIC ANALYSIS (owner, Round 28; second since Round 29) — the four core fundamentals and everything else the
                 assessment measured, on a page of its own */}
             <section className="report-card">
                 <h2 className="report-heading-md">Your psychometric analysis</h2>
                 <p className="report-small">
-                    The four fundamentals that help in every career, and the qualities that make you different —
+                    The four core fundamentals that help in every career, and the qualities that make you different —
                     none of them good or bad.
                 </p>
                 <div className="report-card-actions">

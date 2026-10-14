@@ -4,7 +4,7 @@ import BackToDashboard from "../BackToDashboard"
 import PsychometricScores from "../User/PsychometricScores"
 
 // YOUR PSYCHOMETRIC ANALYSIS (owner, Round 28) — its own page, linked from the report and the Profile.
-// The four fundamentals first, then everything else the assessment measured, in the same groups and
+// The four core fundamentals first, then everything else the assessment measured, in the same groups and
 // words as before (GET /reports/getMyScores: words only, never a number; uncertainty tolerance and
 // firmness as positions; "Partial · N%" where only part of a factor was measured).
 function PsychometricAnalysis() {
@@ -17,7 +17,7 @@ function PsychometricAnalysis() {
 
             <div className="report-card psych-intro">
                 <p>
-                    <strong>The four fundamentals</strong> — confidence, sticking with things, picking up new things
+                    <strong>The four core fundamentals</strong> — confidence, sticking with things, picking up new things
                     and deciding with good information — help in every career and every interest. Everyone gains from
                     having them on the higher side, and all four grow with practice.
                 </p>

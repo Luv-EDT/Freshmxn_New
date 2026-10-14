@@ -11,7 +11,7 @@ import ReportStatus from "./ReportStatus"
 import useReportData from "./useReportData"
 import { groupList, splitShown, MAIN_SHOWN, SWITCH_COST_GROUP_YEARS, SECONDARY_SORTS } from "./reportFilters"
 import { abroadLines } from "./reportPlan"
-import { TOP_SHOWN, tierNameFor, buildFirstFor, BUILD_FIRST_TITLE, BUILD_FIRST_NOTE, framingFor, listOf } from "./reportFraming"
+import { TOP_SHOWN, tierNameFor, tierWhyFor, buildFirstFor, BUILD_FIRST_TITLE, BUILD_FIRST_NOTE, framingFor, listOf } from "./reportFraming"
 
 // "YOUR MATCHES" — the whole list on its own page (owner, Round 19, /report/matches). The report
 // itself is a short overview with the top three; this page holds every match with the sort, the
@@ -121,6 +121,7 @@ function MatchesPage() {
                 </div>
             )}
             <h3 className="match-group-title">{group.flat ? `All your matches — ${secondaryLabel.toLowerCase().replace("ai-", "AI-")} first` : tierNameFor(group.tier) || "Your other matches"}</h3>
+            {!group.flat && tierWhyFor(group.tier) && <p className="report-small match-group-why">{tierWhyFor(group.tier)}</p>}
             <div className="match-list">{group.entries.map((entry) => card(entry))}</div>
         </section>
     ))
@@ -250,13 +251,15 @@ function MatchesPage() {
                     <li>
                         <strong>Whether it fits how you think and work</strong>, measured from your assessment against
                         what the work asks. Careers that fit you now come first; the ones under <em>{BUILD_FIRST_TITLE}</em> link
-                        to what you do but ask for more than your profile shows today.
+                        to what you do but ask for more of your fundamentals — the qualities in your psychometric
+                        analysis — than your profile shows today.
                     </li>
                 </ol>
                 <p className="report-small">
-                    Open your full list to see each group by name — "Proven long-time passion" down to "Other
-                    interests". Inside a group, the careers that fit you best come first; a <em>Then order by</em> sort
-                    orders the whole list instead. Having more of a quality than
+                    Open your full list to see each group by name — "Proven long-time passion" down to "Something
+                    you do now". Inside a group, <em>Best match</em> puts first the careers that fit you best once what
+                    you'd leave behind is counted; <em>Best fit, ignoring switching cost</em> orders them by fit alone. A
+                    <em> Then order by</em> sort orders the whole list instead. Having more of a quality than
                     a career asks never counts against you — except comfort with uncertainty and how firmly you hold a
                     view, where careers can want either end.
                 </p>

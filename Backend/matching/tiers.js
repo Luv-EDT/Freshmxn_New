@@ -48,18 +48,20 @@ const tierFor = (entry) => {
     return match ? match.tier : null
 }
 
-// WITHIN A TIER, order by FIT (owner, Round 20), then by the activity match, then by id.
+// WITHIN A TIER, order by SCORE — fit × the switching-cost multiplier — then fit, then the activity
+// match, then id (owner, Round 30).
 //
-// Until Round 20 the switching cost ordered careers inside each tier (fit × exp(−waste/τ)). The owner
-// moved it out: the tiers and the fit inside them are the ranking, and the cost is shown by the
-// report instead — "Best match" moves careers that would leave SWITCH_COST_GROUP_YEARS or more behind
-// into a last group, least affected first; "ignoring switching cost" leaves them where they are.
-// `score` (fit × cost) is still computed and stored for that grouping and the switch-cost sort.
+// Round 20 ordered by fit alone and left the cost to the report's grouping, which made "Best match"
+// and "Best fit, ignoring switching cost" the same list for almost every student (the grouping only
+// moves careers that leave 2+ years behind). Now Best match counts any cost inside a tier, and the
+// report's "ignoring switching cost" re-orders each tier by fit alone (reportFilters.groupList). For a
+// student with no cost anywhere (school students) score equals fit, so nothing changes for them.
 //
 // The final tie-break on id is not cosmetic: without it two equal entries can swap places between
 // runs and the output stops being reproducible.
 const compareWithinTier = (left, right) => (
-    (right.comfortScore || 0) - (left.comfortScore || 0)
+    (right.score || 0) - (left.score || 0)
+    || (right.comfortScore || 0) - (left.comfortScore || 0)
     || (right.matchScore || 0) - (left.matchScore || 0)
     || left.professionId.localeCompare(right.professionId)
 )

@@ -2415,7 +2415,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "TIERS — every one of the sixteen tiers has a crisp label (at most four words), and 'Build skills first' marks exactly the engine's not-a-fit tiers",
+        name: "TIERS — every one of the sixteen tiers has a crisp label (at most four words), and 'Build fundamentals first' marks exactly the engine's not-a-fit tiers",
         // REPLACES the five-band check (owner, Round 20): the open list now shows the engine's tiers
         // themselves as headings, so the names must line up with tiers.js one for one.
         run: () => {
@@ -2441,7 +2441,13 @@ const fixtures = [
                 const names = TIER_NAMES.filter((row) => row.buildFirst === band).map((row) => row.name)
                 if (new Set(names).size !== names.length) problems.push("two tiers in one band share a heading")
             })
-            if (!/BUILD_FIRST_TITLE/.test(source)) problems.push("the 'Build skills first' band is not shown")
+            if (!/BUILD_FIRST_TITLE/.test(source)) problems.push("the 'Build fundamentals first' band is not shown")
+            // OWNER CHANGE (Round 30): "fundamentals", not "skills"; the vague interest headings got clearer
+            // names and a line under each
+            const framing = loadEsModule(path.join(REPORT_DIR, "reportFraming.js"))
+            if (framing.BUILD_FIRST_TITLE !== "Build fundamentals first" || !/psychometric analysis/.test(framing.BUILD_FIRST_NOTE)) problems.push("the band is not 'Build fundamentals first' with what fundamentals are")
+            if (TIER_NAMES.some((row) => /interests?$/i.test(row.name))) problems.push("a tier is still called '… interest(s)'")
+            ;[9, 10, 11, 14, 15, 16].forEach((tier) => { if (!framing.tierWhyFor(tier)) problems.push(`tier ${tier} has no line saying what pointed there`) })
             return problems.length > 0 ? problems.join("; ") : null
         },
         expect: null,
@@ -5010,7 +5016,7 @@ const fixtures = [
             if (!/to="\/report\/matches"/.test(page)) problems.push("the overview does not open the matches page")
             if (!/to="\/report\/psychometric"/.test(page) || !/path="\/report\/psychometric"/.test(app)) problems.push("the overview does not open the psychometric analysis page")
             const psych = fs.readFileSync(path.join(REPORT_DIR, "PsychometricAnalysis.js"), "utf8")
-            if (!/four fundamentals/.test(psych) || !/doesn't make you good or bad — only different/.test(psych) || !/<PsychometricScores allOpen \/>/.test(psych)) problems.push("the psychometric analysis page does not say what the fundamentals are and that the rest only make you different")
+            if (!/<strong>The four core fundamentals<\/strong>/.test(psych) || !/doesn't make you good or bad — only different/.test(psych) || !/<PsychometricScores allOpen \/>/.test(psych)) problems.push("the psychometric analysis page does not say what the fundamentals are and that the rest only make you different")
             if (/<h2>Combined careers<\/h2>/.test(page)) problems.push("combined careers are still a card of their own")
             const medium = ["What seems to drive you", "Your psychometric analysis", "What you said you wanted"].filter((text) => !new RegExp(`className="report-heading-md">${text}`).test(page))
             if (medium.length > 0) problems.push(`not in the shared medium heading: ${medium.join(", ")}`)
