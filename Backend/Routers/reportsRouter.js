@@ -22,6 +22,27 @@ const supportFor = (submission) => {
     return { checkedOn: DISABILITY_SUPPORT.checked_on, rows: DISABILITY_SUPPORT.rows }
 }
 
+// WHERE THE STUDENT STANDS (owner, Round 31: "the next step should be relevant to the student") — the
+// card walks each career's path from here: what's behind them, what's next, how long from now. Read
+// from their details today, like the degree line beside it.
+const { readJourney, degreeLeadsHere } = require("../matching/journey")
+const youFor = (user) => {
+    const journey = readJourney(user)
+    const family = DEGREE_OPTIONS.families.find((option) => option.id === journey.degree)
+    const years = family && typeof family.years === "number" ? family.years : null
+    return {
+        stage: journey.stage,
+        preAdmission: journey.preAdmission,
+        courseYear: journey.courseYear,
+        // a college student's own degree still to finish (null when we can't tell)
+        degreeYearsLeft: journey.stage === "college" && !journey.preAdmission && years !== null && typeof journey.courseYear === "number"
+            ? Math.max(0, years - journey.courseYear) : null,
+        experienceYears: journey.experienceYears,
+        // a bachelor's done (working) or under way (college) — the "any bachelor's" step is theirs
+        hasDegree: Boolean(family && family.bachelor) && !journey.preAdmission,
+    }
+}
+
 // "B.Tech / B.E. (Civil)" — for the card's "your degree already counts" line
 const degreeLabelFor = (detail) => {
     const family = detail && DEGREE_OPTIONS.families.find((option) => option.id === detail.degree)
@@ -183,7 +204,10 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
             Profile.findOne({ user: req.user._id }).select("raw_scores").lean(),
         ])
         const raw = (profile && profile.raw_scores) || {}
-        const withWorkOn = (entry) => ({ ...entry, workOn: workOnFor(entry.professionId, raw) })
+        // degreeLeads (Round 31): THEIR degree is one this career names — not just "any bachelor's",
+        // which can still leave a degree to do (a BA student still needs the LLB to be a lawyer)
+        const journeyNow = readJourney(req.user)
+        const withWorkOn = (entry) => ({ ...entry, workOn: workOnFor(entry.professionId, raw), degreeLeads: degreeLeadsHere({ id: entry.professionId }, journeyNow) })
 
         // A REPORT OLDER THAN THE LAST SUBMIT IS BEING REPLACED, not the answer.
         //
@@ -258,6 +282,7 @@ router.get("/getMyReport", authMiddleware, requireDiscovery, async (req, res) =>
                 release: report.release,
                 journey: report.journey,
                 degree: degreeLabelFor(req.user.journeyDetail),
+                you: youFor(req.user),
                 support: supportFor(submission),
                 // Round 13: does the student hope to study or work abroad, and where — the report shows
                 // its "Going abroad" parts only for "maybe" or "yes"

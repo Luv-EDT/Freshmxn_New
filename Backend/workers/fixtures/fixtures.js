@@ -2470,7 +2470,7 @@ const fixtures = [
             if (!/<Section title="Your next 12 months">/.test(card)) problems.push("the card has no 'Your next 12 months'")
 
             // the card's steps come from real data: its path step (levelPath) and its exams
-            if (!/levelPath\(detail\.pathToEntry/.test(card) || !/cardSteps\(entry, detail, journey, stepForPlan\)/.test(card)) {
+            if (!/levelPath\(detail\.pathToEntry/.test(card) || !/cardSteps\(entry, detail, journey, road, you\)/.test(card)) {
                 problems.push("the card's next steps no longer start from its own levelled path")
             }
             const steps = (plan.split("export const cardSteps")[1] || "").split("\n}\n")[0]
@@ -3158,7 +3158,7 @@ const fixtures = [
         // Built from data, never filler: an empty string, an "undefined" or a fourth step would all
         // be the report padding itself.
         run: () => {
-            const { cardSteps, whyFits } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { cardSteps, whyFits, personalRoad } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
             const { studentFacing } = require("../../Routers/professionsRouter")
             const professions = require("../../data/ALL-professions.json").professions
 
@@ -3166,7 +3166,10 @@ const fixtures = [
             ;["class9_10", "class11_12", "college", "early_professional"].forEach((journey) => {
                 professions.forEach((profession) => {
                     const detail = studentFacing(profession)
-                    const steps = cardSteps({ professionId: profession.id }, detail, journey, detail.pathToEntry[1] || null)
+                    const entry = { professionId: profession.id }
+                    const you = { degreeYearsLeft: journey === "college" ? 2 : null, hasDegree: journey !== "class9_10" && journey !== "class11_12" }
+                    const road = personalRoad({ steps: (detail.pathToEntry || []).map((step) => ({ ...step, level: /^class_/.test(step.stage) ? 1 : 2 })), entry, detail, journey, you })
+                    const steps = cardSteps(entry, detail, journey, road, you)
                     if (steps.length > 3) problems.push(`${profession.profession} (${journey}): ${steps.length} steps`)
                     steps.forEach((step) => {
                         if (typeof step !== "string" || step.trim() === "" || /undefined|null|NaN/.test(step)) {
@@ -4946,29 +4949,72 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 19 — a college or working student is never told to start a bachelor's (unless the career needs its own) and never sees school steps",
+        name: "ROUND 31 — every career's path is walked from where THIS student stands: steps are behind them, where they are, or ahead (bold); past school, the next step is never a first-degree entrance or degree unless the career needs its own degree (then it is said to be a switch) or they haven't started college yet (owner change from Round 19)",
         run: () => {
-            const { roadFrom } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
+            const { personalRoad, cardSteps, howLongForYou } = loadEsModule(path.join(REPORT_DIR, "reportPlan.js"))
             const source = fs.readFileSync(path.join(REPORT_DIR, "ProfessionCard.js"), "utf8")
             const anchors = source.match(/const STAGE_ANCHORS = \{[\s\S]*?\n\}/)
             // eslint-disable-next-line no-new-func
             const levelPath = new Function(`${anchors[0]}\n${source.match(/export const levelPath = [\s\S]*?\n\}/)[0].replace("export const", "const")}\nreturn levelPath`)()
-            const DEGREE = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+            const { journeyMultiplier, readJourney, degreeLeadsHere } = require("../../matching/journey")
+            const { studentFacing } = require("../../Routers/professionsRouter")
+            const FIRST_DEGREE = ["entrance_exam", "entrance", "degree", "undergrad", "diploma"]
+            const ORDER = { done: 0, now: 1, ahead: 2 }
+            const students = {
+                class9: [{ journey: "class9_10", journeyDetail: { class: 9 } }, {}],
+                class12: [{ journey: "class11_12", journeyDetail: { class: 12, stream: ["physics", "chemistry", "maths"] } }, {}],
+                preAdmission: [{ journey: "college", journeyDetail: { collegeStage: "pre_admission" } }, { preAdmission: true }],
+                btechCivil: [{ journey: "college", journeyDetail: { degree: "btech", subject: "civil", courseYear: 2, stream: ["physics", "chemistry", "maths"] } }, { degreeYearsLeft: 2, hasDegree: true }],
+                ba: [{ journey: "college", journeyDetail: { degree: "ba", subject: "economics", courseYear: 2 } }, { degreeYearsLeft: 1, hasDegree: true }],
+                architect: [{ journey: "early_professional", journeyDetail: { degree: "barch_bplan", experienceYears: 4, currentProfessionId: "eng-architect" } }, { hasDegree: true }],
+            }
             const problems = []
+            const looks = {}
             require("../../data/ALL-professions.json").professions.forEach((profession) => {
-                const all = levelPath(profession.path_to_entry || [])
-                ;[["college", 2], ["early_professional", 3]].forEach(([journey, level]) => {
-                    const { steps, nextIndex } = roadFrom(all, journey, level, profession.mid_stream_entry)
-                    if (steps.some((step) => step.level < 2)) problems.push(`${profession.id}: a ${journey} student is shown a school step`)
-                    const next = nextIndex >= 0 ? steps[nextIndex] : null
-                    if (next && DEGREE.includes(next.stage) && profession.mid_stream_entry !== "restart_undergrad") problems.push(`${profession.id}: a ${journey} student's next step is a first degree`)
+                const detail = studentFacing(profession)
+                Object.entries(students).forEach(([name, [user, you]]) => {
+                    const journey = readJourney(user)
+                    const cost = journeyMultiplier(profession, journey)
+                    const entry = { professionId: profession.id, ownCareer: cost.ownCareer, yearsToGetThere: cost.yearsToGetThere, entryClosed: cost.entryClosed, wasteBreakdown: cost.wasteBreakdown, degreeLeads: degreeLeadsHere(profession, journey) }
+                    const road = personalRoad({ steps: levelPath(detail.pathToEntry || []), entry, detail, journey: user.journey, you })
+                    const steps = cardSteps(entry, detail, user.journey, road, you)
+                    looks[`${name}:${profession.id}`] = { road, steps, how: howLongForYou(entry, detail, user.journey, you, "degree") }
+                    const pastSchool = user.journey === "college" || user.journey === "early_professional"
+                    if (road.steps.some((step) => !ORDER.hasOwnProperty(step.status))) problems.push(`${name}/${profession.id}: a step with no status`)
+                    // a degree a career only "helps" with can sit after a certificate — covered by theirs, it is
+                    // ticked where it stands; otherwise what is behind them always comes first
+                    if (road.situation !== "covered" && road.steps.some((step, index) => index > 0 && ORDER[step.status] < ORDER[road.steps[index - 1].status])) problems.push(`${name}/${profession.id}: a step behind them comes after one ahead`)
+                    if (pastSchool && road.steps.some((step) => /^class_/.test(step.stage))) problems.push(`${name}/${profession.id}: a school step is shown past school`)
+                    const next = road.nextIndex >= 0 ? road.steps[road.nextIndex] : null
+                    const routine = !["switch", "switch_closed", "pre_admission"].includes(road.situation)
+                    if (pastSchool && routine && next && FIRST_DEGREE.includes(next.stage) && !/^\s*(Five-year|.*LLB|.*\bafter (any|a) bachelor)/i.test(next.requirement) && entry.degreeLeads) {
+                        problems.push(`${name}/${profession.id}: their own degree leads here but the next step is "${next.requirement.slice(0, 40)}"`)
+                    }
+                    if (pastSchool && routine && next && ["entrance_exam", "entrance"].includes(next.stage) && road.steps.slice(road.nextIndex + 1).some((step) => FIRST_DEGREE.includes(step.stage))) {
+                        problems.push(`${name}/${profession.id}: a ${user.journey} student is sent to a first-degree entrance as a routine next step`)
+                    }
+                    if (steps.some((line) => /^Your next step:/.test(line)) && !routine && road.situation !== "pre_admission") problems.push(`${name}/${profession.id}: a switch is written as a routine "Your next step"`)
                 })
-                const school = roadFrom(all, "class11_12", 1, profession.mid_stream_entry)
-                if (school.steps.length !== all.length) problems.push(`${profession.id}: a school student's road lost steps`)
             })
+
+            // the owner's cases
+            const civil = looks["btechCivil:eng-civil-engineer"]
+            if (civil.road.situation !== "degree_counts" || civil.steps.some((line) => /JEE/.test(line)) || civil.road.steps.find((step) => step.stage === "degree").status !== "now") problems.push("a B.Tech Civil student viewing Civil Engineer is not walked on from their own degree")
+            const lawyer = looks["ba:law-lawyer"]
+            if (lawyer.road.steps.find((step) => step.stage === "degree").status !== "ahead") problems.push("a BA student is told the LLB is behind them")
+            const doctor = looks["ba:hlt-doctor"]
+            if (!["switch", "switch_closed"].includes(doctor.road.situation) || !doctor.steps.some((line) => /start its own degree/.test(line))) problems.push("medicine for a BA student is not said to be a switch")
+            const own = looks["architect:eng-architect"]
+            if (own.road.situation !== "own" || own.how.text !== "This is your work now") problems.push("a working architect's own career is not 'your work now'")
+            const pre = looks["preAdmission:hlt-doctor"]
+            if (pre.road.situation !== "pre_admission" || pre.road.steps[pre.road.nextIndex].stage !== "entrance_exam") problems.push("a student about to start college is not sent to the entrance")
+
+            // the card: "For you" first, the steps ahead in bold, the ones behind ticked
+            if (!/howLongForYou\(entry/.test(source) || !/For you: /.test(source)) problems.push("the path doesn't say how long for this person")
+            if (!/ahead \? <strong>\{step\.requirement\}<\/strong>/.test(source)) problems.push("the steps still ahead are not bold")
             if (!/subjects: !pastSchool/.test(source)) problems.push("college and working students still see the Class 11–12 subjects fold")
             if (!/"Usually not needed/.test(source)) problems.push("the master's line still says 'not needed'")
-            return problems.length > 0 ? problems.slice(0, 6).join("; ") : null
+            return problems.length > 0 ? problems.slice(0, 8).join("; ") : null
         },
         expect: null,
     },

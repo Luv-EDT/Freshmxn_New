@@ -176,7 +176,9 @@ const yearsToGetThere = (profession, journey) => {
     const hasDegree = journey.stage === "early_professional" ? degreeYears(journey) > 0 : Boolean(journey.degree) && !journey.preAdmission
     let ahead
 
-    if (degreeCounts(profession, journey)) ahead = ownDegreeLeft
+    // only a degree this career NAMES leads straight in; "any bachelor's" still leaves what comes after
+    // it — the LLB, the MBA (Round 31: a BA student was told 2 years to become a lawyer)
+    if (degreeLeadsHere(profession, journey)) ahead = ownDegreeLeft
     else if (profession.mid_stream_entry === "open") ahead = 0
     else if (profession.mid_stream_entry === "after_any_degree" && hasDegree) ahead = ownDegreeLeft + Math.max(1, full - 3)
     else ahead = full
@@ -240,4 +242,4 @@ const hardFilterReason = (profession, journey) => {
     return null
 }
 
-module.exports = { readJourney, tauFor, wasteFor, journeyMultiplier, hardFilterReason, class12Satisfied, degreeCounts, yearsToGetThere, entryClosed, experienceCarriesOver }
+module.exports = { readJourney, tauFor, wasteFor, journeyMultiplier, hardFilterReason, class12Satisfied, degreeCounts, degreeLeadsHere, yearsToGetThere, entryClosed, experienceCarriesOver }

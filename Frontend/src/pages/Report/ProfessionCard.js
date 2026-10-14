@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { whyFits, whyChosen, cardSteps, entryRoute, roadFrom } from "./reportPlan"
+import { whyFits, whyChosen, cardSteps, entryRoute, personalRoad, howLongForYou } from "./reportPlan"
 import AbroadWaitlist from "./AbroadWaitlist"
 
 // One profession in the report: a heading until it is opened, then everything the taxonomy knows.
@@ -167,7 +167,7 @@ const PORTABILITY_WORDS = {
 const LOST_WORDS = { undergrad: "degree years that won't count", class_11_12: "a Class 12 subject to add through open school", employment: "work years in a different field" }
 const lostParts = (breakdown) => Object.keys(breakdown || {}).filter((key) => breakdown[key] > 0 && LOST_WORDS[key]).map((key) => LOST_WORDS[key]).join(", ")
 
-function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, rank, showAi, degreeLabel, abroadPlans, combined }) {
+function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchCost, topRank, rank, showAi, degreeLabel, abroadPlans, combined, you = {} }) {
     // a student who said maybe or yes to going abroad also sees how this career travels
     const abroadMinded = Boolean(abroadPlans && abroadPlans.hope !== "no")
     const [open, setOpen] = useState(false)
@@ -178,17 +178,18 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
         if (next && !detail && onOpen) onOpen(entry.professionId)
     }
 
-    const studentLevel = JOURNEY_LEVEL[journey]
     const allSteps = detail ? levelPath(detail.pathToEntry || []) : []
 
-    // the road from where this student stands, and their next step on it (reportPlan.roadFrom)
+    // the road from where THIS student stands — each step behind them, where they are, or still to
+    // do — and their next step on it (reportPlan.personalRoad, owner, Round 31)
     const pastSchool = journey === "college" || journey === "early_professional"
-    const { steps, nextIndex } = roadFrom(allSteps, journey, studentLevel, detail && detail.midStreamEntry)
+    const road = personalRoad({ steps: allSteps, entry, detail: detail || {}, journey, you })
+    const { steps, nextIndex } = road
+    const forYou = howLongForYou(entry, detail || {}, journey, you, degreeLabel)
 
     const fit = whyFits(entry)
     const chosen = whyChosen(entry)
-    const stepForPlan = nextIndex >= 0 ? steps[nextIndex] : null
-    const nextSteps = cardSteps(entry, detail, journey, stepForPlan)
+    const nextSteps = cardSteps(entry, detail, journey, road, you)
 
     const subjects = detail && Array.isArray(detail.class12Prerequisite) && !detail.class12Prerequisite.includes("any")
         ? detail.class12Prerequisite.map((subject) => SUBJECTS[subject] || subject).join(" + ")
@@ -390,22 +391,35 @@ function ProfessionCard({ entry, detail, detailsLoaded, journey, onOpen, switchC
                             <More title="The road">
                                 {shows.path && (
                                     <Fold title="How long, and the path">
-                                        {years !== null && <p className="pc-years">About <strong>{years} years</strong> to qualify</p>}
+                                        {/* FOR THIS PERSON FIRST (owner, Round 31): how long from where they stand,
+                                            then the plain length from Class 12 */}
+                                        {forYou && (
+                                            <p className="pc-years">
+                                                <strong>For you: {forYou.text.charAt(0).toLowerCase() + forYou.text.slice(1)}</strong>
+                                                {forYou.reason && ` — ${forYou.reason}`}.
+                                            </p>
+                                        )}
+                                        {years !== null && (forYou
+                                            ? <p className="pc-small">From the start (after Class 12): about {years} years.</p>
+                                            : <p className="pc-years">About <strong>{years} years</strong> to qualify</p>)}
+                                        {/* the steps still ahead of this person are bold; the ones behind them are ticked */}
                                         {steps.length > 0 && (
                                             <ol className="pc-path">
                                                 {steps.map((step, index) => {
                                                     const isNext = index === nextIndex
-                                                    const isPast = studentLevel !== undefined && step.level < studentLevel
+                                                    const ahead = step.status === "ahead"
 
                                                     return (
                                                         <li
                                                             key={step.step}
-                                                            className={`${isPast ? "is-past" : ""}${isNext ? " is-next" : ""}`.trim() || undefined}
+                                                            className={`is-${step.status}${isNext ? " is-next" : ""}`}
                                                         >
-                                                            <span className="pc-stage">{stageLabel(step.stage)}</span>
+                                                            <span className="pc-stage">{step.status === "done" ? "✓ " : ""}{stageLabel(step.stage)}</span>
                                                             {isNext && <span className="pc-next"> · your next step</span>}
+                                                            {step.status === "now" && <span className="pc-next"> · you're here</span>}
+                                                            {step.note && <span className="pc-step-note"> · {step.note}</span>}
                                                             <br />
-                                                            {step.requirement}
+                                                            {ahead ? <strong>{step.requirement}</strong> : step.requirement}
                                                         </li>
                                                     )
                                                 })}

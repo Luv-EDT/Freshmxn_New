@@ -648,7 +648,7 @@ const fixtures = [
                 }
             }
             if (!result.ranked.every((entry) => typeof entry.wastedYears === "number" && typeof entry.score === "number")) return "the cost and the score must be on every entry"
-            if (result.matching_version !== "matching@2.6.0") return `version ${result.matching_version}`
+            if (!/^matching@2\.([6-9]|[1-9]\d)\./.test(result.matching_version)) return `version ${result.matching_version}`
             return null
         },
     },

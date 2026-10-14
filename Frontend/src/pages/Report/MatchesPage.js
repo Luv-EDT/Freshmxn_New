@@ -99,6 +99,7 @@ function MatchesPage() {
             showAi={secondary === "ai"}
             degreeLabel={(state.data && state.data.degree) || null}
             abroadPlans={(state.data && state.data.abroadPlans) || null}
+            you={(state.data && state.data.you) || {}}
         />
     )
 

@@ -228,12 +228,19 @@ button.pc-toggle:hover:not(:disabled) {
     margin: 8px 0;
 }
 
-.pc-path li.is-past {
+/* Round 31 (owner): behind you — muted and ticked; still to do — the requirement in bold */
+.pc-path li.is-done {
     opacity: 0.7;
 }
 
-.pc-path li.is-next {
-    font-weight: 700;
+.pc-path li.is-now .pc-stage,
+.pc-path li.is-next .pc-stage {
+    color: var(--teal);
+}
+
+.pc-step-note {
+    font-size: 0.85rem;
+    color: var(--navy-soft);
 }
 
 .pc-stage,

@@ -64,7 +64,9 @@ const constants = require("./constants")
 // Round 31 (owner: no career reaches a student on fit alone); the ranking was never affected, so the
 // version stays.
 // 2.6.0 (Round 30, owner): inside a tier, Best match orders by fit × switching cost, so the two sorts differ.
-const MATCHING_VERSION = "matching@2.6.0"
+// 2.7.0 (Round 31): "time to get there from now" counts the degree an any-graduate career still asks
+// for (the LLB, the MBA) — only a degree the career names leads straight in. Shown, never ranked.
+const MATCHING_VERSION = "matching@2.7.0"
 
 const matchProfile = ({ profile, interest, user, professions, baseline, resolvedActivities, sort, combinedCareers = COMBINED_CAREERS }) => {
     if (!profile) throw new Error("matchProfile: profile is required")
