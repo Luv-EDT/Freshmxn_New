@@ -26,6 +26,7 @@ highlight only.** All statistics verified to a citable source — cite inline on
 "Your ranked matches" preview card, which the owner found text-heavy.
 **Primary CTA (teal):** Let's figure out your career →
 **Secondary CTA (ghost):** See how it works
+**Third button (ghost):** Try the demo → `/try-demo` (owner, Round 32 — a 7-minute, no-login taste; see HOW_FRESHMXN_WORKS "The demo")
 
 *(Kira move: consider a highlighter-pink swipe under "in demand and AI-resilient" — the one place
 pink earns its keep.)*
@@ -49,6 +50,36 @@ is changing faster than that advice can keep up.
   employability 56.3%). The problem usually isn't ability — it's a direction that never fit.
 - **AI is redrawing the map.** AI, data, cloud and cybersecurity are now the most in-demand skills in
   India, with new fields appearing fast while routine roles shrink (India Skills Report 2026).
+
+**Second block under the four questions (owner, Round 32): "What a system does for you".** Three
+columns (stacked on a phone), each a set of folded questions a student would ask, answered only with
+what the product really does:
+
+*Save time*
+- *How do I explore without wasting a year on random courses?* — **Structured exploration.** Your
+  matches are ranked from your own story, each with its road and first steps for where you are — and a
+  mentor who has done the job. Try with focus, then pivot with purpose.
+
+*Feel good about it*
+- *I don't know what I'm interested in — where do I start?* — **Clarity when nothing clicks yet.**
+  Virtual Career Counselling walks through four stages of your life — small things count. We find the thread.
+- *I've found something new I love — how do I make it real?* — **From spark to action.** Every career
+  shows the path and your next 12 months, and your mentor can help you carry a passion forward, not just find a job.
+- *Will this make me better, not just busier?* — **Growth that's real.** We measure 31 factors —
+  including the four core fundamentals every career needs — and show what to work on for each career.
+- *Can I talk to someone who's done it?* — **A mentor who's been where you are**, in the job role you
+  choose — real experience, not generic advice.
+- *My past choices feel wrong — is it too late?* — **Your past doesn't define you.** Every career is
+  counted from where you stand today: what carries over, and how long from now.
+
+*Make money*
+- *Is that master's or expensive course worth it?* — **The real return.** Each career shows the cost to
+  qualify, starting and mid-career pay ranges, and whether a master's is needed, helps, or isn't worth it.
+- *What good careers am I missing?* — **Beyond the obvious.** 1,000+ careers and job roles, careers
+  that combine two fields, and how in demand and AI-resilient each one is.
+- *How do I get job- or internship-ready fast?* — **Ready sooner.** Your first steps for each career are
+  right on its card — and help with internships, jobs and a starter skill kit is on our waitlist.
+  *(No resume service is promised — none exists yet.)*
 
 ---
 

@@ -30,6 +30,7 @@ import SuccessStories from "./pages/Public/SuccessStories.js"
 import MentorWaitlistPublic from "./pages/Public/MentorWaitlistPublic.js"
 import HowItWorks from "./pages/Public/HowItWorks.js"
 import Programs from "./pages/Public/Programs.js"
+import DemoPage from "./pages/Demo/DemoPage"
 import About from "./pages/Public/About.js"
 import Terms from "./pages/Public/Terms.js"
 import Privacy from "./pages/Public/Privacy.js"
@@ -55,6 +56,8 @@ function App() {
                 <Route path="/mentor-waitlist" element={<MentorWaitlistPublic />} />
                 <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="/programs" element={<Programs />} />
+                {/* Round 32 (owner): a taste before any login — the API is /demo, so the page is not */}
+                <Route path="/try-demo" element={<DemoPage />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/privacy" element={<Privacy />} />

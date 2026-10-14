@@ -244,6 +244,30 @@ const SECTIONS = [
         ),
     },
     {
+        id: "demo",
+        title: "The demo (before you sign up)",
+        body: (
+            <>
+                <p>
+                    "Try the demo" is a short taste you can take without an account. It keeps your first name, what you
+                    tell us pulls you and why, your answers to eight statements and six puzzles, and — when you ask to
+                    see your result — your email and whether you are 18 or older. If you are under 18, you confirm that
+                    a parent or guardian knows and agrees; we record when, and which version of this policy you saw.
+                    We keep no address, device details or cookies for it, and nothing for advertising.
+                </p>
+                <p>
+                    <strong>How long:</strong> a demo is deleted by itself after 30 days. If you later sign up and buy
+                    with the same, confirmed email, your dashboard offers to carry your demo answers into your real
+                    assessment so you don't repeat them — you choose, and either way the demo is then deleted.
+                </p>
+                <p>
+                    What you type may also help us improve our career data — the activities that point to careers,
+                    and professions we don't cover yet — kept as the words alone, never with your name or email.
+                </p>
+            </>
+        ),
+    },
+    {
         id: "retention",
         title: "How long we keep it",
         body: (
