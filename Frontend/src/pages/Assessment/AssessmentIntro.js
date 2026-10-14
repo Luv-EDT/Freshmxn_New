@@ -145,7 +145,8 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
 
         // an admin reopened this test and it has not been started again yet (Round 30: never on the short
         // story, whose own offer below shows only once its questions closed unanswered)
-        const reopened = Boolean(retakeGranted[module.key]) && !isDone && !isStarted && module.key !== "storyRecall"
+        // (Round 31: one taken up from an offer says so in its own note below)
+        const reopened = Boolean(retakeGranted[module.key]) && !isDone && !isStarted && module.key !== "storyRecall" && !keptEarlier[module.key]
         const storyOffer = module.key === "storyRecall" && storyState && storyState.phase === "expired" && storyState.retakesLeft > 0
         // we improved this test and offered everyone who took it another go (Round 29); their choice.
         // Round 31: taken up but not finished, their earlier result is still there to go back to

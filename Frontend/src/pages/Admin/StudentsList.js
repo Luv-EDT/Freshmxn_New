@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Table, Button, Popconfirm, Input, message } from "antd"
+import { Table, Button, Popconfirm, message } from "antd"
 import dayjs from "dayjs"
 import { getAllUsersForAdmin } from "../../apiCall/userApi"
 import { downgradeUserForAdmin, getPricing } from "../../apiCall/paymentsApi"
@@ -8,7 +8,7 @@ import { GiveFreeAccess, DeleteAccount } from "./StudentAccessActions"
 import { PLAN_NAMES } from "../plans"
 import { getProgressForAdmin } from "../../apiCall/submissionsApi"
 import { sectionsDone, ASSESSMENT_MODULES } from "../Assessment/assessmentModules"
-import { matchesStudent } from "./StudentSearch"
+import StudentSearch, { matchesStudent } from "./StudentSearch"
 
 // THREE COLUMNS ON WHERE EACH STUDENT IS (owner, Round 29): the assessment (the same count the
 // student's own page shows), the mentorship stage, and the report updates with their log.
@@ -152,8 +152,8 @@ function StudentsList({ dataVersion, onDataChanged }) {
     return (
         <div>
             {/* Toolbar */}
-            <Input placeholder="Search name or email" value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: 300 }} />{" "}
             <Button onClick={fetchUsers}>Refresh</Button>
+            <StudentSearch value={search} onChange={setSearch} />
 
             <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleUsers} scroll={{ x: "max-content" }} />
 
