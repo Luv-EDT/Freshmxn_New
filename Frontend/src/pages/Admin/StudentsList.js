@@ -21,8 +21,9 @@ const UPDATE_KINDS = { own: "own change", free: "free (a retake we asked for)", 
 
 function ReportUpdates({ user }) {
     const log = user.updateLog || []
+    // Round 30: a retake we asked for makes the NEXT update free (never more than one waiting)
     const freeUsed = log.filter((entry) => entry.kind === "free").length
-    const summary = `${user.selfUpdatesUsed || 0} of 3 own · ${freeUsed} free used${user.freeUpdates > 0 ? ` · ${user.freeUpdates} free left` : ""}`
+    const summary = `Own: ${user.selfUpdatesUsed || 0} of 3 used · ${user.freeUpdates > 0 ? "next update free" : "no free update waiting"}${freeUsed ? ` · ${freeUsed} free used so far` : ""}`
     if (log.length === 0) return summary
     return (
         <details>

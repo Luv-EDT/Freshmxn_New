@@ -340,7 +340,7 @@ granted or a report re-run is emailed too.
 top centre; **Your matches** — your top three, with three buttons: "See all N matches", "Combined careers
 (N)" (careers that mix two professions, often from different sectors) and "Compare careers"; **What seems
 to drive you**; (since Round 28 a **Your psychometric analysis →** card opens `/report/psychometric`: the
-four fundamentals first — they help in every career, so higher is better — then every other group, which
+four **core** fundamentals first (Round 30) — they help in every career, so higher is better — then every other group, which
 only make you different, never better or worse; the Profile links to your report instead of repeating it);
 before Round 28, **The five fundamentals** — confidence, sticking with things, picking up new material and
 deciding with good information, each as a word (High / Medium / Low) with what it means and why it
@@ -360,9 +360,13 @@ consider"** opens careers nothing you told us pointed to but which fit how you t
 first, up to 30, never ranked), and at the very bottom, **"How your list is ordered"**. Opened, the list is
 shown **under its tier headings**
 — two or three words each since Round 24: "Proven long-time passion", "Confident current passion",
-"Long-time interest", "Other interests"… (*proven* = you achieved at it, *confident* = you said you're sure,
+"Long-time activity", "Current, your reasons", "Something you do now"… each with one line saying which of
+your activities pointed there (Round 30) (*proven* = you achieved at it, *confident* = you said you're sure,
 *passion* = you love it). The careers that ask for more than your profile shows today sit under one band,
-**"Build skills first"**, instead of the old "A stretch — …". Only the groups you have are shown, numbers
+**"Build fundamentals first"** (Round 30 — *fundamentals* means every quality in your psychometric
+analysis: personality, intelligences, thinking abilities and the habits under them). Inside a group,
+**Best match** counts what you'd leave behind (fit × switching cost); **Best fit, ignoring switching
+cost** orders by fit alone, so the two lists differ whenever any career has a cost (Round 30). Only the groups you have are shown, numbers
 running on across them (Round 20). The **filters** fold away behind one **"Filter your list"** button, like
 the sort, and the page still says how many careers they hide; the **studying / working abroad** lines are
 the last thing on the page; and **how the list is ordered** is explained on the overview, in a fold beside
@@ -428,7 +432,7 @@ the whole list by pay, demand, speed, AI exposure (with its value shown) or **le
 you (nothing is picked for you) and see them side by side, with the same plain questions, "what to work
 on" and "worth knowing".
 
-**Your profile** shows your psychometric results in six groups — the four fundamentals, personality ("how
+**Your profile** shows your psychometric results in six groups — the four core fundamentals, personality ("how
 you tend to react to the world"), cognitive abilities, areas you feel drawn to, **two traits that make you
 different** (comfort with not knowing the outcome, and how firmly you hold a view you've thought through —
 each a position, never high or low, because careers want different amounts of each; Round 20) and ways you
@@ -458,6 +462,14 @@ activity trace.
 | Someone forgets their password | an emailed reset link (`/forgot-password`) |
 
 ---
+
+**"Something went wrong with this test?"** sits only on the assessment start page, on the card of a test
+you have finished (Round 30) — not inside a test, and not before you've taken it. **The focus test** turns
+the cross after each digit **green** when you press correctly and **red** when you press on a 3, in both
+rounds; reaction times are measured from the moment the digit is actually on screen and the moment your
+key or tap happened (Round 30). Its average leaves out presses under 0.15 s (before a digit can be read),
+which other SART sites usually count — so ours reads a little slower. A retake we ask for makes your
+**next** report update free (one at a time, Round 30).
 
 **When a test needs taking again** (Round 29): if a timed test didn't count, you're told why in plain words
 (for the focus test: pressing before the number appeared, or pressing on the 3s). When the admin allows a

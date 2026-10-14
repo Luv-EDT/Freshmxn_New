@@ -55,6 +55,11 @@ const financialAidRequestSchema = new mongoose.Schema(
         handledAt: {
             type: Date,
         },
+        // Round 30 (owner): a decision the admin undid, with why — the request went back to pending
+        decisionLog: {
+            type: [{ at: Date, from: String, amountInr: Number, note: String, by: { type: mongoose.Schema.Types.ObjectId, ref: "User" } }],
+            default: [],
+        },
     },
     {
         timestamps: true,

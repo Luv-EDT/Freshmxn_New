@@ -156,7 +156,8 @@ export const runBlock = ({ trials, show, hide, onTrial, controls = {} }) => new 
 
     let index = 0
     let blockStart = null
-    let onset = null            // when THIS trial's digit was actually painted
+    let shownAt = null          // the frame in which THIS trial's digit was put on the page
+    let onset = null            // the next frame — when the digit was actually on screen (Round 30)
     let previousOnset = null
     let showing = null          // "digit" | "mask"
     let response = null         // performance.now() of the first press in this trial
@@ -165,13 +166,16 @@ export const runBlock = ({ trials, show, hide, onTrial, controls = {} }) => new 
 
     // ONLY THE FIRST PRESS IN A TRIAL COUNTS. A student who taps three times has not responded
     // three times, and taking the last one would reward hammering the key.
+    // A press between the frame that drew the digit and the frame that showed it still counts (it is
+    // timed from the onset, so it reads as anticipatory, which it is).
     const respond = (timestamp) => {
-        if (response === null && onset !== null) response = timestamp
+        if (response === null && shownAt !== null) response = timestamp
     }
 
     const finishTrial = () => {
         const trial = trials[index]
-        const rt = response === null ? null : response - onset
+        if (onset === null) onset = shownAt   // a stall swallowed the next frame: the best we have
+        const rt = response === null ? null : Math.max(0, response - onset)
 
         // GO: a press is correct, silence is an omission. NO-GO: silence is correct, a press is a
         // commission error. The scorer derives everything from these two columns, so they are
@@ -188,6 +192,7 @@ export const runBlock = ({ trials, show, hide, onTrial, controls = {} }) => new 
         index += 1
         response = null
         onset = null
+        shownAt = null
         showing = null
     }
 
@@ -202,6 +207,12 @@ export const runBlock = ({ trials, show, hide, onTrial, controls = {} }) => new 
         if (stopped) return
         if (blockStart === null) blockStart = now
 
+        // THE DIGIT IS ON SCREEN FROM THE FRAME AFTER THE ONE THAT DREW IT (owner, Round 30). A change
+        // made inside a frame's callback is shown at the next refresh, so stamping the drawing frame
+        // made every reaction time one frame (~17 ms at 60 Hz) too long. The block's schedule is
+        // untouched — only where each reaction time is measured from.
+        if (shownAt !== null && onset === null && now - (blockStart + index * TRIAL_MS) < TRIAL_MS) onset = now
+
         // A WHILE RATHER THAN AN IF, which was measured rather than assumed and is the smaller of
         // the two things happening here: in a healthy block at most one window closes per frame, and
         // after a stall an `if` clears the backlog one trial per frame and reaches the same rows a
@@ -213,7 +224,7 @@ export const runBlock = ({ trials, show, hide, onTrial, controls = {} }) => new 
         // a short session rather than a damaged one, and quietly charges the student with omission
         // errors on digits they were never shown.
         while (index < trials.length && now - (blockStart + index * TRIAL_MS) >= TRIAL_MS) {
-            if (onset !== null) {
+            if (shownAt !== null) {
                 finishTrial()
             } else {
                 // A whole 1150ms window passed without a single frame — the tab was hidden, or the
@@ -238,11 +249,9 @@ export const runBlock = ({ trials, show, hide, onTrial, controls = {} }) => new 
             if (showing !== wanted) {
                 show(wanted, trials[index])
 
-                // The onset is this frame's timestamp, not a performance.now() called a line later:
-                // rAF is handed the time the frame is being composited for, which is the earliest
-                // moment the student could have seen anything. Every reaction time in the block is
-                // measured from here.
-                if (wanted === "digit") onset = now
+                // This frame's timestamp is when the digit went on the page; the next frame's (above)
+                // is when it was on screen, and every reaction time is measured from that one.
+                if (wanted === "digit") shownAt = now
 
                 showing = wanted
             }

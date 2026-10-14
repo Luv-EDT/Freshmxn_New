@@ -255,7 +255,8 @@ export const sortByAiExposure = (ranked) => sortRanked(ranked, "ai")
 //   best     "Best match": careers that would leave SWITCH_COST_GROUP_YEARS or more of what the
 //            student has done behind move out of their tier into one last group, least affected
 //            first. Nothing is removed — it is moved, and the card still says how many years.
-//   noCost   "Best fit, ignoring switching cost": every career stays in its tier. Nothing is added
+//   noCost   "Best fit, ignoring switching cost": every career stays in its tier, ordered by fit
+//            alone (Round 30 — Best match's order inside a tier counts the cost). Nothing is added
 //            from outside the list (the old worth-the-switch extras went in Round 20).
 //
 // A secondary sort IGNORES THE TIERS (owner, Round 29): the list becomes one group ordered by it —
@@ -299,6 +300,11 @@ export const groupList = (ranked, primary, secondary, details = {}, options = {}
         const groups = kept.length > 0 ? [{ key: "sorted", tier: null, costly: false, flat: true, entries: sortRanked(kept, secondary, details) }] : []
         if (costly.length > 0) groups.push({ key: "costly", tier: null, costly: true, entries: sortRanked(costly, secondary, details) })
         return groups
+    }
+
+    // ignoring the cost: inside each tier, fit alone (ties keep the engine's order)
+    if (primary === "noCost") {
+        kept.sort((left, right) => (left.tier ?? 99) - (right.tier ?? 99) || (right.comfortScore ?? -1) - (left.comfortScore ?? -1) || left.rankedPosition - right.rankedPosition)
     }
 
     const groups = []

@@ -4,7 +4,6 @@ import { digitSpanNext, digitSpanAnswer } from "../../apiCall/submissionsApi"
 import useLeaveWarning from "./useLeaveWarning"
 import OneAttemptWarning from "./OneAttemptWarning"
 import TestResult from "./TestResult"
-import { ReportProblem } from "./ResearchBox"
 
 // Forward digit span — 04_Item_Bank.md §5. One digit at a time, 1000 ms each, no gap.
 //
@@ -172,7 +171,6 @@ function DigitSpan({ onDone, alreadyTaken }) {
                 <h2>Remembering numbers</h2>
                 <p><strong>You have already completed this one.</strong> Your answers are saved.</p>
                 <TestResult moduleKey="digitSpan" />
-                <ReportProblem moduleKey="digitSpan" />
                 <p>
                     This is the one section that cannot be retaken. Now that you know the format and
                     the pace, a second attempt would measure practice rather than memory, and it
@@ -273,7 +271,6 @@ function DigitSpan({ onDone, alreadyTaken }) {
             <h2>Remembering numbers</h2>
             <p>Finished. Your answers are saved.</p>
             <TestResult moduleKey="digitSpan" />
-            <ReportProblem moduleKey="digitSpan" />
         </div>
     )
 }

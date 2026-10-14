@@ -40,6 +40,7 @@ const OFFERABLE = [
 // most 3s pressed; a device fault shows as dropped trials, a low refresh rate or interruptions.
 const runLines = (run) => [
     `${run.trials} trials · ${run.presses} presses · 3s pressed: ${run.threesPressed}`,
+    `Average response: ${run.meanAllMs ?? "—"} ms counting every correct press · ${run.meanCleanMs ?? "—"} ms without those under 150 ms (the one the score uses)`,
     `Response times: under 150 ms ${run.rtSpread.under150} · 150–300 ${run.rtSpread.from150to300} · 300–600 ${run.rtSpread.from300to600} · over 600 ${run.rtSpread.over600}`,
     `Device: ${run.device || "not recorded"}${run.refreshHz ? ` · ${run.refreshHz} Hz` : ""} · dropped trials: ${run.droppedTrials ?? "not recorded"}`,
     `Presses from: ${run.input ? `keyboard ${run.input.keyboard || 0}, touch ${run.input.touch || 0}` : "not recorded (before Round 29)"}`,

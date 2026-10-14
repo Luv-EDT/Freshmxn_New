@@ -61,7 +61,8 @@ const constants = require("./constants")
 // 2.4.0 (Round 28): combined careers are two exact professions.
 // 2.5.0 (Round 29, owner): careers nothing pointed to but which fit how the student thinks and works
 // are kept as "Some other careers you can consider" — the ranking itself is unchanged.
-const MATCHING_VERSION = "matching@2.5.0"
+// 2.6.0 (Round 30, owner): inside a tier, Best match orders by fit × switching cost, so the two sorts differ.
+const MATCHING_VERSION = "matching@2.6.0"
 
 // careers not in the ranking whose fit clears the comfort line, best fit first (owner, Round 29)
 const otherCareersFrom = (universe, ranked) => {

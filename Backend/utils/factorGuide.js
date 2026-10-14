@@ -54,7 +54,7 @@ const FACTOR_GUIDE = {
 const GUIDE_GROUPS = [
     {
         key: "universals",
-        title: "The four fundamentals",
+        title: "The four core fundamentals",   // Round 30: "fundamentals" now means every quality measured
         meaning: "Four qualities that help in every career. All of them grow with practice.",
         factors: ["confidence", "consistency_grit", "learning_capacity", "informed_decision_making"],
     },

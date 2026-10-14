@@ -4,7 +4,6 @@ import { reasoningNext, reasoningAnswer } from "../../apiCall/submissionsApi"
 import useLeaveWarning from "./useLeaveWarning"
 import OneAttemptWarning from "./OneAttemptWarning"
 import TestResult from "./TestResult"
-import { ReportProblem } from "./ResearchBox"
 import { MatrixCell, CubeFigure } from "./ReasoningFigures"
 
 // The in-house reasoning test (owner, Round 10, item 1) — sixteen puzzles of four kinds, one at a
@@ -87,7 +86,6 @@ function ReasoningTest({ alreadyTaken, onDone }) {
                 <h2>Reasoning puzzles</h2>
                 <p>You have finished this section — thank you. It is taken once, so there is nothing more to do here.</p>
                 <TestResult moduleKey="reasoning" />
-                <ReportProblem moduleKey="reasoning" />
                 <button type="button" className="btn btn-primary" onClick={onDone}>Back to all sections</button>
             </section>
         )
@@ -122,7 +120,6 @@ function ReasoningTest({ alreadyTaken, onDone }) {
                 <h2>All sixteen done</h2>
                 <p>Your answers are saved. Your results are part of your report.</p>
                 <TestResult moduleKey="reasoning" />
-                <ReportProblem moduleKey="reasoning" />
                 <button type="button" className="btn btn-primary" onClick={onDone}>Back to all sections</button>
             </section>
         )

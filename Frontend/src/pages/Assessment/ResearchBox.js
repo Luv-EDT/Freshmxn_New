@@ -13,7 +13,7 @@ import {
 export function ResearchBox({ measured = null }) {
     return (
         <details className="faq-item research-box">
-            <summary>Why we do this — {FACTOR_COUNT} research-backed factors{measured !== null ? ` · ${measured} measured so far` : ""}</summary>
+            <summary>Why we do this <span className="research-count">— {FACTOR_COUNT} research-backed factors{measured !== null ? ` · ${measured} measured so far` : ""}</span></summary>
             <div className="research-body">
                 {WHY_WE_DO_THIS.map((paragraph) => <p key={paragraph.slice(0, 24)}>{paragraph}</p>)}
 

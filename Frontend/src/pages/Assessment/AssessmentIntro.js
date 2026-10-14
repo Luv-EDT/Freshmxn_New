@@ -90,7 +90,6 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
     const needLabels = ((accommodations && accommodations.needs) || []).map((id) => (NEEDS.find((need) => need.id === id) || {}).label).filter(Boolean)
     const setAside = built.filter((module) => skipped[module.key])
     const doneCount = built.filter((module) => completed.includes(module.key)).length
-    const sectionsPct = built.length ? Math.round((doneCount / built.length) * 100) : 0
     const storyPhase = storyState ? storyState.phase : null
 
     // the deck opens on the first section still to do. The story steps aside once it has been read —
@@ -142,8 +141,10 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
             label = byPhase[storyState.phase] || label
         }
 
-        // an admin reopened this test after a technical problem, and it has not been taken again yet
-        const reopened = Boolean(retakeGranted[module.key]) && !isDone
+        // an admin reopened this test and it has not been started again yet (Round 30: never on the short
+        // story, whose own offer below shows only once its questions closed unanswered)
+        const reopened = Boolean(retakeGranted[module.key]) && !isDone && !isStarted && module.key !== "storyRecall"
+        const storyOffer = module.key === "storyRecall" && storyState && storyState.phase === "expired" && storyState.retakesLeft > 0
         // we improved this test and offered everyone who took it another go (Round 29); their choice
         const offered = isDone && retakeOffers[module.key]
 
@@ -167,8 +168,12 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                 <p className="deck-minutes">About {module.minutes} minutes</p>
                 {reopened && (
                     <p className="retake-note">
-                        <strong>Retake available</strong> — your earlier attempt had a technical problem, so this is open
-                        again for one more try. Press Submit again afterwards so your report is updated.
+                        <strong>Open again for one more try</strong> — press Submit again afterwards so your report is updated.
+                    </p>
+                )}
+                {storyOffer && (
+                    <p className="retake-note">
+                        <strong>Your answers weren't sent in time</strong> — you can take it again with a new story.
                     </p>
                 )}
                 {offered && (
@@ -199,7 +204,8 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                 ) : (
                     <button type="button" className={isDone ? "btn btn-ghost" : "btn btn-primary"} onClick={() => onOpen(module.key)}>{label}</button>
                 )}
-                {PERFORMANCE_TESTS.includes(module.key) && (isDone || isStarted) && !(module.key === "storyRecall" && storyState && storyState.retakesLeft === 0) && <ReportProblem moduleKey={module.key} />}
+                {/* Round 30 (owner): only here, on the start page, and only once the test is done */}
+                {PERFORMANCE_TESTS.includes(module.key) && isDone && !(module.key === "storyRecall" && storyState && storyState.retakesLeft === 0) && <ReportProblem moduleKey={module.key} />}
                 <div className="deck-nav">
                     <button type="button" className="deck-arrow" onClick={() => move(-1)} disabled={index === 0} aria-label="Previous section">‹</button>
                     <button type="button" className="deck-arrow" onClick={() => move(1)} disabled={index === built.length - 1} aria-label="Next section">›</button>
@@ -226,12 +232,12 @@ function AssessmentIntro({ modules, completed, started, progress = {}, storyStat
                 long-term memory). Do it in as many sittings as you like — every section saves when you leave it.
             </p>
 
-            {/* how far through the student is (owner, Round 29: sections, with the share of the whole; the
-                factor count moved into "Why we do this") */}
+            {/* how far through the student is (owner, Round 29: sections; Round 30: beside them, the share of
+                the 31 factors measured; the factor count itself is in "Why we do this") */}
             <p className="assess-meta">
-                <strong>{doneCount} of {built.length} sections done — {sectionsPct}%</strong>
+                <strong>{doneCount} of {built.length} sections done — {coverage.pct}% of factors measured</strong>
             </p>
-            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${sectionsPct}%` }} /></div>
+            <div className="coverage-bar" aria-hidden="true"><span style={{ width: `${coverage.pct}%` }} /></div>
 
             {/* Round 13: what the student told us in the interest form decides which tests are set aside */}
             {needLabels.length > 0 && setAside.length > 0 && (

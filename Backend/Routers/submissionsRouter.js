@@ -1001,7 +1001,8 @@ const testResultsFor = (psychometric) => {
         results.sartRaw = scored && scored.valid
             ? {
                 state: "done",
-                line: `Average response ${(seen.mean_rt_clean / 1000).toFixed(2)} s · ${seen.commission_errors} wrong ${seen.commission_errors === 1 ? "press" : "presses"} on a 3`,
+                // Round 30: says which presses the average leaves out, since other SART sites count them
+                line: `Average response ${(seen.mean_rt_clean / 1000).toFixed(2)} s (presses under 0.15 s, before a digit can be read, are left out) · ${seen.commission_errors} wrong ${seen.commission_errors === 1 ? "press" : "presses"} on a 3`,
                 levels: { speed: levelFor(scored.processing_speed), focus: levelFor(scored.sart_attention) },
             }
             : { state: "invalid" }

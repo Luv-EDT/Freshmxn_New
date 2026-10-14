@@ -10,7 +10,6 @@ import {
 } from "./sartTask"
 import OneAttemptWarning from "./OneAttemptWarning"
 import TestResult from "./TestResult"
-import { ReportProblem } from "./ResearchBox"
 
 // SART — sustained attention and processing speed. 04_Item_Bank.md §6.
 //
@@ -58,7 +57,7 @@ function Sart({ alreadyTaken, onDone }) {
     const visible = useRef(null)            // which frame element is currently shown
     const currentTrial = useRef(null)       // what is on screen, for the practice error feedback
     const feedbackOn = useRef(false)        // the written "missed one" line — practice only
-    const errorShown = useRef(false)        // one red cross per trial, not one per tap
+    const errorShown = useRef(false)        // one coloured cross per trial, not one per tap
 
     // ── stimulus presentation, by direct DOM write ──────────────────────────────────────────────
 
@@ -94,7 +93,8 @@ function Sart({ alreadyTaken, onDone }) {
         }
     }
 
-    // A press on a 3 turns the cross that follows it red — in BOTH blocks.
+    // A press on a 3 turns the cross that follows it red, and a press on any other digit turns it
+    // green (owner, Round 30) — in BOTH blocks.
     //
     // THIS IS THE FEEDBACK THAT TEACHES THE TASK. "Press for everything except 3" is simple to read
     // and surprisingly hard to feel until you have made the mistake once and seen it. Pressing on a
@@ -114,11 +114,19 @@ function Sart({ alreadyTaken, onDone }) {
     // every session so it can never be forgotten when norms are built.
     // Written straight to the DOM, like every other stimulus change, so it costs no re-render.
     const flagCommission = () => {
-        if (!currentTrial.current || currentTrial.current.isGo) return
+        if (!currentTrial.current) return
         if (errorShown.current) return
 
         errorShown.current = true
-        if (maskRef.current) maskRef.current.style.color = "#ff3b30"
+        if (maskRef.current) maskRef.current.style.color = currentTrial.current.isGo ? "#34c759" : "#ff3b30"
+    }
+
+    // The browser's own time for the press (Round 30) — the same clock as the frames, taken when the
+    // key or tap happened rather than when this handler got to run. An old browser that stamps events
+    // in another clock falls back to now.
+    const pressTime = (event) => {
+        const now = performance.now()
+        return event.timeStamp > 0 && event.timeStamp <= now ? event.timeStamp : now
     }
 
     // ── responses ───────────────────────────────────────────────────────────────────────────────
@@ -134,7 +142,7 @@ function Sart({ alreadyTaken, onDone }) {
             // a key held down repeats by itself — that is not a press on every trial (Round 28)
             if (event.repeat) return
             presses.current.keyboard += 1
-            if (controls.current.respond) controls.current.respond(performance.now())
+            if (controls.current.respond) controls.current.respond(pressTime(event))
             flagCommission()
         }
 
@@ -216,10 +224,9 @@ function Sart({ alreadyTaken, onDone }) {
         feedbackOn.current = true
         await requestFullscreen()
 
-        // FEEDBACK ONLY IN PRACTICE, and that is the whole difference between the two blocks. §6
-        // gives the practice block feedback because that is what makes it teaching; the real block
-        // has none, because knowing you just missed a 3 changes how hard you try on the next one,
-        // and the score stops being comparable between students.
+        // THE WRITTEN "MISSED ONE" LINE IS PRACTICE ONLY. The green and red crosses show in both blocks
+        // (owner, Rounds 13 and 30 — recorded on every session as feedbackInScoredBlock /
+        // correctPressFeedback, since published SART norms assume no feedback).
         const result = await runBlock({
             trials: buildTrials(PRACTICE_TRIALS, 3),
             show,
@@ -313,6 +320,8 @@ function Sart({ alreadyTaken, onDone }) {
             // Recorded on every session because it changes what the reaction times mean. §6's
             // no-feedback design is what published SART norms assume; this cohort departs from it.
             feedbackInScoredBlock: true,
+            // Round 30 (owner): a correct press turns the cross green too, in both blocks
+            correctPressFeedback: true,
             // Stored alongside the raw rows so the counts the student was shown are recoverable
             // later — if anyone ever disputes what their screen said, this is the record of it.
             descriptives: describeSession(result.records),
@@ -367,7 +376,7 @@ function Sart({ alreadyTaken, onDone }) {
             onPointerDown={(event) => {
                 event.preventDefault()
                 presses.current.touch += 1
-                if (controls.current.respond) controls.current.respond(performance.now())
+                if (controls.current.respond) controls.current.respond(pressTime(event))
                 flagCommission()
             }}
             style={{
@@ -445,7 +454,6 @@ function Sart({ alreadyTaken, onDone }) {
                 <h2>Staying focused</h2>
                 <p><strong>You have already done this one.</strong> Your result is saved.</p>
                 <TestResult moduleKey="sartRaw" />
-                <ReportProblem moduleKey="sartRaw" />
                 <p>
                     Like the number task, this cannot be retaken — you now know the rhythm and where
                     the 3s tend to fall, and a second attempt would measure practice rather than
@@ -607,7 +615,8 @@ function Sart({ alreadyTaken, onDone }) {
                 </p>
                 <p>
                     <strong>Press SPACE for every digit except 3.</strong> On a phone, tap the black
-                    area. The practice round tells you when you get one wrong; the real one does not.
+                    area. The cross after each digit turns <strong>green</strong> when you press correctly and <strong>red</strong> when
+                    you press on a 3 — in both rounds. The practice round also tells you when you miss one.
                 </p>
                 <p>
                     <button type="button" className="btn btn-primary" style={button} onClick={runPractice}>Start the practice round</button>
@@ -634,8 +643,8 @@ function Sart({ alreadyTaken, onDone }) {
             <>
                 <h2>Practice finished</h2>
                 <p>
-                    The real round is {TEST_TRIALS} digits and takes about four and a half minutes. It
-                    will not tell you when you get one wrong.
+                    The real round is {TEST_TRIALS} digits and takes about four and a half minutes. The
+                    green and red crosses carry on; it won't tell you when you miss one.
                 </p>
                 <p>
                     <strong>Once it starts it cannot be paused.</strong> Put your phone on silent and
