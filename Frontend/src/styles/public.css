@@ -1330,3 +1330,51 @@
     .label-long { display: none; }
     .label-short { display: inline; }
 }
+
+/* Round 32 (owner): "What a system does for you" — three jobs, each a column of folded questions */
+.jobs-title { margin: var(--space-6) 0 var(--space-3); text-align: center; }
+.jobs { display: grid; gap: var(--space-4); grid-template-columns: 1fr; align-items: start; }
+.jobs-head { margin: 0 0 var(--space-2); color: var(--teal-dark); font-size: 1.05rem; }
+.jobs-col .faq { margin: 0; }
+@media (min-width: 900px) { .jobs { grid-template-columns: repeat(3, 1fr); } }
+
+/* Round 32 (owner): "Try the demo" */
+.demo-page { padding-top: var(--space-5); padding-bottom: var(--space-6); max-width: 760px; }
+.demo-banner { display: inline-block; margin: 0 0 var(--space-2); padding: 4px 12px; border-radius: 999px; background: var(--teal-tint, #e6f2f3); color: var(--teal-dark); font-size: 0.85rem; font-weight: 700; }
+.demo-progress { display: flex; gap: 6px; margin-bottom: var(--space-4); }
+.demo-progress span { flex: 1; height: 6px; border-radius: 3px; background: #e3e3e3; }
+.demo-progress span.is-done { background: var(--teal); }
+.demo-step { display: grid; gap: var(--space-3); }
+.demo-step h1, .demo-step h2 { margin: 0; }
+.demo-lead { margin: 0; color: var(--navy-soft); }
+.demo-hint { margin: 0; font-size: 0.9rem; color: var(--navy-soft); }
+.demo-label { display: block; font-weight: 700; margin: 0 0 6px; }
+.demo-input { width: 100%; max-width: 480px; min-height: 44px; padding: 8px 12px; border: 1px solid #cfd6dd; border-radius: var(--radius, 12px); font: inherit; }
+.demo-box { display: grid; gap: 8px; padding: var(--space-3); border: 1px solid #e6e9ec; border-radius: var(--radius, 12px); background: #fff; }
+.demo-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo-chip { min-height: 40px; padding: 6px 14px; border: 1px solid #cfd6dd; border-radius: 999px; background: #fff; color: var(--navy); font: inherit; font-size: 0.9rem; cursor: pointer; }
+.demo-chip.is-on, .demo-chip[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+.demo-yesno { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo-thing { margin: 0; }
+.demo-scale { display: grid; gap: 6px; }
+.demo-scale-option { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 6px 10px; border: 1px solid #e6e9ec; border-radius: 10px; cursor: pointer; }
+.demo-scale-option.is-on { border-color: var(--teal); background: var(--teal-tint, #e6f2f3); }
+.demo-question legend { font-weight: 700; margin-bottom: 8px; }
+.demo-consent { max-width: 480px; }
+.demo-factors { display: grid; gap: var(--space-3); grid-template-columns: 1fr; }
+.demo-factor { padding: var(--space-3); border-radius: var(--radius, 12px); background: var(--teal-tint, #e6f2f3); }
+.demo-factor p { margin: 0; }
+.demo-career { display: grid; gap: 6px; }
+.demo-words { margin: 0; }
+.demo-gap { padding: var(--space-4); border-radius: var(--radius, 12px); background: #f4f1ea; }
+.demo-gap h2 { margin-top: 0; }
+.demo-plans { display: grid; gap: var(--space-3); margin-top: var(--space-5); }
+.demo-plan-list { display: grid; gap: var(--space-3); grid-template-columns: 1fr; }
+.demo-plan { display: grid; gap: 8px; align-content: start; padding: var(--space-4); border: 1px solid #e6e9ec; border-radius: var(--radius, 12px); background: #fff; }
+.demo-plan.is-main { border: 2px solid var(--teal); }
+.demo-plan h3 { margin: 0; }
+.demo-plan-price { margin: 0; font-size: 1.4rem; font-weight: 900; color: var(--teal-dark); }
+@media (min-width: 900px) {
+    .demo-factors { grid-template-columns: 1fr 1fr; }
+    .demo-plan-list { grid-template-columns: repeat(3, 1fr); }
+}

@@ -47,6 +47,8 @@ const realModels = () => ({
         [require("../model/mentorReportsModel"), null],
     ],
     byUser: Object.fromEntries(USER_COLLECTIONS.map(([name, file]) => [name, require(file)])),
+    // Round 32: a demo they did before signing up is kept under their email, not their id
+    DemoSession: require("../model/demoSessionsModel"),
 })
 
 // Returns { counts } — rows removed per collection — or { error } (not found, or an admin).
@@ -97,6 +99,11 @@ const deleteAccountData = async (userId, { dryRun = false, models = null } = {})
             const renamed = (row[field] || []).map((item) => (String(item.mentor) === String(id) ? { ...item, mentorName: REMOVED } : item))
             await Model.updateOne({ _id: row._id }, { $set: { [field]: renamed } })
         }
+    }
+
+    if (M.DemoSession && user.email) {
+        const demoFilter = { email: String(user.email).toLowerCase() }
+        counts.demoSessions = dryRun ? await M.DemoSession.countDocuments(demoFilter) : (await M.DemoSession.deleteMany(demoFilter)).deletedCount
     }
 
     counts.users = dryRun ? 1 : (await M.User.deleteOne({ _id: id })).deletedCount

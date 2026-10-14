@@ -5,6 +5,7 @@ import JourneyProgress, { journeyStages } from "../JourneyProgress"
 import UpgradeToMentorship from "../UpgradeToMentorship"
 import ParentConsentBanner from "./ParentConsentBanner"
 import CareerHelpBox from "./CareerHelpBox"
+import DemoCarryCard from "./DemoCarryCard"
 import useNotificationCount from "../useNotificationCount"
 import { PLAN_NAMES as TIER_NAMES, isMentorOnly } from "../plans"
 
@@ -79,6 +80,9 @@ function Home() {
                     </div>
 
                     <JourneyProgress user={user} variant="home" />
+
+                    {/* Round 32 (owner): answers from "Try the demo", offered once — shows nothing otherwise */}
+                    {!isMentorOnly(user) && <DemoCarryCard />}
 
                     {/* ONE OBVIOUS NEXT ACTION, above the list. The bar shows the whole journey; this
                         says which part of it to do now. A student who lands here after a week away

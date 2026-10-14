@@ -4,7 +4,8 @@
 //   1. Candidates, from three places, each tagged with every source it came from:
 //        job board        this week's Adzuna India postings — titles seen at least MIN_POSTINGS times
 //        students         aspirations that matched none of our 223 careers (aspiration_signals,
-//                         outcome "unmatched"), counted by how many students wrote them
+//                         outcome "unmatched"), counted by how many students wrote them — and, since
+//                         Round 32, the professions demo visitors named that matched none (demo_signals)
 //        reports          roles the official sources name as new or fast-growing (one search a run)
 //   2. Anything that is ALREADY ONE OF OUR JOB TITLES is dropped — first by name (all ~1,700 titles
 //      across the 223 careers, normalised the same way), then by meaning (each title's vector,
@@ -299,7 +300,11 @@ const runCareerScout = async ({
         }
     }
 
-    const recommendations = await Recommendation.find({ "aspiration_signals.outcome": "unmatched" }).select("aspiration_signals").limit(5000).lean()
+    const students = await Recommendation.find({ "aspiration_signals.outcome": "unmatched" }).select("aspiration_signals").limit(5000).lean()
+    // Round 32 (owner): a profession named in the demo that isn't one of ours counts too, one vote each —
+    // the rows keep only the words, never who typed them (model/demoSignalsModel.js)
+    const demoAspirations = await require("../model/demoSignalsModel").find({ kind: "aspiration", matched: false }).select("text").limit(5000).lean()
+    const recommendations = [...students, ...demoAspirations.map((row) => ({ aspiration_signals: [{ outcome: "unmatched", professionText: row.text }] }))]
 
     let reports = []
     try {

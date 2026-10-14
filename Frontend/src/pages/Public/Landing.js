@@ -55,6 +55,64 @@ const QUESTIONS = [
     },
 ]
 
+// WHAT A SYSTEM DOES FOR YOU (owner, Round 32) — the jobs students hire us for (save time, feel good about
+// it, make money), each as the question a student would ask and an answer drawn only from what the
+// product really does. Nothing here promises a feature that isn't built: help with internships, jobs and
+// a starter kit is a waitlist, and there is no resume service.
+const JOBS = [
+    {
+        title: "Save time",
+        questions: [
+            {
+                q: "How do I explore without wasting a year on random courses?",
+                a: <><strong>Structured exploration.</strong> Your matches are ranked from your own story, each with its road and first steps for where you are — and a mentor who has done the job. Try with focus, then pivot with purpose.</>,
+            },
+        ],
+    },
+    {
+        title: "Feel good about it",
+        questions: [
+            {
+                q: "I don't know what I'm interested in — where do I start?",
+                a: <><strong>Clarity when nothing clicks yet.</strong> Virtual Career Counselling walks through four stages of your life — small things count. We find the thread.</>,
+            },
+            {
+                q: "I've found something new I love — how do I make it real?",
+                a: <><strong>From spark to action.</strong> Every career shows the path and your next 12 months, and your mentor can help you carry a passion forward, not just find a job.</>,
+            },
+            {
+                q: "Will this make me better, not just busier?",
+                a: <><strong>Growth that's real.</strong> We measure 31 factors — including the four core fundamentals every career needs — and show what to work on for each career.</>,
+            },
+            {
+                q: "Can I talk to someone who's done it?",
+                a: <><strong>A mentor who's been where you are</strong>, in the job role you choose — real experience, not generic advice.</>,
+            },
+            {
+                q: "My past choices feel wrong — is it too late?",
+                a: <><strong>Your past doesn't define you.</strong> Every career is counted from where you stand today: what carries over, and how long from now.</>,
+            },
+        ],
+    },
+    {
+        title: "Make money",
+        questions: [
+            {
+                q: "Is that master's or expensive course worth it?",
+                a: <><strong>The real return.</strong> Each career shows the cost to qualify, starting and mid-career pay ranges, and whether a master's is needed, helps, or isn't worth it.</>,
+            },
+            {
+                q: "What good careers am I missing?",
+                a: <><strong>Beyond the obvious.</strong> 1,000+ careers and job roles, careers that combine two fields, and how in demand and AI-resilient each one is.</>,
+            },
+            {
+                q: "How do I get job- or internship-ready fast?",
+                a: <><strong>Ready sooner.</strong> Your first steps for each career are right on its card — and help with internships, jobs and a starter skill kit is on our waitlist.</>,
+            },
+        ],
+    },
+]
+
 // Who is it for — the four journeys the product already handles, as three audiences.
 const AUDIENCES = [
     {
@@ -98,6 +156,8 @@ function Landing() {
                             <div className="btn-row">
                                 <Link to="/programs" className="btn btn-primary tap">Let's figure out your career →</Link>
                                 <Link to="/how-it-works" className="btn btn-ghost tap">See how it works</Link>
+                                {/* Round 32 (owner): a 7-minute taste before any login */}
+                                <Link to="/try-demo" className="btn btn-ghost tap btn-demo">Try the demo</Link>
                             </div>
                         </div>
 
@@ -128,6 +188,24 @@ function Landing() {
                                     <summary>{item.q}</summary>
                                     <p>{item.a}</p>
                                 </details>
+                            ))}
+                        </div>
+
+                        {/* WHAT A SYSTEM DOES FOR YOU (owner, Round 32) — three jobs, the same folded questions */}
+                        <h3 className="jobs-title">What a system does for you</h3>
+                        <div className="jobs">
+                            {JOBS.map((job) => (
+                                <div key={job.title} className="jobs-col">
+                                    <h4 className="jobs-head">{job.title}</h4>
+                                    <div className="faq">
+                                        {job.questions.map((item) => (
+                                            <details key={item.q} className="faq-item">
+                                                <summary>{item.q}</summary>
+                                                <p>{item.a}</p>
+                                            </details>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
