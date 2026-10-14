@@ -96,6 +96,36 @@ same template.
 
 ---
 
+## 2b. The demo — trying before signing up (Round 32)
+
+A visitor can press **"Try the demo"** on the landing page (`/try-demo`) without an account. It takes about 7
+minutes:
+
+1. **A first name** — that's all to start. (The spam check and "3 starts an hour from one place" stop scripts; a
+   daily cap, `DEMO_DAILY_CAP`, keeps the AI cost in check — over it the page says "busy, try tomorrow".)
+2. **What pulls you** — things you loved when younger, enjoy now, and would love to do one day, plus "which
+   profession would you like to go into?". Then **what stuck**, and why (the same four reasons the real form uses).
+3. **A taste of two factors** — 8 of the real personality statements about openness, and the **first 6 puzzles of
+   the real reasoning test**, served and marked exactly as the real test does.
+4. **An email** (and, under 18, a box that a parent or guardian agrees). Then the **real engines** read the answers:
+   the activity step, then the same matching the full report uses — and show **two careers**, each tied to the
+   visitor's own words, how much this was (2 of 31 factors, 2 of 223 careers), and the three plans with prices
+   from the server.
+
+**The demo is kept apart from everything else.** It has its own office door (`/demo`) and its own drawer
+(`demo_sessions`), and never touches a student's record, a payment or a score. It deletes itself after 30 days.
+What visitors type does help our data, without their name or email: their activities build the shared activity
+cache, and careers they name that we don't have go to the monthly careers scout (`demo_signals`).
+
+**Carrying it forward.** If the visitor later signs up with **the same email**, verifies it and buys Career
+Discovery, their dashboard shows "You tried the demo" — **Carry them forward** or **Start fresh**. Carrying fills
+only what is still empty: their answers go into Virtual Career Counselling (they finish the rest), the 8 statements
+into the real personality test, and the 6 puzzles into the real reasoning test, which then starts at **puzzle 7 of
+16** and is scored by the real scorer with all sixteen. A demo score is never carried. Either way the demo is then
+deleted.
+
+---
+
 ## 3. Paying
 
 Payments can run in **manual mode**: you ask for access (`POST /payments/requestAccess`), our
@@ -511,7 +541,7 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 |---|---|---|
 | The 1st of each month, 9:00 India time | **Follow-up** (`housekeeping/followUpScan.js`) | 6 and 12 months after your latest assessment, emails you a link (`/follow-up/…`) to five quick questions: what you're doing now, which career, did a match help. One reminder, then never again. You can opt out. This is how we'll learn, one day, whether our matches really work. The clock restarts only if you told us you're looking for something new |
 | The 1st of each month | **Data refresh** (`housekeeping/dataRefresh.js`) | For up to 60 careers, checks job-board numbers (Adzuna) and asks Claude to search a few official sources (government labour survey, National Career Service, India Skills Report, Naukri, LinkedIn's published reports). Suggested changes to **demand and pay** go to the admin's **Data updates** tab. Approved ones show on the career page at once; the ranking itself is never changed by them |
-| The 1st of each month, right after the data refresh (Round 29: was weekly) | **Careers scout** (`housekeeping/careerScout.js`) | (Round 28: a title is compared with our careers' **names and job titles**, short text with short text — comparing it with whole career descriptions made everything look "Nothing close"; every run also re-sorts the watch list and sets aside rows that turn out to be covered.) Collects new job titles from three places — the job board, careers students asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit. *The monthly refresh never picks these up — only the admin does* (Round 27): read the row → **New career** or **Combined career** (a draft is written) → **View draft → Accept** (or send back with a note) → Data updates → **Export patch** → Claude Code applies, re-embeds, runs the fixtures and commits → live with that deploy |
+| The 1st of each month, right after the data refresh (Round 29: was weekly) | **Careers scout** (`housekeeping/careerScout.js`) | (Round 28: a title is compared with our careers' **names and job titles**, short text with short text — comparing it with whole career descriptions made everything look "Nothing close"; every run also re-sorts the watch list and sets aside rows that turn out to be covered.) Collects new job titles from three places — the job board, careers students (and demo visitors, Round 32) asked for that we don't have, and the roles the official reports call new or fast-growing. Drops any title that is already one of our ~1,860 job titles (by name or by meaning), keeps the ones far from all our careers or sitting between two, has Claude check pay, AI-safety and growth, and lists them in **Emerging careers**. If the admin approves one, Claude **drafts the whole career** the same careful way the 223 were built (`housekeeping/draftCareer.js`); the admin reads the draft and accepts it or sends it back. An accepted career reaches the site only through a commit. *The monthly refresh never picks these up — only the admin does* (Round 27): read the row → **New career** or **Combined career** (a draft is written) → **View draft → Accept** (or send back with a note) → Data updates → **Export patch** → Claude Code applies, re-embeds, runs the fixtures and commits → live with that deploy |
 | The 1st of each month — but only what's in season | **Study bot** (`housekeeping/studyRefresh.js`) | Checks things only when they can have changed (Round 13): an **exam** in the two months before its applications usually open (each on its own official site); **colleges** in September and October, after NIRF publishes (NIRF first, then other published rankings and the regulators); **master's and study-abroad answers** in January, April, July and October (government and university sites only); **closing ranks** August to October (official counselling results); **licences abroad** in January (the licensing body's own site). A month with nothing due makes no AI call. Suggested changes go to **Data updates**; nothing changes until the admin approves. The admin's **Run now** checks everything regardless of season |
 | Every hour, at :17 | **Batch collector** (`housekeeping/researchBatch.js`) | The data refresh and the study bot don't wait for Claude's answers one by one. They hand Anthropic all their questions in **one bundle at half price**. Anthropic answers the bundle in the background — usually within the hour, at most a day. This small check asks every hour "is a bundle finished?"; if so it reads the answers, runs exactly the same checks the job would have, and files the suggestions in Data updates. Any answer that came back incomplete or unreadable is asked again the normal way. With no bundle waiting it does nothing and costs nothing |
 | Only when the admin presses it | **Model comparison** (`housekeeping/modelCompare.js`) | Asks the same 20 careers of two Claude models (Opus 5.5 and Sonnet 5.5) and shows side by side what each would change, how many pages it cited and what it cost. Nothing is filed. The admin then chooses which model runs the monthly jobs |

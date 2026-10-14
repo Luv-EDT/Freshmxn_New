@@ -72,6 +72,7 @@ the Upstash database can be deleted too.
 | `RESEND_API_KEY` | resend.com → API Keys | ✅ **the server crashes at boot without it** |
 | `EMAIL_FROM` | The sender you use locally, e.g. `Freshmxn <onboarding@resend.dev>`. Round 29: a bare address is sent as `Freshmxn <address>`, so students never see "no-reply" as the name | ✅ |
 | `EMAIL_DAILY_CAP` | Round 29: emails a day before reminders wait (default 90 — Resend's free plan sends 100 a day, 3,000 a month) | optional |
+| `DEMO_DAILY_CAP` | Round 32: new "Try the demo" sessions a day (from midnight IST) before the demo says "busy, try tomorrow" — each costs a few AI calls (default 200) | optional |
 | `DB_LIMIT_MB` | Round 29: the database size the admin's line measures against (default 512, Atlas's free tier) | optional |
 | `ANTHROPIC_API_KEY` | console.anthropic.com | ✅ grading + reports |
 | `VOYAGE_API_KEY` | dash.voyageai.com — **also add a payment method there** (Billing): without one Voyage allows 3 requests a minute, and activity matching stalls | ✅ activity matching |
