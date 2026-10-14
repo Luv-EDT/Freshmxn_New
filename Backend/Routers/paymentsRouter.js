@@ -2132,6 +2132,49 @@ router.put("/declineFinancialAidForAdmin/:id", express.json(), authMiddleware, a
 })
 
 
+// UNDOING A DECISION (owner, Round 30). An approved aid not yet used for a payment, or a declined one,
+// goes back to pending with the reason logged; the admin then decides it again as usual (approve or
+// decline, each emailing the student). An approval already spent on a payment can't be undone here —
+// that is a refund. The quote stops using an undone approval at once (it reads approved + unused).
+router.put("/reopenFinancialAidForAdmin/:id", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const note = typeof req.body.adminNote === "string" ? req.body.adminNote.trim().slice(0, 500) : ""
+        if (!note) {
+            return res.status(400).json({ success: false, message: "Please write why you're undoing the decision" })
+        }
+
+        const aidRequest = await FinancialAidRequest.findById(req.params.id).lean()   // :id is a FINANCIAL AID REQUEST id
+        if (!aidRequest) {
+            return res.status(404).json({ success: false, message: "Financial aid request not found" })
+        }
+        if (aidRequest.usedAt) {
+            return res.status(400).json({ success: false, message: "Already used for a payment — use a refund instead" })
+        }
+        if (!["approved", "declined"].includes(aidRequest.status)) {
+            return res.status(400).json({ success: false, message: "Only an approved or declined request can be undone" })
+        }
+
+        const updated = await FinancialAidRequest.findOneAndUpdate(
+            { _id: aidRequest._id, status: aidRequest.status, usedAt: null },
+            {
+                $set: { status: "pending", adminNote: null, handledAt: null },
+                $unset: { approvedAmountInr: "" },
+                $push: { decisionLog: { at: new Date(), from: aidRequest.status, amountInr: aidRequest.approvedAmountInr || null, note, by: req.user._id } },
+            },
+            { returnDocument: "after" }
+        )
+        if (!updated) {
+            return res.status(409).json({ success: false, message: "The request changed meanwhile — refresh and try again" })
+        }
+
+        return res.status(200).json({ success: true, message: "Decision undone — the request is pending again", data: updated })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to undo the decision", error: error.message })
+    }
+})
+
+
 // Admin: another mentor session paid by hand (UPI/bank) or given free — manual mode's way in (Round 28)
 router.put("/grantMentorSessionForAdmin/:userId", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {

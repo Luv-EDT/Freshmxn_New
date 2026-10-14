@@ -5,6 +5,7 @@ import {
     getAllFinancialAidForAdmin,
     approveFinancialAidForAdmin,
     declineFinancialAidForAdmin,
+    reopenFinancialAidForAdmin,
 } from "../../apiCall/paymentsApi"
 import { formatCallback } from "../User/callbackOptions"
 import StudentEditForm from "./StudentEditForm"
@@ -22,6 +23,7 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
     const [amounts, setAmounts] = useState({})                   // { [requestId]: rupees }
     const [editingStudent, setEditingStudent] = useState(null)
     const [declining, setDeclining] = useState(null)
+    const [reopening, setReopening] = useState(null)
 
     // fetch on mount, and again whenever any tab changes student data
     useEffect(() => {
@@ -68,6 +70,19 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
             onDataChanged()
         } catch (error) {
             message.error(error.response?.data?.message || "Failed to decline request")
+        }
+    }
+
+    // undo an approval (not yet used) or a decline — back to pending, decided again as usual (Round 30)
+    const handleReopen = async (id, reason) => {
+        try {
+            const response = await reopenFinancialAidForAdmin(id, { adminNote: reason })
+            message.success(response.data.message)
+            setAidRequests((prev) => prev.map((request) => (request._id === id ? { ...request, ...response.data.data, user: request.user } : request)))
+            setReopening(null)
+            onDataChanged()
+        } catch (error) {
+            message.error(error.response?.data?.message || "Failed to undo the decision")
         }
     }
 
@@ -122,6 +137,9 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
                             <Button size="small" danger onClick={() => setDeclining(record)}>Decline</Button>{" "}
                         </>
                     )}
+                    {["approved", "declined"].includes(record.status) && !record.usedAt && (
+                        <><Button size="small" onClick={() => setReopening(record)}>Undo decision</Button>{" "}</>
+                    )}
                     {record.user && (
                         <Button size="small" onClick={() => setEditingStudent(record.user)}>Edit</Button>
                     )}
@@ -150,6 +168,13 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
                 title="Why are you declining this financial aid request?"
                 onCancel={() => setDeclining(null)}
                 onSubmit={(reason) => handleDecline(declining._id, reason)}
+            />
+
+            <ReasonModal
+                open={reopening !== null}
+                title="Why are you undoing this decision? (kept on the request)"
+                onCancel={() => setReopening(null)}
+                onSubmit={(reason) => handleReopen(reopening._id, reason)}
             />
 
             <StudentEditForm

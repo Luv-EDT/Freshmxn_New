@@ -326,7 +326,7 @@ function ReportPage() {
             <p className="report-small report-updates-used">
                 You've used {data.selfUpdatesUsed || 0} of your 3 report updates from your own changes. Updates
                 from our improvements, and retakes we ask for, are free.
-                {data.freeUpdates > 0 && ` You have ${data.freeUpdates} free ${data.freeUpdates === 1 ? "update" : "updates"} waiting.`}
+                {data.freeUpdates > 0 && " Your next update is free (a retake we asked for)."}
             </p>
         </div>
     )

@@ -126,3 +126,8 @@ export async function grantMentorSessionForAdmin(userId, payload) {
     const response = await axiosInstance.put(`/payments/grantMentorSessionForAdmin/${userId}`, payload)
     return response
 }
+
+export async function reopenFinancialAidForAdmin(id, payload) {
+    const response = await axiosInstance.put(`/payments/reopenFinancialAidForAdmin/${id}`, payload)
+    return response
+}

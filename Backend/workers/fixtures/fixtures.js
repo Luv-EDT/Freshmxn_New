@@ -5574,7 +5574,7 @@ const fixtures = [
             const submissions = read("submissionsRouter.js")
             if (!/hasReport && updatesLeft\(req\.user\) === 0/.test(submissions) || !/hasReport \? updateSpend\(req\.user, "resubmit"\) : null/.test(submissions)) problems.push("a resubmit does not count as an own update")
             const { updateSpend } = require("../../utils/selfUpdates")
-            if (!updateSpend({ freeUpdates: 1 }, "x").$inc.freeUpdates || !updateSpend({ freeUpdates: 0 }, "x").$inc.selfUpdatesUsed || updateSpend({}, "x", "system").$inc) problems.push("free updates are not spent first, or a system update counts")
+            if (!updateSpend({ freeUpdates: 1 }, "x").$set || updateSpend({ freeUpdates: 1 }, "x").$set.freeUpdates !== 0 || !updateSpend({ freeUpdates: 0 }, "x").$inc.selfUpdatesUsed || updateSpend({}, "x", "system").$inc) problems.push("free updates are not spent first, or a system update counts")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
@@ -5795,8 +5795,12 @@ const fixtures = [
             const user = { selfUpdatesUsed: 3, freeUpdates: 1 }
             if (updatesLeft(user) !== 1) problems.push("a free update is not counted when the own three are used")
             const spend = updateSpend(user, "resubmit")
-            if (!spend.$inc || spend.$inc.freeUpdates !== -1 || spend.$inc.selfUpdatesUsed) problems.push("a free update is not spent first")
+            // OWNER CHANGE (Round 30): one free update waits at most — retakes make the NEXT update free
+            if (!spend.$set || spend.$set.freeUpdates !== 0 || spend.$inc) problems.push("a free update is not spent first")
             if (freeUpdatesLeft({ freeUpdates: -2 }) !== 0) problems.push("a negative credit counts")
+            if (freeUpdatesLeft({ freeUpdates: 3 }) !== 1 || updatesLeft({ selfUpdatesUsed: 1, freeUpdates: 3 }) !== 3) problems.push("free updates still stack")
+            const selfUpdatesSource = fs.readFileSync(path.join(__dirname, "../../utils/selfUpdates.js"), "utf8")
+            if (!/\$max: \{ freeUpdates: 1 \}/.test(selfUpdatesSource)) problems.push("granting a free update can go above one")
             const issues = fs.readFileSync(path.join(__dirname, "../../Routers/assessmentIssuesRouter.js"), "utf8")
             const grant = issues.split('router.put("/grantRetakeForAdmin/:id"')[1] || ""
             if (!/grantFreeUpdate/.test(grant) || !/"retakeGranted"/.test(grant) || !/retakeReasons\(issue\)/.test(grant)) problems.push("an admin retake is not free, or the student isn't told why")
@@ -5966,6 +5970,24 @@ const fixtures = [
             if (!/currentTrial\.current\.isGo \? "#34c759" : "#ff3b30"/.test(source)) problems.push("a correct press doesn't turn the cross green")
             if (!/correctPressFeedback: true/.test(source)) problems.push("the session doesn't record the green feedback")
             if (/the real one does not/.test(source)) problems.push("the instructions still say the real round gives no feedback")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 30 — the admin can undo a financial-aid decision (approved and unused, or declined) with a reason; it goes back to pending; an approval already paid with is refused",
+        run: () => {
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            const route = (router.split('router.put("/reopenFinancialAidForAdmin/:id"')[1] || "").split("\nrouter.")[0]
+            const problems = []
+            if (!route) return "there is no way to undo a decision"
+            if (!/adminAuthMiddleware/.test(route.slice(0, 120))) problems.push("not admin-only")
+            if (!/if \(!note\)/.test(route)) problems.push("no reason required")
+            if (!/if \(aidRequest\.usedAt\)/.test(route)) problems.push("an approval already paid with can be undone")
+            if (!/\["approved", "declined"\]\.includes\(aidRequest\.status\)/.test(route)) problems.push("a pending or cancelled request can be 'undone'")
+            if (!/status: "pending"/.test(route) || !/\$unset: \{ approvedAmountInr: "" \}/.test(route) || !/decisionLog/.test(route)) problems.push("it doesn't go back to pending, keep the amount, or log why")
+            const list = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/FinancialAidList.js"), "utf8")
+            if (!/Undo decision/.test(list) || !/!record\.usedAt/.test(list)) problems.push("the admin has no Undo button, or it shows for a used approval")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
