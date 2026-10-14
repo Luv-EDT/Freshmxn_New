@@ -158,7 +158,11 @@ const sartRunDetails = (rawText, meta) => {
     const pressed = rows.filter((row) => (row.isGo ? row.correct : !row.correct))
     const bucket = (low, high) => pressed.filter((row) => row.rt >= low && row.rt < high).length
     const threes = rows.filter((row) => !row.isGo)
+    // the run's own averages (Round 30): every correct press, and the ones the score uses (150 ms and up)
+    const described = (require("../scoring/sartScoring")(rawText) || {}).descriptives || {}
     return {
+        meanAllMs: described.mean_rt_all ?? null,
+        meanCleanMs: described.mean_rt_clean ?? null,
         trials: rows.length,
         presses: pressed.length,
         rtSpread: { under150: bucket(0, 150), from150to300: bucket(150, 300), from300to600: bucket(300, 600), over600: bucket(600, 10000) },

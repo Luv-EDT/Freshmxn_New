@@ -5458,9 +5458,11 @@ const fixtures = [
             ;[["DigitSpan.js", "digitSpan"], ["ReasoningTest.js", "reasoning"], ["WordRecallTest.js", "wordRecall"], ["Sart.js", "sartRaw"]].forEach(([file, key]) => {
                 const page = read(file)
                 if (!page.includes(`<TestResult moduleKey="${key}" />`)) problems.push(`${file} shows no result`)
-                if (!page.includes(`<ReportProblem moduleKey="${key}" />`)) problems.push(`${file} has no "Something went wrong"`)
+                // OWNER CHANGE (Round 30): "Something went wrong" only on the start page, once the test is done
+                if (page.includes("<ReportProblem")) problems.push(`${file} still shows "Something went wrong" on the test page`)
             })
-            if (!read("AssessmentShell.js").includes('<ReportProblem moduleKey="storyRecall" />')) problems.push("the short story has no \"Something went wrong\"")
+            if (read("AssessmentShell.js").includes("<ReportProblem")) problems.push("the short story's page still shows \"Something went wrong\"")
+            if (!/PERFORMANCE_TESTS\.includes\(module\.key\) && isDone && /.test(read("AssessmentIntro.js"))) problems.push("the start page shows \"Something went wrong\" before a test is done")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
@@ -5874,7 +5876,10 @@ const fixtures = [
             const retakes = fs.readFileSync(path.join(__dirname, "../../utils/retakes.js"), "utf8")
             if (!/module === "storyRecall"\) update\.\$inc = \{ "psychometric\.storyRetakes": 1 \}/.test(retakes)) problems.push("a granted story retake doesn't count towards the three")
             const shell = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentShell.js"), "utf8")
-            if (!/storyState\.retakesLeft === 0\) && <ReportProblem moduleKey="storyRecall"/.test(shell)) problems.push("\"Something went wrong\" shows on the story when no new story is left")
+            // Round 30: the story's issue button lives on the start page's card only
+            const intro = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentIntro.js"), "utf8")
+            if (!/module\.key === "storyRecall" && storyState && storyState\.retakesLeft === 0\) && <ReportProblem/.test(intro) || shell.includes("<ReportProblem")) problems.push("\"Something went wrong\" shows on the story when no new story is left")
+            if (!/storyState\.phase === "expired" && storyState\.retakesLeft > 0/.test(intro) || !/module\.key !== "storyRecall"/.test(intro) || /technical problem, so this is open/.test(intro)) problems.push("the story's retake box shows while it runs, or speaks of a technical problem")
             const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/StoryRecall.js"), "utf8")
             if (!/Take it again with a new story/.test(page)) problems.push("the expired story offers no new one")
             const { stillDue, NOTICES } = require("../../housekeeping/storyNotices")
@@ -5906,7 +5911,8 @@ const fixtures = [
             const usage = fs.readFileSync(path.join(__dirname, "../../Routers/dataUpdatesRouter.js"), "utf8")
             if (!/emails: \{ today: await sentToday\(\), cap: dailyCap\(\) \}/.test(usage) || !/dbStats\(\)/.test(usage)) problems.push("the admin can't see the email budget or the database")
             const intro = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/AssessmentIntro.js"), "utf8")
-            if (!/sections done — \{sectionsPct\}%/.test(intro) || /coverage\.count\} of \{coverage\.total\} factors/.test(intro) || !/<ResearchBox measured=\{coverage\.count\} \/>/.test(intro)) problems.push("the assessment line is not \"x of 10 sections done — y%\" with the factors in Why we do this")
+            // OWNER CHANGE (Round 30): the percentage is of the factors measured, not the sections
+            if (!/sections done — \{coverage\.pct\}% of factors measured/.test(intro) || /coverage\.count\} of \{coverage\.total\} factors/.test(intro) || !/<ResearchBox measured=\{coverage\.count\} \/>/.test(intro)) problems.push("the assessment line is not \"x of 10 sections done — y% of factors measured\" with the factors in Why we do this")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
@@ -5931,6 +5937,29 @@ const fixtures = [
                     if (!new RegExp(`router\\.${method}\\(\\s*"\\/${route}["/]`).test(router)) problems.push(`${name}: ${method.toUpperCase()} /${prefix}/${route} has no route`)
                 }
             })
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 30 — SART timing: a reaction time is measured from the frame the digit was ON screen (one after the frame that drew it), presses use the browser's own event time, and a press turns the cross green on a digit and red on a 3",
+        run: async () => {
+            const sart = loadSartTask()
+            const problems = []
+            const trials = sart.buildTrials(60, 6)
+            const frameMs = 1000 / 60
+            const result = await driveBlock({ sart, trials, frameMs, reactionMs: 300 })
+            const rts = result.records.filter((record) => record.isGo && record.rt !== null).map((record) => record.rt)
+            const mean = rts.reduce((sum, rt) => sum + rt, 0) / rts.length
+            // the driver presses on the first frame 300 ms or more after the drawing frame, so timed from
+            // the drawing frame a reaction reads 300–317 ms; timed from the frame after, one frame less
+            if (rts.some((rt) => rt > 300.5) || mean >= 300 || rts.some((rt) => rt < 300 - frameMs - 0.5)) problems.push(`reactions are not timed from the frame after the digit was drawn (mean ${mean.toFixed(1)} ms, max ${Math.max(...rts).toFixed(1)})`)
+            if (result.records.length !== trials.length) problems.push("rows were lost")
+            const source = fs.readFileSync(path.join(ASSESSMENT_DIR, "Sart.js"), "utf8")
+            if ((source.match(/controls\.current\.respond\(pressTime\(event\)\)/g) || []).length !== 2) problems.push("the key and the tap don't both use the event's own time")
+            if (!/currentTrial\.current\.isGo \? "#34c759" : "#ff3b30"/.test(source)) problems.push("a correct press doesn't turn the cross green")
+            if (!/correctPressFeedback: true/.test(source)) problems.push("the session doesn't record the green feedback")
+            if (/the real one does not/.test(source)) problems.push("the instructions still say the real round gives no feedback")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

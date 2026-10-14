@@ -15,7 +15,6 @@ import ExternalTest from "./ExternalTest"
 import Sart from "./Sart"
 import ReasoningTest from "./ReasoningTest"
 import WordRecallTest from "./WordRecallTest"
-import { ReportProblem } from "./ResearchBox"
 import LikertModule from "./LikertModule"
 import DirectionModal from "../DirectionModal"
 import {
@@ -423,12 +422,7 @@ function AssessmentShell() {
             )}
 
             {moduleKey === "storyRecall" && (
-                <>
-                    <StoryRecall onDone={handleServerSavedDone} />
-                    {/* owner, Round 28: the short story gets the same "something went wrong" as every test —
-                        Round 29: only while a new story can still be given */}
-                    {!(storyState && storyState.retakesLeft === 0) && <ReportProblem moduleKey="storyRecall" />}
-                </>
+                <StoryRecall onDone={handleServerSavedDone} />
             )}
 
             {moduleKey === "digitSpan" && (
