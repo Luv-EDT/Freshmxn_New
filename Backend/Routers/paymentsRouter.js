@@ -101,6 +101,13 @@ const calculateQuote = async (user, tier, coupon) => {
             return { error: "Invalid coupon" }
         }
 
+        // a coupon for one plan (owner, Round 33) — an upgrade counts as the plan it ends on, so a
+        // Discovery + Mentor coupon also discounts the upgrade into it
+        const plans = existingCoupon.plans || []
+        if (plans.length > 0 && !plans.includes(requestedTier)) {
+            return { error: "This coupon isn't for this plan" }
+        }
+
         discountPct = existingCoupon.discountPct
     }
 

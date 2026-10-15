@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { Table, Button, Popconfirm, message } from "antd"
 import dayjs from "dayjs"
 import { getAllCoupons, updateCoupon, deleteCoupon } from "../../apiCall/couponsApi"
-import CouponsForm from "./CouponsForm"
+import CouponsForm, { PLAN_OPTIONS } from "./CouponsForm"
 
 function CouponsList() {
     const [coupons, setCoupons] = useState([])
@@ -69,6 +69,7 @@ function CouponsList() {
     const columns = [
         { title: "Code", dataIndex: "code" },
         { title: "Discount %", dataIndex: "discountPct" },
+        { title: "Works on", render: (_, record) => ((record.plans || []).length ? PLAN_OPTIONS.filter((plan) => record.plans.includes(plan.value)).map((plan) => plan.label).join(", ") : "All plans") },
         { title: "Active", render: (_, record) => (record.isActive ? "Yes" : "No") },
         { title: "Used", render: (_, record) => `${record.timesUsed} / ${record.usageLimit === 0 ? "∞" : record.usageLimit}` },
         { title: "Expires", render: (_, record) => (record.expiresAt ? dayjs(record.expiresAt).format("DD MMM YYYY") : "Never") },

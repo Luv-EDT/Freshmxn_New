@@ -33,13 +33,16 @@ router.get("/getAll", authMiddleware, adminAuthMiddleware, async (req, res) => {
 })
 
 
+// the plans a coupon works on — only real plan numbers, each once; empty means every plan
+const cleanPlans = (plans) => [...new Set((Array.isArray(plans) ? plans : []).map(Number).filter((tier) => [1, 2, 3].includes(tier)))].sort()
+
 // ========================
 // Add Coupon
 // ========================
 
 router.post("/add", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const { code, discountPct, isActive, expiresAt, usageLimit } = req.body
+        const { code, discountPct, isActive, expiresAt, usageLimit, plans } = req.body
 
         if (!code || !code.trim()) {
             return res.status(400).json({
@@ -74,6 +77,7 @@ router.post("/add", authMiddleware, adminAuthMiddleware, async (req, res) => {
             isActive: isActive !== false,
             expiresAt: expiresAt || undefined,
             usageLimit: Number(usageLimit) || 0,
+            plans: cleanPlans(plans),
             timesUsed: 0,           // always starts unused
         })
 
@@ -103,6 +107,7 @@ router.put("/update/:id", authMiddleware, adminAuthMiddleware, async (req, res) 
 
         const updates = { ...req.body }
         delete updates.timesUsed   // only a grant changes this
+        if (updates.plans !== undefined) updates.plans = cleanPlans(updates.plans)
 
         if (updates.code !== undefined) {
             updates.code = String(updates.code).trim().toUpperCase()

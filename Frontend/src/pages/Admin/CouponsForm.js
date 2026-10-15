@@ -1,7 +1,13 @@
 import { useEffect } from "react"
-import { Form, Input, InputNumber, Switch, DatePicker, Modal, message } from "antd"
+import { Form, Input, InputNumber, Switch, DatePicker, Modal, Checkbox, message } from "antd"
 import dayjs from "dayjs"
 import { addCoupon } from "../../apiCall/couponsApi"
+
+export const PLAN_OPTIONS = [
+    { label: "Career Discovery", value: 1 },
+    { label: "Mentor Only", value: 3 },
+    { label: "Discovery + Mentor", value: 2 },
+]
 
 function CouponsForm({ visible, onClose, initialData, onAddSuccess, onUpdateSuccess }) {
     const [form] = Form.useForm()
@@ -58,7 +64,7 @@ function CouponsForm({ visible, onClose, initialData, onAddSuccess, onUpdateSucc
             onOk={handleSubmit}
             onCancel={onClose}
         >
-            <Form form={form} layout="vertical" initialValues={{ isActive: true, usageLimit: 0 }}>
+            <Form form={form} layout="vertical" initialValues={{ isActive: true, usageLimit: 0, plans: [] }}>
                 <Form.Item
                     name="code"
                     label="Code"
@@ -72,6 +78,10 @@ function CouponsForm({ visible, onClose, initialData, onAddSuccess, onUpdateSucc
                     rules={[{ required: true, message: "Please enter the discount" }]}
                 >
                     <InputNumber min={0} max={100} />
+                </Form.Item>
+                {/* owner, Round 33: none ticked = every plan; an upgrade counts as the plan it ends on */}
+                <Form.Item name="plans" label="Works on (none ticked = all plans)">
+                    <Checkbox.Group options={PLAN_OPTIONS} />
                 </Form.Item>
                 <Form.Item name="usageLimit" label="Usage limit (0 = unlimited)">
                     <InputNumber min={0} />
