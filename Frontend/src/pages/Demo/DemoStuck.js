@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 // QUESTION 2 — WHAT STUCK, AND WHY (owner, Round 32). For each thing: has it stayed with you over time?
-// For a yes, why it stays — the four chips are the real form's four "why" groups, so the answer means the
+// For a yes, why it stays — the chips are the real form's four "why" groups and (Round 33) its kinds of problem, so the answer means the
 // same thing to matching and can carry into the real form later — and, if they like, their own words.
 const REASONS = [
     { key: "curiosityDriven", label: "I'm curious about it" },
@@ -9,6 +9,14 @@ const REASONS = [
     { key: "socialRecognition", label: "People notice me for it" },
     { key: "effortlessEngagement", label: "It feels effortless" },
 ]
+// "It helps me deal with a problem in my life" (owner, Round 33) — the real form's three kinds of problem,
+// so it counts towards what drives them exactly as in the full counselling
+const PROBLEMS = [
+    { key: "individualInternalProblems", label: "Inside me" },
+    { key: "interpersonalInternalProblems", label: "With people" },
+    { key: "externalProblems", label: "Around me — money, place, circumstances" },
+]
+const PROBLEM_KEYS = PROBLEMS.map((problem) => problem.key)
 
 function DemoStuck({ draws, initial, onNext, onBack, busy }) {
     const startOf = (text) => (initial || []).find((row) => row.text === text)
@@ -21,6 +29,16 @@ function DemoStuck({ draws, initial, onNext, onBack, busy }) {
     const toggleReason = (index, key) => {
         const row = rows[index]
         update(index, { reasons: row.reasons.includes(key) ? row.reasons.filter((reason) => reason !== key) : [...row.reasons, key] })
+    }
+    // the problem tag: on with "inside me" by default, off clears all three
+    const hasProblem = (row) => row.reasons.some((reason) => PROBLEM_KEYS.includes(reason))
+    const toggleProblem = (index) => {
+        const row = rows[index]
+        update(index, { reasons: hasProblem(row) ? row.reasons.filter((reason) => !PROBLEM_KEYS.includes(reason)) : [...row.reasons, PROBLEM_KEYS[0]] })
+    }
+    const pickProblem = (index, key) => {
+        const row = rows[index]
+        update(index, { reasons: [...row.reasons.filter((reason) => !PROBLEM_KEYS.includes(reason)), key] })
     }
     const answered = rows.every((row) => row.stuck !== null)
 
@@ -43,7 +61,16 @@ function DemoStuck({ draws, initial, onNext, onBack, busy }) {
                                 {REASONS.map((reason) => (
                                     <button type="button" key={reason.key} aria-pressed={row.reasons.includes(reason.key)} className={`demo-chip${row.reasons.includes(reason.key) ? " is-on" : ""}`} onClick={() => toggleReason(index, reason.key)}>{reason.label}</button>
                                 ))}
+                                <button type="button" aria-pressed={hasProblem(row)} className={`demo-chip${hasProblem(row) ? " is-on" : ""}`} onClick={() => toggleProblem(index)}>It helps me deal with a problem in my life</button>
                             </div>
+                            {hasProblem(row) && (
+                                <div className="demo-chips demo-subchips" role="radiogroup" aria-label="What kind of problem?">
+                                    <span className="demo-hint">What kind?</span>
+                                    {PROBLEMS.map((problem) => (
+                                        <button type="button" role="radio" key={problem.key} aria-checked={row.reasons.includes(problem.key)} className={`demo-chip${row.reasons.includes(problem.key) ? " is-on" : ""}`} onClick={() => pickProblem(index, problem.key)}>{problem.label}</button>
+                                    ))}
+                                </div>
+                            )}
                             <input
                                 type="text"
                                 className="demo-input"

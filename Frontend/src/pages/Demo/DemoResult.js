@@ -2,10 +2,11 @@ import { Link } from "react-router-dom"
 import ProfessionCard from "../Report/ProfessionCard"
 import DemoPlans from "./DemoPlans"
 
-// THE DEMO REPORT (owner, Round 33) — kept clean: a fold on what we did differently; the two careers, each
+// THE DEMO REPORT (owner, Round 33) — kept clean: the two careers straight away (no quoted words), each
 // a real career card (everything inside: why, the road from where they stand, exams, money, the future);
 // a psychometric fold showing exactly how much of each factor the demo measured (an owner exception for the
-// demo: "N% measured" beside a word level — never a score) with the rest faded at 0%; what the full program
+// demo: "N% measured" beside a word level — never a score) with the rest faded at 0%; a fold on what we did
+// differently; what the full program
 // adds; then the plans, financial aid and refunds. True numbers only — never a confidence or match figure.
 const TOTAL_FACTORS = 31
 
@@ -19,34 +20,14 @@ function DemoResult({ result }) {
     return (
         <section className="demo-step demo-result">
             <h1>{name}, here's your glimpse.</h1>
-
-            <details className="faq-item demo-fold">
-                <summary>What we did differently</summary>
-                <p>
-                    We started with <strong>your story</strong> — what you've enjoyed, what stuck and why — and let it
-                    point to careers first. Only then did we look at your answers to the three tasks, and only to check
-                    whether those careers fit the fundamentals they ask for.
-                </p>
-                <p>
-                    Most tests do it the other way round: they score you first and screen careers by marks or
-                    intelligence — which skips what you truly care about.
-                </p>
-                <p><Link to="/how-it-works">How the full program works →</Link></p>
-            </details>
-
             <h2>Two careers your story points to</h2>
             {careers.length === 0 && (
                 <p>Your words didn't point to one of our careers yet — that happens with a few short answers. The full counselling asks about four stages of your life, and finds far more.</p>
             )}
             {careers.length === 1 && <p className="demo-hint">Your words pointed to one career this time. The full counselling asks about four stages of your life, and finds far more.</p>}
             <div className="match-list">
-                {careers.map(({ entry, words }, index) => (
+                {careers.map(({ entry }, index) => (
                     <div key={entry.professionId} className="demo-career">
-                        {words && (
-                            <p className="demo-words">
-                                You said <strong>“{words.said}”</strong>{words.why ? <>, and that it stays because <em>“{words.why}”</em></> : null}.
-                            </p>
-                        )}
                         <ProfessionCard
                             entry={entry}
                             detail={details[entry.professionId]}
@@ -60,10 +41,12 @@ function DemoResult({ result }) {
                     </div>
                 ))}
             </div>
-            <p className="demo-hint">Tap a career to open everything about it — the road from where you are, exams, money and its future.</p>
+            <p className="demo-hint">Tap a career to open everything about it.</p>
+            {/* owner, Round 33: one line, after the two careers — what 6 minutes can't do */}
+            <p className="demo-fomo">That took 6 minutes. <strong>The full journey takes 3+ hours</strong> — and finds sharper careers, the road to each, and a far deeper you.</p>
 
             <details className="faq-item demo-fold">
-                <summary>Your psychometric snapshot — {measured.length} of {TOTAL_FACTORS} factors, each only partly measured</summary>
+                <summary>Your psychometric snapshot — just {measured.length} of {TOTAL_FACTORS} factors, and even those only partly measured</summary>
                 <p>
                     Seven quick statements, a 90-second focus game and four puzzles touched {measured.length} factors —
                     and none of them fully. The bar shows how much of each we measured; the rest we didn't touch at all.
@@ -92,6 +75,20 @@ function DemoResult({ result }) {
                         </ul>
                     </div>
                 ))}
+            </details>
+
+            <details className="faq-item demo-fold">
+                <summary>What we did differently</summary>
+                <p>
+                    We started with <strong>your story</strong> — what you've enjoyed, what stuck and why — and let it
+                    point to careers first. Only then did we look at your answers to the three tasks, and only to check
+                    whether those careers fit the fundamentals they ask for.
+                </p>
+                <p>
+                    Most tests do it the other way round: they score you first and screen careers by marks or
+                    intelligence — which skips what you truly care about.
+                </p>
+                <p><Link to="/how-it-works">How the full program works →</Link></p>
             </details>
 
             <div className="demo-gap">

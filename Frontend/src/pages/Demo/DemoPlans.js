@@ -1,48 +1,33 @@
 import { Link } from "react-router-dom"
-import usePricing, { formatInr } from "../Public/usePricing"
 
-// WHAT NEXT — THE THREE REAL PLANS, prices live from the server (never written in the copy), framed from the
-// demo (owner, Round 33): go straight to a mentor in one of these two careers; or take the whole process;
-// or both. Register remembers the plan through to the paywall (?plan=, Round 25), and after paying their
-// demo careers are offered first when they choose a mentor (Routers/demoResumeRouter.js).
-const PLANS = [
-    { tier: 3, title: "Talk to a mentor in one of these two careers", line: "Skip the full process for now — a professional in the career and job role you choose, one-hour session plus a follow-up. Your two demo careers are waiting when you choose." },
-    { tier: 1, title: "Take the whole journey", line: "The full Virtual Career Counselling, all 31 factors, and every career your story points to — ranked, with the road from where you stand to each.", main: true },
-    { tier: 2, title: "Both", line: "The whole journey, plus a mentor in a job role from your matches." },
+// WHERE TO GO FROM HERE (owner, Round 33): just the three options, no plan details or prices here, and one
+// button to the programs page — which has the plans, the prices (from the server) and the refund rules.
+const OPTIONS = [
+    "Talk to a mentor in one of these two careers",
+    "Take the whole journey — 3+ hours to know yourself better, get your career recommendations and see how to get there",
+    "Both",
 ]
 
 function DemoPlans() {
-    const pricing = usePricing()
-    const priceOf = { 1: pricing.tier1, 2: pricing.tier2, 3: pricing.tier3 }
-
     return (
         <section className="demo-plans">
             <h2>Where to go from here</h2>
-            <p className="demo-lead">Sign up with the same email and your story carries over — you won't repeat it.</p>
-            <div className="demo-plan-list">
-                {PLANS.map((plan) => (
-                    <div key={plan.tier} className={`demo-plan${plan.main ? " is-main" : ""}`}>
-                        <p className="demo-plan-kicker">{plan.title}</p>
-                        <h3>{pricing.names[plan.tier]}</h3>
-                        <p className="demo-plan-price">{formatInr(priceOf[plan.tier])}</p>
-                        <p>{plan.line}</p>
-                        <Link to={`/register?plan=${plan.tier}`} className={`btn ${plan.main ? "btn-primary" : "btn-ghost"} tap`}>
-                            {plan.main ? "Start Career Discovery" : `Choose ${pricing.names[plan.tier]}`}
-                        </Link>
-                    </div>
-                ))}
-            </div>
+            <p className="demo-lead">You have three options now:</p>
+            <ol className="demo-options">
+                {OPTIONS.map((option) => <li key={option}>{option}</li>)}
+            </ol>
+            <p className="demo-hint">Sign up with the same email and your story carries over — you won't repeat it.</p>
             <div className="demo-money-note">
                 <p>
-                    <strong>Price a stretch for your family?</strong> After signing up you can ask for financial aid —
-                    we look at every request.
+                    <strong>Need help with the price?</strong> After signing up you can ask for financial aid — we look
+                    at every request.
                 </p>
                 <p>
-                    <strong>Refunds:</strong> if we can't match you with a mentor within 20 business days, Mentor Only is
-                    refunded in full, and Discovery + Mentor moves back to Career Discovery with the difference refunded.
+                    <strong>Refunds:</strong> don't like your results? Give us quick feedback and we'll refund you — on
+                    any plan.
                 </p>
-                <p><Link to="/programs">See the plans and the refund rules in full →</Link></p>
             </div>
+            <Link to="/programs" className="btn btn-primary tap demo-programs-btn">See the programs →</Link>
         </section>
     )
 }

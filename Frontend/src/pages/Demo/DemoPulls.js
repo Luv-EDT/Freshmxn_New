@@ -1,16 +1,13 @@
-import { useEffect, useState } from "react"
-import { AutoComplete } from "antd"
+import { useState } from "react"
 import ChipListInput from "../Interest/ChipListInput"
 import ActivityReferenceList from "../Interest/ActivityReferenceList"
 import { ACTIVITY_REFERENCE_LISTS } from "../Interest/activityReferenceLists"
-import { getCareerNames } from "../../apiCall/professionsApi"
 
 // THE STORY QUESTION (owner, Round 33) — one common question, asked across three timelines: school or
 // college (the near and far past), now, and what they aspire to. The inputs are the real Virtual Career
 // Counselling ones (ChipListInput with voice, the "Stuck?" list, pinned at the top while they scroll); the
-// tap-to-add examples come from the same activity lists. The last box also type-aheads over our real
-// careers' names (the public GET /professions/getNames) — a career picked there keeps its id, and any
-// wording of their own is kept too.
+// tap-to-add examples come from the same activity lists. A career they aspire to is written in their own
+// words — the activity step reads it like any other (owner, Round 33: no separate career picker).
 const MAX_THINGS = 12
 
 const short = (text) => String(text).split(" (")[0].trim()
@@ -27,14 +24,6 @@ const filled = (list) => (list || []).map((text) => String(text).trim()).filter(
 function DemoPulls({ initial, onNext, busy }) {
     const start = (when) => (initial.draws || []).filter((draw) => draw.when === when).map((draw) => draw.text)
     const [lists, setLists] = useState({ past: start("past"), present: start("present"), future: start("future") })
-    // careers picked from our list, by the text shown on their chip
-    const [picked, setPicked] = useState(() => Object.fromEntries((initial.draws || []).filter((draw) => draw.professionId).map((draw) => [draw.text, draw.professionId])))
-    const [search, setSearch] = useState("")
-    const [names, setNames] = useState([])
-
-    useEffect(() => {
-        getCareerNames().then((response) => setNames(response.data.data || [])).catch(() => setNames([]))
-    }, [])
 
     const total = filled(lists.past).length + filled(lists.present).length + filled(lists.future).length
     const addChip = (when, text) => {
@@ -42,23 +31,9 @@ function DemoPulls({ initial, onNext, busy }) {
         setLists({ ...lists, [when]: [...filled(lists[when]), text] })
     }
 
-    const options = search.trim().length >= 2
-        ? names.filter((row) => row.profession.toLowerCase().includes(search.trim().toLowerCase())).slice(0, 8).map((row) => ({ value: row.profession, id: row.id }))
-        : []
-
-    const pickCareer = (value, option) => {
-        addChip("future", value)
-        setPicked({ ...picked, [value]: option.id })
-        setSearch("")
-    }
-
     const draws = ["past", "present", "future"]
-        .flatMap((when) => filled(lists[when]).map((text) => ({ text, when, ...(when === "future" && picked[text] ? { professionId: picked[text] } : {}) })))
+        .flatMap((when) => filled(lists[when]).map((text) => ({ text, when })))
         .slice(0, MAX_THINGS)
-    // the first career they picked from our list is "the profession they'd like to go into"
-    const firstCareer = draws.find((draw) => draw.professionId)
-    const aspiration = firstCareer ? { text: firstCareer.text, professionId: firstCareer.professionId } : null
-
     return (
         <section className="demo-step">
             <div className="demo-reference">
@@ -89,25 +64,10 @@ function DemoPulls({ initial, onNext, busy }) {
                             ))}
                         </div>
                     )}
-                    {box.when === "future" && (
-                        <>
-                            <label className="demo-label demo-label-small" htmlFor="demo-aspiration">Or pick a career you'd like to go into, from our list</label>
-                            <AutoComplete
-                                id="demo-aspiration"
-                                className="demo-aspiration"
-                                value={search}
-                                options={options}
-                                onChange={setSearch}
-                                onSelect={pickCareer}
-                                placeholder="Type a career, e.g. architect"
-                                style={{ width: "100%" }}
-                            />
-                        </>
-                    )}
                 </div>
             ))}
 
-            <button type="button" className="btn btn-primary" disabled={busy || draws.length === 0} onClick={() => onNext({ draws, aspiration })}>
+            <button type="button" className="btn btn-primary" disabled={busy || draws.length === 0} onClick={() => onNext({ draws, aspiration: null })}>
                 {busy ? "Saving…" : "Next"}
             </button>
             {draws.length === 0 && <p className="demo-hint">Add at least one thing to go on.</p>}

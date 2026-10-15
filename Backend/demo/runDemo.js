@@ -18,6 +18,7 @@ const { studentFacing } = require("../Routers/professionsRouter")
 const { levelFor } = require("../Routers/reportsRouter")
 const { stripInternal } = require("./strip")
 const { MEASURED_PCT } = require("./demoTaste")
+const { PROBLEM_KEYS } = require("../model/demoSessionsModel")
 const { FACTOR_GUIDE, GUIDE_GROUPS } = require("../utils/factorGuide")
 
 const ANSWER_LETTERS = ["A", "B", "C", "D", "E"]
@@ -49,9 +50,12 @@ const keyOf = (text) => String(text || "").trim().replace(/\s+/g, " ").toLowerCa
 const demoInterest = (interests = {}) => {
     const draws = interests.draws || []
     const aspiration = interests.aspiration && interests.aspiration.text ? interests.aspiration : null
-    const reasons = { curiosityDriven: [], personalGrowth: [], socialRecognition: [], effortlessEngagement: [] }
+    const reasons = { curiosityDriven: [], personalGrowth: [], socialRecognition: [], effortlessEngagement: [], individualInternalProblems: [], interpersonalInternalProblems: [], externalProblems: [] }
+    // a "why" group lists the thing; a problem group (Round 33: "it helps me deal with a problem in my life")
+    // is a row in the real form's shape — the problem, and the thing that helps with it
     ;(interests.stuck || []).forEach((row) => (row.reasons || []).forEach((reason) => {
-        if (reasons[reason]) reasons[reason].push(row.text)
+        if (!reasons[reason]) return
+        reasons[reason].push(PROBLEM_KEYS.includes(reason) ? { problem: row.text, source: "typed", activities: [row.text] } : row.text)
     }))
 
     return {
@@ -140,8 +144,14 @@ const runDemo = async ({ session, resolver, data }) => {
 
     // identity-free rows for our data processing (model/demoSignalsModel.js)
     const aspirationSignal = (match.aspirationSignals || [])[0]
+    // what they wrote in "what you aspire to" is an aspiration for the scout (Round 33): "matched" when it is
+    // the name of one of our careers or job roles, so the scout looks only at the ones we don't cover
+    const aspired = new Set((interests.draws || []).filter((draw) => draw.when === "future").map((draw) => keyOf(draw.text)))
+    const knownNames = new Set(data.professions.professions.flatMap((profession) => [profession.profession, ...(profession.job_roles || [])]).map(keyOf))
     const signals = [
-        ...resolved.map((row) => ({ text: row.activity, kind: "activity", matched: !row.unrateable && (row.candidateProfessionIds || []).length > 0, nearestCareerIds: (row.candidateProfessionIds || []).slice(0, 5) })),
+        ...resolved.map((row) => (aspired.has(keyOf(row.activity))
+            ? { text: row.activity, kind: "aspiration", matched: knownNames.has(keyOf(row.activity)), nearestCareerIds: (row.candidateProfessionIds || []).slice(0, 5) }
+            : { text: row.activity, kind: "activity", matched: !row.unrateable && (row.candidateProfessionIds || []).length > 0, nearestCareerIds: (row.candidateProfessionIds || []).slice(0, 5) })),
         ...(interests.aspiration && interests.aspiration.text
             ? [{ text: interests.aspiration.text, kind: "aspiration", matched: !aspirationSignal || aspirationSignal.outcome !== "unmatched", nearestCareerIds: aspirationSignal && aspirationSignal.professionId ? [aspirationSignal.professionId] : [] }]
             : []),
