@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
 
-// THE "TRY THE DEMO" SESSION (owner, Round 32) — a visitor's 7-minute taste before any login. It is a
+// THE "TRY THE DEMO" SESSION (owner, Rounds 32-33) — a visitor's 6-minute taste before any login. It is a
 // collection of its own: the demo never writes a User, a Submission, a Payment or a report.
 //
 // The browser holds only a random token; the row keeps its sha256. What is kept is what the visitor
@@ -8,9 +8,12 @@ const mongoose = require("mongoose")
 // or older (an under-18 ticks that a parent or guardian knows and agrees; the time and policy version
 // are kept). No IP, no device, no cookies, nothing for advertising.
 //
-// RESUME, NOT RESTART: after they register and buy, their answers can be carried into the real flow —
-// only from their own, verified account (Routers/demoResumeRouter.js), and only into what is still
-// empty there. Once carried (or declined) the row is deleted; one never linked deletes itself after
+// WHAT IS KEPT IS SMALL (owner, Round 33): the story answers, the four puzzles' ids, and the tastes worked
+// out from the three tasks — never the statements' answers, the puzzle choices or any SART row.
+//
+// RESUME, NOT RESTART: after they register and buy, their story answers can be carried into the real
+// counselling form, and their two careers onto their account for choosing a mentor — only from their own,
+// verified account (Routers/demoResumeRouter.js), and only into what is still empty there. Once carried (or declined) the row is deleted; one never linked deletes itself after
 // 30 days (the TTL index below).
 
 const DEMO_TTL_DAYS = 30
@@ -34,24 +37,28 @@ const demoSessionSchema = new mongoose.Schema(
         },
         // Q1 "what pulls you" (past, present, one day) and Q2 "what stuck, and why"
         interests: {
-            draws: { type: [{ text: String, when: { type: String, enum: ["past", "present", "future"] }, _id: false }], default: [] },
+            draws: { type: [{ text: String, when: { type: String, enum: ["past", "present", "future"] }, professionId: String, _id: false }], default: [] },
             aspiration: { type: { text: String, professionId: String, _id: false }, default: null },
             stuck: { type: [{ text: String, reasons: [{ type: String, enum: REASON_KEYS }], why: String, _id: false }], default: [] },
         },
-        // eight of the real IPIP-50 Openness items, keyed like the real assessment (IPIP_O1 …), A–E
-        openness: {
+        // the four demo puzzles dealt to this visitor (ids only — Backend/demo/demoPuzzles.js)
+        puzzles: {
+            type: [String],
+            default: [],
+        },
+        // what the three tasks say (Backend/demo/demoTaste.js) — { mi, reasoning, reasoningRight, speed, focus, sart }
+        tastes: {
             type: Object,
             default: null,
         },
-        // the first six puzzles of the real reasoning test under this seed — the same block shape the real
-        // test keeps (seed, form, startedAt, pending, responses), so it can continue from puzzle 7
-        reasoning: {
-            type: Object,
+        // where they are now — kept only once they give an email at the result step (owner, Round 33)
+        stage: {
+            type: { journey: String, years: Number, _id: false },
             default: null,
         },
         result: {
             type: Object,
-            default: null,    // { careerIds, opennessLevel, reasoningRight, pointedTo, at }
+            default: null,    // { careers, pointedTo, factors, at }
         },
         email: {
             type: String,

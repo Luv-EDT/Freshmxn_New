@@ -1,37 +1,40 @@
+import { Link } from "react-router-dom"
 import ProfessionCard from "../Report/ProfessionCard"
 import DemoPlans from "./DemoPlans"
 
-// THE DEMO REPORT (owner, Round 32): the two strongest careers from the real engines, each opening into
-// the real career card; the visitor's own words that led there; the two factors as words; and an honest
-// note of how much this was — true numbers, never a confidence figure or a match score.
+// THE DEMO REPORT (owner, Round 33) — kept clean: a fold on what we did differently; the two careers, each
+// a real career card (everything inside: why, the road from where they stand, exams, money, the future);
+// a psychometric fold showing exactly how much of each factor the demo measured (an owner exception for the
+// demo: "N% measured" beside a word level — never a score) with the rest faded at 0%; what the full program
+// adds; then the plans, financial aid and refunds. True numbers only — never a confidence or match figure.
 const TOTAL_FACTORS = 31
-const TOTAL_CAREERS = 223
 
-const OPENNESS_WORDS = {
-    High: "You lean towards new ideas, imagination and abstract thinking.",
-    Medium: "You mix new ideas with what you already know works.",
-    Low: "You prefer the concrete and the practical to the abstract.",
-}
+const secondsOf = (ms) => (typeof ms === "number" ? `${(ms / 1000).toFixed(2)} s` : null)
 
 function DemoResult({ result }) {
-    const { name, careers, details, pointedTo, opennessLevel, reasoningRight, reasoningOf } = result
+    const { name, careers, details, pointedTo, factors = [], sart, reasoningRight, you = {} } = result
+    const measured = factors.flatMap((group) => group.factors).filter((factor) => factor.measuredPct > 0)
+    const untouched = factors.filter((group) => group.factors.every((factor) => factor.measuredPct === 0)).map((group) => group.title.toLowerCase())
 
     return (
         <section className="demo-step demo-result">
-            <h1>{name}, here's a glimpse.</h1>
+            <h1>{name}, here's your glimpse.</h1>
 
-            <div className="demo-factors">
-                <div className="demo-factor">
-                    <p className="demo-label">Openness</p>
-                    <p><strong>{opennessLevel || "Not measured"}</strong>{opennessLevel && ` — ${OPENNESS_WORDS[opennessLevel]}`}</p>
-                </div>
-                <div className="demo-factor">
-                    <p className="demo-label">Reasoning — a taste</p>
-                    <p><strong>{reasoningRight} of {reasoningOf} puzzles right.</strong> The full test has 16, and it's the one that counts.</p>
-                </div>
-            </div>
+            <details className="faq-item demo-fold">
+                <summary>What we did differently</summary>
+                <p>
+                    We started with <strong>your story</strong> — what you've enjoyed, what stuck and why — and let it
+                    point to careers first. Only then did we look at your answers to the three tasks, and only to check
+                    whether those careers fit the fundamentals they ask for.
+                </p>
+                <p>
+                    Most tests do it the other way round: they score you first and screen careers by marks or
+                    intelligence — which skips what you truly care about.
+                </p>
+                <p><Link to="/how-it-works">How the full program works →</Link></p>
+            </details>
 
-            <h2>Two careers your answers point to</h2>
+            <h2>Two careers your story points to</h2>
             {careers.length === 0 && (
                 <p>Your words didn't point to one of our careers yet — that happens with a few short answers. The full counselling asks about four stages of your life, and finds far more.</p>
             )}
@@ -41,13 +44,15 @@ function DemoResult({ result }) {
                     <div key={entry.professionId} className="demo-career">
                         {words && (
                             <p className="demo-words">
-                                You said <strong>“{words.said}”</strong> pulls you{words.why ? <>, and that it stays because <em>“{words.why}”</em></> : null}.
+                                You said <strong>“{words.said}”</strong>{words.why ? <>, and that it stays because <em>“{words.why}”</em></> : null}.
                             </p>
                         )}
                         <ProfessionCard
                             entry={entry}
                             detail={details[entry.professionId]}
                             detailsLoaded
+                            journey={you.stage || undefined}
+                            you={you}
                             rank={index + 1}
                             topRank={index + 1}
                             switchCost={0}
@@ -55,14 +60,56 @@ function DemoResult({ result }) {
                     </div>
                 ))}
             </div>
+            <p className="demo-hint">Tap a career to open everything about it — the road from where you are, exams, money and its future.</p>
+
+            <details className="faq-item demo-fold">
+                <summary>Your psychometric snapshot — {measured.length} of {TOTAL_FACTORS} factors, each only partly measured</summary>
+                <p>
+                    Seven quick statements, a 90-second focus game and four puzzles touched {measured.length} factors —
+                    and none of them fully. The bar shows how much of each we measured; the rest we didn't touch at all.
+                </p>
+                {(reasoningRight !== undefined || sart) && (
+                    <p className="demo-hint">
+                        {typeof reasoningRight === "number" && <>Puzzles: {reasoningRight} of 4 right. </>}
+                        {sart && sart.meanMs && <>Focus game: average response {secondsOf(sart.meanMs)}, {sart.pressesOnThree} of {sart.threes} presses on a 3.</>}
+                        {sart && sart.tooEarly && <>Focus game: many presses came before the number appeared, so we couldn't read your speed.</>}
+                    </p>
+                )}
+                {factors.map((group) => (
+                    <div key={group.title} className="demo-factor-group">
+                        <h3>{group.title}</h3>
+                        <ul>
+                            {group.factors.map((factor) => (
+                                <li key={factor.factor} className={factor.measuredPct > 0 ? "is-measured" : "is-faded"}>
+                                    <span className="demo-factor-name">{factor.name}</span>
+                                    <span className="demo-factor-level">{factor.level || (factor.measuredPct > 0 ? "—" : "Not measured")}</span>
+                                    <span className="demo-measure" aria-label={`${factor.measuredPct}% measured`}>
+                                        <span style={{ width: `${factor.measuredPct}%` }} />
+                                    </span>
+                                    <span className="demo-measure-pct">{factor.measuredPct}% measured</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </details>
 
             <div className="demo-gap">
-                <h2>How much this was</h2>
+                <h2>What the full program adds</h2>
                 <p>
-                    We measured <strong>2 of {TOTAL_FACTORS} factors</strong> and showed <strong>{careers.length} of the {TOTAL_CAREERS} careers</strong> we
-                    rank{typeof pointedTo === "number" ? <> — your words alone pointed to {pointedTo}</> : null}. The full program measures all {TOTAL_FACTORS},
-                    reads your whole story across four stages of your life, and ranks every career it points to — each with its road,
-                    exams, money and future.
+                    <strong>We measured {measured.length} of {TOTAL_FACTORS} factors, and those only partly.</strong>
+                    {untouched.length > 0 && <> We didn't touch {untouched.join(", ")} at all.</>}
+                </p>
+                <p>
+                    <strong>Virtual Career Counselling</strong> replaces the two-minute questions you just answered: it walks
+                    through four stages of your life — what you did, what stuck and why — and helps you understand yourself
+                    before any career is named.
+                </p>
+                <p>
+                    <strong>We showed you just 2 careers.</strong>
+                    {typeof pointedTo === "number" && pointedTo > 2 && <> Your few words already pointed to {pointedTo}.</>}{" "}
+                    The full report ranks every career your story points to, from 1,000+ careers and job roles — each with
+                    its road from where you stand, exams, where to study, money, demand and AI exposure.
                 </p>
             </div>
 

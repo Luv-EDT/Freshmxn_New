@@ -5,37 +5,61 @@ import PublicFooter from "../Public/PublicFooter"
 import TurnstileBox, { turnstileOn } from "../TurnstileBox"
 import DemoPulls from "./DemoPulls"
 import DemoStuck from "./DemoStuck"
-import DemoOpenness from "./DemoOpenness"
-import DemoReasoning from "./DemoReasoning"
+import DemoMi from "./DemoMi"
+import DemoSart from "./DemoSart"
+import DemoPuzzles from "./DemoPuzzles"
 import DemoResult from "./DemoResult"
-import { startDemo, getDemoState, saveDemoInterests, saveDemoOpenness, getDemoResult, loadDemoResult } from "../../apiCall/demoApi"
+import { startDemo, getDemoState, saveDemoInterests, saveDemoTests, getDemoResult, loadDemoResult } from "../../apiCall/demoApi"
 
-// "TRY THE DEMO" (owner, Round 32) — /try-demo, no login. A first name; what pulls you and what stuck;
-// eight statements and six puzzles; an email; then two careers from the real engines and the three plans.
+// "TRY A FREE DEMO" (owner, Rounds 32-33) — /try-demo, no login, about 6 minutes. A first name and where
+// they are now; their story across three timelines and what stuck; seven statements, a 90-second focus game
+// and four puzzles; an email; then two careers from the real engines and the three plans.
 //
-// It runs on its own routes (/demo) and its own data — nothing here touches an account. The demo's
-// token lives in this tab (sessionStorage), so a refresh carries on where it was.
+// It runs on its own routes (/demo) and its own data — nothing here touches an account. The demo's token
+// lives in this tab (sessionStorage), so a refresh carries on where it was; where they are now stays in the
+// tab too, and reaches the server only with the email (owner).
 const TOKEN_KEY = "freshmxnDemoToken"
-const readToken = () => {
-    try { return sessionStorage.getItem(TOKEN_KEY) } catch (error) { return null }
+const STAGE_KEY = "freshmxnDemoStage"
+const read = (key) => {
+    try { return sessionStorage.getItem(key) } catch (error) { return null }
 }
-const keepToken = (token) => {
-    try { sessionStorage.setItem(TOKEN_KEY, token) } catch (error) { /* a private window — the demo still runs */ }
+const keep = (key, value) => {
+    try { sessionStorage.setItem(key, value) } catch (error) { /* a private window — the demo still runs */ }
 }
 
-const STEPS = ["pulls", "stuck", "openness", "reasoning", "gate"]
+// the three stages the visitor moves through (owner, Round 33)
+const PHASES = [
+    { key: "counselling", label: "Virtual career counselling", steps: ["pulls", "stuck"] },
+    { key: "assessments", label: "Assessments", steps: ["mi", "sart", "puzzles"] },
+    { key: "report", label: "Report", steps: ["gate", "result"] },
+]
+const ASSESSMENT_STEPS = PHASES[1].steps
+
+const STAGE_OPTIONS = [
+    { value: "class9_10", label: "School — Class 9–10" },
+    { value: "class11_12", label: "School — Class 11–12" },
+    { value: "college", label: "College" },
+    { value: "early_professional", label: "Working" },
+]
+
+const readStage = () => {
+    try { return JSON.parse(read(STAGE_KEY)) || { journey: "", years: "" } } catch (error) { return { journey: "", years: "" } }
+}
 
 function DemoPage() {
     const [step, setStep] = useState("loading")
-    const [token, setToken] = useState(readToken())
+    const [token, setToken] = useState(read(TOKEN_KEY))
     const [name, setName] = useState("")
+    const [stage, setStage] = useState(readStage)
     const [captcha, setCaptcha] = useState({ token: "", reset: 0 })
     const [interests, setInterests] = useState({ draws: [], aspiration: null, stuck: [] })
+    const [mi, setMi] = useState({})
+    const [sart, setSart] = useState([])
     const [gate, setGate] = useState({ email: "", adult: null, parent: false })
     const [result, setResult] = useState(null)
     const [busy, setBusy] = useState(false)
 
-    // a refresh carries on where it was
+    // a refresh carries on where it was (the three tasks restart together if one was cut short)
     useEffect(() => {
         const resume = async () => {
             if (!token) return setStep("start")
@@ -47,9 +71,8 @@ function DemoPage() {
                     setResult((await loadDemoResult(token)).data.data)
                     return setStep("result")
                 }
-                if (state.reasoningAnswered >= 6) return setStep("gate")
-                if (state.openness) return setStep("reasoning")
-                if (state.status === "interests") return setStep("openness")
+                if (state.tested) return setStep("gate")
+                if (state.status === "interests") return setStep("mi")
                 return setStep("pulls")
             } catch (error) {
                 setToken(null)
@@ -76,7 +99,8 @@ function DemoPage() {
     const start = () => run(async () => {
         try {
             const response = await startDemo({ name, turnstileToken: captcha.token })
-            keepToken(response.data.data.token)
+            keep(TOKEN_KEY, response.data.data.token)
+            keep(STAGE_KEY, JSON.stringify(stage))
             setToken(response.data.data.token)
             setName(response.data.data.name)
             setStep("pulls")
@@ -95,50 +119,83 @@ function DemoPage() {
         const next = { ...interests, stuck }
         await saveDemoInterests({ token, ...next })
         setInterests(next)
-        setStep("openness")
+        setStep("mi")
     })
 
-    const saveOpenness = (answers) => run(async () => {
-        await saveDemoOpenness({ token, answers })
-        setStep("reasoning")
+    const saveTests = (puzzles) => run(async () => {
+        await saveDemoTests({ token, mi, sart, puzzles })
+        setStep("gate")
     })
 
     const seeResult = () => run(async () => {
-        const response = await getDemoResult({ token, email: gate.email, adult: gate.adult, parentConsent: gate.adult === false ? gate.parent : undefined })
+        const response = await getDemoResult({
+            token,
+            email: gate.email,
+            adult: gate.adult,
+            parentConsent: gate.adult === false ? gate.parent : undefined,
+            stage: stage.journey ? { journey: stage.journey, years: stage.journey === "early_professional" ? Number(stage.years) || 0 : undefined } : undefined,
+        })
         setResult(response.data.data)
         setStep("result")
     })
 
     const onCaptcha = useCallback((value) => setCaptcha((current) => ({ ...current, token: value })), [])
-    const progress = STEPS.indexOf(step)
+    const phaseIndex = PHASES.findIndex((phase) => phase.steps.includes(step))
+    const stageReady = stage.journey && (stage.journey !== "early_professional" || String(stage.years).trim() !== "")
 
     return (
         <div>
             <PublicNav />
             <main className="page demo-page">
-                {progress >= 0 && (
-                    <>
-                        <p className="demo-banner">A 2-factor taste of a 31-factor assessment.</p>
-                        <div className="demo-progress" aria-label={`Step ${progress + 1} of ${STEPS.length}`}>
-                            {STEPS.map((key, index) => <span key={key} className={index <= progress ? "is-done" : ""} />)}
-                        </div>
-                    </>
+                {phaseIndex >= 0 && (
+                    <ol className="demo-phases" aria-label="Where you are in the demo">
+                        {PHASES.map((phase, index) => (
+                            <li key={phase.key} className={index < phaseIndex ? "is-done" : index === phaseIndex ? "is-current" : ""}>
+                                <span className="demo-phase-dot" aria-hidden="true">{index < phaseIndex ? "✓" : index + 1}</span>
+                                {phase.label}
+                            </li>
+                        ))}
+                    </ol>
                 )}
+                {ASSESSMENT_STEPS.includes(step) && <p className="demo-banner">A taste of 10 of our 31 factors — each only partly measured.</p>}
 
                 {step === "loading" && <p>Loading…</p>}
 
                 {step === "start" && (
                     <section className="demo-step">
-                        <span className="eyebrow">TRY THE DEMO</span>
-                        <h1>A 7-minute glimpse of what we'd find for you</h1>
+                        <span className="eyebrow">FREE DEMO</span>
+                        <h1>Six minutes to a glimpse of your careers</h1>
                         <p className="demo-lead">
-                            Two questions about what pulls you, eight statements and six puzzles — then two careers your
-                            answers point to, from the same engine as the full program. No login.
+                            Tell us a little of your story, play three short games, and see two careers your answers point
+                            to — from the same engine as the full program. No login.
                         </p>
                         <label className="demo-label" htmlFor="demo-name">Your first name</label>
                         <input id="demo-name" className="demo-input" value={name} maxLength={60} onChange={(event) => setName(event.target.value)} placeholder="e.g. Asha" />
+
+                        <p className="demo-label">Where are you now?</p>
+                        <div className="demo-chips" role="radiogroup" aria-label="Where are you now?">
+                            {STAGE_OPTIONS.map((option) => (
+                                <button
+                                    type="button"
+                                    key={option.value}
+                                    role="radio"
+                                    aria-checked={stage.journey === option.value}
+                                    className={`demo-chip${stage.journey === option.value ? " is-on" : ""}`}
+                                    onClick={() => setStage({ ...stage, journey: option.value })}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                        {stage.journey === "early_professional" && (
+                            <>
+                                <label className="demo-label" htmlFor="demo-years">Years of work experience</label>
+                                <input id="demo-years" type="number" min="0" max="45" className="demo-input demo-input-short" value={stage.years} onChange={(event) => setStage({ ...stage, years: event.target.value })} />
+                            </>
+                        )}
+
                         <TurnstileBox onToken={onCaptcha} resetKey={captcha.reset} />
-                        <button type="button" className="btn btn-primary tap" disabled={busy || name.trim().length < 2 || (turnstileOn && !captcha.token)} onClick={start}>
+                        <button type="button" className="btn btn-primary tap" disabled={busy || name.trim().length < 2 || !stageReady || (turnstileOn && !captcha.token)} onClick={start}>
                             {busy ? "Starting…" : "Start"}
                         </button>
                     </section>
@@ -146,13 +203,14 @@ function DemoPage() {
 
                 {step === "pulls" && <DemoPulls initial={interests} onNext={savePulls} busy={busy} />}
                 {step === "stuck" && <DemoStuck draws={interests.draws} initial={interests.stuck} onNext={saveStuck} onBack={() => setStep("pulls")} busy={busy} />}
-                {step === "openness" && <DemoOpenness onNext={saveOpenness} busy={busy} />}
-                {step === "reasoning" && <DemoReasoning token={token} onDone={() => setStep("gate")} />}
+                {step === "mi" && <DemoMi answers={mi} onChange={setMi} onNext={() => setStep("sart")} />}
+                {step === "sart" && <DemoSart onDone={(rows) => { setSart(rows); setStep("puzzles") }} />}
+                {step === "puzzles" && (busy ? <p className="demo-hint">Saving…</p> : <DemoPuzzles token={token} onDone={saveTests} />)}
 
                 {step === "gate" && (
                     <section className="demo-step">
                         <h2>Your result is ready, {name}</h2>
-                        <p className="demo-lead">Where should we keep it? If you sign up later with this email, your answers carry over.</p>
+                        <p className="demo-lead">Where should we keep it? If you sign up later with this email, your story carries over.</p>
                         <label className="demo-label" htmlFor="demo-email">Your email</label>
                         <input id="demo-email" type="email" className="demo-input" value={gate.email} onChange={(event) => setGate({ ...gate, email: event.target.value })} placeholder="you@example.com" />
                         <p className="demo-label">Are you 18 or older?</p>
@@ -167,14 +225,21 @@ function DemoPage() {
                             </label>
                         )}
                         <p className="demo-hint">We keep your demo for 30 days and never use it for ads. See our <a href="/privacy#demo">Privacy Policy</a>.</p>
-                        <button
-                            type="button"
-                            className="btn btn-primary tap"
-                            disabled={busy || !gate.email.includes("@") || gate.adult === null || (gate.adult === false && !gate.parent)}
-                            onClick={seeResult}
-                        >
-                            {busy ? "Reading your answers…" : "See my two careers"}
-                        </button>
+                        {busy ? (
+                            <div className="demo-reading" role="status">
+                                <span className="demo-reading-bar" aria-hidden="true"><span /></span>
+                                <p><strong>Reading your answers — this takes about 30 seconds.</strong> We're matching your story against 1,000+ careers and job roles.</p>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn btn-primary tap"
+                                disabled={!gate.email.includes("@") || gate.adult === null || (gate.adult === false && !gate.parent)}
+                                onClick={seeResult}
+                            >
+                                See my two careers
+                            </button>
+                        )}
                     </section>
                 )}
 

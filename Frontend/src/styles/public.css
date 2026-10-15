@@ -1378,3 +1378,422 @@
     .demo-factors { grid-template-columns: 1fr 1fr; }
     .demo-plan-list { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── round 33: the front door — the demo invitation over a blurred landing ──────────────────── */
+
+.behind-splash {
+    filter: blur(7px) saturate(0.85);
+    pointer-events: none;
+    user-select: none;
+}
+
+.splash {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 72px 16px 32px;
+    overflow-y: auto;
+    background: radial-gradient(120% 90% at 50% 0%, rgba(0, 117, 130, 0.92) 0%, rgba(30, 42, 56, 0.94) 62%);
+    color: #fff;
+    animation: splash-in 0.35s ease-out;
+}
+
+@keyframes splash-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.splash-glow {
+    position: absolute;
+    width: min(70vw, 560px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 179, 199, 0.35) 0%, rgba(255, 179, 199, 0) 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    pointer-events: none;
+}
+
+.splash-logo {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    height: 34px;
+    width: auto;
+}
+
+.splash-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.splash-close:hover,
+.splash-close:focus-visible {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.splash-body {
+    position: relative;
+    max-width: 640px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.splash-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.6rem, 9vw, 4.6rem);
+    line-height: 1.05;
+    margin: 0;
+    color: #fff;
+}
+
+.splash-lead {
+    font-size: clamp(1.05rem, 2.6vw, 1.3rem);
+    line-height: 1.55;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.splash-lead .highlight-pink {
+    color: var(--navy);
+}
+
+.splash-cta {
+    margin-top: var(--space-3);
+    background: var(--pink);
+    color: var(--navy);
+    font-size: 1.15rem;
+    font-weight: 900;
+    padding: 16px 34px;
+    border-radius: 999px;
+    border: 0;
+    box-shadow: 0 10px 30px rgba(255, 179, 199, 0.35);
+    animation: splash-pulse 2.4s ease-in-out infinite;
+}
+
+.splash-cta:hover,
+.splash-cta:focus-visible {
+    color: var(--navy);
+    background: #fff;
+}
+
+@keyframes splash-pulse {
+    0%, 100% { box-shadow: 0 10px 30px rgba(255, 179, 199, 0.35), 0 0 0 0 rgba(255, 179, 199, 0.5); }
+    50% { box-shadow: 0 10px 30px rgba(255, 179, 199, 0.35), 0 0 0 14px rgba(255, 179, 199, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .splash, .splash-cta { animation: none; }
+}
+
+.splash-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.splash-meta span {
+    font-size: 0.85rem;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.splash-skip {
+    background: none;
+    border: 0;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 0.95rem;
+    min-height: 44px;
+}
+
+/* the brand line above the tagline — a real title now, not small print (owner, Round 33) */
+.hero-brand {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    color: var(--teal-dark);
+    margin: 0 0 var(--space-2);
+    line-height: 1.1;
+}
+
+.closing h2 em { font-style: normal; }
+
+/* programs: the plan's name leads, centred; the price sits smaller under it (owner, Round 33) */
+.price-card h3 {
+    text-align: center;
+    font-size: 1.45rem;
+}
+
+.price-card .price {
+    text-align: center;
+    font-size: 1.7rem;
+    color: var(--teal-dark);
+}
+
+/* ── round 33: the demo, reworked ───────────────────────────────────────────────────────────── */
+
+/* three stages: Virtual career counselling › Assessments › Report */
+.demo-phases {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0;
+    margin: 0 0 var(--space-4);
+}
+
+.demo-phases li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 6px 6px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--navy-soft);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.demo-phases li + li::before {
+    content: "›";
+    margin: 0 4px 0 -4px;
+    color: var(--muted, #8a94a0);
+}
+
+.demo-phases li.is-current {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+}
+
+.demo-phases li.is-done {
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+.demo-phase-dot {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--navy);
+    font-size: 0.8rem;
+}
+
+/* "Stuck?" pinned at the top while they scroll (owner: like the main form) */
+.demo-reference {
+    position: sticky;
+    top: 72px;
+    z-index: 15;
+    margin-bottom: var(--space-3);
+}
+
+.demo-reference .if-reference {
+    position: static;
+    margin: 0;
+}
+
+@media (max-width: 719px) {
+    .demo-reference { top: 112px; }
+}
+
+.demo-question {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 0 0 var(--space-2);
+    max-width: 40em;
+}
+
+.demo-label-small {
+    margin-top: var(--space-3);
+    font-size: 0.9rem;
+}
+
+.demo-input-short { max-width: 140px; }
+
+/* the focus game */
+.demo-sart-rules {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: var(--space-2) 0;
+}
+
+.demo-sart-rule {
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    font-weight: 900;
+}
+
+.demo-sart-rule.is-go { background: #e6f7ea; color: #1e7b34; }
+.demo-sart-rule.is-nogo { background: #ffe8e6; color: #b3261e; }
+
+.demo-sart-time {
+    text-align: center;
+    font-weight: 700;
+    color: var(--navy-soft);
+    margin: 0 0 var(--space-2);
+}
+
+.demo-sart-stage {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    height: 320px;
+    margin: 0 auto;
+    background: #000;
+    color: #fff;
+    border-radius: var(--radius-lg);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    overflow: hidden;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.demo-sart-digit,
+.demo-sart-mask {
+    position: absolute;
+    line-height: 1;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+}
+
+.demo-sart-mask { font-size: 72pt; font-weight: normal; }
+
+.demo-sart-count {
+    font-family: var(--font-display);
+    font-size: 4rem;
+}
+
+/* "about 30 seconds" while the result is worked out */
+.demo-reading {
+    background: var(--teal-tint);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+}
+
+.demo-reading p { margin: var(--space-2) 0 0; }
+
+.demo-reading-bar {
+    display: block;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(0, 117, 130, 0.15);
+    overflow: hidden;
+}
+
+.demo-reading-bar span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--teal);
+    animation: demo-reading 30s linear forwards;
+}
+
+@keyframes demo-reading {
+    from { width: 3%; }
+    to { width: 95%; }
+}
+
+/* the report's folds and the psychometric snapshot */
+.demo-fold {
+    margin: var(--space-4) 0;
+}
+
+.demo-fold > p { max-width: 42em; }
+
+.demo-factor-group h3 {
+    font-size: 1rem;
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+.demo-factor-group ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.demo-factor-group li {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "name level" "bar pct";
+    gap: 2px 12px;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--line);
+}
+
+.demo-factor-group li.is-faded { opacity: 0.45; }
+
+.demo-factor-name { grid-area: name; font-weight: 700; }
+.demo-factor-level { grid-area: level; font-weight: 700; color: var(--teal-dark); }
+.demo-factor-group li.is-faded .demo-factor-level { color: var(--navy-soft); font-weight: 400; }
+
+.demo-measure {
+    grid-area: bar;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--line);
+    overflow: hidden;
+}
+
+.demo-measure span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.demo-measure-pct {
+    grid-area: pct;
+    font-size: 0.8rem;
+    color: var(--navy-soft);
+}
+
+.demo-plan-kicker {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+.demo-money-note {
+    margin-top: var(--space-5);
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--cream);
+}
+
+.demo-money-note p { margin: 0 0 var(--space-2); }
+
+.demo-career-picks { margin: var(--space-3) 0; }

@@ -13,16 +13,14 @@ export async function saveDemoInterests(payload) {
     return axiosInstance.put("/demo/saveInterests", payload)
 }
 
-export async function saveDemoOpenness(payload) {
-    return axiosInstance.put("/demo/saveOpenness", payload)
+// the four puzzles dealt to this visitor, without answers (Round 33)
+export async function getDemoPuzzles(token) {
+    return axiosInstance.get("/demo/puzzles", { params: { token } })
 }
 
-export async function demoReasoningNext(token) {
-    return axiosInstance.post("/demo/reasoningNext", { token })
-}
-
-export async function demoReasoningAnswer(payload) {
-    return axiosInstance.post("/demo/reasoningAnswer", payload)
+// the three tasks' answers, sent once — worked out on the server, only the small result kept
+export async function saveDemoTests(payload) {
+    return axiosInstance.post("/demo/saveTests", payload)
 }
 
 export async function getDemoResult(payload) {
@@ -33,7 +31,7 @@ export async function loadDemoResult(token) {
     return axiosInstance.get("/demo/result", { params: { token } })
 }
 
-// after buying — carry the demo's answers into the real account (Round 32)
+// after buying — carry the demo's story and its two careers into the real account (Rounds 32-33)
 export async function getMyDemo() {
     return axiosInstance.get("/demoResume/getMine")
 }

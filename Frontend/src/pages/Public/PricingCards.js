@@ -51,7 +51,7 @@ function PricingCards() {
             <div className="pricing pricing-three">
                 {PLANS.map((plan) => (
                     <div key={plan.tier} className={`price-card${plan.featured ? " featured" : ""}`}>
-                        <h3>{names[plan.tier]}*</h3>
+                        <h3>{names[plan.tier]}</h3>
                         <div className="price">{formatInr(amounts[plan.tier])}</div>
                         <ul className="price-points">
                             {plan.points.map((point) => <li key={point}>{point}</li>)}
@@ -69,7 +69,7 @@ function PricingCards() {
                 ))}
             </div>
             {/* one note for all three (owner, Round 26) */}
-            <p className="pricing-note">*{HELP_NOTE}</p>
+            <p className="pricing-note">{HELP_NOTE}</p>
             <p className="upgrade-note">
                 <em>
                     Did {names[1]} first? Add a mentor for just <strong>{formatInr(upgrade)} more</strong> after you

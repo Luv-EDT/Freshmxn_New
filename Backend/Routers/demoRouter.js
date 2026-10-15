@@ -7,11 +7,12 @@ const ActivityFactors = require("../model/activityFactorsModel")
 const { checkName } = require("../utils/nameRules")
 const { verifyTurnstile } = require("../utils/turnstile")
 const { createActivityResolver } = require("../matching/activityResolver")
-const { runDemo, OPENNESS_ITEMS, ANSWER_LETTERS, keyOf } = require("../demo/runDemo")
+const { runDemo, ANSWER_LETTERS, STAGES, keyOf } = require("../demo/runDemo")
 const { loadData } = require("../demo/loadData")
-const { DEMO_REASONING_ITEMS, reasoningTimedOut, reasoningResponse, reasoningBank } = require("../demo/reasoningMarks")
+const { pickPuzzles, publicPuzzle, markPuzzle } = require("../demo/demoPuzzles")
+const { MI_DEMO_ITEMS, DEMO_SART_TRIALS, miTaste, puzzleTaste, sartTaste } = require("../demo/demoTaste")
 
-// "TRY THE DEMO" (owner, Round 32) — /demo, before any login. The page is /try-demo, so no page shares
+// "TRY THE DEMO" (owner, Rounds 32-33) — /demo, before any login. The page is /try-demo, so no page shares
 // this prefix.
 //
 // THE ONE RULE: the demo is additive and isolated. These routes write only demo_sessions, demo_signals
@@ -42,7 +43,7 @@ const demoRateLimiter = rateLimit({
 })
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const MAX_DRAWS = 8
+const MAX_DRAWS = 12
 const hashOf = (token) => crypto.createHash("sha256").update(String(token || "")).digest("hex")
 const dailyCap = () => Number(process.env.DEMO_DAILY_CAP) || 200
 const cleanText = (value, max) => (typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max) : "")
@@ -108,7 +109,12 @@ router.put("/saveInterests", demoRateLimiter, async (req, res) => {
 
         const seen = new Set()
         const draws = (Array.isArray(req.body.draws) ? req.body.draws : [])
-            .map((draw) => ({ text: cleanText(draw && draw.text, 80), when: draw && draw.when }))
+            .map((draw) => ({
+                text: cleanText(draw && draw.text, 80),
+                when: draw && draw.when,
+                // a career picked from our list in the "one day" box keeps its id
+                ...(draw && typeof draw.professionId === "string" && knownCareer(draw.professionId) ? { professionId: draw.professionId } : {}),
+            }))
             .filter((draw) => draw.text.length >= 2 && ["past", "present", "future"].includes(draw.when))
             .filter((draw) => !seen.has(keyOf(draw.text)) && seen.add(keyOf(draw.text)))
             .slice(0, MAX_DRAWS)
@@ -144,109 +150,74 @@ router.put("/saveInterests", demoRateLimiter, async (req, res) => {
 })
 
 // ========================
-// Openness — eight real IPIP-50 items
+// The three tasks — 7 statements, 90 s of SART, 4 puzzles
 // ========================
 
-router.put("/saveOpenness", demoRateLimiter, async (req, res) => {
+// the four puzzles for this visitor, without their answers (dealt once; a refresh gets the same four)
+router.get("/puzzles", demoRateLimiter, async (req, res) => {
     try {
         const session = await sessionFor(req)
         if (!session) return noSession(res)
 
-        const given = req.body.answers || {}
-        const answers = {}
-        OPENNESS_ITEMS.forEach((id) => {
-            if (ANSWER_LETTERS.includes(given[id])) answers[id] = given[id]
-        })
-        if (Object.keys(answers).length !== OPENNESS_ITEMS.length) {
-            return res.status(400).json({ success: false, message: "Please answer all eight statements" })
+        if (!(session.puzzles || []).length) {
+            session.puzzles = pickPuzzles()
+            await session.save()
         }
 
-        session.openness = answers
+        return res.status(200).json({ success: true, message: "Your puzzles", data: { puzzles: session.puzzles.map(publicPuzzle) } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Could not load the puzzles", error: error.message })
+    }
+})
+
+// everything from the three tasks arrives at once and is worked out here; only the small result is kept
+router.post("/saveTests", demoRateLimiter, async (req, res) => {
+    try {
+        const session = await sessionFor(req)
+        if (!session) return noSession(res)
+
+        const mi = req.body.mi || {}
+        const miIds = Object.values(MI_DEMO_ITEMS)
+        if (!miIds.every((id) => ANSWER_LETTERS.includes(mi[id]))) {
+            return res.status(400).json({ success: false, message: "Please answer all seven statements" })
+        }
+
+        const dealt = session.puzzles || []
+        const answers = Array.isArray(req.body.puzzles) ? req.body.puzzles : []
+        if (dealt.length !== 4) {
+            return res.status(400).json({ success: false, message: "Load the puzzles first" })
+        }
+        const right = dealt.filter((id) => {
+            const answer = answers.find((row) => row && row.id === id)
+            return answer && Number.isInteger(answer.choice) && markPuzzle(id, answer.choice, Number(answer.ms))
+        }).length
+
+        // the SART rows the page recorded — only the four fields the taste reads, and a sane count
+        const rows = (Array.isArray(req.body.sart) ? req.body.sart : []).slice(0, DEMO_SART_TRIALS + 5).map((row) => ({
+            isGo: row && row.isGo === true,
+            correct: row && row.correct === true,
+            rt: row && typeof row.rt === "number" && row.rt >= 0 && row.rt < 5000 ? row.rt : null,
+            dropped: Boolean(row && row.dropped),
+        }))
+        const sart = sartTaste(rows)
+
+        session.tastes = {
+            mi: miTaste(mi),
+            reasoning: puzzleTaste(right),
+            reasoningRight: right,
+            speed: sart.speed,
+            focus: sart.focus,
+            sart: { meanMs: sart.meanMs, pressesOnThree: sart.pressesOnThree, threes: sart.threes, tooEarly: sart.tooEarly },
+        }
+        session.markModified("tastes")
+        if (session.status !== "done") session.status = "assessed"
         await session.save()
 
-        return res.status(200).json({ success: true, message: "Saved", data: { answered: OPENNESS_ITEMS.length } })
+        return res.status(200).json({ success: true, message: "Saved", data: { reasoningRight: right } })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Could not save your answers", error: error.message })
-    }
-})
-
-// ========================
-// Reasoning — puzzles 1-6 of the real test, marked and timed exactly as it does
-// ========================
-
-// the same rules as the real /reasoningNext: a seed on the session, one puzzle at a time, never the
-// answer, its clock started here so a refresh never buys time, and an expired one recorded as not answered
-router.post("/reasoningNext", demoRateLimiter, async (req, res) => {
-    try {
-        const session = await sessionFor(req)
-        if (!session) return noSession(res)
-
-        let block = session.reasoning || {}
-        const seed = typeof block.seed === "number" ? block.seed : Math.floor(Math.random() * 2 ** 31)
-        let responses = block.responses || []
-
-        if (block.pending && typeof block.seed === "number" && block.pending.index === responses.length) {
-            const shown = reasoningBank.itemFor(block.seed, block.pending.index, "A")
-            if (reasoningTimedOut(shown, block.pending)) {
-                responses = [...responses, reasoningResponse(shown, null, Date.now() - new Date(block.pending.issuedAt).getTime(), true)]
-                block = { ...block, pending: null }
-            }
-        }
-
-        if (responses.length >= DEMO_REASONING_ITEMS) {
-            session.reasoning = { ...block, seed, form: "A", responses, pending: null }
-            session.markModified("reasoning")
-            await session.save()
-            return res.status(200).json({ success: true, message: "Puzzles done", data: { done: true, answered: responses.length } })
-        }
-
-        const index = responses.length
-        const pending = block.pending && block.pending.index === index ? block.pending : { index, issuedAt: new Date() }
-        session.reasoning = { seed, form: "A", startedAt: block.startedAt || new Date(), responses, pending }
-        session.markModified("reasoning")
-        await session.save()
-
-        const item = reasoningBank.itemFor(seed, index, "A")
-        const secondsLeft = Math.max(Math.ceil((item.timeLimitS * 1000 - (Date.now() - new Date(pending.issuedAt).getTime())) / 1000), 0)
-
-        return res.status(200).json({
-            success: true,
-            message: "Next puzzle",
-            data: { done: false, number: index + 1, of: DEMO_REASONING_ITEMS, item: reasoningBank.publicItem(item), secondsLeft },
-        })
-
-    } catch (error) {
-        return res.status(500).json({ success: false, message: "Could not load the next puzzle", error: error.message })
-    }
-})
-
-router.post("/reasoningAnswer", demoRateLimiter, async (req, res) => {
-    try {
-        const session = await sessionFor(req)
-        if (!session) return noSession(res)
-
-        const block = session.reasoning || {}
-        const responses = block.responses || []
-        const pending = block.pending
-        if (!pending || typeof block.seed !== "number" || pending.index !== responses.length) {
-            return res.status(400).json({ success: false, message: "No puzzle is open" })
-        }
-
-        const item = reasoningBank.itemFor(block.seed, pending.index, "A")
-        const choice = Number.isInteger(req.body.choice) && req.body.choice >= 0 && req.body.choice < item.options.length ? req.body.choice : null
-        const ms = Date.now() - new Date(pending.issuedAt).getTime()
-        const all = [...responses, reasoningResponse(item, choice, ms, reasoningTimedOut(item, pending))]
-
-        session.reasoning = { ...block, responses: all, pending: null }
-        session.markModified("reasoning")
-        if (all.length >= DEMO_REASONING_ITEMS && session.status === "interests") session.status = "assessed"
-        await session.save()
-
-        return res.status(200).json({ success: true, message: "Answer recorded", data: { done: all.length >= DEMO_REASONING_ITEMS, answered: all.length } })
-
-    } catch (error) {
-        return res.status(500).json({ success: false, message: "Could not record your answer", error: error.message })
     }
 })
 
@@ -259,9 +230,10 @@ const resultPayload = (session, details) => ({
     careers: session.result.careers,
     details,
     pointedTo: session.result.pointedTo,
-    opennessLevel: session.result.opennessLevel,
+    factors: session.result.factors,
+    sart: session.result.sart,
     reasoningRight: session.result.reasoningRight,
-    reasoningOf: DEMO_REASONING_ITEMS,
+    you: session.result.you,
 })
 
 const detailsFor = (careers) => {
@@ -281,8 +253,8 @@ router.post("/result", demoRateLimiter, async (req, res) => {
         }
 
         const interests = session.interests || {}
-        if (!(interests.draws || []).length || !session.openness || ((session.reasoning || {}).responses || []).length < DEMO_REASONING_ITEMS) {
-            return res.status(400).json({ success: false, message: "Finish the questions and the puzzles first" })
+        if (!(interests.draws || []).length || !session.tastes) {
+            return res.status(400).json({ success: false, message: "Finish the questions and the three tasks first" })
         }
 
         const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : ""
@@ -297,6 +269,13 @@ router.post("/result", demoRateLimiter, async (req, res) => {
         if (req.body.adult === false && req.body.parentConsent !== true) {
             return res.status(400).json({ success: false, message: "Please confirm that your parent or guardian knows and agrees" })
         }
+
+        // where they are now — asked at the start, kept only now that there is an email (owner, Round 33)
+        const rawStage = req.body.stage || {}
+        const years = Number(rawStage.years)
+        session.stage = STAGES.includes(rawStage.journey)
+            ? { journey: rawStage.journey, ...(rawStage.journey === "early_professional" && Number.isFinite(years) && years >= 0 && years <= 45 ? { years: Math.round(years) } : {}) }
+            : null
 
         const data = loadData()
         const resolver = createActivityResolver({
@@ -316,8 +295,10 @@ router.post("/result", demoRateLimiter, async (req, res) => {
         session.result = {
             careers: outcome.careers,
             pointedTo: outcome.pointedTo,
-            opennessLevel: outcome.opennessLevel,
+            factors: outcome.factors,
+            sart: outcome.sart,
             reasoningRight: outcome.reasoningRight,
+            you: outcome.you,
             at: new Date(),
         }
         session.status = "done"
@@ -354,12 +335,11 @@ router.get("/state", demoRateLimiter, async (req, res) => {
     try {
         const session = await sessionFor(req)
         if (!session) return noSession(res)
-        const answered = ((session.reasoning || {}).responses || []).length
 
         return res.status(200).json({
             success: true,
             message: "Demo state",
-            data: { name: session.name, status: session.status, interests: session.interests, openness: Boolean(session.openness), reasoningAnswered: answered, hasResult: Boolean(session.result) },
+            data: { name: session.name, status: session.status, interests: session.interests, tested: Boolean(session.tastes), hasResult: Boolean(session.result) },
         })
 
     } catch (error) {
@@ -368,4 +348,3 @@ router.get("/state", demoRateLimiter, async (req, res) => {
 })
 
 module.exports = router
-module.exports.DEMO_REASONING_ITEMS = DEMO_REASONING_ITEMS

@@ -1,20 +1,15 @@
-// THE DEMO'S RESULT — the real engines with fewer inputs (owner, Round 32). Nothing here is a new
+// THE DEMO'S RESULT — the real engines with fewer inputs (owner, Rounds 32-33). Nothing here is a new
 // algorithm, and none of the real files is changed to make it work:
 //
-//     the visitor's words  → the real activity resolver → candidate careers   (interests lead)
-//     8 Openness answers   → the real scoreProfile()    → raw_scores.openness   (a real IPIP-50 score)
-//     6 reasoning puzzles  → their share right, 0-10    → raw_scores.reasoning  (in memory only)
-//     all of it            → the real matchProfile()    → tiers, then fit on the two factors
+//     the visitor's words   → the real activity resolver → candidate careers     (interests lead)
+//     where they are now    → the journey matching reads  → what carries over, how long from here
+//     the tastes (demoTaste.js: 7 MI statements, 4 puzzles, 90 s of SART)
+//                           → raw_scores in memory        → the 10 factors they touch
+//     all of it             → the real matchProfile()     → tiers, then fit on what was measured
 //
-// THE 25 OTHER FACTORS ARE SIMPLY MISSING, and matching already handles that: a missing factor is
-// skipped and the fit renormalises over what was measured (similarity.js). Every one of the 223 careers
-// weights openness or reasoning, so every candidate gets a fit — a light sort, as the owner asked.
-//
-// WHY THE REASONING TASTE IS NOT THE REAL SCORER'S. The real scorer (scoring/reasoningInHouse.js)
-// refuses fewer than 16 answers on purpose — an unfinished test is "not measured". The demo's taste is
-// the same share (right ÷ answered × 10) over six puzzles, labelled "6 of 16", used only to sort the two
-// careers here, and never written to any profile. A student who buys carries the six ANSWERS into the
-// real test and finishes it there; the real scorer then scores all sixteen.
+// THE OTHER 21 FACTORS ARE SIMPLY MISSING, and matching already handles that: a missing factor is skipped
+// and the fit renormalises over what was measured (similarity.js) — so the two careers come from the
+// visitor's story first, and the tastes only order them. Nothing here is written to any profile.
 //
 // Pure apart from the resolver it is given — the fixtures pass a stub.
 const scoreProfile = require("../scoring/scoreProfile")
@@ -22,13 +17,28 @@ const matchProfile = require("../matching/matchProfile")
 const { studentFacing } = require("../Routers/professionsRouter")
 const { levelFor } = require("../Routers/reportsRouter")
 const { stripInternal } = require("./strip")
-const { DEMO_REASONING_ITEMS } = require("./reasoningMarks")
+const { MEASURED_PCT } = require("./demoTaste")
+const { FACTOR_GUIDE, GUIDE_GROUPS } = require("../utils/factorGuide")
 
-// eight of the ten real Openness items — the real scorer needs 8 of 10 (0.8 coverage) to score a trait,
-// so this is the fewest that gives a real score. O7 ("quick to understand") and O8 ("use difficult
-// words") are left for the full assessment.
-const OPENNESS_ITEMS = ["IPIP_O1", "IPIP_O2", "IPIP_O3", "IPIP_O4", "IPIP_O5", "IPIP_O6", "IPIP_O9", "IPIP_O10"]
 const ANSWER_LETTERS = ["A", "B", "C", "D", "E"]
+const STAGES = ["class9_10", "class11_12", "college", "early_professional"]
+
+// where the visitor is now, as the journey matching reads it (Backend/matching/journey.js)
+const stageUser = (stage) => {
+    if (!stage || !STAGES.includes(stage.journey)) return {}
+    const years = stage.journey === "early_professional" && typeof stage.years === "number" ? stage.years : null
+    return { journey: stage.journey, journeyDetail: years === null ? {} : { experienceYears: years } }
+}
+
+// what the career card's "from where you stand" needs (the report's youFor, from a stage alone)
+const youOf = (stage) => ({
+    stage: stage && stage.journey ? stage.journey : null,
+    preAdmission: false,
+    courseYear: null,
+    degreeYearsLeft: null,
+    experienceYears: stage && typeof stage.years === "number" ? stage.years : null,
+    hasDegree: Boolean(stage && stage.journey === "early_professional"),
+})
 
 const keyOf = (text) => String(text || "").trim().replace(/\s+/g, " ").toLowerCase()
 
@@ -59,14 +69,22 @@ const demoInterest = (interests = {}) => {
     }
 }
 
-const reasoningRight = (block) => ((block && block.responses) || []).filter((response) => response.correct === true).length
-
-// the share right, 0-10 — the real scorer's own formula, over the six
-const reasoningTaste = (block) => {
-    const responses = (block && block.responses) || []
-    if (responses.length < DEMO_REASONING_ITEMS) return null
-    return Math.round((reasoningRight(block) / responses.length) * 10 * 100) / 100
-}
+// every factor of the 31, grouped as the profile groups them: the ones the demo touched carry a word level
+// and how much of them it measured; the rest are listed as not measured (owner: shown faded, at 0%)
+const factorList = (scores) => GUIDE_GROUPS.map((group) => ({
+    title: group.title,
+    factors: group.factors.map((factor) => {
+        const value = scores[factor]
+        const measured = typeof value === "number" && MEASURED_PCT[factor]
+        return {
+            factor,
+            name: (FACTOR_GUIDE[factor] || {}).name || factor,
+            meaning: (FACTOR_GUIDE[factor] || {}).meaning || "",
+            level: measured ? levelFor(value) : null,
+            measuredPct: measured ? MEASURED_PCT[factor] : 0,
+        }
+    }),
+}))
 
 // a career's facts for the card — the real studentFacing record, without the going-abroad parts (their
 // waitlist button needs an account)
@@ -79,9 +97,12 @@ const demoDetail = (profession) => {
 const runDemo = async ({ session, resolver, data }) => {
     const interests = session.interests || {}
     const interest = demoInterest(interests)
+    const tastes = session.tastes || {}
 
-    const profile = scoreProfile({ ipip50: { answers: session.openness || {} } })
-    profile.raw_scores.reasoning = reasoningTaste(session.reasoning)
+    // the tastes, in memory only — the real profile shape with only these ten filled
+    const profile = scoreProfile({})
+    const scores = { ...(tastes.mi || {}), reasoning: tastes.reasoning, processing_speed: tastes.speed, focus: tastes.focus }
+    Object.entries(scores).forEach(([factor, value]) => { profile.raw_scores[factor] = typeof value === "number" ? value : null })
 
     const rows = interest.currentInterests.persistentInterests
         .filter((row) => keyOf(row.activity) !== "")
@@ -97,7 +118,7 @@ const runDemo = async ({ session, resolver, data }) => {
     const match = matchProfile({
         profile,
         interest,
-        user: {},
+        user: stageUser(session.stage),
         professions: data.professions.professions,
         baseline: data.baseline,
         resolvedActivities: resolved,
@@ -130,10 +151,12 @@ const runDemo = async ({ session, resolver, data }) => {
         careers,
         details: Object.fromEntries(careers.map(({ entry }) => [entry.professionId, demoDetail(byId.get(entry.professionId))])),
         pointedTo: match.ranked.length,
-        opennessLevel: levelFor(profile.raw_scores.openness),
-        reasoningRight: reasoningRight(session.reasoning),
+        factors: factorList(scores),
+        sart: tastes.sart || null,
+        reasoningRight: tastes.reasoningRight,
+        you: youOf(session.stage),
         signals,
     }
 }
 
-module.exports = { runDemo, demoInterest, reasoningTaste, demoDetail, OPENNESS_ITEMS, ANSWER_LETTERS, keyOf }
+module.exports = { runDemo, demoInterest, demoDetail, stageUser, factorList, ANSWER_LETTERS, STAGES, keyOf }

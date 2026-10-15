@@ -143,6 +143,12 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0, // 0 = none, 1 = Career Discovery, 2 = Mentorship
         },
+        // THE TWO CAREERS FROM THEIR DEMO (owner, Round 33) — written only by /demoResume/import, from
+        // their own paid account; offered first when they choose their mentor's field
+        demoCareers: {
+            type: [{ professionId: String, profession: String, _id: false }],
+            default: [],
+        },
         progress: {
             interestForm: {
                 type: String,

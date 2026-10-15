@@ -5216,8 +5216,9 @@ const fixtures = [
             // in its own colour, and the main button last
             // Round 27 (owner): the mentor pill reads "Mentor with us" so the nav fits one row; the full
             // question stays as its title
-            const order = ["How it works", "About us", "Mentorship program", "Mentor with us", "Log in", "Let's figure out your career"].map((label) => nav.indexOf(`>${label}<`))
-            if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push("the nav order is not How it works · About us · Mentorship program · Mentor with us · Log in · Let's figure out your career")
+            // Round 33 (owner): About us leads the nav
+            const order = ["About us", "How it works", "Mentorship program", "Mentor with us", "Log in", "Let's figure out your career"].map((label) => nav.indexOf(`>${label}<`))
+            if (order.some((at) => at < 0) || order.some((at, index) => index > 0 && at < order[index - 1])) problems.push("the nav order is not About us · How it works · Mentorship program · Mentor with us · Log in · Let's figure out your career")
             if (/>Success stories</.test(nav)) problems.push("Success stories is still in the nav")
             if (!/className="nav-mentor" title="Are you a professional\? Mentor with us"[^>]*>Mentor with us</.test(nav)) problems.push("the mentor invitation is missing, not in its own colour, or has lost its full wording as a title")
             if (!/className="nav-login">Log in</.test(nav)) problems.push("Log in is not in its own colour")
@@ -6094,7 +6095,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 32 — DEMO ISOLATION: the demo's routes and code touch no student record — no User, Submission, Payment, Profile, Recommendation or Report, never grantAccess — and every carry-forward write is behind a login and a paid plan",
+        name: "ROUND 32/33 — DEMO ISOLATION: the demo's routes and code touch no student record — no User, Submission, Payment, Profile, Recommendation or Report, never grantAccess — and every carry-forward write is behind a login and a paid plan",
         run: () => {
             const problems = []
             const demoFiles = ["Routers/demoRouter.js", ...fs.readdirSync(path.join(__dirname, "../../demo")).map((file) => `demo/${file}`)]
@@ -6107,8 +6108,10 @@ const fixtures = [
             })
             const resume = fs.readFileSync(path.join(__dirname, "../../Routers/demoResumeRouter.js"), "utf8")
             const routes = resume.match(/router\.(get|post|put|delete)\("[^"]+",[^)]*?async/g) || []
-            if (routes.length < 3 || routes.some((route) => !/authMiddleware, requireDiscovery/.test(route))) problems.push("a carry-forward route is not behind a login and a paid Discovery plan")
+            if (routes.length < 3 || routes.some((route) => !/authMiddleware, requirePaid/.test(route))) problems.push("a carry-forward route is not behind a login and a paid plan")
             if (!/req\.user\._id/.test(resume) || /req\.body\.(userId|email)/.test(resume)) problems.push("carry-forward is not keyed on the logged-in account")
+            if (/psychometric/.test(codeOf(resume))) problems.push("carry-forward writes into the assessment — the demo's tasks are never carried (owner, Round 33)")
+            if (!/grants\(Number\(user\.currentTier\)\)\.discovery/.test(resume)) problems.push("the story is carried into the counselling form on a plan without Career Discovery")
             const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
             if (!/app\.use\("\/demo", demoRouter\)/.test(server) || !/app\.use\("\/demoResume", demoResumeRouter\)/.test(server)) problems.push("the demo routes are not mounted")
             const app = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/App.js"), "utf8")
@@ -6118,15 +6121,15 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 32 — DEMO PARITY: the demo marks and times its puzzles with exact copies of the real test's code, and cleans careers with an exact copy of the report's rule",
+        name: "ROUND 33 — DEMO PARITY: the demo reads a SART press on the real scorer's anchors, and cleans careers with an exact copy of the report's rule",
         run: () => {
             const problems = []
             const grab = (source, pattern) => ((source.match(pattern) || [])[0] || "").replace(/\s+/g, " ").trim()
-            const real = fs.readFileSync(path.join(__dirname, "../../Routers/submissionsRouter.js"), "utf8")
-            const marks = fs.readFileSync(path.join(__dirname, "../../demo/reasoningMarks.js"), "utf8")
-            ;[/const REASONING_GRACE_MS = \d+/, /const reasoningTimedOut = [^\n]+/, /const reasoningResponse = \([\s\S]*?\n\}\)/].forEach((pattern) => {
-                const a = grab(real, pattern)
-                if (!a || a !== grab(marks, pattern)) problems.push(`the demo's ${pattern.source.slice(6, 30)} differs from the real test's`)
+            const real = fs.readFileSync(path.join(__dirname, "../../scoring/sartScoring.js"), "utf8")
+            const { SART_ANCHORS } = require("../../demo/demoTaste")
+            Object.entries(SART_ANCHORS).forEach(([key, value]) => {
+                const match = real.match(new RegExp(`${key}:\\s*([0-9.]+)`))
+                if (!match || Number(match[1]) !== value) problems.push(`the demo's ${key} (${value}) differs from the real scorer's (${match && match[1]})`)
             })
             const reports = fs.readFileSync(path.join(__dirname, "../../Routers/reportsRouter.js"), "utf8")
             const strip = fs.readFileSync(path.join(__dirname, "../../demo/strip.js"), "utf8")
@@ -6134,60 +6137,70 @@ const fixtures = [
                 const a = grab(reports, pattern)
                 if (!a || a !== grab(strip, pattern)) problems.push(`the demo's ${pattern.source.slice(6, 24)} differs from the report's`)
             })
+            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Demo/DemoSart.js"), "utf8")
+            const { DEMO_SART_TRIALS, DEMO_SART_NO_GO } = require("../../demo/demoTaste")
+            if (!page.includes(`const DEMO_TRIALS = ${DEMO_SART_TRIALS}`) || !page.includes(`const DEMO_NO_GO = ${DEMO_SART_NO_GO}`)) problems.push("the page and the server disagree on the focus game's length")
+            if (!/from "\.\.\/Assessment\/sartTask"/.test(page) || !/buildTrials\(DEMO_TRIALS, DEMO_NO_GO\)/.test(page) || /PRACTICE/.test(page)) problems.push("the focus game isn't the real task's clock and trial builder, 90 s, no practice")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "ROUND 32 — DEMO REASONING IS THE REAL TEST'S FIRST SIX: the same seed gives the same puzzles, six demo answers put into the real block make the real test serve puzzle 7, and the real scorer scores the sixteen exactly as a native run",
+        name: "ROUND 33 — DEMO PUZZLES: twelve of the demo's own (3 easy · 6 medium · 3 hard), never the real test's; each visitor gets 1 easy, 2 different medium and 1 hard; the page never sees an answer; late or wrong is not right",
         run: () => {
             const problems = []
-            const bank = require("../../assessment/reasoningBank")
-            const { DEMO_REASONING_ITEMS, reasoningResponse } = require("../../demo/reasoningMarks")
-            const score = require("../../scoring/reasoningInHouse")
-            if (DEMO_REASONING_ITEMS !== 6 || DEMO_REASONING_ITEMS >= bank.ITEM_COUNT) problems.push("the demo is not six of the sixteen")
-            const seed = 424242
-            const picks = [0, 1, 2, 0, 1, 3, 0, 2, 1, 0, 3, 2, 1, 0, 2, 1]
-            const run = (from, to) => Array.from({ length: to - from }, (_, offset) => {
-                const item = bank.itemFor(seed, from + offset, "A")
-                return reasoningResponse(item, picks[from + offset] % item.options.length, 20000, false)
-            })
-            const demoBlock = { seed, form: "A", responses: run(0, DEMO_REASONING_ITEMS), pending: null }
-            if (demoBlock.responses.length !== 6) problems.push("the demo block does not hold six answers")
-            // the real /reasoningNext serves index = responses.length
-            if (bank.itemFor(seed, demoBlock.responses.length, "A").id !== "R7") problems.push("the real test would not carry on at puzzle 7")
-            const carried = { ...demoBlock, responses: [...demoBlock.responses, ...run(6, 16)], completedAt: new Date() }
-            const native = { seed, form: "A", responses: run(0, 16), completedAt: new Date() }
-            if (JSON.stringify(score(carried)) !== JSON.stringify(score(native)) || score(carried).score === null) problems.push("a carried run doesn't score like a native one")
-            // and six alone are never scored as the real factor
-            if (score({ ...demoBlock, completedAt: new Date() }).score !== null) problems.push("the real scorer scored six puzzles")
+            const { BANK, pickPuzzles, publicPuzzle, markPuzzle, TIME_LIMIT_S } = require("../../demo/demoPuzzles")
+            const count = (level) => BANK.filter((item) => item.level === level).length
+            if (BANK.length !== 12 || count("easy") !== 3 || count("medium") !== 6 || count("hard") !== 3) problems.push("the bank is not 3 · 6 · 3")
+            if (BANK.some((item) => !Number.isInteger(item.answer) || item.answer < 0 || item.answer >= item.options.length || new Set(item.options).size !== item.options.length)) problems.push("an item's answer or options are malformed")
+            const reasoningBank = require("../../assessment/reasoningBank")
+            const realIds = new Set(Array.from({ length: 16 }, (_, index) => reasoningBank.itemFor(7, index, "A").id))
+            if (BANK.some((item) => realIds.has(item.id) || !/^DP_/.test(item.id))) problems.push("a demo puzzle shares an id with the real test")
+            for (let run = 0; run < 50; run++) {
+                const ids = pickPuzzles()
+                const levels = ids.map((id) => BANK.find((item) => item.id === id).level).join()
+                if (ids.length !== 4 || levels !== "easy,medium,medium,hard" || ids[1] === ids[2]) { problems.push(`a bad deal: ${ids.join()}`); break }
+            }
+            if (BANK.some((item) => "answer" in publicPuzzle(item.id) || publicPuzzle(item.id).timeLimitS !== TIME_LIMIT_S[item.level])) problems.push("the page sees an answer, or the wrong clock")
+            const item = BANK.find((row) => row.level === "medium")
+            if (!markPuzzle(item.id, item.answer, 1000)) problems.push("a right, timely answer isn't right")
+            if (markPuzzle(item.id, (item.answer + 1) % item.options.length, 1000)) problems.push("a wrong answer counts")
+            if (markPuzzle(item.id, item.answer, TIME_LIMIT_S.medium * 1000 + 6000)) problems.push("a late answer counts")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "ROUND 32 — DEMO OPENNESS: eight real IPIP-50 items (the real scorer needs 8 of 10), the same eight on the page and the server, scored by the real scoreProfile",
+        name: "ROUND 33 — DEMO TASTES: one real MI statement per intelligence (the same seven on page and server), 0-10 from A-E; 90 s of SART read for speed and focus, early presses refuse it; nothing raw is kept",
         run: () => {
             const problems = []
-            const scoreProfile = require("../../scoring/scoreProfile")
-            const { OPENNESS_ITEMS } = require("../../demo/runDemo")
-            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Demo/DemoOpenness.js"), "utf8")
-            const pageItems = JSON.parse((page.match(/DEMO_OPENNESS_ITEMS = (\[[^\]]+\])/) || [])[1] || "[]")
-            if (pageItems.join() !== OPENNESS_ITEMS.join() || OPENNESS_ITEMS.length !== 8) problems.push("the page and the server ask different statements")
-            const answers = Object.fromEntries(OPENNESS_ITEMS.map((id) => [id, "D"]))
-            const scored = scoreProfile({ ipip50: { answers } })
-            if (typeof scored.raw_scores.openness !== "number") problems.push("eight answers give no openness score")
-            const five = Object.fromEntries(OPENNESS_ITEMS.slice(0, 5).map((id) => [id, "D"]))
-            if (scoreProfile({ ipip50: { answers: five } }).raw_scores.openness !== null) problems.push("the 8-of-10 rule changed — re-check the demo's eight")
+            const { MI_DEMO_ITEMS, miTaste, sartTaste, MEASURED_PCT } = require("../../demo/demoTaste")
+            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Demo/DemoMi.js"), "utf8")
+            const pageIds = JSON.parse((page.match(/DEMO_MI_ITEMS = (\[[^\]]+\])/) || [])[1] || "[]")
+            const ids = Object.values(MI_DEMO_ITEMS)
+            if (pageIds.join() !== ids.join() || ids.length !== 7) problems.push("the page and the server ask different statements")
+            const items = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Assessment/moduleItems.js"), "utf8")
+            if (ids.some((id) => !items.includes(`id: "${id}"`))) problems.push("a demo statement isn't a real MI item")
+            const low = miTaste(Object.fromEntries(ids.map((id) => [id, "A"])))
+            const high = miTaste(Object.fromEntries(ids.map((id) => [id, "E"])))
+            if (Object.values(low).some((value) => value !== 0) || Object.values(high).some((value) => value !== 10)) problems.push("A-E don't map to 0-10")
+            const steady = [...Array.from({ length: 69 }, () => ({ isGo: true, correct: true, rt: 300 })), ...Array.from({ length: 9 }, () => ({ isGo: false, correct: true, rt: null }))]
+            const read = sartTaste(steady)
+            if (read.meanMs !== 300 || read.speed !== 7.3 || read.focus !== 10 || read.pressesOnThree !== 0 || read.threes !== 9) problems.push(`a steady, careful run reads wrong: ${JSON.stringify(read)}`)
+            const early = sartTaste([...Array.from({ length: 69 }, (_, index) => ({ isGo: true, correct: true, rt: index % 3 === 0 ? 90 : 300 })), ...steady.slice(69)])
+            if (!early.tooEarly || early.speed !== null) problems.push("a run full of presses before the digit still gives a speed")
+            if (Object.keys(MEASURED_PCT).length !== 10 || Object.values(MEASURED_PCT).some((pct) => pct <= 0 || pct >= 50)) problems.push("the measured shares are not ten honest partials")
+            const model = fs.readFileSync(path.join(__dirname, "../../model/demoSessionsModel.js"), "utf8")
+            if (/openness:|reasoning:\s*\{|sartRaw|rows:/.test(model)) problems.push("the session keeps raw answers or SART rows")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "ROUND 32 — DEMO RESULT: the real engines with fewer inputs — interests lead, at most two careers, the visitor's own words, no match_confidence, no going-abroad parts, and identity-free signals",
+        name: "ROUND 33 — DEMO RESULT: the real engines with fewer inputs — interests lead, at most two careers, the visitor's own words and stage, no match_confidence, no going-abroad parts; all 31 factors listed, ten partly measured, the rest at 0%; identity-free signals",
         run: async () => {
             const problems = []
-            const { runDemo, demoInterest } = require("../../demo/runDemo")
+            const { runDemo, demoInterest, stageUser } = require("../../demo/runDemo")
             const { loadData } = require("../../demo/loadData")
             const data = loadData()
             const session = {
@@ -6196,8 +6209,8 @@ const fixtures = [
                     aspiration: { text: "space lawyer", professionId: null },
                     stuck: [{ text: "Drawing comics", reasons: ["effortlessEngagement"], why: "I lose track of time" }],
                 },
-                openness: { IPIP_O1: "D", IPIP_O2: "B", IPIP_O3: "E", IPIP_O4: "B", IPIP_O5: "D", IPIP_O6: "B", IPIP_O9: "D", IPIP_O10: "E" },
-                reasoning: { responses: [true, true, false, true, false, true].map((correct) => ({ correct })) },
+                tastes: { mi: { spatial_intelligence: 7.5, verbal_intelligence: 5, logical_intelligence: 5, musical_intelligence: 2.5, bodily_intelligence: 5, naturalistic_intelligence: 2.5, existential_intelligence: 7.5 }, reasoning: 7.5, reasoningRight: 3, speed: 6, focus: 8, sart: { meanMs: 340, pressesOnThree: 1, threes: 9 } },
+                stage: { journey: "early_professional", years: 3 },
             }
             const resolver = {
                 resolveActivities: async (rows) => rows.map((row) => ({ ...row, candidateProfessionIds: row.key === "drawing comics" ? ["des-illustrator", "des-graphic-designer", "des-animator-vfx"] : row.key === "building websites" ? ["swc-software-developer"] : [] })),
@@ -6208,13 +6221,18 @@ const fixtures = [
             const first = out.careers[0]
             if (!first || !first.words || first.words.said !== "Drawing comics" || first.words.why !== "I lose track of time") problems.push("the career doesn't carry the visitor's own words")
             if (Object.values(out.details).some((detail) => !detail || detail.abroad !== null || detail.goingAbroad !== null)) problems.push("a detail carries going-abroad parts (their waitlist needs an account)")
-            if (out.reasoningRight !== 4 || !["High", "Medium", "Low"].includes(out.opennessLevel)) problems.push("the two factors aren't words and a count")
+            const all = out.factors.flatMap((group) => group.factors)
+            const measured = all.filter((factor) => factor.measuredPct > 0)
+            if (all.length !== 31 || measured.length !== 10) problems.push(`expected 31 factors with 10 measured, got ${all.length} / ${measured.length}`)
+            if (measured.some((factor) => !["High", "Medium", "Low"].includes(factor.level)) || all.filter((factor) => factor.measuredPct === 0).some((factor) => factor.level !== null)) problems.push("a factor shows a number or a level it wasn't measured for")
+            if (JSON.stringify(out.factors).match(/"(value|score|raw)":/)) problems.push("a raw score left the server")
+            if (out.you.stage !== "early_professional" || out.you.experienceYears !== 3 || stageUser(session.stage).journeyDetail.experienceYears !== 3) problems.push("where they are now doesn't reach matching and the card")
             if (out.signals.some((row) => Object.keys(row).some((key) => !["text", "kind", "matched", "nearestCareerIds"].includes(key)))) problems.push("a signal carries more than the words")
             const aspiration = out.signals.find((row) => row.kind === "aspiration")
             if (!aspiration || aspiration.matched !== false) problems.push("an unmatched profession isn't kept for the scout")
             // interests lead: nothing pointed to → nothing ranked
             const none = await runDemo({ session: { ...session, interests: { draws: [{ text: "stuff", when: "present" }], stuck: [] } }, resolver: { resolveActivities: async () => [] }, data })
-            if (none.careers.length !== 0) problems.push("a career reached the demo on the two factors alone")
+            if (none.careers.length !== 0) problems.push("a career reached the demo on the tastes alone")
             const interest = demoInterest(session.interests)
             if (interest.currentInterests.longTermPursuits.join() !== "Drawing comics" || interest.highSchool.effortlessEngagement.join() !== "Drawing comics") problems.push("what stuck and why don't reach the lists and reasons")
             const scout = fs.readFileSync(path.join(__dirname, "../../housekeeping/careerScout.js"), "utf8")
@@ -6224,7 +6242,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 32 — DEMO RESUME: answers (never scores) fill only what is empty — the form's own shape, Openness's eight items, reasoning only from the email's first demo and only into an untouched test",
+        name: "ROUND 33 — DEMO RESUME: only the story is carried (into the counselling form, Career Discovery plans only, only when empty); the demo's two careers go onto the account for any paid plan, once; nothing the tasks measured",
         run: () => {
             const problems = []
             const { interestFrom, planFor } = require("../../Routers/demoResumeRouter")
@@ -6237,30 +6255,78 @@ const fixtures = [
             if (interest.college.curiosityDriven.join() !== "Drawing comics" || interest.college.additionalInterests[0].activity !== "Football") problems.push("the things don't land in the life stage")
             if (interest.currentInterests.persistentInterests.some((row) => row.confidence !== "" || row.activity !== row.activity.toLowerCase())) problems.push("persistent interests are not pre-ticked without a confidence")
             if (interest.aspirationalProfessions[0].professionId !== "eng-architect") problems.push("the named profession is lost")
-            const session = (reasoning, openness = { IPIP_O1: "D" }) => ({ interests, openness, reasoning, createdAt: new Date() })
-            const user = { progress: { interestForm: "not_started" } }
-            const first = session({ seed: 1, responses: [{}, {}, {}, {}, {}, {}] })
-            const later = session({ seed: 2, responses: [{}, {}, {}, {}, {}, {}] })
-            let plan = planFor(user, null, [first, later])
-            if (!plan.interestEmpty || !plan.opennessEmpty || !plan.reasoningEmpty || plan.first !== first || plan.latest !== later) problems.push("an empty account isn't offered everything, reasoning from the first demo")
-            plan = planFor(user, { psychometric: { reasoning: { seed: 9 } } }, [first])
-            if (plan.reasoningEmpty) problems.push("reasoning would overwrite a started test")
-            plan = planFor(user, { psychometric: { history: { reasoning: [{}] } } }, [first])
-            if (plan.reasoningEmpty) problems.push("reasoning would be carried into a retake")
-            plan = planFor({ progress: { interestForm: "done" } }, { interest: { highSchool: {} }, psychometric: { ipip50: { answers: {} } } }, [first])
-            if (plan.interestEmpty || plan.opennessEmpty) problems.push("a filled form or assessment would be overwritten")
+            const result = { careers: [{ entry: { professionId: "des-illustrator", profession: "Illustrator" } }, { entry: { professionId: "eng-architect", profession: "Architect" } }] }
+            const older = { interests, result: { careers: [] }, createdAt: new Date(0) }
+            const latest = { interests, result, createdAt: new Date() }
+            let plan = planFor({ currentTier: 1, progress: { interestForm: "not_started" } }, null, [older, latest])
+            if (!plan.interestEmpty || plan.careers.map((career) => career.professionId).join() !== "des-illustrator,eng-architect" || plan.latest !== latest) problems.push("an empty Discovery account isn't offered the story and the latest demo's careers")
+            plan = planFor({ currentTier: 3, progress: {} }, null, [latest])
+            if (plan.interestEmpty || plan.careers.length !== 2) problems.push("Mentor Only should get the careers, not the counselling form")
+            plan = planFor({ currentTier: 2, demoCareers: [{ professionId: "x" }], progress: { interestForm: "done" } }, { interest: { highSchool: {} } }, [latest])
+            if (plan.interestEmpty || plan.careers.length !== 0) problems.push("a filled form or saved careers would be overwritten")
+            const user = fs.readFileSync(path.join(__dirname, "../../model/userModel.js"), "utf8")
+            if (!/demoCareers: \{/.test(user)) problems.push("the account has no place for the demo's careers")
+            const choose = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/MentorshipChoose.js"), "utf8")
+            if (!/user\.demoCareers/.test(choose) || !/From your demo/.test(choose)) problems.push("choosing a mentor doesn't offer the demo's careers first")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
     },
     {
-        name: "ROUND 32 — the landing page answers \"You need a system\" with the jobs students hire us for, promising nothing that isn't built; and a Try the demo button",
+        name: "ROUND 33 — THE DEMO'S SHAPE: three stages (counselling › assessments › report), the taste banner only during the assessments, one common story question over three timelines with the reference list on top, 'about 30 seconds', where they are now asked at the start",
         run: () => {
-            const landing = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Landing.js"), "utf8")
             const problems = []
-            if (!/What a system does for you/.test(landing) || !/title: "Save time"/.test(landing) || !/title: "Feel good about it"/.test(landing) || !/title: "Make money"/.test(landing)) problems.push("the three jobs are not on the landing page")
-            if (/resume/i.test((landing.match(/const JOBS = \[[\s\S]*?\n\]/) || [""])[0])) problems.push("the jobs promise a resume service, which doesn't exist")
-            if (!/to="\/try-demo"/.test(landing)) problems.push("no Try the demo button")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Demo", file), "utf8")
+            const page = read("DemoPage.js")
+            if (!/label: "Virtual career counselling"/.test(page) || !/label: "Assessments"/.test(page) || !/label: "Report"/.test(page)) problems.push("the three stages aren't shown")
+            if (!/ASSESSMENT_STEPS\.includes\(step\) && <p className="demo-banner">/.test(page)) problems.push("the taste banner shows outside the assessments")
+            if (!/about 30 seconds/.test(page)) problems.push("the wait isn't said")
+            if (!/Where are you now\?/.test(page) || !/STAGE_OPTIONS/.test(page)) problems.push("where they are now isn't asked")
+            const pulls = read("DemoPulls.js")
+            if (/Up to \{?MAX_THINGS|up to 8/i.test(pulls)) problems.push("the story question still names a limit")
+            if (pulls.indexOf("<ActivityReferenceList") < 0 || pulls.indexOf("<ActivityReferenceList") > pulls.indexOf("BOXES.map")) problems.push("the reference list isn't on top")
+            if (!/when: "past"[^\n]*school or college/.test(pulls) || !/when: "future"[^\n]*aspire/.test(pulls)) problems.push("the three timelines aren't school/college, now and aspire")
+            ;["DemoOpenness.js", "DemoReasoning.js"].forEach((file) => {
+                if (fs.existsSync(path.join(__dirname, "../../../Frontend/src/pages/Demo", file))) problems.push(`${file} is still there`)
+            })
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 33 — THE FRONT DOOR AND A LIGHTER LANDING: visitors first see the demo invitation (once per visit, never when logged in, ✕ to close); the landing goes straight to the owner's ten questions, no 'career gyaan' heading or job groups; two hero buttons; nothing promised that isn't built",
+        run: () => {
+            const problems = []
+            // the code only — comments may say what was removed
+            const landing = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Landing.js"), "utf8").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+            const splash = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/DemoSplash.js"), "utf8")
+            const ten = ["Will AI take my job?", "Why do I only know a handful of careers?", "I don't know what I'm interested in — where do I start?", "Will my degree make me job-ready?", "How do I explore without wasting years on a degree or random online courses?", "Is that master's or expensive course worth it?", "How do I get job- or internship-ready fast?", "Can I talk to someone who's done it?", "I've found something new I love — how do I make it real?", "My past choices feel wrong — is it too late?"]
+            const missing = ten.filter((q) => !landing.includes(`q: "${q}"`))
+            if (missing.length) problems.push(`missing: ${missing.join(" | ")}`)
+            if (/career gyaan|You need a|What a system does for you|const JOBS|Save time/.test(landing)) problems.push("the old heading or job groups are still there")
+            if (/resume|AI-proof/i.test((landing.match(/export const QUESTIONS = \[[\s\S]*?\n\]/) || [""])[0])) problems.push("an answer promises something that isn't built")
+            if (/See how it works/.test(landing) || !/to="\/try-demo"[^>]*>Try a Free Demo</.test(landing)) problems.push("the hero buttons aren't 'Let's figure out your career' and 'Try a Free Demo'")
+            if (/<em>you<\/em>/.test(landing)) problems.push("the closing line is still in italics")
+            if (!/!localStorage\.getItem\("token"\) && !splashSeen\(\)/.test(landing) || !/sessionStorage/.test(splash)) problems.push("the invitation isn't once per visit for visitors only")
+            if (!/className="splash-close"/.test(splash) || !/to="\/try-demo"/.test(splash) || !/Freshmxn's Lab/.test(splash)) problems.push("the invitation is missing its ✕, its title or its demo button")
+            const pricing = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/PricingCards.js"), "utf8")
+            if (/\{names\[plan\.tier\]\}\*|\*\{HELP_NOTE\}/.test(pricing)) problems.push("the plan names still carry an asterisk")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 33 — COUPONS FOR ONE PLAN: a coupon may name the plans it works on (none = all); another plan is refused, and an upgrade counts as the plan it ends on",
+        run: () => {
+            const problems = []
+            const model = fs.readFileSync(path.join(__dirname, "../../model/couponsModel.js"), "utf8")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/couponsRouter.js"), "utf8")
+            const payments = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            const form = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/CouponsForm.js"), "utf8")
+            if (!/plans: \{\s*type: \[Number\]/.test(model)) problems.push("coupons have no plans")
+            if ((router.match(/cleanPlans\(/g) || []).length < 2) problems.push("add and update don't clean the plans")
+            if (!/plans\.length > 0 && !plans\.includes\(requestedTier\)/.test(payments) || !/This coupon isn't for this plan/.test(payments)) problems.push("the quote doesn't check the plan")
+            if (!/value: 1/.test(form) || !/value: 2/.test(form) || !/value: 3/.test(form)) problems.push("the admin can't choose the plans")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

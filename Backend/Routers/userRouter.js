@@ -22,7 +22,7 @@ const PROFESSION_IDS = new Set(require("../data/ALL-professions.json").professio
 const { sendParentCode } = require("../utils/parentConsent")
 
 const JOURNEYS = ["class9_10", "class11_12", "college", "early_professional"]
-const POLICY_VERSION = "v1.6"   // 14 October 2026: the "Try the demo" taste before sign-up — what it keeps, for how long, and carrying it forward (v1.5, 12 October: the contact shared with a mentor on consent, session reviews and reports (v1.4, 11 October: "how else can we help" waitlist, the spam check; v1.3, 4 October: plans to go abroad, and voice typing; v1.2, 3 October: the study-abroad partner on opt-in; v1.1, 1 October: sensitive answers; email-verified parental consent))
+const POLICY_VERSION = "v1.7"   // 15 October 2026: the reworked demo — a small result instead of answers, where you are now, the two careers kept for a mentor (v1.6, 14 October: the "Try the demo" taste before sign-up; v1.5, 12 October: the contact shared with a mentor on consent, session reviews and reports (v1.4, 11 October: "how else can we help" waitlist, the spam check; v1.3, 4 October: plans to go abroad, and voice typing; v1.2, 3 October: the study-abroad partner on opt-in; v1.1, 1 October: sensitive answers; email-verified parental consent))
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phoneRegex = /^[0-9]{10}$/
 

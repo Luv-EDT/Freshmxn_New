@@ -19,9 +19,9 @@ function PublicNav() {
             <nav className="nav-row">
                 <Link to="/"><img src={logo} alt="Freshmxn" height="34" className="brand-logo" /></Link>
                 <div className="nav-links">
+                    <Link to="/about" className="nav-link">About us</Link>
                     <Link to="/how-it-works" className="nav-link">How it works</Link>
                     {/* success stories live inside About us since Round 26 (owner) */}
-                    <Link to="/about" className="nav-link">About us</Link>
                     <Link to="/mentor-waitlist" className="nav-link">Mentorship program</Link>
                     {/* for working professionals (owner, Rounds 12, 25, 26) — only to visitors, each in its own colour; short wording so the nav fits one row (Round 27) */}
                     {!isLoggedIn && <Link to="/mentor/register" className="nav-mentor" title="Are you a professional? Mentor with us" aria-label="Are you a professional? Mentor with us">Mentor with us</Link>}

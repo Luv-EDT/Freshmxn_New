@@ -22,6 +22,12 @@ const couponSchema = new mongoose.Schema(
             type: Number,
             default: 0, // 0 = unlimited
         },
+        // WHICH PLANS IT WORKS ON (owner, Round 33): empty = every plan; otherwise any of 1 (Career
+        // Discovery), 2 (Discovery + Mentor), 3 (Mentor Only). An upgrade counts as the plan it ends on.
+        plans: {
+            type: [Number],
+            default: [],
+        },
         timesUsed: {
             type: Number,
             default: 0, // counted when access is granted, not when a quote is shown
