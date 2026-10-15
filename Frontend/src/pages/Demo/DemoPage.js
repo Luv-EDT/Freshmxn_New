@@ -46,6 +46,18 @@ const readStage = () => {
     try { return JSON.parse(read(STAGE_KEY)) || { journey: "", years: "" } } catch (error) { return { journey: "", years: "" } }
 }
 
+// the email, checked as they type (owner, Round 33): a proper address, and a nudge on the common typos
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i
+const DOMAIN_FIXES = { "gmail.con": "gmail.com", "gmail.co": "gmail.com", "gmial.com": "gmail.com", "gmal.com": "gmail.com", "gamil.com": "gmail.com", "yahoo.con": "yahoo.com", "yaho.com": "yahoo.com", "hotmail.con": "hotmail.com", "outlook.con": "outlook.com", "rediffmail.con": "rediffmail.com" }
+const emailCheck = (value) => {
+    const email = String(value || "").trim().toLowerCase()
+    if (!email) return { ok: false, message: "" }
+    const domain = email.split("@")[1] || ""
+    if (DOMAIN_FIXES[domain]) return { ok: false, message: `Did you mean ${email.split("@")[0]}@${DOMAIN_FIXES[domain]}?`, fix: `${email.split("@")[0]}@${DOMAIN_FIXES[domain]}` }
+    if (!EMAIL_SHAPE.test(email)) return { ok: false, message: "That doesn't look like a full email yet — e.g. you@gmail.com" }
+    return { ok: true, message: "" }
+}
+
 function DemoPage() {
     const [step, setStep] = useState("loading")
     const [token, setToken] = useState(read(TOKEN_KEY))
@@ -213,7 +225,13 @@ function DemoPage() {
                         <h2>Your result is ready, {name}</h2>
                         <p className="demo-lead">Where should we keep it? If you sign up later with this email, your story carries over.</p>
                         <label className="demo-label" htmlFor="demo-email">Your email</label>
-                        <input id="demo-email" type="email" className="demo-input" value={gate.email} onChange={(event) => setGate({ ...gate, email: event.target.value })} placeholder="you@example.com" />
+                        <input id="demo-email" type="email" className={`demo-input${gate.email && !emailCheck(gate.email).ok ? " is-invalid" : ""}`} value={gate.email} onChange={(event) => setGate({ ...gate, email: event.target.value })} placeholder="you@example.com" aria-describedby="demo-email-check" />
+                        {gate.email && !emailCheck(gate.email).ok && emailCheck(gate.email).message && (
+                            <p id="demo-email-check" className="demo-email-check" role="alert">
+                                {emailCheck(gate.email).message}
+                                {emailCheck(gate.email).fix && <button type="button" className="demo-email-fix" onClick={() => setGate({ ...gate, email: emailCheck(gate.email).fix })}>Use it</button>}
+                            </p>
+                        )}
                         <p className="demo-label">Are you 18 or older?</p>
                         <div className="demo-chips" role="radiogroup" aria-label="Are you 18 or older?">
                             <button type="button" role="radio" aria-checked={gate.adult === true} className={`demo-chip${gate.adult === true ? " is-on" : ""}`} onClick={() => setGate({ ...gate, adult: true, parent: false })}>Yes</button>
@@ -235,7 +253,7 @@ function DemoPage() {
                             <button
                                 type="button"
                                 className="btn btn-primary tap"
-                                disabled={!gate.email.includes("@") || gate.adult === null || (gate.adult === false && !gate.parent)}
+                                disabled={!emailCheck(gate.email).ok || gate.adult === null || (gate.adult === false && !gate.parent)}
                                 onClick={seeResult}
                             >
                                 See my two careers
