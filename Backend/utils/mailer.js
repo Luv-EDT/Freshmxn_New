@@ -28,6 +28,23 @@ const escapeHtml = (text) => String(text === undefined || text === null ? "" : t
 // "Freshmxn <address>". An EMAIL_FROM that already carries a name is used as it is.
 const senderOf = (from) => (String(from || "").includes("<") ? from : `Freshmxn <${String(from || "").trim()}>`)
 
+// A PLAIN-TEXT TWIN OF EVERY EMAIL (Round 33c). Mail with only an HTML part is a common spam signal;
+// the text part is the same words with the tags taken out and each link written after its words.
+const textOf = (html) => String(html || "")
+    .replace(/<a [^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, "$2 ($1)")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, "\"")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+
 const sendEmail = async ({ to, subject, html }) => {
     const resend = resendClient()
 
@@ -37,7 +54,7 @@ const sendEmail = async ({ to, subject, html }) => {
     }
 
     try {
-        const { error } = await resend.emails.send({ from: senderOf(process.env.EMAIL_FROM), to, subject, html })
+        const { error } = await resend.emails.send({ from: senderOf(process.env.EMAIL_FROM), to, subject, html, text: textOf(html) })
         if (error) {
             console.log(`Email "${subject}" failed:`, error)
             return { sent: false, error: error.message || String(error) }
@@ -56,4 +73,4 @@ const notifyAdmin = async (subject, html) => {
     return sendEmail({ to: process.env.ADMIN_EMAIL, subject: `[Freshmxn] ${subject}`, html })
 }
 
-module.exports = { sendEmail, notifyAdmin, escapeHtml, senderOf }
+module.exports = { sendEmail, notifyAdmin, escapeHtml, senderOf, textOf }

@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, Link, Navigate } from "react-router-dom"
 import { useSelector } from "react-redux"
 import { Modal, message } from "antd"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
 import { chooseProfession } from "../../apiCall/mentorWaitlistApi"
+import { getMyDemo } from "../../apiCall/demoApi"
 import CareerRolePicker, { pickerComplete, pickerSummary } from "../CareerRolePicker"
 import { hasMentor } from "../plans"
 import { formatDate, useMentorWaitlist, HelpLine, HelpWanted } from "./mentorshipParts"
@@ -23,6 +24,13 @@ function MentorshipChoose() {
     const [selected, setSelected] = useState(null)   // { professionId, profession, jobRole }
     const [ownChoice, setOwnChoice] = useState({})   // Mentor Only: the picker's value
     const [contact, setContact] = useState({ contactVia: null, consent: false })   // Round 28: how the mentor reaches you
+    const [linkedDemoCareers, setLinkedDemoCareers] = useState([])
+
+    // a demo done with this (verified) email: its two careers are offered even before carrying it forward
+    useEffect(() => {
+        if (!user || (user.demoCareers || []).length) return
+        getMyDemo().then((response) => setLinkedDemoCareers(((response.data.data || {}).careers) || [])).catch(() => setLinkedDemoCareers([]))
+    }, [user])
 
     const sendChoice = async () => {
         const payload = waitlist && waitlist.mentorOnly
@@ -61,7 +69,8 @@ function MentorshipChoose() {
 
     // the demo's two careers (Round 33): quick picks for Mentor Only; on Discovery + Mentor, lifted to the top
     // of their matches when they are among them
-    const demoCareers = user.demoCareers || []
+    // also when they haven't pressed "Carry them forward" yet: the linked demo's careers, read-only
+    const demoCareers = (user.demoCareers || []).length ? user.demoCareers : linkedDemoCareers
     const demoIds = demoCareers.map((career) => career.professionId)
     const orderedOptions = [...options.filter((option) => demoIds.includes(option.professionId)), ...options.filter((option) => !demoIds.includes(option.professionId))]
 
