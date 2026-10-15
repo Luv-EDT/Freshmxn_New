@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom"
 import usePricing, { formatInr } from "../Public/usePricing"
 
-// THE THREE REAL PLANS, prices live from the server (owner, Round 32: never written in the copy) — in
-// the owner's order for the demo: Mentor Only, Career Discovery, Discovery + Mentor. The main button is
-// Career Discovery; Register remembers the plan through to the paywall (?plan=, Round 25).
+// WHAT NEXT — THE THREE REAL PLANS, prices live from the server (never written in the copy), framed from the
+// demo (owner, Round 33): go straight to a mentor in one of these two careers; or take the whole process;
+// or both. Register remembers the plan through to the paywall (?plan=, Round 25), and after paying their
+// demo careers are offered first when they choose a mentor (Routers/demoResumeRouter.js).
 const PLANS = [
-    { tier: 3, line: "Skip the assessment — a mentor in any career and job role you choose." },
-    { tier: 1, line: "The full picture: your whole story, all 31 factors, and every career it points to — ranked, with the road to each.", main: true },
-    { tier: 2, line: "Everything in Career Discovery, plus a mentor in a job role from your matches." },
+    { tier: 3, title: "Talk to a mentor in one of these two careers", line: "Skip the full process for now — a professional in the career and job role you choose, one-hour session plus a follow-up. Your two demo careers are waiting when you choose." },
+    { tier: 1, title: "Take the whole journey", line: "The full Virtual Career Counselling, all 31 factors, and every career your story points to — ranked, with the road from where you stand to each.", main: true },
+    { tier: 2, title: "Both", line: "The whole journey, plus a mentor in a job role from your matches." },
 ]
 
 function DemoPlans() {
@@ -16,11 +17,12 @@ function DemoPlans() {
 
     return (
         <section className="demo-plans">
-            <h2>This was a glimpse. The program is the depth.</h2>
-            <p className="demo-lead">Your demo answers carry over — sign up with the same email and you won't repeat them.</p>
+            <h2>Where to go from here</h2>
+            <p className="demo-lead">Sign up with the same email and your story carries over — you won't repeat it.</p>
             <div className="demo-plan-list">
                 {PLANS.map((plan) => (
                     <div key={plan.tier} className={`demo-plan${plan.main ? " is-main" : ""}`}>
+                        <p className="demo-plan-kicker">{plan.title}</p>
                         <h3>{pricing.names[plan.tier]}</h3>
                         <p className="demo-plan-price">{formatInr(priceOf[plan.tier])}</p>
                         <p>{plan.line}</p>
@@ -30,7 +32,17 @@ function DemoPlans() {
                     </div>
                 ))}
             </div>
-            <p className="demo-hint"><Link to="/programs">Compare the plans in full →</Link></p>
+            <div className="demo-money-note">
+                <p>
+                    <strong>Price a stretch for your family?</strong> After signing up you can ask for financial aid —
+                    we look at every request.
+                </p>
+                <p>
+                    <strong>Refunds:</strong> if we can't match you with a mentor within 20 business days, Mentor Only is
+                    refunded in full, and Discovery + Mentor moves back to Career Discovery with the difference refunded.
+                </p>
+                <p><Link to="/programs">See the plans and the refund rules in full →</Link></p>
+            </div>
         </section>
     )
 }

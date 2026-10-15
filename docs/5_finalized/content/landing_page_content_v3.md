@@ -17,69 +17,37 @@ highlight only.** All statistics verified to a citable source — cite inline on
 
 ## 1. HERO
 
-**Eyebrow:** FRESHMXN'S LAB
+**Brand line (a real title since Round 33):** Freshmxn's Lab
+**Before the page (Round 33):** a visitor's first view is an invitation over the blurred page — logo, "Freshmxn's Lab", the body line below, **Try a Free Demo**, ✕ to close. Once per visit; never when logged in.
 **Headline (Orelega One):** Explore. Get clarity. Take action.  *(the company tagline — owner, 2026-09-24)*
-**Closing statement (end of the page, before About):** Careers that fit *you*. And the future.
+**Closing statement (end of the page, before About):** Careers that fit you. And the future. (no italics, Round 33)
 **Body (as on the site, owner Round 10):** We match your story and strengths to careers that are
 **in demand and AI-resilient**, then help you get there with mentors who've done it.
 **Hero picture:** an illustration of a happy student (inline SVG, brand colours) — it replaced the
 "Your ranked matches" preview card, which the owner found text-heavy.
 **Primary CTA (teal):** Let's figure out your career →
-**Secondary CTA (ghost):** See how it works
-**Third button (ghost):** Try the demo → `/try-demo` (owner, Round 32 — a 7-minute, no-login taste; see HOW_FRESHMXN_WORKS "The demo")
+**Secondary CTA (ghost):** Try a Free Demo → `/try-demo` (Round 33: "See how it works" removed — it is in the nav)
 
 *(Kira move: consider a highlighter-pink swipe under "in demand and AI-resilient" — the one place
 pink earns its keep.)*
 
 ---
 
-## 2. THE PROBLEM  *(the Kira strikethrough section — your strongest rhetorical beat)*
+## 2. WHAT STUDENTS ASK US  *(Round 33: replaces "You don't need more career gyaan" and "What a system does for you")*
 
-**Heading (with strikethrough):** You don't need more ~~career gyaan~~. You need a **system**.
+Ten folded questions, the ones that hook school and college students first on top; each answer is a hidden fact
+(source kept) and what Freshmxn does about it. The live wording is `QUESTIONS` in `Frontend/src/pages/Public/Landing.js`.
 
-Most students don't choose a career — they inherit one. Picked from the handful they've heard of.
-Nudged by which subjects they scored well in. Pushed by what worked for someone else. And the world
-is changing faster than that advice can keep up.
-
-- **The list is too short.** 93% of Indian students are aware of only seven career options (India
-  Today survey) — out of hundreds that exist and pay well. You can't choose what you've never heard of.
-- **Marks aren't the whole story.** India's own skills data shows why so many graduates struggle: the
-  gap is between what colleges teach and what work actually demands — problem-solving, communication,
-  digital skills — not raw marks (Mercer-Mettl Graduate Skill Index).
-- **About 44% of Indian graduates still aren't considered job-ready** (India Skills Report 2026,
-  employability 56.3%). The problem usually isn't ability — it's a direction that never fit.
-- **AI is redrawing the map.** AI, data, cloud and cybersecurity are now the most in-demand skills in
-  India, with new fields appearing fast while routine roles shrink (India Skills Report 2026).
-
-**Second block under the four questions (owner, Round 32): "What a system does for you".** Three
-columns (stacked on a phone), each a set of folded questions a student would ask, answered only with
-what the product really does:
-
-*Save time*
-- *How do I explore without wasting a year on random courses?* — **Structured exploration.** Your
-  matches are ranked from your own story, each with its road and first steps for where you are — and a
-  mentor who has done the job. Try with focus, then pivot with purpose.
-
-*Feel good about it*
-- *I don't know what I'm interested in — where do I start?* — **Clarity when nothing clicks yet.**
-  Virtual Career Counselling walks through four stages of your life — small things count. We find the thread.
-- *I've found something new I love — how do I make it real?* — **From spark to action.** Every career
-  shows the path and your next 12 months, and your mentor can help you carry a passion forward, not just find a job.
-- *Will this make me better, not just busier?* — **Growth that's real.** We measure 31 factors —
-  including the four core fundamentals every career needs — and show what to work on for each career.
-- *Can I talk to someone who's done it?* — **A mentor who's been where you are**, in the job role you
-  choose — real experience, not generic advice.
-- *My past choices feel wrong — is it too late?* — **Your past doesn't define you.** Every career is
-  counted from where you stand today: what carries over, and how long from now.
-
-*Make money*
-- *Is that master's or expensive course worth it?* — **The real return.** Each career shows the cost to
-  qualify, starting and mid-career pay ranges, and whether a master's is needed, helps, or isn't worth it.
-- *What good careers am I missing?* — **Beyond the obvious.** 1,000+ careers and job roles, careers
-  that combine two fields, and how in demand and AI-resilient each one is.
-- *How do I get job- or internship-ready fast?* — **Ready sooner.** Your first steps for each career are
-  right on its card — and help with internships, jobs and a starter skill kit is on our waitlist.
-  *(No resume service is promised — none exists yet.)*
+1. Will AI take my job? — India Skills Report 2026; every career shows how exposed it is to AI and how much India needs it.
+2. Why do I only know a handful of careers? — 93% know only seven options (India Today survey); 1,000+ careers and job roles.
+3. I don't know what I'm interested in — where do I start? — Virtual Career Counselling; the free 6-minute demo.
+4. Will my degree make me job-ready? — about 44% not job-ready (India Skills Report 2026); counted from where you stand.
+5. How do I explore without wasting years on a degree or random online courses? — matches from your story, the road, your next 12 months, a mentor.
+6. Is that master's or expensive course worth it? — cost to qualify, pay ranges, whether a master's is needed.
+7. How do I get job- or internship-ready fast? — first steps on each card; internships/jobs/starter kit on the waitlist (no resume service).
+8. Can I talk to someone who's done it? — a mentor in the job role you choose, 1 hour + 20-minute follow-up, matched within 20 business days.
+9. I've found something new I love — how do I make it real? — the path and next 12 months; a mentor for work or passion.
+10. My past choices feel wrong — is it too late? — what carries over, years left behind, how long from now.
 
 ---
 

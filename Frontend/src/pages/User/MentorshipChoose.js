@@ -59,6 +59,12 @@ function MentorshipChoose() {
     if (!user) return null
     if (!isTier2) return <Navigate to="/mentorship" replace />
 
+    // the demo's two careers (Round 33): quick picks for Mentor Only; on Discovery + Mentor, lifted to the top
+    // of their matches when they are among them
+    const demoCareers = user.demoCareers || []
+    const demoIds = demoCareers.map((career) => career.professionId)
+    const orderedOptions = [...options.filter((option) => demoIds.includes(option.professionId)), ...options.filter((option) => !demoIds.includes(option.professionId))]
+
     const chosenText = waitlist && (waitlist.otherRequest
         ? waitlist.otherRequest
         : waitlist.chosenJobRole ? `${waitlist.chosenJobRole} (${waitlist.chosenProfessionName})` : waitlist.chosenProfessionName)
@@ -81,6 +87,19 @@ function MentorshipChoose() {
                             move toward. If it isn't in our list, tell us in your own words. We'll confirm your mentor and
                             schedule your two sessions within <strong>20 business days</strong> of your choice.
                         </p>
+                        {/* the two careers from their demo, offered first (owner, Round 33) */}
+                        {demoCareers.length > 0 && !ownChoice.professionId && typeof ownChoice.other !== "string" && (
+                            <div className="demo-career-picks">
+                                <p className="next-card-label">From your demo</p>
+                                <div className="btn-row">
+                                    {demoCareers.map((career) => (
+                                        <button type="button" key={career.professionId} className="btn btn-ghost" onClick={() => setOwnChoice({ professionId: career.professionId, profession: career.profession })}>
+                                            {career.profession}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <CareerRolePicker value={ownChoice} onChange={setOwnChoice} allowAnyCareer />
                         <ContactChoice value={contact} onChange={setContact} />
                         <p>
@@ -114,10 +133,11 @@ function MentorshipChoose() {
                                     without distinct role types list their roles as one group.
                                 </p>
                                 <div className="role-picker">
-                                    {options.map((option) => (
+                                    {orderedOptions.map((option) => (
                                         <details key={option.professionId} className="role-picker-career">
                                             <summary>
                                                 <span>#{option.rank} {option.profession}</span>
+                                                {demoIds.includes(option.professionId) && <span className="role-picker-suits">From your demo</span>}
                                                 {selected && selected.professionId === option.professionId && <span className="role-picker-chosen">✓ {selected.jobRole}</span>}
                                             </summary>
                                             <div className="role-picker-roles" role="radiogroup" aria-label={`Job roles in ${option.profession}`}>

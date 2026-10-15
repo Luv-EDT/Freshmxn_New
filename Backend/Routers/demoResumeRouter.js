@@ -3,28 +3,27 @@ const DemoSession = require("../model/demoSessionsModel")
 const Submission = require("../model/submissionsModel")
 const User = require("../model/userModel")
 const authMiddleware = require("../middlewares/authMiddleware")
-const requireDiscovery = require("../middlewares/requireDiscovery")
-const { OPENNESS_ITEMS, keyOf } = require("../demo/runDemo")
+const requirePaid = require("../middlewares/requirePaid")
+const { keyOf } = require("../demo/runDemo")
+const { grants } = require("../utils/plans")
 
-// RESUME, DON'T RESTART (owner, Round 32). A visitor who did the demo and then registered and bought
-// Career Discovery carries their demo ANSWERS into the real flow — never a demo-grade score.
+// RESUME, DON'T RESTART (owner, Rounds 32-33). A visitor who did the demo and then registered and paid
+// carries what they TOLD us into the real flow — never anything the demo's short tasks measured.
 //
-// EVERY WRITE HAPPENS HERE, ON THE REAL SIDE: a logged-in, paid account (authMiddleware +
-// requireDiscovery), keyed on req.user._id, writing only that account's own submission. The /demo routes
-// never touch a Submission. The demo is linked by the account's VERIFIED email; the student sees what
-// would be carried and chooses (Carry them forward / Start fresh). Either way the demo rows are then
-// deleted.
+// EVERY WRITE HAPPENS HERE, ON THE REAL SIDE: a logged-in, paid account (authMiddleware + requirePaid),
+// keyed on req.user._id, writing only that account. The /demo routes never touch a Submission or a User.
+// The demo is linked by the account's VERIFIED email; the student sees what would be carried and chooses
+// (Carry them forward / Start fresh). Either way the demo rows are then deleted.
 //
 // ONLY WHAT IS STILL EMPTY IS FILLED:
-//   · the two interest answers → the real Virtual Career Counselling form: the life stage for their
-//     journey gets each thing (under the reason they gave for why it stuck, or as an interest of their
-//     own), "what still feels like you" is pre-ticked WITHOUT a confidence — they finish it — and the
-//     profession they named goes into aspirations;
-//   · the eight Openness answers → the same eight items of the real IPIP-50 (they answer the other 44);
-//   · the six reasoning answers → puzzles 1-6 of the real reasoning test, under the same seed, so the real
-//     test serves puzzles 7-16 and the real scorer scores all sixteen with its own clocks and checks.
-//     Carried only from the email's FIRST finished demo (owner: no best-of-several), and only when the
-//     real test hasn't been started or retaken.
+//   · the story answers → the real Virtual Career Counselling form (Career Discovery plans only): the life
+//     stage for their journey gets each thing (under the reason they gave for why it stuck, or as an
+//     interest of their own), "what still feels like you" is pre-ticked WITHOUT a confidence — they finish
+//     it — and the profession they named goes into aspirations;
+//   · the demo's two careers → User.demoCareers (any plan), offered first when they choose their mentor's
+//     field — "go straight to a mentor in one of these" (owner, Round 33).
+// The demo's statements, puzzles and SART are never carried (owner, Round 33): one question per factor
+// says too little to stand in for the real assessment.
 const router = express.Router()
 
 const STAGE_FOR = { class9_10: "highSchool", class11_12: "highSchool", college: "college", early_professional: "postCollege" }
@@ -68,27 +67,30 @@ const interestFrom = (interests, stage) => {
     }
 }
 
-// what can still be filled for this student, and from which demo
+// the two careers a finished demo pointed to
+const careersOf = (session) => ((session.result && session.result.careers) || [])
+    .map(({ entry }) => entry && entry.professionId ? { professionId: entry.professionId, profession: entry.profession } : null)
+    .filter(Boolean)
+
+// what can still be filled for this student, from their latest finished demo
 const planFor = (user, submission, sessions) => {
     const latest = sessions[sessions.length - 1]
-    const first = sessions[0]
-    const psychometric = (submission && submission.psychometric) || {}
-    const interestEmpty = (!submission || !submission.interest || Object.keys(submission.interest).length === 0) && (user.progress || {}).interestForm !== "done"
-    const opennessEmpty = !psychometric.ipip50 && Boolean(latest.openness)
-    const reasoningEmpty = !psychometric.reasoning && !((psychometric.history || {}).reasoning || []).length
-        && Boolean(first.reasoning && (first.reasoning.responses || []).length > 0)
-    return { latest, first, interestEmpty, opennessEmpty, reasoningEmpty }
+    const interestEmpty = grants(Number(user.currentTier)).discovery
+        && (!submission || !submission.interest || Object.keys(submission.interest).length === 0)
+        && (user.progress || {}).interestForm !== "done"
+    const careers = (user.demoCareers || []).length ? [] : careersOf(latest)
+    return { latest, interestEmpty, careers }
 }
 
-router.get("/getMine", authMiddleware, requireDiscovery, async (req, res) => {
+router.get("/getMine", authMiddleware, requirePaid, async (req, res) => {
     try {
         const sessions = await linkedSessions(req.user)
         if (sessions.length === 0) {
             return res.status(200).json({ success: true, message: "No demo to carry forward", data: null })
         }
-        const submission = await Submission.findOne({ user: req.user._id }).select("interest psychometric.ipip50 psychometric.reasoning psychometric.history").lean()
+        const submission = await Submission.findOne({ user: req.user._id }).select("interest").lean()
         const plan = planFor(req.user, submission, sessions)
-        if (!plan.interestEmpty && !plan.opennessEmpty && !plan.reasoningEmpty) {
+        if (!plan.interestEmpty && plan.careers.length === 0) {
             return res.status(200).json({ success: true, message: "Nothing left to carry forward", data: null })
         }
 
@@ -99,11 +101,8 @@ router.get("/getMine", authMiddleware, requireDiscovery, async (req, res) => {
                 at: plan.latest.createdAt,
                 things: (plan.latest.interests.draws || []).map((draw) => draw.text),
                 aspiration: plan.latest.interests.aspiration ? plan.latest.interests.aspiration.text : null,
-                carries: {
-                    interests: plan.interestEmpty,
-                    openness: plan.opennessEmpty,
-                    reasoning: plan.reasoningEmpty ? (plan.first.reasoning.responses || []).length : 0,
-                },
+                careers: plan.careers,
+                carries: { interests: plan.interestEmpty, careers: plan.careers.length > 0 },
             },
         })
 
@@ -112,13 +111,13 @@ router.get("/getMine", authMiddleware, requireDiscovery, async (req, res) => {
     }
 })
 
-router.post("/import", authMiddleware, requireDiscovery, async (req, res) => {
+router.post("/import", authMiddleware, requirePaid, async (req, res) => {
     try {
         const sessions = await linkedSessions(req.user)
         if (sessions.length === 0) {
             return res.status(404).json({ success: false, message: "No demo to carry forward" })
         }
-        const submission = await Submission.findOne({ user: req.user._id }).lean()
+        const submission = await Submission.findOne({ user: req.user._id }).select("interest").lean()
         const plan = planFor(req.user, submission, sessions)
 
         const set = {}
@@ -127,26 +126,14 @@ router.post("/import", authMiddleware, requireDiscovery, async (req, res) => {
             set.interest = interestFrom(plan.latest.interests || {}, stageFor(req.user))
             carried.push("interests")
         }
-        if (plan.opennessEmpty) {
-            const answers = {}
-            OPENNESS_ITEMS.forEach((id) => { if (plan.latest.openness[id]) answers[id] = plan.latest.openness[id] })
-            set["psychometric.ipip50"] = { answers }
-            carried.push("openness")
-        }
-        if (plan.reasoningEmpty) {
-            // the real test's own block — seed, form, when it started, the answers so far, nothing open
-            const block = plan.first.reasoning
-            set["psychometric.reasoning"] = { seed: block.seed, form: "A", startedAt: block.startedAt || plan.first.createdAt, responses: block.responses, pending: null }
-            carried.push("reasoning")
-        }
-
         if (carried.length > 0) {
             set.lastSavedAt = new Date()
             await Submission.findOneAndUpdate({ user: req.user._id }, { $set: set }, { upsert: true })
-            const progress = {}
-            if (set.interest) progress["progress.interestForm"] = "in_progress"
-            if ((set["psychometric.ipip50"] || set["psychometric.reasoning"]) && (req.user.progress || {}).psychometric === "not_started") progress["progress.psychometric"] = "in_progress"
-            if (Object.keys(progress).length) await User.updateOne({ _id: req.user._id }, { $set: progress })
+            await User.updateOne({ _id: req.user._id }, { $set: { "progress.interestForm": "in_progress" } })
+        }
+        if (plan.careers.length > 0) {
+            await User.updateOne({ _id: req.user._id }, { $set: { demoCareers: plan.careers } })
+            carried.push("careers")
         }
 
         // carried (or nothing left to carry) — the demo rows go
@@ -160,7 +147,7 @@ router.post("/import", authMiddleware, requireDiscovery, async (req, res) => {
 })
 
 // "Start fresh" — nothing is carried, and the demo rows are deleted
-router.post("/decline", authMiddleware, requireDiscovery, async (req, res) => {
+router.post("/decline", authMiddleware, requirePaid, async (req, res) => {
     try {
         if (req.user.isEmailVerified && req.user.email) await DemoSession.deleteMany({ email: String(req.user.email).toLowerCase() })
         return res.status(200).json({ success: true, message: "Starting fresh", data: null })

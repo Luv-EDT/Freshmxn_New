@@ -96,33 +96,54 @@ same template.
 
 ---
 
-## 2b. The demo — trying before signing up (Round 32)
+## 2b. The demo — trying before signing up (Rounds 32–33)
 
-A visitor can press **"Try the demo"** on the landing page (`/try-demo`) without an account. It takes about 7
-minutes:
+**The front door (Round 33).** The first time a visitor opens the home page in a visit, an invitation covers it:
+the logo, "Freshmxn's Lab", the one-line promise and a big **Try a Free Demo** button, with the landing page blurred
+behind. **✕** (top right) or "explore the home page first" closes it; it doesn't come back in that visit, and a
+logged-in student never sees it.
 
-1. **A first name** — that's all to start. (The spam check and "3 starts an hour from one place" stop scripts; a
-   daily cap, `DEMO_DAILY_CAP`, keeps the AI cost in check — over it the page says "busy, try tomorrow".)
-2. **What pulls you** — things you loved when younger, enjoy now, and would love to do one day, plus "which
-   profession would you like to go into?". Then **what stuck**, and why (the same four reasons the real form uses).
-3. **A taste of two factors** — 8 of the real personality statements about openness, and the **first 6 puzzles of
-   the real reasoning test**, served and marked exactly as the real test does.
-4. **An email** (and, under 18, a box that a parent or guardian agrees). Then the **real engines** read the answers:
-   the activity step, then the same matching the full report uses — and show **two careers**, each tied to the
-   visitor's own words, how much this was (2 of 31 factors, 2 of 223 careers), and the three plans with prices
-   from the server.
+The demo (`/try-demo`, no account) takes about 6 minutes, in three stages shown at the top —
+**Virtual career counselling › Assessments › Report**:
 
-**The demo is kept apart from everything else.** It has its own office door (`/demo`) and its own drawer
-(`demo_sessions`), and never touches a student's record, a payment or a score. It deletes itself after 30 days.
-What visitors type does help our data, without their name or email: their activities build the shared activity
-cache, and careers they name that we don't have go to the monthly careers scout (`demo_signals`).
+1. **A first name and where you are now** — school (Class 9–10 or 11–12), college, or working (and for how many
+   years). Where you are now stays in the browser and reaches us only with the email at the end. (The spam check,
+   "3 starts an hour from one place" and a daily cap, `DEMO_DAILY_CAP`, keep the AI cost in check.)
+2. **Your story** — one question: what have you enjoyed, been curious about or felt good at, grown through, been
+   noticed for, solved a problem with, or that simply felt good? Asked across three timelines: school or college,
+   now, and what you aspire to (with our careers to pick from). The "Stuck?" list stays pinned at the top. Then
+   **what stuck, and why** (the four reasons the real form uses).
+3. **Three quick tasks** — "A taste of 10 of our 31 factors":
+   - **7 statements**, one real "what you're drawn to" statement per intelligence;
+   - **a 90-second focus game** — the real SART's own clock, 78 digits instead of 225, no practice round;
+   - **4 puzzles** (1 easy, 2 medium, 1 hard) drawn from the demo's own bank of 12 — never the real test's.
+   Everything is worked out on the server and only a small result is kept — never the answers, the puzzle choices
+   or the focus game's timings.
+4. **An email** (and, under 18, a box that a parent or guardian agrees). "Reading your answers — this takes about 30
+   seconds": the **real engines** read the story first (the activity step and the same matching the full report
+   uses), and the tasks only check the careers it points to against the fundamentals they need.
 
-**Carrying it forward.** If the visitor later signs up with **the same email**, verifies it and buys Career
-Discovery, their dashboard shows "You tried the demo" — **Carry them forward** or **Start fresh**. Carrying fills
-only what is still empty: their answers go into Virtual Career Counselling (they finish the rest), the 8 statements
-into the real personality test, and the 6 puzzles into the real reasoning test, which then starts at **puzzle 7 of
-16** and is scored by the real scorer with all sixteen. A demo score is never carried. Either way the demo is then
-deleted.
+**The report** keeps it clean: a fold on what we did differently (story first, not screening by intelligence); the
+**two careers**, each the real career card with everything inside — the road from where you stand, exams, money,
+the future; a **psychometric fold** listing all 31 factors — the ten touched as a word level with how much of each
+was measured (about 20–35%), the rest faded at 0%; what the full program adds; then the plans — a mentor straight
+away in one of these two careers (Mentor Only), the whole journey (Career Discovery) or both — and a note on
+financial aid and refunds.
+
+**The demo is kept apart from everything else.** It has its own door (`/demo`) and drawer (`demo_sessions`), never
+touches a student's record, a payment or a score, and deletes itself after 30 days. What visitors type helps our
+data without their name or email: their activities build the shared activity cache, and careers they name that we
+don't have go to the monthly careers scout (`demo_signals`).
+
+**Carrying it forward.** After signing up with **the same email**, verifying it and paying (any plan), the dashboard
+shows "You tried the demo" — **Carry them forward** or **Start fresh**. Carrying puts their story into Virtual
+Career Counselling (Career Discovery plans, only if still empty) and keeps the demo's two careers on their account,
+offered first when they choose their mentor. Nothing the three tasks measured is carried. Either way the demo is
+then deleted.
+
+**Coupons for one plan (Round 33).** A coupon can work on every plan, or only on some (Career Discovery, Mentor
+Only, Discovery + Mentor) — the admin ticks them. An upgrade counts as the plan it ends on, so a Discovery + Mentor
+coupon also discounts the upgrade into it.
 
 ---
 

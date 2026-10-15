@@ -35,8 +35,10 @@ Redis since Round 22). One free Render web service runs the API, the built site 
   the code, don't weaken the fixture (unless the owner changed the product; then say so).
 - **The demo is additive and isolated** (owner, Round 32). `/demo/*` and `Backend/demo/` write only `demo_sessions`,
   `demo_signals` and the shared activity cache — never a User, Submission, Payment, Profile, Recommendation or Report,
-  never `grantAccess`, never a score. Demo answers reach the real flow only through `/demoResume/import` (login +
-  Career Discovery, the student's own submission, only what is empty). The DEMO ISOLATION fixture holds this.
+  never `grantAccess`, never a score. Only the story (Career Discovery plans, only what is empty) and the two careers
+  (`User.demoCareers`) reach the real flow, through `/demoResume/import` (login + a paid plan) — never anything the
+  demo's tasks measured (owner, Round 33). The demo report's "N% measured" beside a factor is an owner-approved
+  exception for the demo only. The DEMO ISOLATION fixture holds this.
 - Never commit `.env` or keys. Never publish the company PAN/TAN.
 
 ## Data patches (owner, Round 17)
@@ -51,7 +53,7 @@ Then run the fixtures and commit. If `profession_embeddings.json` lists `pending
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 72/72
-node Backend/workers/fixtures/runFixtures.js     # 235/235
+node Backend/workers/fixtures/runFixtures.js     # 237/237
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

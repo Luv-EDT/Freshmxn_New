@@ -5,9 +5,11 @@ import { getMyDemo, importMyDemo, declineMyDemo } from "../../apiCall/demoApi"
 import { getCurrentUser } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
 
-// RESUME, DON'T RESTART (owner, Round 32). A student who did "Try the demo" with the same, confirmed email
-// is offered its answers here, once they have Career Discovery. They see what would be carried and choose;
-// the server fills only what is still empty in their real form and assessment (Routers/demoResumeRouter.js).
+// RESUME, DON'T RESTART (owner, Rounds 32-33). A student who did the demo with the same, confirmed email is
+// offered it here once they have paid: their story into Virtual Career Counselling (Career Discovery plans),
+// and the demo's two careers, offered first when they choose a mentor. They see what would be carried and
+// choose; the server fills only what is still empty (Routers/demoResumeRouter.js). The demo's short tasks
+// are never carried.
 // Shows nothing at all when there is no demo to carry.
 function DemoCarryCard() {
     const dispatch = useDispatch()
@@ -40,9 +42,8 @@ function DemoCarryCard() {
     }
 
     const carries = [
-        demo.carries.interests && `what pulls you (${demo.things.slice(0, 3).join(", ")}${demo.things.length > 3 ? "…" : ""})${demo.aspiration ? ` and "${demo.aspiration}"` : ""} — into Virtual Career Counselling`,
-        demo.carries.openness && "your eight answers on how you see yourself — into the assessment",
-        demo.carries.reasoning > 0 && `your first ${demo.carries.reasoning} reasoning puzzles — the test carries on from puzzle ${demo.carries.reasoning + 1}`,
+        demo.carries.interests && `your story (${demo.things.slice(0, 3).join(", ")}${demo.things.length > 3 ? "…" : ""})${demo.aspiration ? ` and "${demo.aspiration}"` : ""} — into Virtual Career Counselling`,
+        demo.carries.careers && `your two demo careers (${(demo.careers || []).map((career) => career.profession).join(" and ")}) — offered first when you choose your mentor`,
     ].filter(Boolean)
 
     return (

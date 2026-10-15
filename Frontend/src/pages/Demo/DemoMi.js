@@ -1,31 +1,38 @@
 import { useState } from "react"
-import { IPIP_ITEMS, IPIP_SCALE, IPIP_STEM } from "../Assessment/ipip50Items"
+import { MI_ITEMS, MI_SCALE } from "../Assessment/moduleItems"
 
-// OPENNESS — eight of the real IPIP-50 Openness statements, worded and scored exactly as in the full
-// assessment (owner, Round 32). Eight because the real scorer needs 8 of a trait's 10 to give a score.
-export const DEMO_OPENNESS_ITEMS = ["IPIP_O1", "IPIP_O2", "IPIP_O3", "IPIP_O4", "IPIP_O5", "IPIP_O6", "IPIP_O9", "IPIP_O10"]
+// WHAT YOU'RE DRAWN TO (owner, Round 33) — one real "what you are drawn to" statement per intelligence,
+// worded as in the full assessment. One statement says little on its own, so these are a taste: the result
+// shows each as "about 20% measured", and they are never carried into the real assessment.
+// The ids must match Backend/demo/demoTaste.js MI_DEMO_ITEMS (a fixture checks).
+export const DEMO_MI_ITEMS = ["MI_V1", "MI_L1", "MI_S3", "MI_M2", "MI_B3", "MI_N2", "MI_E1"]
 
-function DemoOpenness({ onNext, busy }) {
-    const items = DEMO_OPENNESS_ITEMS.map((id) => IPIP_ITEMS.find((item) => item.id === id)).filter(Boolean)
-    const [answers, setAnswers] = useState({})
-    const done = items.every((item) => answers[item.id])
+function DemoMi({ answers, onChange, onNext }) {
+    const items = DEMO_MI_ITEMS.map((id) => MI_ITEMS.find((item) => item.id === id)).filter(Boolean)
+    const [current, setCurrent] = useState(answers || {})
+    const done = items.every((item) => current[item.id])
+    const pick = (id, value) => {
+        const next = { ...current, [id]: value }
+        setCurrent(next)
+        onChange(next)
+    }
 
     return (
         <section className="demo-step">
-            <h2>How you see yourself</h2>
-            <p className="demo-lead">{IPIP_STEM} — pick how accurately each describes you. There are no right answers.</p>
+            <h2>What you're drawn to</h2>
+            <p className="demo-lead">Seven quick statements — how much is each like you? There are no right answers.</p>
             {items.map((item) => (
                 <fieldset key={item.id} className="question-card demo-question">
                     <legend>{item.text}</legend>
                     <div className="demo-scale">
-                        {IPIP_SCALE.map((option) => (
-                            <label key={option.value} className={`demo-scale-option${answers[item.id] === option.value ? " is-on" : ""}`}>
+                        {MI_SCALE.map((option) => (
+                            <label key={option.value} className={`demo-scale-option${current[item.id] === option.value ? " is-on" : ""}`}>
                                 <input
                                     type="radio"
                                     name={item.id}
                                     value={option.value}
-                                    checked={answers[item.id] === option.value}
-                                    onChange={() => setAnswers({ ...answers, [item.id]: option.value })}
+                                    checked={current[item.id] === option.value}
+                                    onChange={() => pick(item.id, option.value)}
                                 />
                                 {option.label}
                             </label>
@@ -33,11 +40,11 @@ function DemoOpenness({ onNext, busy }) {
                     </div>
                 </fieldset>
             ))}
-            <button type="button" className="btn btn-primary" disabled={busy || !done} onClick={() => onNext(answers)}>
-                {busy ? "Saving…" : "Next: six puzzles"}
+            <button type="button" className="btn btn-primary" disabled={!done} onClick={onNext}>
+                Next: a 90-second focus game
             </button>
         </section>
     )
 }
 
-export default DemoOpenness
+export default DemoMi

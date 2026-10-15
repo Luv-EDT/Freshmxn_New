@@ -81,8 +81,9 @@ function Home() {
 
                     <JourneyProgress user={user} variant="home" />
 
-                    {/* Round 32 (owner): answers from "Try the demo", offered once — shows nothing otherwise */}
-                    {!isMentorOnly(user) && <DemoCarryCard />}
+                    {/* Rounds 32-33 (owner): the story and two careers from "Try a Free Demo", offered once, on
+                        every plan — shows nothing otherwise */}
+                    <DemoCarryCard />
 
                     {/* ONE OBVIOUS NEXT ACTION, above the list. The bar shows the whole journey; this
                         says which part of it to do now. A student who lands here after a week away
