@@ -6362,7 +6362,36 @@ const fixtures = [
             if (/usePricing|formatInr|demo-plan-price/.test(plans) || (plans.match(/to="\/programs"/g) || []).length !== 1) problems.push("the options carry plan details, or not exactly one programs button")
             if (/family/i.test(plans) || !/refund you — on\s+any plan/.test(plans)) problems.push("the money note mentions family or not the any-plan refund")
             const splashCss = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/styles/public.css"), "utf8")
-            if (!/\.splash-lead \.highlight-pink \{\s*color: var\(--pink\)/.test(splashCss)) problems.push("the invitation's highlight isn't readable on the dark")
+            // owner, Round 33c: the highlight is the brand's teal lifted for the dark, no longer pink
+            if (!/\.splash-lead \.highlight-pink \{\s*color: #7fd3dc/.test(splashCss)) problems.push("the invitation's highlight isn't the light teal")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 33c — THE DEMO, CLEARER: measured factors first and the rest blurred; the 'just two careers' line; three openable cards; a three-leg flowchart; the email checked as it's typed; mentor choice reads the linked demo; every email has a text part",
+        run: async () => {
+            const problems = []
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages", file), "utf8")
+            const result = read("Demo/DemoResult.js")
+            const at = (text) => result.indexOf(text)
+            if (!(at("What we measured — partly") > 0 && at("What we measured — partly") < at("demo-factor-locked"))) problems.push("the measured factors don't come before the blurred rest")
+            if (!/just two careers/.test(result) || !/much wider\s+spectrum/.test(result)) problems.push("no 'just two careers' line")
+            if ((result.match(/className="demo-add-card"/g) || []).length !== 3) problems.push("not three openable cards in 'What the full program adds'")
+            const plans = read("Demo/DemoPlans.js")
+            if ((plans.match(/title: "/g) || []).length !== 3 || !/demo-tree-legs/.test(plans)) problems.push("the options aren't a three-leg flowchart")
+            if (/same email/i.test(plans)) problems.push("the 'sign up with the same email' line is still there")
+            const page = read("Demo/DemoPage.js")
+            if (!/emailCheck\(gate\.email\)\.ok/.test(page) || !/demo-email-fix/.test(page)) problems.push("the email isn't checked as it's typed")
+            const choose = read("User/MentorshipChoose.js")
+            if (!/getMyDemo/.test(choose) || !/linkedDemoCareers/.test(choose)) problems.push("the mentor choice doesn't read the linked demo's careers")
+            const css = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/styles/public.css"), "utf8")
+            if (!/\.demo-factor-locked ul \{[^}]*filter: blur/.test(css)) problems.push("the unmeasured factors aren't blurred")
+            if (!/\.demo-page h2 \{[^}]*\}/.test(css) || !/\.demo-page h1,\s*\.demo-page h2 \{[^}]*font-family: var\(--font-display\)[^}]*text-align: center/.test(css)) problems.push("demo headings aren't Orelega One and centred")
+            const { textOf } = require("../../utils/mailer")
+            if (textOf('<p>Hi,</p><p><a href="https://x.com/a?b=1&amp;c=2">Confirm</a></p>') !== "Hi,\nConfirm (https://x.com/a?b=1&c=2)") problems.push("the text part loses words or links")
+            const mailer = fs.readFileSync(path.join(__dirname, "../../utils/mailer.js"), "utf8")
+            if (!/text: textOf\(html\)/.test(mailer)) problems.push("emails are sent without a text part")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

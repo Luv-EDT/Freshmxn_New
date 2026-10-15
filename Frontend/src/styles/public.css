@@ -1800,9 +1800,10 @@
 
 /* ── round 33b: the demo's darker theme, the invitation's highlight, centred Choose buttons ─────── */
 
-/* "in demand and AI-resilient" on the dark invitation: pink letters, no swipe (owner: the navy text vanished) */
+/* "in demand and AI-resilient" on the dark invitation: light-teal letters, no swipe — the brand's teal, lifted
+   to read on navy (owner, Round 33c: the pink didn't fit the scheme) */
 .splash-lead .highlight-pink {
-    color: var(--pink);
+    color: #7fd3dc;
     background: none;
     padding: 0;
     font-weight: 900;
@@ -1862,3 +1863,267 @@
 /* programs: every Choose button centred (owner) */
 .price-actions { justify-items: center; }
 .price-card .price-actions .btn { align-self: center; }
+
+/* ── round 33c: one type scale, the measured-first snapshot, the three openable cards, the flowchart ── */
+
+/* one scale for the whole demo: headings in Orelega One and centred, subheadings a step down, text normal */
+.demo-page h1,
+.demo-page h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    text-align: center;
+    color: var(--navy);
+    line-height: 1.2;
+}
+
+.demo-page h1 { font-size: clamp(1.7rem, 5vw, 2.1rem); }
+.demo-page h2 { font-size: clamp(1.35rem, 4vw, 1.6rem); }
+
+.demo-page h3 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--navy);
+}
+
+.demo-page,
+.demo-page .demo-lead,
+.demo-page .demo-question { font-size: 1rem; }
+
+.demo-page .demo-hint { font-size: 0.9rem; }
+
+.demo-two-note {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--teal);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    background: var(--teal-tint);
+}
+
+/* the factors we didn't measure: listed, but blurred — the full assessment unlocks them */
+.demo-factor-locked { position: relative; }
+
+.demo-factor-locked ul {
+    filter: blur(2.5px);
+    user-select: none;
+    pointer-events: none;
+}
+
+.demo-factor-locked li {
+    grid-template-areas: "name pct";
+    grid-template-columns: 1fr auto;
+}
+
+.demo-locked-note {
+    margin: var(--space-3) 0 0;
+    text-align: center;
+    font-weight: 700;
+    color: var(--teal-dark);
+}
+
+/* what the full program adds: three cards that open, each inviting a tap */
+.demo-adds {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-5) 0;
+}
+
+.demo-add-card {
+    border: 2px solid var(--teal);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.demo-add-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+
+.demo-add-card summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: var(--space-3) var(--space-4);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--navy);
+    cursor: pointer;
+    list-style: none;
+}
+
+.demo-add-card summary::-webkit-details-marker { display: none; }
+
+.demo-add-card summary::after {
+    content: "Tap to see ›";
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--teal);
+    color: #fff;
+    font-size: 0.8rem;
+}
+
+.demo-add-card[open] summary::after { content: "Close"; background: var(--navy-soft); }
+
+.demo-add-card[open] { background: var(--teal-tint); }
+
+.demo-add-card > p { margin: 0; padding: 0 var(--space-4) var(--space-4); }
+
+.demo-add-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    font-size: 1.3rem;
+}
+
+/* where to go from here: a small flowchart — you, then three legs */
+.demo-tree {
+    display: grid;
+    justify-items: center;
+    margin: var(--space-4) 0;
+}
+
+.demo-tree-root {
+    position: relative;
+    padding: 12px 22px;
+    border-radius: 999px;
+    background: var(--navy);
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* the trunk under the root */
+.demo-tree-root::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 2px;
+    height: 22px;
+    background: var(--teal);
+}
+
+.demo-tree-legs {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+    width: 100%;
+    margin-top: 44px;
+}
+
+/* the branch across the three legs */
+.demo-tree-legs::before {
+    content: "";
+    position: absolute;
+    top: -22px;
+    left: 16.66%;
+    right: 16.66%;
+    height: 2px;
+    background: var(--teal);
+}
+
+.demo-tree-node {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    justify-items: center;
+    padding: var(--space-3);
+    border: 2px solid var(--teal);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    text-align: center;
+}
+
+/* each leg drops from the branch */
+.demo-tree-node::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -24px;
+    width: 2px;
+    height: 22px;
+    background: var(--teal);
+}
+
+.demo-tree-node > span:last-child { font-size: 0.9rem; color: var(--navy-soft); }
+
+.demo-tree-num {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* phones: the legs stack under one trunk */
+@media (max-width: 719px) {
+    .demo-tree-legs {
+        grid-template-columns: 1fr;
+        margin-top: 22px;
+        padding-left: 36px;
+    }
+
+    /* each leg carries its own piece of the trunk, so the line always reaches the last option */
+    .demo-tree-legs::before { display: none; }
+
+    .demo-tree-node::after {
+        content: "";
+        position: absolute;
+        left: -18px;
+        top: calc(-1 * var(--space-3) - 2px);
+        width: 2px;
+        height: calc(100% + var(--space-3) + 4px);
+        background: var(--teal);
+    }
+
+    .demo-tree-node:first-child::after { top: -24px; height: calc(100% + 26px); }
+    .demo-tree-node:last-child::after { height: calc(50% + var(--space-3) + 2px); }
+    .demo-tree-node:first-child:last-child::after { height: calc(50% + 24px); }
+
+    .demo-tree-root::after { left: 20px; }
+
+    .demo-tree { justify-items: start; }
+
+    .demo-tree-node::before {
+        left: -18px;
+        top: 50%;
+        width: 18px;
+        height: 2px;
+    }
+}
+
+/* the email is checked as it is typed */
+.demo-input.is-invalid { border-color: #c2410c; }
+
+.demo-email-check {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 0;
+    font-size: 0.9rem;
+    color: #9a3412;
+}
+
+.demo-email-fix {
+    min-height: 36px;
+    padding: 4px 14px;
+    border: 1px solid var(--teal);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--teal-dark);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}

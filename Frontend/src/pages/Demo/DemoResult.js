@@ -15,6 +15,8 @@ const secondsOf = (ms) => (typeof ms === "number" ? `${(ms / 1000).toFixed(2)} s
 function DemoResult({ result }) {
     const { name, careers, details, pointedTo, factors = [], sart, reasoningRight, you = {} } = result
     const measured = factors.flatMap((group) => group.factors).filter((factor) => factor.measuredPct > 0)
+    const measuredRows = factors.flatMap((group) => group.factors.filter((factor) => factor.measuredPct > 0).map((factor) => ({ ...factor, group: group.title })))
+    const restRows = factors.flatMap((group) => group.factors.filter((factor) => factor.measuredPct === 0))
     const untouched = factors.filter((group) => group.factors.every((factor) => factor.measuredPct === 0)).map((group) => group.title.toLowerCase())
 
     return (
@@ -42,6 +44,10 @@ function DemoResult({ result }) {
                 ))}
             </div>
             <p className="demo-hint">Tap a career to open everything about it.</p>
+            <p className="demo-two-note">
+                These are <strong>just two careers</strong>. Go through the whole process and we'll give you a much wider
+                spectrum — built from everything you tell us and the complete assessment.
+            </p>
             {/* owner, Round 33: one line, after the two careers — what 6 minutes can't do */}
             <p className="demo-fomo">That took 6 minutes. <strong>The full journey takes 3+ hours</strong> — and finds sharper careers, the road to each, and a far deeper you.</p>
 
@@ -58,23 +64,34 @@ function DemoResult({ result }) {
                         {sart && sart.tooEarly && <>Focus game: many presses came before the number appeared, so we couldn't read your speed.</>}
                     </p>
                 )}
-                {factors.map((group) => (
-                    <div key={group.title} className="demo-factor-group">
-                        <h3>{group.title}</h3>
-                        <ul>
-                            {group.factors.map((factor) => (
-                                <li key={factor.factor} className={factor.measuredPct > 0 ? "is-measured" : "is-faded"}>
-                                    <span className="demo-factor-name">{factor.name}</span>
-                                    <span className="demo-factor-level">{factor.level || (factor.measuredPct > 0 ? "—" : "Not measured")}</span>
-                                    <span className="demo-measure" aria-label={`${factor.measuredPct}% measured`}>
-                                        <span style={{ width: `${factor.measuredPct}%` }} />
-                                    </span>
-                                    <span className="demo-measure-pct">{factor.measuredPct}% measured</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ))}
+                {/* measured (partly) first, the rest blurred below — owner, Round 33 */}
+                <div className="demo-factor-group">
+                    <h3>What we measured — partly</h3>
+                    <ul>
+                        {measuredRows.map((factor) => (
+                            <li key={factor.factor} className="is-measured">
+                                <span className="demo-factor-name">{factor.name} <small>· {factor.group}</small></span>
+                                <span className="demo-factor-level">{factor.level || "—"}</span>
+                                <span className="demo-measure" aria-label={`${factor.measuredPct}% measured`}>
+                                    <span style={{ width: `${factor.measuredPct}%` }} />
+                                </span>
+                                <span className="demo-measure-pct">{factor.measuredPct}% measured</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div className="demo-factor-group demo-factor-locked">
+                    <h3>Not measured yet — {TOTAL_FACTORS - measuredRows.length} factors</h3>
+                    <ul aria-label="Factors the full assessment measures">
+                        {restRows.map((factor) => (
+                            <li key={factor.factor} className="is-faded">
+                                <span className="demo-factor-name">{factor.name}</span>
+                                <span className="demo-measure-pct">0% measured</span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="demo-locked-note">The full assessment measures all {TOTAL_FACTORS}.</p>
+                </div>
             </details>
 
             <details className="faq-item demo-fold">
@@ -91,24 +108,32 @@ function DemoResult({ result }) {
                 <p><Link to="/how-it-works">How the full program works →</Link></p>
             </details>
 
-            <div className="demo-gap">
+            {/* what the full program adds — three cards that open (owner, Round 33) */}
+            <section className="demo-adds">
                 <h2>What the full program adds</h2>
-                <p>
-                    <strong>We measured {measured.length} of {TOTAL_FACTORS} factors, and those only partly.</strong>
-                    {untouched.length > 0 && <> We didn't touch {untouched.join(", ")} at all.</>}
-                </p>
-                <p>
-                    <strong>Virtual Career Counselling</strong> replaces the two-minute questions you just answered: it walks
-                    through four stages of your life — what you did, what stuck and why — and helps you understand yourself
-                    before any career is named.
-                </p>
-                <p>
-                    <strong>We showed you just 2 careers.</strong>
-                    {typeof pointedTo === "number" && pointedTo > 2 && <> Your few words already pointed to {pointedTo}.</>}{" "}
-                    The full report ranks every career your story points to, from 1,000+ careers and job roles — each with
-                    its road from where you stand, exams, where to study, money, demand and AI exposure.
-                </p>
-            </div>
+                <details className="demo-add-card">
+                    <summary><span className="demo-add-icon" aria-hidden="true">🧠</span>We measured just {measured.length} of {TOTAL_FACTORS} factors</summary>
+                    <p>
+                        And only partly.{untouched.length > 0 && <> We didn't touch {untouched.join(", ")} at all.</>} The full
+                        assessment measures all {TOTAL_FACTORS}, properly.
+                    </p>
+                </details>
+                <details className="demo-add-card">
+                    <summary><span className="demo-add-icon" aria-hidden="true">🧭</span>Virtual Career Counselling</summary>
+                    <p>
+                        It replaces the two-minute questions you just answered: it walks through four stages of your life —
+                        what you did, what stuck and why — and helps you understand yourself before any career is named.
+                    </p>
+                </details>
+                <details className="demo-add-card">
+                    <summary><span className="demo-add-icon" aria-hidden="true">🎯</span>We showed you just 2 careers</summary>
+                    <p>
+                        {typeof pointedTo === "number" && pointedTo > 2 && <>Your few words already pointed to {pointedTo}. </>}
+                        The full report ranks every career your story points to, from 1,000+ careers and job roles — each with
+                        its road from where you stand, exams, where to study, money, demand and AI exposure.
+                    </p>
+                </details>
+            </section>
 
             <DemoPlans />
         </section>

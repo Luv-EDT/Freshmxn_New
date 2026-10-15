@@ -120,16 +120,21 @@ The demo (`/try-demo`, no account) takes about 6 minutes, in three stages shown 
    - **4 puzzles** (1 easy, 2 medium, 1 hard) drawn from the demo's own bank of 12 — never the real test's.
    Everything is worked out on the server and only a small result is kept — never the answers, the puzzle choices
    or the focus game's timings.
-4. **An email** (and, under 18, a box that a parent or guardian agrees). "Reading your answers — this takes about 30
+4. **An email** (and, under 18, a box that a parent or guardian agrees). The email is checked as it is typed
+   (Round 33c): a badly formed one can't go on, and a common slip like `gmail.con` gets a one-tap **Use it** fix. "Reading your answers — this takes about 30
    seconds": the **real engines** read the story first (the activity step and the same matching the full report
    uses), and the tasks only check the careers it points to against the fundamentals they need.
 
-**The report** keeps it clean (on a darker page, no footer until here): the
-**two careers** straight away, a one-line "the full journey takes 3+ hours", each the real career card with everything inside — the road from where you stand, exams, money,
-the future; a **psychometric fold** listing all 31 factors — the ten touched as a word level with how much of each
-was measured (about 20–35%), the rest faded at 0%; a fold on what we did differently (story first, not screening by
-intelligence); what the full program adds; then three options — a mentor in one of these two careers, the whole
-journey, or both — with one button to the programs page, and a note on financial aid and refunds.
+**The report** keeps it clean (on a darker page, no footer until here; headings centred in the display font):
+the **two careers** straight away, each the real career card with everything inside — the road from where you
+stand, exams, money, the future; a line that these are **just two careers** and the whole process gives a much
+wider spectrum; a one-line "the full journey takes 3+ hours"; a **psychometric fold** — first the factors we did
+touch (reasoning, the areas you feel drawn to, speed and focus) as a word level with how much of each was measured
+(about 20–35%), then the other factors listed but blurred, "the full assessment measures all 31"; a fold on what we
+did differently (story first, not screening by intelligence); **what the full program adds** as three cards to tap
+open (the factors, Virtual Career Counselling, just two careers); then **where to go from here** as a small
+flowchart — you, then three legs: a mentor in one of these two careers, the whole journey, or both — with one
+button to the programs page, and a note on financial aid and refunds.
 
 **The demo is kept apart from everything else.** It has its own door (`/demo`) and drawer (`demo_sessions`), never
 touches a student's record, a payment or a score, and deletes itself after 30 days. What visitors type helps our
@@ -139,7 +144,8 @@ don't have go to the monthly careers scout (`demo_signals`).
 **Carrying it forward.** After signing up with **the same email**, verifying it and paying (any plan), the dashboard
 shows "You tried the demo" — **Carry them forward** or **Start fresh**. Carrying puts their story into Virtual
 Career Counselling (Career Discovery plans, only if still empty) and keeps the demo's two careers on their account,
-offered first when they choose their mentor. Nothing the three tasks measured is carried. Either way the demo is
+offered first when they choose their mentor — the mentor page also shows the linked demo's two careers before
+they press Carry (Round 33c). Nothing the three tasks measured is carried. Either way the demo is
 then deleted.
 
 **Coupons for one plan (Round 33).** A coupon can work on every plan, or only on some (Career Discovery, Mentor
