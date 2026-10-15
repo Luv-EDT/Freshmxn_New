@@ -309,8 +309,21 @@ moving it to `old.freshmxn.com` first.
    `GOOGLE_CALLBACK_URL=https://www.freshmxn.com/auth/google/callback`; add that URI in Google Cloud.
 5. ~~Remove the `noindex` tag~~ — done 2026-09-24 (owner chose to let Google list the site). The
    site.
-6. Optional: resend.com → **Domains** → add `freshmxn.com` → paste the TXT/MX records it gives you
-   into Hostinger, then set `EMAIL_FROM` to e.g. `Freshmxn <hello@freshmxn.com>`.
+6. **Emails landing in spam? Verify the sending domain (Round 33c — not optional any more).** Mail sent
+   from an address whose domain hasn't proved it may send for it is the usual reason for the junk folder.
+   1. resend.com → **Domains** → **Add domain** → `freshmxn.com` (region closest to India).
+   2. Resend lists DNS records — an **SPF** (TXT, usually on `send`), a **DKIM** (TXT `resend._domainkey`)
+      and an **MX** for the `send` subdomain. Add each exactly in **Cloudflare → DNS → Records** (the domain's
+      DNS lives in Cloudflare, not Hostinger), **DNS only (grey cloud)**. Don't touch the existing MX/TXT
+      records for Hostinger email.
+   3. Add a **DMARC** record: type TXT, name `_dmarc`, value `v=DMARC1; p=none; rua=mailto:luvgoel@freshmxn.com`
+      (start with `p=none`; move to `p=quarantine` after a few clean weeks).
+   4. Back in Resend → **Verify**; wait until every record shows Verified.
+   5. Render → Environment: `EMAIL_FROM=Freshmxn <hello@freshmxn.com>` (any address on the verified domain —
+      not `onboarding@resend.dev`, not a Gmail address) → Manual Deploy.
+   6. Test: register a test account with a Gmail address; the email should arrive in the inbox. In Gmail,
+      ⋮ → **Show original** should read `SPF: PASS`, `DKIM: PASS`, `DMARC: PASS`.
+   The code side is done: every email now carries a plain-text copy beside the HTML.
 
 Last: in `render.yaml`, change `branch:` to `main` once the work is merged.
 
