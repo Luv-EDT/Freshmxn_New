@@ -6331,6 +6331,42 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 33b — THE DEMO, POLISHED: 'it helps me deal with a problem' counts as the real form's kinds of problem; no career picker; no footer during the demo; careers first, no quoted words, the 3+ hours line; options without prices and one programs button; refunds on any plan; no 'family'",
+        run: async () => {
+            const problems = []
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Demo", file), "utf8")
+            const { REASON_KEYS } = require("../../model/demoSessionsModel")
+            const realProblems = ["individualInternalProblems", "interpersonalInternalProblems", "externalProblems"]
+            if (!realProblems.every((key) => REASON_KEYS.includes(key))) problems.push("the session doesn't accept the problem reasons")
+            const { demoInterest } = require("../../demo/runDemo")
+            const stage = demoInterest({ draws: [{ text: "Coding", when: "present" }], stuck: [{ text: "Coding", reasons: ["externalProblems"] }] }).highSchool
+            if (!stage.externalProblems.length || stage.externalProblems[0].problem !== "Coding") problems.push("a problem reason isn't a real-form problem row")
+            const { runProgramOne } = require("../../matching/program1")
+            const one = runProgramOne({ interest: demoInterest({ draws: [{ text: "Coding", when: "present" }], stuck: [{ text: "Coding", reasons: ["externalProblems"] }] }), profile: require("../../scoring/scoreProfile")({}) })
+            if (!(one.dominantReasons || []).includes("externalProblems")) problems.push("matching doesn't count the problem reason")
+            const { interestFrom } = require("../../Routers/demoResumeRouter")
+            if (!(interestFrom({ draws: [{ text: "Coding", when: "present" }], stuck: [{ text: "Coding", reasons: ["individualInternalProblems"] }] }, "college").college.individualInternalProblems[0] || {}).problem) problems.push("the carried form loses the problem row")
+            const stuck = read("DemoStuck.js")
+            if (!/It helps me deal with a problem in my life/.test(stuck)) problems.push("no problem tag")
+            const pulls = read("DemoPulls.js")
+            if (/AutoComplete|getCareerNames|demo-aspiration/.test(pulls)) problems.push("the career picker is still in the story question")
+            const page = read("DemoPage.js")
+            if (!/\{step === "result" && <PublicFooter \/>\}/.test(page) || !/className="demo-shell"/.test(page)) problems.push("the footer shows during the demo, or no dark shell")
+            const result = read("DemoResult.js")
+            if (/You said|words\.said/.test(result)) problems.push("quoted words are still shown")
+            const at = (text) => result.indexOf(text)
+            if (!(at("Two careers your story points to") < at("psychometric snapshot") && at("psychometric snapshot") < at("What we did differently"))) problems.push("the order isn't careers → psychometric → what we did differently")
+            if (!/3\+ hours/.test(result) || !/even those only partly measured/.test(result)) problems.push("the 3+ hours line or the snapshot wording is missing")
+            const plans = read("DemoPlans.js")
+            if (/usePricing|formatInr|demo-plan-price/.test(plans) || (plans.match(/to="\/programs"/g) || []).length !== 1) problems.push("the options carry plan details, or not exactly one programs button")
+            if (/family/i.test(plans) || !/refund you — on\s+any plan/.test(plans)) problems.push("the money note mentions family or not the any-plan refund")
+            const splashCss = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/styles/public.css"), "utf8")
+            if (!/\.splash-lead \.highlight-pink \{\s*color: var\(--pink\)/.test(splashCss)) problems.push("the invitation's highlight isn't readable on the dark")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

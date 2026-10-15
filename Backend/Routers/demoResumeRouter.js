@@ -41,14 +41,15 @@ const stageFor = (user) => {
 
 // what the real form stores (interestFormState.buildSubmissionInterest), from the demo's two answers
 const interestFrom = (interests, stage) => {
-    const groups = { curiosityDriven: [], personalGrowth: [], socialRecognition: [], effortlessEngagement: [] }
+    const groups = { curiosityDriven: [], personalGrowth: [], socialRecognition: [], effortlessEngagement: [], individualInternalProblems: [], interpersonalInternalProblems: [], externalProblems: [] }
     const additionalInterests = []
     const stuckBy = new Map((interests.stuck || []).map((row) => [keyOf(row.text), row]))
 
     ;(interests.draws || []).forEach((draw) => {
         const stuck = stuckBy.get(keyOf(draw.text))
         const reasons = stuck ? (stuck.reasons || []).filter((reason) => groups[reason]) : []
-        if (reasons.length > 0) reasons.forEach((reason) => groups[reason].push(draw.text))
+        // a problem it helps with is a row in the real form's shape (Round 33)
+        if (reasons.length > 0) reasons.forEach((reason) => groups[reason].push(DemoSession.PROBLEM_KEYS.includes(reason) ? { problem: draw.text, source: "typed", activities: [draw.text] } : draw.text))
         else additionalInterests.push({ activity: draw.text, reason: (stuck && stuck.why) || WHEN_WORDS[draw.when] || "" })
     })
 

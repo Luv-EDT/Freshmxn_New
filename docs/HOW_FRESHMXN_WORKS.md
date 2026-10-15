@@ -111,8 +111,9 @@ The demo (`/try-demo`, no account) takes about 6 minutes, in three stages shown 
    "3 starts an hour from one place" and a daily cap, `DEMO_DAILY_CAP`, keep the AI cost in check.)
 2. **Your story** — one question: what have you enjoyed, been curious about or felt good at, grown through, been
    noticed for, solved a problem with, or that simply felt good? Asked across three timelines: school or college,
-   now, and what you aspire to (with our careers to pick from). The "Stuck?" list stays pinned at the top. Then
-   **what stuck, and why** (the four reasons the real form uses).
+   now, and what you aspire to (in their own words). The "Stuck?" list stays pinned at the top. Then
+   **what stuck, and why** — the four reasons the real form uses, plus "it helps me deal with a problem in my life"
+   (inside me / with people / around me), which matching counts just like the real form's problems.
 3. **Three quick tasks** — "A taste of 10 of our 31 factors":
    - **7 statements**, one real "what you're drawn to" statement per intelligence;
    - **a 90-second focus game** — the real SART's own clock, 78 digits instead of 225, no practice round;
@@ -123,12 +124,12 @@ The demo (`/try-demo`, no account) takes about 6 minutes, in three stages shown 
    seconds": the **real engines** read the story first (the activity step and the same matching the full report
    uses), and the tasks only check the careers it points to against the fundamentals they need.
 
-**The report** keeps it clean: a fold on what we did differently (story first, not screening by intelligence); the
-**two careers**, each the real career card with everything inside — the road from where you stand, exams, money,
+**The report** keeps it clean (on a darker page, no footer until here): the
+**two careers** straight away, a one-line "the full journey takes 3+ hours", each the real career card with everything inside — the road from where you stand, exams, money,
 the future; a **psychometric fold** listing all 31 factors — the ten touched as a word level with how much of each
-was measured (about 20–35%), the rest faded at 0%; what the full program adds; then the plans — a mentor straight
-away in one of these two careers (Mentor Only), the whole journey (Career Discovery) or both — and a note on
-financial aid and refunds.
+was measured (about 20–35%), the rest faded at 0%; a fold on what we did differently (story first, not screening by
+intelligence); what the full program adds; then three options — a mentor in one of these two careers, the whole
+journey, or both — with one button to the programs page, and a note on financial aid and refunds.
 
 **The demo is kept apart from everything else.** It has its own door (`/demo`) and drawer (`demo_sessions`), never
 touches a student's record, a payment or a score, and deletes itself after 30 days. What visitors type helps our

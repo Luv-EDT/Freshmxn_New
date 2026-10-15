@@ -17,7 +17,10 @@ const mongoose = require("mongoose")
 // 30 days (the TTL index below).
 
 const DEMO_TTL_DAYS = 30
-const REASON_KEYS = ["curiosityDriven", "personalGrowth", "socialRecognition", "effortlessEngagement"]
+// the real form's four "why" groups, plus (Round 33) "it helps me deal with a problem in my life" — stored as
+// the real form's three kinds of problem (inside me / with people / around me), which matching counts too
+const REASON_KEYS = ["curiosityDriven", "personalGrowth", "socialRecognition", "effortlessEngagement", "individualInternalProblems", "interpersonalInternalProblems", "externalProblems"]
+const PROBLEM_KEYS = ["individualInternalProblems", "interpersonalInternalProblems", "externalProblems"]
 
 const demoSessionSchema = new mongoose.Schema(
     {
@@ -93,3 +96,4 @@ const DemoSession = mongoose.model("demo_sessions", demoSessionSchema)
 module.exports = DemoSession
 module.exports.DEMO_TTL_DAYS = DEMO_TTL_DAYS
 module.exports.REASON_KEYS = REASON_KEYS
+module.exports.PROBLEM_KEYS = PROBLEM_KEYS

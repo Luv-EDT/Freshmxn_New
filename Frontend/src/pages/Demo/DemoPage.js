@@ -144,7 +144,8 @@ function DemoPage() {
     const stageReady = stage.journey && (stage.journey !== "early_professional" || String(stage.years).trim() !== "")
 
     return (
-        <div>
+        // a darker theme for the demo (owner, Round 33): dark at the sides, the page itself a bright column
+        <div className="demo-shell">
             <PublicNav />
             <main className="page demo-page">
                 {phaseIndex >= 0 && (
@@ -245,7 +246,8 @@ function DemoPage() {
 
                 {step === "result" && result && <DemoResult result={result} />}
             </main>
-            <PublicFooter />
+            {/* no footer while the demo is going on — only once the result is shown (owner, Round 33) */}
+            {step === "result" && <PublicFooter />}
         </div>
     )
 }
