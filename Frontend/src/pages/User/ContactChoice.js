@@ -2,8 +2,8 @@ import { useState } from "react"
 import { message } from "antd"
 import { saveMyContact } from "../../apiCall/mentorWaitlistApi"
 
-// HOW YOUR MENTOR CONTACTS YOU (owner, Round 28): WhatsApp or email, and the student's agreement that
-// we share their first name and that one contact with their mentor. Asked with the choice on
+// HOW WE REACH YOU (owner, Rounds 28 and 34): WhatsApp or email, and the student's agreement that we
+// share their first name, their brief and that one contact with their mentor. Asked with the choice on
 // /mentorship/choose, and on /mentorship for a choice sent before this was asked.
 export const contactReady = (value) => Boolean(value && ["whatsapp", "email"].includes(value.contactVia) && value.consent === true)
 
@@ -11,20 +11,29 @@ export function ContactChoice({ value, onChange }) {
     const set = (part) => onChange({ ...value, ...part })
     return (
         <fieldset className="contact-choice">
-            <legend>How should your mentor contact you?</legend>
+            <legend>How should we reach you about your mentor?</legend>
             <label className="choice">
                 <input type="radio" name="contactVia" checked={value.contactVia === "whatsapp"} onChange={() => set({ contactVia: "whatsapp" })} />
-                <span>WhatsApp (the phone number on your profile)</span>
+                <span>WhatsApp (the phone number on your profile) — <strong>recommended</strong></span>
             </label>
             <label className="choice">
                 <input type="radio" name="contactVia" checked={value.contactVia === "email"} onChange={() => set({ contactVia: "email" })} />
                 <span>Email</span>
             </label>
+            {/* Round 34 (owner): email works only if they read it */}
+            {value.contactVia === "email" && (
+                <p className="contact-note">
+                    Please check your email often, so your call can be scheduled in time. We prefer a phone number —
+                    WhatsApp is quicker and easier.
+                </p>
+            )}
             <label className="consent-check">
                 <input type="checkbox" checked={value.consent === true} onChange={(event) => set({ consent: event.target.checked })} />
                 <span>
-                    <span aria-hidden="true">🔒</span> Freshmxn may share my first name and my {value.contactVia === "email" ? "email" : value.contactVia === "whatsapp" ? "WhatsApp number" : "WhatsApp number or email"} with
-                    my mentor, only to arrange my sessions. Mentors agree to keep it private.
+                    <span aria-hidden="true">🔒</span> Freshmxn may share with my mentor my first name, my choice and what I
+                    want to know, my languages, highlights of my Virtual Career Counselling answers (interests,
+                    achievements, challenges, education) and my {value.contactVia === "email" ? "email" : value.contactVia === "whatsapp" ? "WhatsApp number" : "WhatsApp number or email"} —
+                    only to prepare for and hold my sessions. Mentors agree to keep it private.
                 </span>
             </label>
         </fieldset>

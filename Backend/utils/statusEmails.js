@@ -131,26 +131,59 @@ const TEMPLATES = {
         subject: "Your report is being prepared again",
         body: `<p>We've fixed what stopped your report and it is being prepared again. It is usually ready within a few minutes: <a href="${site()}/report">${site()}/report</a></p>`,
     }),
-    // ── mentor sessions (Round 28) ──
+    // ── mentor sessions (Rounds 28 and 34) ──
     mentorInvite: ({ firstName, profession, jobRole, focus, helpWanted }) => ({
-        subject: "You've received a mentor invite",
-        body: `<p>You've been matched with a student who would like your help.</p>${line("Student", firstName)}${line("Career", profession)}${line("Job role", jobRole)}${line("Help with", focus)}${line("They'd like to know", helpWanted)}<p>Please open your mentor page, accept our privacy rules, and you'll see how to reach the student: <a href="${site()}/mentor">${site()}/mentor</a></p><p>Then send them your Calendly (booking) link and press "I've sent my booking link".</p><p><strong>Privacy rules</strong></p><ul>${PRIVACY_RULES.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>`,
+        subject: "You have a new student",
+        body: `<p>We've matched you with a student. You have <strong>2.5 days</strong> to read their brief and prepare — about 30 minutes, and much less with practice.</p>${line("Student", firstName)}${line("Career", profession)}${line("Job role", jobRole)}${line("Help with", focus)}${line("They'd like to know", helpWanted)}<p>Read the full brief on your mentor page: <a href="${site()}/mentor">${site()}/mentor</a></p><p>The student books from your Calendly links, so keep the slots you opened free and honour every booking. After the session, tell us on WhatsApp (8882756287) that it's done — we then send the student the feedback form, and your payment follows their feedback.</p><p><strong>Privacy rules</strong></p><ul>${PRIVACY_RULES.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>`,
     }),
-    mentorConfirmed: ({ mentorName, contactVia }) => ({
-        subject: "Your mentor is confirmed",
-        body: `<p>Your mentor${mentorName ? `, <strong>${escapeHtml(mentorName)}</strong>,` : ""} is confirmed. They'll message you on <strong>${contactVia === "email" ? "email" : "WhatsApp"}</strong> with a link to book your session.</p><p>After your session, leave a short review here — it opens once we've marked the session done: <a href="${site()}/mentorship/review">${site()}/mentorship/review</a></p><p>If anything about your mentor feels wrong, use "Report a problem with my mentor" on <a href="${site()}/mentorship">${site()}/mentorship</a>.</p>`,
+    mentorConfirmed: ({ mentorName, calendlyMain, calendlyFollowUp }) => ({
+        subject: "Your mentor is confirmed — book your session",
+        body: `<p>Your mentor${mentorName ? `, <strong>${escapeHtml(mentorName)}</strong>,` : ""} is confirmed. Book your session from these links within <strong>2.5 days</strong>, or it counts as a no-show:</p>${calendlyMain ? `<p>1-hour main session (in the next 4 days): <a href="${escapeHtml(calendlyMain)}">${escapeHtml(calendlyMain)}</a></p>` : ""}${calendlyFollowUp ? `<p>20-minute follow-up (day 5 or 6, if you'd like one): <a href="${escapeHtml(calendlyFollowUp)}">${escapeHtml(calendlyFollowUp)}</a></p>` : ""}<p>Book both together — if you don't pick a follow-up slot now, we take it that you don't want it (your mentor will also offer it at the end of your session). Add both to your calendar. Joining more than 10 minutes late counts as a no-show. To reschedule, message us on WhatsApp (8882756287) and we'll ask your mentor.</p><p>The links are also on your dashboard: <a href="${site()}/mentorship">${site()}/mentorship</a></p><p>After your session we'll send you a short feedback form. Please fill it only after the session, and don't share it with your mentor — it's for you to tell us, and for us to judge the mentor.</p>`,
     }),
     reviewOpen: () => ({
-        subject: "How was your mentor session?",
-        body: `<p>Your mentor session is marked done. Tell us how it went — a rating out of 10 and two quick questions: <a href="${site()}/mentorship/review">${site()}/mentorship/review</a></p>`,
+        subject: "How was your mentor session? Your feedback form is open",
+        body: `<p>Your mentor has told us your session is done. Please fill the short feedback form — it takes 2 minutes and you can send it only once. It closes your mentor ticket, so send it after your follow-up too, if you booked one: <a href="${site()}/mentorship/review">${site()}/mentorship/review</a></p><p>Please don't share it with your mentor.</p>`,
     }),
-    mentorReportReceived: () => ({
+    mentorReportReceived: ({ wants, refundInr }) => ({
         subject: "We've received your report about your mentor",
-        body: `<p>Thank you for telling us. <strong>Please block your mentor's number on WhatsApp now</strong> if you haven't already.</p><p>We'll stop them contacting you and come back to you within 2 working days with what you chose — your money back, or another mentor.</p>`,
+        body: wants === "refund"
+            ? `<p>Thank you for telling us, and we're sorry. Your mentor ticket is closed and you'll get a refund of the mentor part${refundInr ? ` (<strong>${inr(refundInr)}</strong>)` : ""} — you'll get a separate email when it's on its way.</p>`
+            : `<p>Thank you for telling us, and we're sorry. We'll give you a new mentor within <strong>15 business days</strong> — the one you reported will not be matched with you again. We'll update you by email, WhatsApp and on your dashboard.</p>`,
     }),
     mentorReportResolved: ({ outcome, note }) => ({
         subject: "About your report",
-        body: `<p>${outcome === "new_mentor" ? "We're finding you a different mentor — the one you reported will not be matched with you again." : outcome === "refund" ? "We're processing your refund. You'll get a separate email when it is on its way." : "We've looked into your report."}</p>${line("Note from our team", note)}`,
+        body: `<p>${outcome === "new_mentor" ? "We've looked into your report. We're finding you a different mentor — the one you reported will not be matched with you again." : outcome === "refund" ? "We've looked into your report. Your refund of the mentor part is being processed — you'll get a separate email when it is on its way." : "We've looked into your report."}</p>${line("Note from our team", note)}`,
+    }),
+    choiceReset: () => ({
+        subject: "Choose your mentor's job role again",
+        body: `<p>As you asked, we've reset your mentor choice. Please choose the career and job role again — your 20-business-day match starts when you send it: <a href="${site()}/mentorship/choose">${site()}/mentorship/choose</a></p>`,
+    }),
+    newMentorComing: ({ dueBy }) => ({
+        subject: "We're finding you a new mentor",
+        body: `<p>We're finding you a new mentor for the same career and job role${dueBy ? `, by <strong>${escapeHtml(new Date(dueBy).toDateString())}</strong>` : " within 15 business days"}. We're sorry for the wait — we'll update you by email, WhatsApp and on your dashboard: <a href="${site()}/mentorship">${site()}/mentorship</a></p>`,
+    }),
+    studentNoShow: () => ({
+        subject: "Your mentor session was marked a no-show",
+        body: `<p>Your mentor session was marked a no-show — it wasn't booked within 2.5 days, or nobody joined within 10 minutes of the start. Your mentor ticket is now closed. If something went wrong, message us on WhatsApp (8882756287).</p>`,
+    }),
+    // ── for mentors (Round 34) ──
+    mentorTestReceived: () => ({
+        subject: "We've received your mentor test",
+        body: `<p>Thank you — your test is with our team. It usually takes a couple of days to review your profile and test; we'll let you know by email whether you're onboarded.</p>`,
+    }),
+    mentorDecision: ({ decision, note }) => ({
+        subject: decision === "approved" ? "Welcome — you're an approved Freshmxn mentor" : "About your mentor application",
+        body: decision === "approved"
+            ? `<p>You're approved. We'll message you on WhatsApp before we match you with a student, so you can open slots on your Calendly links. Your dashboard has everything: <a href="${site()}/mentor">${site()}/mentor</a></p>${line("Note from our team", note)}<p>As promised, your test video has been deleted.</p>`
+            : `<p>Thank you for applying. We can't onboard you as a mentor this time.</p>${line("Why", note)}<p>As promised, your test video has been deleted. Questions? WhatsApp 8882756287.</p>`,
+    }),
+    mentorTierUp: ({ tier }) => ({
+        subject: `You're now a Tier ${tier} mentor`,
+        body: `<p>Congratulations — you've moved up to <strong>Tier ${tier}</strong>, so your sessions now pay more. See it on your dashboard: <a href="${site()}/mentor">${site()}/mentor</a></p>`,
+    }),
+    mentorPaid: ({ amountInr, amountUsd, reference }) => ({
+        subject: "We've sent your mentor payment",
+        body: `<p>We've paid you <strong>${inr(amountInr)}</strong>${amountUsd ? ` ($${amountUsd})` : ""} for your session.</p>${line("Payment reference", reference)}<p>Each payment is listed under Payouts on your dashboard: <a href="${site()}/mentor">${site()}/mentor</a></p>`,
     }),
     retakeDeclined: ({ testName, reason }) => ({
         subject: `About your request for ${testName}`,

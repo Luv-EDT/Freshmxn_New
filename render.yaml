@@ -62,6 +62,14 @@ services:
         sync: false   # Round 25: Cloudflare Turnstile on sign-up — off while empty (DEPLOY.md)
       - key: TURNSTILE_SECRET_KEY
         sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false   # Round 34: Cloudflare R2 for the mentor test video — a pasted link while empty (DEPLOY.md)
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET
+        sync: false
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_NAME

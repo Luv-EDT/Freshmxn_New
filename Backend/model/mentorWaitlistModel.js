@@ -51,6 +51,32 @@ const mentorWaitlistSchema = new mongoose.Schema(
             type: Boolean, // Round 18: wants help with a master's abroad / settling abroad when we offer it (a later version)
             default: false,
         },
+        // Round 34 (owner): the languages they'd like the session in, part of the one-time choice
+        languages: {
+            type: [String],
+            default: [],
+        },
+        // how many business days the current search was promised in: 20 for a choice, 15 for "a new
+        // mentor" after a report or the admin's "find another mentor"
+        matchBusinessDays: {
+            type: Number,
+            default: 20,
+        },
+        // EVERYTHING THAT HAPPENED TO THIS TICKET (Round 34): a choice sent, reset, a new mentor, a refund
+        // — with the choice as it stood, so nothing a student chose is ever lost
+        history: {
+            type: [{
+                at: Date,
+                event: String,       // choice_sent | choice_reset | new_mentor | reassigned | refund_requested | refunded | student_no_show | session_done
+                by: String,          // student | admin
+                note: String,
+                profession: String,
+                jobRole: String,
+                mentorName: String,
+            }],
+            default: [],
+        },
+        sessionDoneAt: { type: Date, default: null },   // the admin pressed "Session done" — the feedback form opens
         planTier: {
             type: Number, // 2 | 3 — the plan the choice was made on
         },
@@ -59,7 +85,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
         },
         matchStatus: {
             type: String,
-            default: "awaiting_choice", // awaiting_choice | matching | matched | completed (Round 28) | unmatchable
+            default: "awaiting_choice", // awaiting_choice | matching | matched | completed (Round 28: the admin marked the session done; feedback open) | closed (Round 34: refund asked for, or the student didn't show) | unmatchable (before Round 34)
         },
         assignedMentor: {
             type: mongoose.Schema.Types.ObjectId,
@@ -89,6 +115,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
                 matchedAt: Date,
                 mainSessionAt: Date,     // Round 29: the main (1-hour) session was held
                 followUp: Boolean,       // Round 29: the follow-up was held (it is up to the student)
+                noShow: String,          // Round 34: "student" — the student didn't join; the mentor is still paid
                 completedAt: Date,
                 adminNote: String,
             }],

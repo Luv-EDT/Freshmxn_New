@@ -143,12 +143,15 @@ function SectionBody({ id, value }) {
     return null
 }
 
+const EMPTY_STEP = { skill: "", resource: "", link: "", cost: "", time: "" }
+
 function MentorReviewSheet() {
     const [sheet, setSheet] = useState(null)
     const [reason, setReason] = useState("")
     const [answers, setAnswers] = useState({})         // section → { verdict, note, sourceUrl }
     const [qualities, setQualities] = useState({})     // factor → { direction, note }
     const [skillsMissing, setSkillsMissing] = useState("")
+    const [roadmap, setRoadmap] = useState([EMPTY_STEP, EMPTY_STEP, EMPTY_STEP])   // Round 34: the starter skills roadmap
     const [submittedAt, setSubmittedAt] = useState(null)
     const [progress, setProgress] = useState({ waiting: 0, checked: 0 })
     const [saving, setSaving] = useState(false)
@@ -164,6 +167,7 @@ function MentorReviewSheet() {
         setAnswers(sections)
         setQualities(quality)
         setSkillsMissing(review.skillsMissing || "")
+        if ((review.roadmap || []).length) setRoadmap(review.roadmap)
         setSubmittedAt(review.submittedAt)
         setProgress({ waiting: review.waiting || 0, checked: review.checked || 0 })
     }
@@ -183,6 +187,7 @@ function MentorReviewSheet() {
     if (!sheet) return reason ? <p className="report-small">{reason}</p> : null
 
     const setSection = (id, field) => (e) => setAnswers((prev) => ({ ...prev, [id]: { ...prev[id], [field]: e.target.value } }))
+    const setStep = (index, field) => (e) => setRoadmap((prev) => prev.map((step, at) => (at === index ? { ...step, [field]: e.target.value } : step)))
     const setQuality = (factor, field) => (e) => setQualities((prev) => ({ ...prev, [factor]: { ...prev[factor], [field]: e.target.value } }))
 
     const renderQuality = (quality) => (
@@ -206,6 +211,7 @@ function MentorReviewSheet() {
             sections: Object.entries(answers).filter(([, answer]) => answer.verdict).map(([section, answer]) => ({ section, ...answer })),
             qualities: Object.entries(qualities).filter(([, answer]) => answer.direction).map(([factor, answer]) => ({ factor, ...answer })),
             skillsMissing,
+            roadmap: roadmap.filter((step) => step.skill || step.resource || step.link),
         })
         setSaving(false)
         if (!response || response.data.success === false) {
@@ -217,7 +223,7 @@ function MentorReviewSheet() {
     }
 
     return (
-        <details className="faq-item mentor-review">
+        <details className="faq-item mentor-review" open>
             <summary>Check our data for {sheet.profession}</summary>
             <p>
                 This is what students read about your profession. These details come from our research and AI, and are
@@ -271,9 +277,42 @@ function MentorReviewSheet() {
                     )}
                 </fieldset>
 
-                <fieldset className="review-section">
-                    <legend>Skills we're missing</legend>
-                    <textarea maxLength={600} placeholder="Skills people in this work need that we haven't mentioned" value={skillsMissing} onChange={(e) => setSkillsMissing(e.target.value)} />
+                {/* Round 34 (owner): a starter skills roadmap, as a table only */}
+                <fieldset className="review-section roadmap">
+                    <legend>Suggest a starter skills roadmap</legend>
+                    <p className="roadmap-tier">A good roadmap is one of the requirements for Tier 3 — it can get you there in 10 sessions.</p>
+                    <p>
+                        Suggest free or cheap resources (YouTube, Coursera, Udemy and others) that give someone the first
+                        20% of skills to start in your field, and find out whether it's for them. Put them in the order they
+                        should be done. Assume the person knows nothing about the field, so start from the basics.
+                    </p>
+                    <div className="table-scroll">
+                        <table className="roadmap-table">
+                            <thead>
+                                <tr><th>#</th><th>Skill or topic</th><th>Resource name</th><th>Link</th><th>Free / cost</th><th>Time it takes</th><th aria-label="Remove" /></tr>
+                            </thead>
+                            <tbody>
+                                {roadmap.map((step, index) => (
+                                    <tr key={index}>
+                                        <td>{index + 1}</td>
+                                        <td><input aria-label={`Step ${index + 1} skill`} maxLength={120} placeholder={index === 0 ? "e.g. Basics of Figma" : ""} value={step.skill} onChange={setStep(index, "skill")} /></td>
+                                        <td><input aria-label={`Step ${index + 1} resource`} maxLength={160} placeholder={index === 0 ? "Figma for beginners (YouTube)" : ""} value={step.resource} onChange={setStep(index, "resource")} /></td>
+                                        <td><input aria-label={`Step ${index + 1} link`} type="url" maxLength={400} placeholder="https://" value={step.link} onChange={setStep(index, "link")} /></td>
+                                        <td><input aria-label={`Step ${index + 1} cost`} maxLength={40} placeholder="Free" value={step.cost} onChange={setStep(index, "cost")} /></td>
+                                        <td><input aria-label={`Step ${index + 1} time`} maxLength={40} placeholder="4 hours" value={step.time} onChange={setStep(index, "time")} /></td>
+                                        <td><button type="button" className="link-button" onClick={() => setRoadmap(roadmap.filter((unused, at) => at !== index))} disabled={roadmap.length <= 1}>Remove</button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRoadmap([...roadmap, EMPTY_STEP])} disabled={roadmap.length >= 15}>+ Add step</button>
+                    {skillsMissing && (
+                        <>
+                            <label>Skills you told us we were missing (before)</label>
+                            <textarea maxLength={600} value={skillsMissing} onChange={(e) => setSkillsMissing(e.target.value)} />
+                        </>
+                    )}
                 </fieldset>
 
                 <p><button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "Sending…" : submittedAt ? "Send again" : "Send my review"}</button></p>

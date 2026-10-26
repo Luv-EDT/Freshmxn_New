@@ -9,6 +9,7 @@
 //     batch_collect    every hour, at :17 — files the answers of a finished half-price batch
 //                      (housekeeping/researchBatch.js); with no batch waiting it makes no AI call
 //     model_compare    on demand — the one-time Opus/Sonnet comparison (housekeeping/modelCompare.js)
+//     mentor_video_cleanup  daily, 03:40 — deletes any mentor test video undecided for 30 days (Round 34)
 //
 // ONE QUEUE, ONE WORKER, several job names — these jobs are rare and small. The calendar lives in the
 // database (workers/jobQueue.js `schedule`: one waiting row per schedule, due at its next time), so a
@@ -40,6 +41,7 @@ const SCHEDULES = [
     { name: "data_refresh", pattern: "0 4 1 * *" },
     { name: "study_refresh", pattern: "0 6 1 * *" },
     { name: "batch_collect", pattern: "17 * * * *" },   // hourly (Round 12) — usually collects within the hour of the 1st
+    { name: "mentor_video_cleanup", pattern: "40 3 * * *" },   // daily (Round 34) — no test video waits more than 30 days
 ]
 
 const JOBS = {
@@ -54,6 +56,7 @@ const JOBS = {
     // reminders — each queued for its own time (runLater)
     retake_offer: (data) => require("../housekeeping/retakeOffer").runRetakeOffer(data),
     story_notice: (data) => require("../housekeeping/storyNotices").runStoryNotice(data),
+    mentor_video_cleanup: () => require("../Routers/mentorTestRouter").cleanUpOldVideos(),
 }
 
 // jobs the admin may start from "Run now" — draft_career is started only by approving a scout row

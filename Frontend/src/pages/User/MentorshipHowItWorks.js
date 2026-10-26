@@ -23,7 +23,7 @@ function MentorshipHowItWorks() {
             <BackToDashboard />
             <main className="page mentor-how">
                 <p><Link to="/mentorship">← Mentorship</Link></p>
-                <h2>How it works</h2>
+                <h2 className="page-title-center">How it works</h2>
                 <Framing />
 
                 <h3>Who your mentor will be</h3>

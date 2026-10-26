@@ -41,7 +41,20 @@ const mentorReviewSchema = new mongoose.Schema(
         },
         skillsMissing: {
             type: String,
-            default: "",
+            default: "",   // before Round 34; the starter skills roadmap below replaced it
+        },
+        // A STARTER SKILLS ROADMAP (owner, Round 34): free or cheap resources, in order, that give someone
+        // the first 20% of skills to start in this field and see whether it suits them. One row per step.
+        roadmap: {
+            type: [{
+                _id: false,
+                skill: String,
+                resource: String,
+                link: String,
+                cost: String,       // "Free" or a price
+                time: String,       // "4 hours", "2 weeks"
+            }],
+            default: [],
         },
         status: {
             type: String,

@@ -1,22 +1,24 @@
 import { useState, useEffect } from "react"
-import { Table, Button, Popconfirm, Segmented, Select, Modal, Input, message } from "antd"
+import { Table, Button, Popconfirm, Segmented, Select, Modal, Input, Checkbox, Dropdown, message } from "antd"
 import dayjs from "dayjs"
-import { getWaitlistForAdmin, matchForAdmin, resolveForAdmin, resetChoiceForAdmin, completeSessionForAdmin, mainSessionDoneForAdmin } from "../../apiCall/mentorWaitlistApi"
-import { grantMentorSessionForAdmin } from "../../apiCall/paymentsApi"
+import { getWaitlistForAdmin, matchForAdmin, resetChoiceForAdmin, completeSessionForAdmin, newMentorForAdmin, studentNoShowForAdmin } from "../../apiCall/mentorWaitlistApi"
+import { grantMentorSessionForAdmin, refundMentorPartForAdmin } from "../../apiCall/paymentsApi"
 import { getAllMentorsForAdmin } from "../../apiCall/mentorsApi"
 import { markWhatsappInviteForAdmin } from "../../apiCall/mentorSessionsApi"
 import StudentSearch, { matchesStudent } from "./StudentSearch"
 
-// Every Tier-2 student and where their mentor match stands. The 20-business-day clock runs from the
-// student's CHOICE, not their payment. Actions are keyed on the student's user id.
-//   Match   — pick an approved mentor (manual in V1)
-//   Resolve — no mentor found: rollover first, refund on request. Recording only: the money itself
-//             still moves through the Refund Requests tab.
-//   Reset   — the student asked (on WhatsApp) to change their career choice
-//   Done    — Round 28: the session happened; it is logged and the student can book another (paid)
-//   Another — Round 28: record another session the student paid for by hand, or give one free
-//   WhatsApp — Round 28: a match emails the mentor the invite; this opens WhatsApp with the same
-//             invite typed in (the mentor's number from their profile) — press send there
+// Every student on a mentor plan and where their mentor ticket stands (owner, Round 34). The clock runs
+// from the student's CHOICE — 20 business days, or 15 for a new mentor. Actions are keyed on the student's
+// user id.
+//   Match         — after asking the mentor on WhatsApp to open Calendly slots; the student then sees the
+//                   links and books. A mentor without Calendly links can't be matched.
+//   WhatsApp      — opens WhatsApp with the mentor's "new student" message typed in
+//   Session done  — after the mentor tells us on WhatsApp; the student's feedback form opens
+//   Student no-show — closes the ticket with no refund; the mentor is still paid
+//   Close or change this ticket — one menu, each choice doing the whole job and telling the student:
+//       find another mentor (a strike when the mentor was at fault) · reset the career choice (within 7
+//       days of it) · refund the mentor part (the money and the ticket in one step)
+//   Another       — Round 28: record another session the student paid for by hand, or give one free
 // A student must have chosen WhatsApp or email and agreed to it before they can be matched.
 
 // weekdays left until the promised date; negative once it has passed
@@ -31,6 +33,15 @@ const businessDaysLeft = (dueBy) => {
         if (next.day() !== 0 && next.day() !== 6) count += step
     }
     return count
+}
+
+const STATUS_WORDS = {
+    awaiting_choice: "Waiting for choice",
+    matching: "Finding mentor",
+    matched: "Matched",
+    completed: "Session done",
+    closed: "Closed",
+    unmatchable: "Closed (before Round 34)",
 }
 
 function MentorMatchesList({ dataVersion, onDataChanged }) {
@@ -58,25 +69,71 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         }
     }
 
-    const handleMainDone = async (studentId) => {
+    // "Session done": the session is logged and the student's feedback form opens
+    const handleDone = async (studentId) => {
         try {
-            const response = await mainSessionDoneForAdmin(studentId)
+            const response = await completeSessionForAdmin(studentId, {})
             message.success(response.data.message)
             fetchAll()
         } catch (error) {
-            message.error(error.response?.data?.message || "Failed to mark the main session")
+            message.error(error.response?.data?.message || "Failed to mark the session done")
         }
     }
 
-    // closes the session, with or without the follow-up (the follow-up is up to the student)
-    const handleDone = async (studentId, followUp) => {
+    const handleNoShow = async (studentId) => {
         try {
-            const response = await completeSessionForAdmin(studentId, { followUp })
+            const response = await studentNoShowForAdmin(studentId, {})
             message.success(response.data.message)
             fetchAll()
         } catch (error) {
-            message.error(error.response?.data?.message || "Failed to log the session")
+            message.error(error.response?.data?.message || "Failed to mark the no-show")
         }
+    }
+
+    // CLOSE OR CHANGE THIS TICKET — one menu, three choices (owner, Round 34)
+    const changeTicket = (record, action) => {
+        const studentId = record.student?._id
+        let note = ""
+        let strike = false
+        const config = {
+            new_mentor: {
+                title: "Find another mentor?",
+                text: "Same career and role. The current mentor is kept away from this student. The student is told: a new mentor within 15 business days.",
+                strikeBox: Boolean(record.assignedMentor),
+                run: () => newMentorForAdmin(studentId, { adminNote: note, strike }),
+            },
+            reset: {
+                title: "Reset the career choice?",
+                text: "The choice, the clock and any match are cleared; the student chooses again and is emailed. Kept in the ticket's history.",
+                run: () => resetChoiceForAdmin(studentId, { adminNote: note }),
+            },
+            refund: {
+                title: "Refund the mentor part?",
+                text: "The refund is sent now — the difference on Discovery + Mentor, everything on Mentor Only, or the extra session's price — and the ticket closes. The student is emailed.",
+                run: () => refundMentorPartForAdmin(studentId, { adminNote: note }),
+            },
+        }[action]
+        Modal.confirm({
+            title: config.title,
+            content: (
+                <>
+                    <p>{config.text}</p>
+                    {config.strikeBox && <p><Checkbox onChange={(event) => { strike = event.target.checked }}>The mentor was at fault (didn't prepare, respond or turn up) — give a strike</Checkbox></p>}
+                    <Input.TextArea placeholder="Note (what the student asked on WhatsApp)" onChange={(event) => { note = event.target.value }} />
+                </>
+            ),
+            okText: "Yes, do it",
+            onOk: async () => {
+                try {
+                    const response = await config.run()
+                    message.success(response.data.message)
+                    fetchAll()
+                    onDataChanged()
+                } catch (error) {
+                    message.error(error.response?.data?.message || "That didn't work")
+                }
+            },
+        })
     }
 
     // opens WhatsApp with the invite typed in, and notes that it was sent
@@ -107,44 +164,6 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         }
     }
 
-    const handleResolve = (studentId, resolution) => {
-        let note = ""
-        Modal.confirm({
-            title: resolution === "refunded" ? "Record a refund?" : "Record a rollover?",
-            content: (
-                <>
-                    <p>
-                        {resolution === "refunded"
-                            ? "This records the outcome only — issue the refund itself from the Refund Requests tab."
-                            : "The payment rolls over: keep searching, or redirect it to another career from their matches."}
-                    </p>
-                    <Input.TextArea placeholder="Note (optional)" onChange={(e) => { note = e.target.value }} />
-                </>
-            ),
-            onOk: async () => {
-                try {
-                    await resolveForAdmin(studentId, { resolution, adminNote: note })
-                    message.success("Resolution recorded")
-                    fetchAll()
-                    onDataChanged()
-                } catch (error) {
-                    message.error(error.response?.data?.message || "Failed to record the resolution")
-                }
-            },
-        })
-    }
-
-    const handleReset = async (studentId) => {
-        try {
-            await resetChoiceForAdmin(studentId, { adminNote: "Student asked to change their choice" })
-            message.success("Choice reset — the student can choose again")
-            fetchAll()
-            onDataChanged()
-        } catch (error) {
-            message.error(error.response?.data?.message || "Failed to reset the choice")
-        }
-    }
-
     const columns = [
         { title: "Student", render: (_, record) => `${record.student?.name} (${record.student?.email})` },
         { title: "Phone", render: (_, record) => record.student?.phone || "—" },
@@ -164,6 +183,7 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         { title: "Wants to know", dataIndex: "helpWanted", render: (value) => value || "—" },
         // Round 19: the help the student wants for that role — as a career, as an interest/passion, or both
         { title: "Help with", dataIndex: "helpFocus", render: (value) => ({ career: "Career", passion: "Interest / passion", both: "Both" }[value] || "—") },
+        { title: "Languages", render: (_, record) => (record.languages || []).join(", ") || "—" },
         { title: "Abroad help waitlist", dataIndex: "abroadHelpWaitlist", render: (value) => (value ? "Yes" : "—") },
         { title: "Support needs (shared)", render: (_, record) => ((record.sharedSupportNeeds || []).length > 0 ? record.sharedSupportNeeds.join(", ") : "—") },
         { title: "Chosen on", render: (_, record) => (record.choiceSentAt ? dayjs(record.choiceSentAt).format("DD MMM YYYY") : "—") },
@@ -176,20 +196,10 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                 return `${dayjs(record.dueBy).format("DD MMM YYYY")} (${record.matchStatus === "matching" ? label : "—"})`
             },
         },
-        { title: "Status", dataIndex: "matchStatus", render: (value, record) => `${value}${(record.sessions || []).length ? ` · ${record.sessions.length} done` : ""}${record.sameFieldNewMentor ? " · different mentor wanted" : ""}` },
+        { title: "Status", dataIndex: "matchStatus", render: (value, record) => `${STATUS_WORDS[value] || value}${(record.sessions || []).length ? ` · ${record.sessions.length} done` : ""}${record.sameFieldNewMentor ? " · different mentor wanted" : ""}${record.resolution === "refund_requested" ? " · refund asked for" : ""}` },
         { title: "Mentor", render: (_, record) => record.assignedMentor?.name || "—" },
         // Round 28: how the mentor may reach the student, and where this match's steps stand
         { title: "Contact", render: (_, record) => (record.contactConsented ? (record.contactVia === "email" ? "Email" : "WhatsApp") : "Waiting for consent") },
-        {
-            title: "Invite steps",
-            render: (_, record) => (record.matchStatus === "matched"
-                ? [
-                    record.whatsappInviteAt ? "✓ WhatsApp sent" : "WhatsApp not sent",
-                    record.mentorPrivacyAcceptedAt ? "✓ privacy accepted" : "privacy not accepted",
-                    record.bookingLinkSentAt ? "✓ booking link sent" : "no booking link yet",
-                ].join(" · ")
-                : "—"),
-        },
         // rows written before Round 13 carry the old, unclear wording
         { title: "Note", render: (_, record) => (record.adminNote === "Re-opened on a new Tier 2 place" ? "Re-joined the mentor plan after leaving it — waiting for a new choice" : record.adminNote) || "—" },
         {
@@ -207,37 +217,31 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                                             style={{ minWidth: 180 }}
                                             options={mentors
                                                 .filter((mentor) => !(record.excludedMentors || []).some((excluded) => String(excluded) === String(mentor.user)))
-                                                .map((mentor) => ({ value: mentor.user, label: `${mentor.name} — ${mentor.discipline}` }))}
+                                                .map((mentor) => ({ value: mentor.user, label: `${mentor.name} — ${mentor.discipline} · Tier ${mentor.tier || 1}${mentor.calendlyMain ? "" : " · no Calendly links"}` }))}
                                             value={chosenMentor[studentId]}
                                             onChange={(value) => setChosenMentor((prev) => ({ ...prev, [studentId]: value }))}
                                         />{" "}
-                                        <Popconfirm title="Match this student with the selected mentor? The mentor is emailed the invite." onConfirm={() => handleMatch(studentId)} disabled={!chosenMentor[studentId]}>
+                                        <Popconfirm title="Did you ask the mentor to open Calendly slots? Matching shows the student the links and emails both." onConfirm={() => handleMatch(studentId)} disabled={!chosenMentor[studentId]}>
                                             <Button type="primary" size="small" disabled={!chosenMentor[studentId]}>Match</Button>
                                         </Popconfirm>{" "}
                                     </>
                                 ) : <span>Waiting for the student's contact consent </span>}
-                                <Button size="small" onClick={() => handleResolve(studentId, "rolled_over")}>Roll over</Button>{" "}
-                                <Button size="small" danger onClick={() => handleResolve(studentId, "refunded")}>Refunded</Button>{" "}
+
                             </>
                         )}
                         {record.matchStatus === "matched" && record.whatsappInvite && (
-                            <><Button size="small" onClick={() => sendWhatsapp(record)}>{record.whatsappInviteAt ? "Send invite on WhatsApp again" : "Send invite on WhatsApp"}</Button>{" "}</>
+                            <><Button size="small" onClick={() => sendWhatsapp(record)}>{record.whatsappInviteAt ? "Message the mentor again" : "Message the mentor on WhatsApp"}</Button>{" "}</>
                         )}
-                        {record.matchStatus === "matched" && !record.mainSessionAt && (
-                            <Popconfirm title="Mark the main (1-hour) session held?" onConfirm={() => handleMainDone(studentId)}>
-                                <Button type="primary" size="small">Main session done</Button>
-                            </Popconfirm>
-                        )}
-                        {record.matchStatus === "matched" && record.mainSessionAt && (
+                        {record.matchStatus === "matched" && (
                             <>
-                                <Popconfirm title="Follow-up held? The session is logged and the student is asked for a review." onConfirm={() => handleDone(studentId, true)}>
-                                    <Button type="primary" size="small">Follow-up done</Button>
+                                <Popconfirm title="Has the mentor told you the session is done? The student's feedback form opens now." onConfirm={() => handleDone(studentId)}>
+                                    <Button type="primary" size="small">Session done</Button>
                                 </Popconfirm>{" "}
-                                <Popconfirm title="Close without a follow-up? The session is logged and the student is asked for a review." onConfirm={() => handleDone(studentId, false)}>
-                                    <Button size="small">Close without follow-up</Button>
-                                </Popconfirm>
+                                <Popconfirm title="The student didn't book within 2.5 days or didn't join? The ticket closes with no refund; the mentor is still paid." onConfirm={() => handleNoShow(studentId)}>
+                                    <Button size="small">Student no-show</Button>
+                                </Popconfirm>{" "}
                             </>
-                        )}{" "}
+                        )}
                         {record.matchStatus === "completed" && (record.extraSessionsPaid || 0) <= (record.extraSessionsUsed || 0) && (
                             <>
                                 <Popconfirm title="Record another session the student paid for by hand?" onConfirm={() => handleAnother(studentId, false)}>
@@ -248,14 +252,20 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                                 </Popconfirm>{" "}
                             </>
                         )}
-                        {record.choiceSentAt && (
-                            <Popconfirm
-                                title="Reset this student's choice? Their clock and any match are cleared, and they choose again."
-                                okText="Reset"
-                                onConfirm={() => handleReset(studentId)}
+                        {(record.choiceSentAt || record.resolution === "refund_requested") && (
+                            <Dropdown
+                                trigger={["click"]}
+                                menu={{
+                                    items: [
+                                        record.choiceSentAt && { key: "new_mentor", label: "Find another mentor" },
+                                        record.canResetChoice && { key: "reset", label: "Reset the career choice (within 7 days)" },
+                                        { key: "refund", label: "Refund the mentor part", danger: true },
+                                    ].filter(Boolean),
+                                    onClick: ({ key }) => changeTicket(record, key),
+                                }}
                             >
-                                <Button size="small">Reset choice</Button>
-                            </Popconfirm>
+                                <Button size="small">Close or change this ticket ▾</Button>
+                            </Dropdown>
                         )}
                     </>
                 )
@@ -268,7 +278,7 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
     return (
         <div>
             <Segmented
-                options={["awaiting_choice", "matching", "matched", "completed", "unmatchable", "all"]}
+                options={["awaiting_choice", "matching", "matched", "completed", "closed", "all"].map((value) => ({ value, label: STATUS_WORDS[value] || "All" }))}
                 value={statusFilter}
                 onChange={setStatusFilter}
             />{" "}

@@ -19,6 +19,7 @@ import MentorshipChoose from "./pages/User/MentorshipChoose.js"
 import MentorshipReview from "./pages/User/MentorshipReview.js"
 import MentorshipHowItWorks from "./pages/User/MentorshipHowItWorks.js"
 import AdminHome from "./pages/Admin/AdminHome.js"
+import AdminMentors from "./pages/Admin/AdminMentors.js"
 import AdminProtectedRoute from "./pages/Admin/AdminProtectedRoute.js"
 import InterestForm from "./pages/Interest/InterestForm.js"
 import AssessmentShell from "./pages/Assessment/AssessmentShell.js"
@@ -174,6 +175,13 @@ function App() {
                     path="/admin"
                     element={<AdminProtectedRoute>
                         <AdminHome />
+                    </AdminProtectedRoute>}
+                />
+                {/* Round 34 (owner): the admin's mentor section, on its own page */}
+                <Route
+                    path="/admin/mentors"
+                    element={<AdminProtectedRoute>
+                        <AdminMentors />
                     </AdminProtectedRoute>}
                 />
 

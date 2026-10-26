@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback } from "react"
-import { Table, Button, Select, Checkbox, Input, Modal, message } from "antd"
+import { Table, Button, Checkbox, Input, Modal, message } from "antd"
 import dayjs from "dayjs"
 import { getMentorFeedbackForAdmin, resolveMentorReportForAdmin } from "../../apiCall/mentorSessionsApi"
 import StudentSearch, { matchesStudent } from "./StudentSearch"
 
-// MENTOR SESSION FEEDBACK (owner, Round 28): students' reports about their mentor (open first) and
-// their reviews after a session, with each mentor's average out of 10.
-//   Another mentor — back to matching on a new clock, this mentor never offered to them again
-//   Refund         — recorded here; issue the money from the student's payments
-//   Pause mentor   — they are not offered to anyone until approved again (Mentors tab)
+// MENTOR SESSION FEEDBACK (owner, Rounds 28 and 34): students' reports about their mentor (open first) and
+// their feedback after a session, with each mentor's average out of 10. A report changes the student's
+// ticket the moment it's sent (a refund asked for, or a new mentor on the way); here the admin records
+// the verdict:
+//   Upheld        — a strike on the mentor, no payout for that session, no automatic Tier 2
+//   Pause mentor  — they are not offered to anyone until un-paused (Mentors tab)
+// A refund the student asked for is sent from their ticket (Mentor matches → Close or change → Refund).
 const REASON_NAMES = { inappropriate: "Behaved inappropriately", privacy: "Didn't respect privacy", no_show: "Didn't turn up / stopped replying", other: "Something else" }
-const OUTCOME_NAMES = { new_mentor: "Another mentor", refund: "Refund", no_action: "No action" }
+const OUTCOME_NAMES = { new_mentor: "A new mentor", refund: "A refund", no_action: "No action" }
+const COVERED_NAMES = { overview: "profession", journey: "journey", relate: "relating", success: "success needs", resources: "resources" }
+const QUALITY_NAMES = { empathetic: "empathetic", knowledgeable: "knowledgeable", clear: "clear", clarity: "gave clarity", recommend: "recommend" }
 
 function SessionFeedbackList() {
     const [data, setData] = useState({ reviews: [], reports: [], averages: [] })
@@ -31,22 +35,22 @@ function SessionFeedbackList() {
     useEffect(() => { fetchAll() }, [fetchAll])
 
     const resolve = (record) => {
-        let outcome = record.wants
+        let upheld = false
         let pauseMentor = false
         let adminNote = ""
         Modal.confirm({
             title: `Resolve the report about ${record.mentorName || "this mentor"}`,
             content: (
                 <div>
-                    <p>The student asked for: <strong>{OUTCOME_NAMES[record.wants]}</strong></p>
-                    <Select defaultValue={outcome} style={{ width: "100%" }} options={Object.entries(OUTCOME_NAMES).map(([value, label]) => ({ value, label }))} onChange={(value) => { outcome = value }} />
+                    <p>The student asked for: <strong>{OUTCOME_NAMES[record.wants]}</strong> — their ticket has already changed.{record.wants === "refund" ? " Send the refund from their ticket on Mentor matches." : ""}</p>
+                    <p><Checkbox onChange={(event) => { upheld = event.target.checked }}>Upheld — it's true (a strike, and no payout for that session)</Checkbox></p>
                     <p><Checkbox onChange={(event) => { pauseMentor = event.target.checked }}>Pause this mentor (no new students)</Checkbox></p>
                     <Input.TextArea rows={3} placeholder="A note for the student (emailed)" onChange={(event) => { adminNote = event.target.value }} />
                 </div>
             ),
             okText: "Resolve",
             onOk: async () => {
-                const response = await resolveMentorReportForAdmin(record._id, { outcome, pauseMentor, adminNote })
+                const response = await resolveMentorReportForAdmin(record._id, { upheld, pauseMentor, adminNote })
                 if (!response || response.data.success === false) {
                     message.error(response?.data?.message || "Could not resolve")
                     return
@@ -63,7 +67,7 @@ function SessionFeedbackList() {
         { title: "Mentor", dataIndex: "mentorName", render: (value) => value || "—" },
         { title: "What happened", render: (_, record) => `${REASON_NAMES[record.reason]}${record.note ? ` — ${record.note}` : ""}` },
         { title: "Wants", dataIndex: "wants", render: (value) => OUTCOME_NAMES[value] },
-        { title: "Status", render: (_, record) => (record.status === "open" ? "Open" : `Resolved: ${OUTCOME_NAMES[record.outcome] || "—"}${record.mentorPaused ? " · mentor paused" : ""}`) },
+        { title: "Status", render: (_, record) => (record.status === "open" ? "Open" : `Resolved${record.upheld ? " · upheld" : " · not upheld"}${record.mentorPaused ? " · mentor paused" : ""}`) },
         { title: "Action", render: (_, record) => (record.status === "open" ? <Button type="primary" size="small" onClick={() => resolve(record)}>Resolve</Button> : null) },
     ]
 
@@ -73,9 +77,10 @@ function SessionFeedbackList() {
         { title: "Mentor", dataIndex: "mentorName", render: (value) => value || "—" },
         { title: "Career — role", render: (_, record) => `${record.profession || "—"}${record.jobRole ? ` — ${record.jobRole}` : ""}` },
         { title: "Rating", dataIndex: "rating", render: (value) => `${value}/10` },
-        { title: "Helped decide", dataIndex: "helpedDecide" },
-        { title: "Would recommend", dataIndex: "wouldRecommend" },
-        { title: "Comment", dataIndex: "comment", render: (value) => value || "—" },
+        { title: "Covered", render: (_, record) => (record.covered ? Object.entries(record.covered).map(([key, value]) => `${COVERED_NAMES[key] || key}: ${value}`).join(" · ") : "—") },
+        { title: "Mentor was", render: (_, record) => (record.qualities ? Object.entries(record.qualities).map(([key, value]) => `${QUALITY_NAMES[key] || key}: ${value}`).join(" · ") : `helped decide: ${record.helpedDecide || "—"} · recommend: ${record.wouldRecommend || "—"}`) },
+        { title: "Within limits", render: (_, record) => (record.withinLimits === "no" ? <strong>NO</strong> : record.withinLimits || "—") },
+        { title: "Concern / comment", render: (_, record) => record.concern || record.comment || "—" },
     ]
 
     const averageColumns = [

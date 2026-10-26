@@ -8,23 +8,26 @@ import { chooseProfession } from "../../apiCall/mentorWaitlistApi"
 import { getMyDemo } from "../../apiCall/demoApi"
 import CareerRolePicker, { pickerComplete, pickerSummary } from "../CareerRolePicker"
 import { hasMentor } from "../plans"
-import { formatDate, useMentorWaitlist, HelpLine, HelpWanted } from "./mentorshipParts"
+import { formatDate, useMentorWaitlist, HelpLine, HelpFields, helpReady, HELP_FOCUS } from "./mentorshipParts"
 import { ContactChoice, contactReady } from "./ContactChoice"
 
-// EVERYTHING THE STUDENT FILLS IN FOR THEIR MENTOR, on its own page (owner, Round 20): the job role
-// (sent once — it starts the 20-business-day clock), what help they want for it, what they want to
-// know and the abroad-help tick. /mentorship itself only says where things stand and how it works.
+// EVERYTHING THE STUDENT TELLS US FOR THEIR MENTOR, ON ONE PAGE, SENT ONCE (owner, Rounds 20 and 34): the
+// job role, what help they want, what they want to know, their languages and how we reach them — then
+// ONE "Send my choice" at the very end. Sending starts the 20-business-day clock; after that nothing can
+// be edited here (a change goes through WhatsApp, and only within 7 days).
 // Discovery + Mentor students choose from their own matches; Mentor Only students (Round 12) from all
-// our careers, or one we don't list. A change after sending goes through WhatsApp and the admin.
+// our careers, or one we don't list.
 function MentorshipChoose() {
     const navigate = useNavigate()
     const { user } = useSelector((state) => state.user)
     const isTier2 = hasMentor(user)   // Discovery + Mentor or Mentor Only
-    const { waitlist, setWaitlist, options, loading } = useMentorWaitlist(isTier2)
+    const { waitlist, options, loading } = useMentorWaitlist(isTier2)
     const [selected, setSelected] = useState(null)   // { professionId, profession, jobRole }
     const [ownChoice, setOwnChoice] = useState({})   // Mentor Only: the picker's value
-    const [contact, setContact] = useState({ contactVia: null, consent: false })   // Round 28: how the mentor reaches you
+    const [help, setHelp] = useState({ helpFocus: null, helpWanted: "", languages: [], languageOther: "" })
+    const [contact, setContact] = useState({ contactVia: null, consent: false })
     const [linkedDemoCareers, setLinkedDemoCareers] = useState([])
+    const [sending, setSending] = useState(false)
 
     // a demo done with this (verified) email: its two careers are offered even before carrying it forward
     useEffect(() => {
@@ -32,13 +35,32 @@ function MentorshipChoose() {
         getMyDemo().then((response) => setLinkedDemoCareers(((response.data.data || {}).careers) || [])).catch(() => setLinkedDemoCareers([]))
     }, [user])
 
+    if (!user) return null
+    if (!isTier2) return <Navigate to="/mentorship" replace />
+
+    const mentorOnly = Boolean(waitlist && waitlist.mentorOnly)
+    const choiceReady = mentorOnly ? pickerComplete(ownChoice) : Boolean(selected)
+    const ready = choiceReady && helpReady(help) && contactReady(contact)
+    const choiceText = mentorOnly ? (choiceReady ? pickerSummary(ownChoice) : "") : selected ? `${selected.jobRole} (${selected.profession})` : ""
+    const languageList = [...(help.languages || []), ...((help.languageOther || "").trim().length >= 2 ? [help.languageOther.trim()] : [])]
+
     const sendChoice = async () => {
-        const payload = waitlist && waitlist.mentorOnly
+        const payload = mentorOnly
             ? (typeof ownChoice.other === "string"
                 ? { other: ownChoice.other, industryCode: ownChoice.industryCode || null }
                 : { professionId: ownChoice.professionId, jobRole: ownChoice.jobRole, jobRoleOther: ownChoice.jobRoleOther, industryCode: ownChoice.industryCode || null })
             : { professionId: selected.professionId, jobRole: selected.jobRole }
-        const response = await chooseProfession({ ...payload, contactVia: contact.contactVia, contactConsent: contact.consent })
+        setSending(true)
+        const response = await chooseProfession({
+            ...payload,
+            helpFocus: help.helpFocus,
+            helpWanted: help.helpWanted,
+            languages: help.languages,
+            languageOther: help.languageOther,
+            contactVia: contact.contactVia,
+            contactConsent: contact.consent,
+        })
+        setSending(false)
 
         if (!response || response.data.success === false) {
             message.error(response?.data?.message || "Could not send your choice")
@@ -46,30 +68,32 @@ function MentorshipChoose() {
         }
 
         message.success(response.data.message)
-        setWaitlist((prev) => ({ ...prev, ...response.data.data }))
         navigate("/mentorship")
     }
 
+    // one last look at everything, because none of it can be changed here afterwards
     const confirmChoice = () => {
-        const mentorOnly = waitlist && waitlist.mentorOnly
-        if (mentorOnly ? !pickerComplete(ownChoice) : !selected) return
-        if (!contactReady(contact)) return
-
+        if (!ready) return
         Modal.confirm({
-            title: mentorOnly ? `Send "${pickerSummary(ownChoice)}" as your choice?` : `Send "${selected.jobRole}" (${selected.profession}) as your choice?`,
-            content: "This starts your 20-business-day mentor match. You can't change it here afterwards — if you need to, message us on WhatsApp.",
+            title: "Send your choice?",
+            content: (
+                <div>
+                    <p><strong>{choiceText}</strong></p>
+                    <p>Help with: {(HELP_FOCUS.find((option) => option.value === help.helpFocus) || {}).label}</p>
+                    {help.helpWanted && <p>You'd like to know: {help.helpWanted}</p>}
+                    <p>Languages: {languageList.join(", ")}</p>
+                    <p>We'll reach you on: {contact.contactVia === "email" ? "email" : "WhatsApp"}</p>
+                    <p>This starts your 20-business-day mentor match. <strong>You can't change any of this here afterwards</strong> — to change the career, message us on WhatsApp within 7 days.</p>
+                </div>
+            ),
             okText: "Send my choice",
             cancelText: "Not yet",
             onOk: sendChoice,
         })
     }
 
-    if (!user) return null
-    if (!isTier2) return <Navigate to="/mentorship" replace />
-
     // the demo's two careers (Round 33): quick picks for Mentor Only; on Discovery + Mentor, lifted to the top
-    // of their matches when they are among them
-    // also when they haven't pressed "Carry them forward" yet: the linked demo's careers, read-only
+    // of their matches when they are among them — also before "Carry them forward"
     const demoCareers = (user.demoCareers || []).length ? user.demoCareers : linkedDemoCareers
     const demoIds = demoCareers.map((career) => career.professionId)
     const orderedOptions = [...options.filter((option) => demoIds.includes(option.professionId)), ...options.filter((option) => !demoIds.includes(option.professionId))]
@@ -77,6 +101,8 @@ function MentorshipChoose() {
     const chosenText = waitlist && (waitlist.otherRequest
         ? waitlist.otherRequest
         : waitlist.chosenJobRole ? `${waitlist.chosenJobRole} (${waitlist.chosenProfessionName})` : waitlist.chosenProfessionName)
+    const choosing = waitlist && waitlist.matchStatus === "awaiting_choice"
+    const noMatchesYet = choosing && !mentorOnly && options.length === 0
 
     return (
         <div>
@@ -84,17 +110,24 @@ function MentorshipChoose() {
             <BackToDashboard />
             <main className="page" aria-busy={loading}>
                 <p><Link to="/mentorship">← Mentorship</Link></p>
-                <h2>Your choices for your mentor</h2>
+                <h2 className="page-title-center">Your choices for your mentor</h2>
 
                 {loading && <div className="skeleton skeleton-block" />}
 
-                {waitlist && waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
+                {choosing && (
+                    <p className="mentor-once-note">
+                        Fill everything below, then press <strong>Send my choice</strong> at the end. It's sent once and
+                        can't be edited afterwards.
+                    </p>
+                )}
+
+                {/* 1. THE JOB ROLE */}
+                {choosing && mentorOnly && (
                     <section>
-                        <h3>Choose the job role you'd like a mentor in</h3>
+                        <h3>1. Choose the job role you'd like a mentor in</h3>
                         <p>
                             Find the career you're interested in and pick the <strong>one job role</strong> you'd like to
-                            move toward. If it isn't in our list, tell us in your own words. We'll confirm your mentor and
-                            schedule your two sessions within <strong>20 business days</strong> of your choice.
+                            move toward. If it isn't in our list, tell us in your own words.
                         </p>
                         {/* the two careers from their demo, offered first (owner, Round 33) */}
                         {demoCareers.length > 0 && !ownChoice.professionId && typeof ownChoice.other !== "string" && (
@@ -110,26 +143,18 @@ function MentorshipChoose() {
                             </div>
                         )}
                         <CareerRolePicker value={ownChoice} onChange={setOwnChoice} allowAnyCareer />
-                        <ContactChoice value={contact} onChange={setContact} />
-                        <p>
-                            {pickerComplete(ownChoice) ? <>Your choice: <strong>{pickerSummary(ownChoice)}</strong>{" "}</> : ""}
-                            <button type="button" className="btn btn-primary" disabled={!pickerComplete(ownChoice) || !contactReady(contact)} onClick={confirmChoice}>
-                                Send my choice
-                            </button>
-                        </p>
                     </section>
                 )}
 
-                {waitlist && !waitlist.mentorOnly && waitlist.matchStatus === "awaiting_choice" && (
+                {choosing && !mentorOnly && (
                     <section>
-                        <h3>Choose the job role you'd like a mentor in</h3>
+                        <h3>1. Choose the job role you'd like a mentor in</h3>
                         <p>
                             Open a career from your matches and pick the <strong>one job role</strong> you'd genuinely like to
-                            move toward — we'll look for a mentor who does that work. We'll confirm your mentor and schedule
-                            your two sessions within <strong>20 business days</strong> of your choice.
+                            move toward — we'll look for a mentor who does that work.
                         </p>
 
-                        {options.length === 0 ? (
+                        {noMatchesYet ? (
                             <p>
                                 Finish your assessment first — your matches appear here once your report is ready.{" "}
                                 <button type="button" className="tap" onClick={() => navigate("/dashboard")}>Go to my journey</button>
@@ -167,35 +192,49 @@ function MentorshipChoose() {
                                         </details>
                                     ))}
                                 </div>
-                                <ContactChoice value={contact} onChange={setContact} />
-                                <p>
-                                    {selected ? <>Your choice: <strong>{selected.jobRole}</strong> ({selected.profession}){" "}</> : "Pick one job role. "}
-                                    <button type="button" className="btn btn-primary" disabled={!selected || !contactReady(contact)} onClick={confirmChoice}>
-                                        Send my choice
-                                    </button>
-                                </p>
                             </>
                         )}
                     </section>
                 )}
 
-                {/* ALREADY SENT: shown, not editable — the clock is running on it */}
-                {waitlist && waitlist.matchStatus !== "awaiting_choice" && chosenText && (
-                    <section>
-                        <h3>Your mentor's job role</h3>
-                        <p>
-                            You chose <strong>{chosenText}</strong>{waitlist.chosenIndustry ? ` in ${waitlist.chosenIndustry}` : ""}
-                            {waitlist.choiceSentAt ? ` on ${formatDate(waitlist.choiceSentAt)}` : ""}.
-                        </p>
-                        <p>
-                            Need to change your choice?{" "}
-                            <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">Message us on WhatsApp</a>.
-                        </p>
-                    </section>
+                {/* 2–4. WHAT HELP, LANGUAGES, HOW WE REACH YOU — then ONE send, at the very end */}
+                {choosing && !noMatchesYet && (
+                    <>
+                        <HelpFields value={help} onChange={setHelp} />
+                        <section>
+                            <h3>How we reach you</h3>
+                            <ContactChoice value={contact} onChange={setContact} />
+                        </section>
+                        <div className="mentor-send">
+                            {choiceText ? <p>Your choice: <strong>{choiceText}</strong></p> : <p>Pick one job role above.</p>}
+                            {!ready && (
+                                <p className="report-small">
+                                    Still needed: {[!choiceReady && "a job role", !help.helpFocus && "what help you want", !helpReady({ ...help, helpFocus: "x" }) && "a language", !contactReady(contact) && "how we reach you and your OK to share"].filter(Boolean).join(", ")}.
+                                </p>
+                            )}
+                            <button type="button" className="btn btn-primary tap" disabled={!ready || sending} onClick={confirmChoice}>
+                                {sending ? "Sending…" : "Send my choice"}
+                            </button>
+                        </div>
+                    </>
                 )}
 
-                {waitlist && (
-                    <HelpWanted waitlist={waitlist} onSaved={(saved) => setWaitlist((prev) => ({ ...prev, ...saved }))} />
+                {/* ALREADY SENT: shown, never editable — the clock is running on it */}
+                {waitlist && !choosing && chosenText && (
+                    <section className="mentor-sent">
+                        <h3>What you sent us</h3>
+                        <ul>
+                            <li>Job role: <strong>{chosenText}</strong>{waitlist.chosenIndustry ? ` in ${waitlist.chosenIndustry}` : ""}{waitlist.choiceSentAt ? `, sent on ${formatDate(waitlist.choiceSentAt)}` : ""}</li>
+                            {waitlist.helpFocus && <li>Help with: {(HELP_FOCUS.find((option) => option.value === waitlist.helpFocus) || {}).label}</li>}
+                            {waitlist.helpWanted && <li>You'd like to know: {waitlist.helpWanted}</li>}
+                            {(waitlist.languages || []).length > 0 && <li>Languages: {waitlist.languages.join(", ")}</li>}
+                            {waitlist.contactVia && <li>We reach you on: {waitlist.contactVia === "email" ? "email" : "WhatsApp"}</li>}
+                        </ul>
+                        <p className="report-small">
+                            These can't be edited. To change the career, message us on WhatsApp
+                            {waitlist.changeableUntil ? ` before ${formatDate(waitlist.changeableUntil)}` : " within 7 days of sending"}.
+                        </p>
+                    </section>
                 )}
 
                 <HelpLine />

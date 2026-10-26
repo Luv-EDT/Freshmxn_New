@@ -57,13 +57,41 @@ const addBusinessDays = (start, days) => {
     return date
 }
 
-const dueByFor = (row) => (row && row.choiceSentAt ? addBusinessDays(row.choiceSentAt, MATCH_BUSINESS_DAYS) : null)
+// 20 business days for a choice; 15 when we're finding a new mentor (Round 34)
+const dueByFor = (row) => (row && row.choiceSentAt ? addBusinessDays(row.choiceSentAt, row.matchBusinessDays || MATCH_BUSINESS_DAYS) : null)
+const NEW_MENTOR_BUSINESS_DAYS = 15
+
+// A CHOICE CAN BE CHANGED FOR 7 DAYS (owner, Round 34) — by the admin, after the student asks on
+// WhatsApp. After that the reset is refused.
+const CHANGE_WINDOW_DAYS = 7
+const changeableUntil = (row) => (row && row.choiceSentAt ? new Date(new Date(row.choiceSentAt).getTime() + CHANGE_WINDOW_DAYS * 864e5) : null)
+const canResetChoice = (row, now = new Date()) => Boolean(row && row.choiceSentAt && changeableUntil(row) > now)
+
+// the languages a student may ask for (owner, Round 34); "Other" carries their own word
+const LANGUAGES = ["English", "Hindi", "Bengali", "Marathi", "Tamil", "Telugu", "Gujarati", "Kannada", "Malayalam", "Punjabi", "Odia"]
+const cleanLanguages = (body) => {
+    const picked = (Array.isArray(body.languages) ? body.languages : []).filter((name) => LANGUAGES.includes(name))
+    const other = typeof body.languageOther === "string" ? body.languageOther.trim().replace(/\s+/g, " ").slice(0, 40) : ""
+    return [...new Set(picked), ...(other.length >= 2 ? [other] : [])]
+}
+
+// one line in the ticket's history, with the choice as it stood
+const historyEntry = (row, event, by, note = "", mentorName = null) => ({
+    at: new Date(),
+    event,
+    by,
+    note,
+    profession: (row && (row.chosenProfessionName || row.otherRequest)) || null,
+    jobRole: (row && row.chosenJobRole) || null,
+    mentorName,
+})
 
 // Discovery + Mentor (tier 2) or Mentor Only (tier 3) — utils/plans.js
 const { grants } = require("../utils/plans")
 const { notifyStudent } = require("../utils/statusEmails")
 const { inviteFacts, whatsappLink } = require("../utils/mentorInvite")
 const { industryByCode } = require("../utils/industries")
+const { writeSessionPayout } = require("../utils/mentorPayouts")
 const hasMentorPlan = (user) => user.paid === true && grants(Number(user.currentTier)).mentor
 const isMentorOnly = (user) => user.paid === true && Number(user.currentTier) === 3
 const professionById = new Map(taxonomy.professions.map((profession) => [profession.id, profession]))
@@ -78,14 +106,21 @@ const contactChoice = (body) => (CONTACT_VIA.includes(body.contactVia) && body.c
 const CONTACT_NEEDED = "Choose how your mentor should contact you, and tick that we may share it with them"
 
 // every new match starts its steps again
-const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null }
+const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null, sessionDoneAt: null }
 
-// what a student may see about their assigned mentor — the profile-visible name and role only.
-// Contact details, currency and residence never leave the admin side.
-const mentorSummary = async (mentorUserId) => {
+// what a student may see about their assigned mentor — the profile-visible name and role, and once
+// matched the two Calendly links they book from (Round 34). Contact details, payout details, currency
+// and residence never leave the admin side.
+const mentorSummary = async (mentorUserId, withLinks = false) => {
     if (!mentorUserId) return null
-    const profile = await Mentor.findOne({ user: mentorUserId }).select("name currentRole discipline")
-    return profile ? { name: profile.name, currentRole: profile.currentRole, discipline: profile.discipline } : null
+    const profile = await Mentor.findOne({ user: mentorUserId }).select("name currentRole discipline calendlyMain calendlyFollowUp")
+    if (!profile) return null
+    return {
+        name: profile.name,
+        currentRole: profile.currentRole,
+        discipline: profile.discipline,
+        ...(withLinks ? { calendlyMain: profile.calendlyMain || null, calendlyFollowUp: profile.calendlyFollowUp || null } : {}),
+    }
 }
 
 
@@ -148,7 +183,15 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 dueBy: dueByFor(row),
                 matchedAt: row.matchedAt,
                 resolution: row.resolution,
-                mentor: await mentorSummary(row.assignedMentor),
+                mentor: await mentorSummary(row.assignedMentor, row.matchStatus === "matched"),
+                languages: row.languages || [],
+                sessionDoneAt: row.sessionDoneAt || null,
+                changeableUntil: changeableUntil(row),
+                // Round 34: what "refund me" would give back, for the report form — from the server, never copy
+                mentorRefundInr: row.assignedMentor && ["matched", "completed"].includes(row.matchStatus)
+                    ? (await require("./paymentsRouter").mentorPartOf(req.user, row)).amountInr
+                    : null,
+                history: (row.history || []).map(({ at, event, profession, jobRole, mentorName }) => ({ at, event, profession, jobRole, mentorName })),
                 // Round 28: the sessions already done, and whether another can be started now
                 sessions: (row.sessions || []).map((session) => ({ profession: session.profession, jobRole: session.jobRole, mentorName: session.mentorName, completedAt: session.completedAt })),
                 extraSessionCredit: Math.max(0, (row.extraSessionsPaid || 0) - (row.extraSessionsUsed || 0)),
@@ -189,6 +232,12 @@ router.put("/saveMyHelp", authMiddleware, async (req, res) => {
                 success: false,
                 message: "The mentor waitlist comes with the Discovery + Mentor or Mentor Only plan"
             })
+        }
+
+        // Round 34 (owner): everything is sent once, with the choice — after that only we change it
+        const sent = await MentorWaitlist.exists({ user: req.user._id, choiceSentAt: { $ne: null } })
+        if (sent) {
+            return res.status(400).json({ success: false, message: "Your answers were sent with your choice and can't be changed here — message us on WhatsApp" })
         }
 
         const helpWanted = cleanText(req.body.helpWanted, HELP_MAX)
@@ -277,6 +326,18 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: "Add your phone number on your profile first, or choose email" })
         }
 
+        // Round 34 (owner): ONE form, sent once — what help they want, what they want to know and the
+        // languages go in with the choice and can't be changed afterwards
+        const helpFocus = HELP_FOCUS.includes(req.body.helpFocus) ? req.body.helpFocus : null
+        if (!helpFocus) {
+            return res.status(400).json({ success: false, message: "Please choose what help you want from your mentor" })
+        }
+        const languages = cleanLanguages(req.body)
+        if (languages.length === 0) {
+            return res.status(400).json({ success: false, message: "Please choose at least one language for your session" })
+        }
+        const answers = { helpFocus, languages, helpWanted: cleanText(req.body.helpWanted, HELP_MAX) }
+
         // an industry is a nice-to-have on either plan; when given it must be one of ours
         const industry = industryCode ? industryByCode.get(String(industryCode)) : null
         if (industryCode && !industry) {
@@ -346,13 +407,18 @@ router.post("/chooseProfession", authMiddleware, async (req, res) => {
         const row = await MentorWaitlist.findOneAndUpdate(
             { user: req.user._id },
             {
-                user: req.user._id,
-                ...choice,
-                ...contact,
-                chosenIndustryCode: industry ? industry.code : null,
-                planTier: Number(req.user.currentTier),
-                choiceSentAt: new Date(),
-                matchStatus: "matching",
+                $set: {
+                    user: req.user._id,
+                    ...choice,
+                    ...contact,
+                    ...answers,
+                    chosenIndustryCode: industry ? industry.code : null,
+                    planTier: Number(req.user.currentTier),
+                    choiceSentAt: new Date(),
+                    matchBusinessDays: MATCH_BUSINESS_DAYS,
+                    matchStatus: "matching",
+                },
+                $push: { history: historyEntry(choice, "choice_sent", "student") },
             },
             { upsert: true, returnDocument: "after" }
         )
@@ -428,6 +494,8 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
                 chosenIndustry: row.chosenIndustryCode && industryByCode.get(row.chosenIndustryCode) ? industryByCode.get(row.chosenIndustryCode).name : null,
                 contactConsented: Boolean(row.contactConsentAt),
                 whatsappInvite: mentorPhone ? whatsappLink(mentorPhone, inviteFacts(row, student)) : null,
+                canResetChoice: canResetChoice(row),
+                changeableUntil: changeableUntil(row),
             }
         })
 
@@ -451,6 +519,10 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 // Match For Admin
 // ========================
 
+// Before matching, the admin asks the mentor on WhatsApp to open slots on their Calendly links (main
+// session in the next 4 days, follow-up on days 5–6). The match then shows the student those links on
+// their dashboard, by email and as a notification — students and mentors never message each other to
+// arrange it (owner, Round 34).
 router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const { id } = req.params   // :id is the STUDENT's user id
@@ -465,7 +537,7 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
             })
         }
 
-        // Round 28: the student must have said how the mentor may reach them, and agreed to it
+        // Round 28: the student must have said how we may reach them, and agreed to it
         if (!row.contactConsentAt) {
             return res.status(400).json({
                 success: false,
@@ -473,7 +545,7 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
             })
         }
 
-        // only approved mentors (a paused one is never offered), and never one kept away from this student
+        // only approved mentors (a paused or removed one is never offered), and never one kept away from this student
         const mentor = await Mentor.findOne({ user: mentorUserId, status: "onboarded" })
 
         if (!mentor) {
@@ -490,21 +562,32 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
             })
         }
 
+        // the student books from these, so a match without them would leave the student stuck
+        if (!mentor.calendlyMain) {
+            return res.status(400).json({
+                success: false,
+                message: `${mentor.name} hasn't added their Calendly links yet — ask them to add them on their dashboard (My profile), then match`
+            })
+        }
+
         const updated = await MentorWaitlist.findOneAndUpdate(
             { user: id },
-            { assignedMentor: mentor.user, matchedAt: new Date(), matchStatus: "matched", resolution: "matched", ...FRESH_MATCH_STEPS },
+            {
+                $set: { assignedMentor: mentor.user, matchedAt: new Date(), matchStatus: "matched", resolution: "matched", ...FRESH_MATCH_STEPS },
+                $push: { history: historyEntry(row, "matched", "admin", "", mentor.name) },
+            },
             { returnDocument: "after" }
         )
 
-        // the invite to the mentor (email; WhatsApp is the admin's one tap), and the news to the student
+        // the news to both: the mentor gets the student's brief to prepare from; the student their links
         const student = await User.findById(id).select("name email").lean()
         const mentorUser = await User.findById(mentor.user).select("email").lean()
         notifyStudent(mentorUser, "mentorInvite", inviteFacts(updated, student))
-        notifyStudent(student, "mentorConfirmed", { mentorName: mentor.name, contactVia: updated.contactVia })
+        notifyStudent(student, "mentorConfirmed", { mentorName: mentor.name, calendlyMain: mentor.calendlyMain, calendlyFollowUp: mentor.calendlyFollowUp })
 
         return res.status(200).json({
             success: true,
-            message: `Matched with ${mentor.name} — they've been emailed the invite. Send it on WhatsApp too.`,
+            message: `Matched with ${mentor.name} — both have been emailed. The student books from ${mentor.name}'s Calendly links.`,
             data: { ...updated.toObject(), whatsappInvite: whatsappLink(mentor.phone, inviteFacts(updated, student)) },
         })
 
@@ -519,83 +602,47 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
 
 
 // ========================
-// Resolve For Admin
+// Close or change the ticket (owner, Round 34)
 // ========================
 
-// When no mentor can be found in 20 business days: rollover first, refund on request
-// (mentor_waitlist_page.md). This RECORDS the outcome — an actual refund still goes through the
-// Refund Requests tab, so the money trail stays in one place.
-router.put("/resolveForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params   // :id is the STUDENT's user id
-        const { resolution, adminNote } = req.body
-
-        if (!["rolled_over", "refunded"].includes(resolution)) {
-            return res.status(400).json({
-                success: false,
-                message: "Resolution must be rolled_over or refunded"
-            })
-        }
-
-        const updated = await MentorWaitlist.findOneAndUpdate(
-            { user: id },
-            { matchStatus: "unmatchable", resolution, adminNote: (adminNote || "").trim() },
-            { returnDocument: "after" }
-        )
-
-        if (!updated) {
-            return res.status(404).json({
-                success: false,
-                message: "No waitlist place for this student"
-            })
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Resolution recorded",
-            data: updated,
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to record the resolution",
-            error: error.message,
-        })
-    }
-})
-
-
-// ========================
-// Reset Choice For Admin
-// ========================
+// THREE CHOICES, EACH DOING THE WHOLE JOB and telling the student by email and notification:
+//   1. find another mentor        newMentorForAdmin (below) — same career and role, the old mentor kept away
+//   2. reset the career choice    resetChoiceForAdmin — only within 7 days of the student's choice
+//   3. refund the mentor part     /payments/refundMentorPartForAdmin — the money, and the ticket closed
+// (They replace "Rolled over" / "Refunded", which only wrote a word on the row, and the Students tab's
+// "Downgrade", which is the same as 3.)
 
 // the student asked (over WhatsApp) to change their career choice. Clears the choice, the clock and
-// any match, back to awaiting_choice — the next choice starts a fresh 20 business days.
+// any match, back to awaiting_choice — the next choice starts a fresh 20 business days. The old choice
+// stays in the ticket's history.
 router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const { id } = req.params   // :id is the STUDENT's user id
-        const { adminNote } = req.body
+        const row = await MentorWaitlist.findOne({ user: id }).lean()
 
+        if (!row || !row.choiceSentAt) {
+            return res.status(400).json({ success: false, message: "There's no choice to reset" })
+        }
+        if (!canResetChoice(row)) {
+            return res.status(400).json({ success: false, message: `A choice can only be reset within ${CHANGE_WINDOW_DAYS} days of sending it` })
+        }
+
+        const note = cleanText(req.body.adminNote, 500)
         const updated = await MentorWaitlist.findOneAndUpdate(
             { user: id },
             {
-                $set: { matchStatus: "awaiting_choice", adminNote: (adminNote || "").trim() },
-                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "", resolution: "" },
+                $set: { matchStatus: "awaiting_choice", adminNote: note, ...FRESH_MATCH_STEPS },
+                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", planTier: "", choiceSentAt: "", assignedMentor: "", matchedAt: "", resolution: "", helpWanted: "", helpFocus: "", languages: "" },
+                $push: { history: historyEntry(row, "choice_reset", "admin", note) },
             },
             { returnDocument: "after" }
         )
 
-        if (!updated) {
-            return res.status(404).json({
-                success: false,
-                message: "No waitlist place for this student"
-            })
-        }
+        notifyStudent(await User.findById(id).select("email").lean(), "choiceReset")
 
         return res.status(200).json({
             success: true,
-            message: "Choice reset — the student can choose again",
+            message: "Choice reset — the student has been told to choose again",
             data: updated,
         })
 
@@ -608,42 +655,67 @@ router.put("/resetChoiceForAdmin/:id", authMiddleware, adminAuthMiddleware, asyn
     }
 })
 
-
-// ========================
-// Mentor sessions (owner, Round 28)
-// ========================
-
-// A SESSION IN TWO STEPS (owner, Round 29). First the admin marks the main session held; then either
-// "Follow-up done" or "Close without follow-up" — the 20-minute follow-up is up to the student. Either
-// one closes the session: it is logged on the row, the review opens, and the student can then book
-// another (paid) — a new career or job role, or the same one with a different mentor.
-router.put("/mainSessionDoneForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+// Same career and role, a different mentor, within 15 business days. `strike` when the mentor is at
+// fault — they didn't prepare, respond or turn up — which counts against them.
+router.put("/newMentorForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
+        const { id } = req.params   // :id is the STUDENT's user id
+        const row = await MentorWaitlist.findOne({ user: id }).lean()
+
+        if (!row || !row.choiceSentAt) {
+            return res.status(400).json({ success: false, message: "This student hasn't chosen a career yet" })
+        }
+
+        const note = cleanText(req.body.adminNote, 500)
+        const old = row.assignedMentor ? await Mentor.findOne({ user: row.assignedMentor }).select("name") : null
+        if (old && req.body.strike === true) {
+            await Mentor.updateOne({ user: row.assignedMentor }, { $push: { strikes: { at: new Date(), reason: note || "didn't prepare, respond or turn up", student: row.user } } })
+        }
+
         const updated = await MentorWaitlist.findOneAndUpdate(
-            { user: req.params.id, matchStatus: "matched", mainSessionAt: null },   // :id is the STUDENT's user id
-            { $set: { mainSessionAt: new Date() } },
+            { user: id },
+            {
+                $set: { matchStatus: "matching", choiceSentAt: new Date(), matchBusinessDays: NEW_MENTOR_BUSINESS_DAYS, sameFieldNewMentor: true, resolution: null, adminNote: note || "Find a DIFFERENT mentor", ...FRESH_MATCH_STEPS },
+                $unset: { assignedMentor: "", matchedAt: "" },
+                ...(row.assignedMentor ? { $addToSet: { excludedMentors: row.assignedMentor } } : {}),
+                $push: { history: historyEntry(row, "new_mentor", "admin", note, old ? old.name : null) },
+            },
             { returnDocument: "after" }
         )
-        if (!updated) {
-            return res.status(400).json({ success: false, message: "Only a matched session can be marked held, once" })
-        }
-        return res.status(200).json({ success: true, message: "Main session marked held — close it after the follow-up, or without one", data: updated })
+
+        notifyStudent(await User.findById(id).select("email").lean(), "newMentorComing", { dueBy: dueByFor(updated) })
+
+        return res.status(200).json({
+            success: true,
+            message: `Back to matching — the student has been told within ${NEW_MENTOR_BUSINESS_DAYS} business days${old && req.body.strike === true ? `; ${old.name} has a strike` : ""}`,
+            data: updated,
+        })
 
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to mark the main session", error: error.message })
+        return res.status(500).json({ success: false, message: "Failed to find another mentor", error: error.message })
     }
 })
 
+
+// ========================
+// Session done, and student no-shows (owner, Round 34)
+// ========================
+
+// ONE "SESSION DONE", pressed after the mentor tells us on WhatsApp that the session (and the follow-up,
+// if one was booked) is over. The session is logged and the student's feedback form opens — on their
+// dashboard, by email and as a notification. Their feedback closes the ticket and makes the mentor's
+// payout due (mentorSessionsRouter saveMyReview).
 router.put("/completeSessionForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const { id } = req.params   // :id is the STUDENT's user id
         const row = await MentorWaitlist.findOne({ user: id }).lean()
 
-        if (!row || row.matchStatus !== "matched" || !row.mainSessionAt) {
-            return res.status(400).json({ success: false, message: "Mark the main session held first" })
+        if (!row || row.matchStatus !== "matched" || !row.assignedMentor) {
+            return res.status(400).json({ success: false, message: "Only a matched session can be marked done" })
         }
 
         const mentor = await mentorSummary(row.assignedMentor)
+        const now = new Date()
         const session = {
             professionId: row.chosenProfessionId,
             profession: row.chosenProfessionName || row.otherRequest,
@@ -651,23 +723,69 @@ router.put("/completeSessionForAdmin/:id", authMiddleware, adminAuthMiddleware, 
             mentor: row.assignedMentor,
             mentorName: mentor ? mentor.name : null,
             matchedAt: row.matchedAt,
-            mainSessionAt: row.mainSessionAt,
-            followUp: req.body.followUp === true,
-            completedAt: new Date(),
+            mainSessionAt: now,
+            followUp: typeof req.body.followUp === "boolean" ? req.body.followUp : undefined,
+            completedAt: now,
             adminNote: cleanText(req.body.adminNote, 500) || undefined,
         }
         const updated = await MentorWaitlist.findOneAndUpdate(
             { _id: row._id, matchStatus: "matched" },
-            { $push: { sessions: session }, $set: { matchStatus: "completed" } },
+            {
+                $push: { sessions: session, history: historyEntry(row, "session_done", "admin", "", session.mentorName) },
+                $set: { matchStatus: "completed", sessionDoneAt: now },
+            },
             { returnDocument: "after" }
         )
 
         notifyStudent(await User.findById(id).select("email").lean(), "reviewOpen")
 
-        return res.status(200).json({ success: true, message: `Session closed${session.followUp ? " after the follow-up" : " without a follow-up"} — the student has been asked for a review`, data: updated })
+        return res.status(200).json({ success: true, message: "Session done — the student's feedback form is open (dashboard, email, notification)", data: updated })
 
     } catch (error) {
-        return res.status(500).json({ success: false, message: "Failed to log the session", error: error.message })
+        return res.status(500).json({ success: false, message: "Failed to mark the session done", error: error.message })
+    }
+})
+
+// the student didn't join (10 minutes late counts) or never booked within 2.5 days: the ticket closes
+// with no refund, and the mentor — who kept the slot — is still paid
+router.put("/studentNoShowForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params   // :id is the STUDENT's user id
+        const row = await MentorWaitlist.findOne({ user: id }).lean()
+
+        if (!row || row.matchStatus !== "matched" || !row.assignedMentor) {
+            return res.status(400).json({ success: false, message: "Only a matched session can be marked a no-show" })
+        }
+
+        const mentor = await mentorSummary(row.assignedMentor)
+        const note = cleanText(req.body.adminNote, 500)
+        const session = {
+            professionId: row.chosenProfessionId,
+            profession: row.chosenProfessionName || row.otherRequest,
+            jobRole: row.chosenJobRole,
+            mentor: row.assignedMentor,
+            mentorName: mentor ? mentor.name : null,
+            matchedAt: row.matchedAt,
+            noShow: "student",
+            completedAt: new Date(),
+            adminNote: note || undefined,
+        }
+        const updated = await MentorWaitlist.findOneAndUpdate(
+            { _id: row._id, matchStatus: "matched" },
+            {
+                $push: { sessions: session, history: historyEntry(row, "student_no_show", "admin", note, session.mentorName) },
+                $set: { matchStatus: "closed", resolution: "student_no_show" },
+            },
+            { returnDocument: "after" }
+        )
+
+        if (updated) await writeSessionPayout({ row: updated, sessionIndex: updated.sessions.length - 1, note: "student no-show" })
+        notifyStudent(await User.findById(id).select("email").lean(), "studentNoShow")
+
+        return res.status(200).json({ success: true, message: "Marked a no-show — the ticket is closed and the mentor's payout is due", data: updated })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to mark the no-show", error: error.message })
     }
 })
 
@@ -691,7 +809,7 @@ router.post("/startAnotherSession", authMiddleware, async (req, res) => {
         const sameField = req.body.sameField === true && Boolean(row.chosenProfessionId || row.otherRequest)
         const update = sameField
             ? {
-                $set: { matchStatus: "matching", choiceSentAt: new Date(), sameFieldNewMentor: true, resolution: null, adminNote: "Same career and role — find a DIFFERENT mentor from last time", ...FRESH_MATCH_STEPS },
+                $set: { matchStatus: "matching", choiceSentAt: new Date(), matchBusinessDays: MATCH_BUSINESS_DAYS, sameFieldNewMentor: true, resolution: null, adminNote: "Same career and role — find a DIFFERENT mentor from last time", ...FRESH_MATCH_STEPS },
                 $unset: { assignedMentor: "", matchedAt: "" },
                 $inc: { extraSessionsUsed: 1 },
                 // last time's mentor can't be picked again for this one
@@ -699,7 +817,7 @@ router.post("/startAnotherSession", authMiddleware, async (req, res) => {
             }
             : {
                 $set: { matchStatus: "awaiting_choice", sameFieldNewMentor: false, resolution: null, adminNote: "Booked another session — waiting for a new choice", ...FRESH_MATCH_STEPS },
-                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", choiceSentAt: "", assignedMentor: "", matchedAt: "" },
+                $unset: { chosenProfessionId: "", chosenProfessionName: "", chosenJobRole: "", jobRoleIsOther: "", chosenIndustryCode: "", otherRequest: "", choiceSentAt: "", assignedMentor: "", matchedAt: "", helpWanted: "", helpFocus: "", languages: "" },
                 $inc: { extraSessionsUsed: 1 },
             }
 
@@ -720,3 +838,6 @@ router.post("/startAnotherSession", authMiddleware, async (req, res) => {
 module.exports = router
 module.exports.pickerOptions = pickerOptions
 module.exports.dueByFor = dueByFor
+module.exports.canResetChoice = canResetChoice
+module.exports.cleanLanguages = cleanLanguages
+module.exports.LANGUAGES = LANGUAGES

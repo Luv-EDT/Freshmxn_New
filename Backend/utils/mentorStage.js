@@ -1,6 +1,6 @@
 // WHERE A STUDENT IS WITH THEIR MENTOR, IN ONE LINE (owner, Round 29) — the admin Students tab's
 // "Mentorship" column. From the second cycle on (another session booked after the first), the stage
-// carries its number: "2 · main session taken".
+// carries its number: "2 · session done — waiting for feedback".
 const { grants } = require("./plans")
 
 const businessDaysLeft = (dueBy, now = new Date()) => {
@@ -22,21 +22,20 @@ const mentorStage = ({ tier, row, reviewed = [], dueBy = null, now = new Date() 
     if (!row) return "not started"
 
     const done = (row.sessions || []).length
-    const cycle = row.matchStatus === "completed" ? done : done + 1
+    // a student no-show logs that session before closing, so it counts like a done one
+    const cycle = row.matchStatus === "completed" || row.resolution === "student_no_show" ? done : done + 1
     const prefix = cycle >= 2 ? `${cycle} · ` : ""
 
-    if (row.matchStatus === "unmatchable" || ["refunded", "rolled_over", "left_tier2"].includes(row.resolution)) return `${prefix}closed`
+    if (row.resolution === "refund_requested") return `${prefix}refund asked for`
+    if (row.resolution === "student_no_show") return `${prefix}closed · student no-show`
+    if (row.matchStatus === "closed" || row.matchStatus === "unmatchable" || ["refunded", "rolled_over", "left_tier2"].includes(row.resolution)) return `${prefix}closed`
     if (row.matchStatus === "awaiting_choice") return `${prefix}not started`
-    if (row.matchStatus === "matching") return `${prefix}20-day wait${dueBy ? ` · ${businessDaysLeft(dueBy, now)} days left` : ""}`
-    if (row.matchStatus === "matched") {
-        if (row.mainSessionAt) return `${prefix}main session taken`
-        if (row.bookingLinkSentAt) return `${prefix}booking link sent`
-        return `${prefix}found mentor — waiting for mentor to reply`
-    }
+    if (row.matchStatus === "matching") return `${prefix}${row.matchBusinessDays === 15 ? "15-day wait (new mentor)" : "20-day wait"}${dueBy ? ` · ${businessDaysLeft(dueBy, now)} days left` : ""}`
+    // Round 34: the student books from the mentor's links; the mentor reports nothing on the platform
+    if (row.matchStatus === "matched") return `${prefix}matched — session to happen`
     if (row.matchStatus === "completed") {
-        if (reviewed.includes(done - 1)) return `${prefix}review given`
-        const last = (row.sessions || [])[done - 1] || {}
-        return `${prefix}${last.followUp ? "follow-up taken" : "main session taken · no follow-up"}`
+        if (reviewed.includes(done - 1)) return `${prefix}feedback in · closed`
+        return `${prefix}session done — waiting for feedback`
     }
     return `${prefix}${row.matchStatus}`
 }

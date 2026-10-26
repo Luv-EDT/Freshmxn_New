@@ -19,6 +19,7 @@ const reportSchema = new mongoose.Schema(
         status: { type: String, enum: ["open", "resolved"], default: "open" },
         outcome: { type: String, default: null },   // new_mentor | refund | no_action
         mentorPaused: { type: Boolean, default: false },
+        upheld: { type: Boolean, default: false },   // Round 34: the admin found it true — a strike, no payout, and it blocks Tier 2
         adminNote: { type: String, default: "" },
         handledAt: { type: Date, default: null },
     },

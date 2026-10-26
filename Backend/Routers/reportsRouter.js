@@ -514,3 +514,4 @@ module.exports.scoreGroupsFor = scoreGroupsFor
 module.exports.workOnFor = workOnFor
 module.exports.fundamentalsFor = fundamentalsFor
 module.exports.systemUpdate = systemUpdate
+module.exports.degreeLabelFor = degreeLabelFor

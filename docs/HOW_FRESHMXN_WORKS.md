@@ -581,25 +581,66 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 
 ## 7. The mentor part
 
-**After the match, step by step (Round 28, owner):**
-1. With your choice you tell us **how your mentor should contact you** — WhatsApp or email — and tick
-   that we may share your first name and that one contact with them. No match happens without it.
-2. When the admin matches you, the **mentor is emailed an invite** (your first name, the career and role,
-   what you want help with — never your contact) and the admin sends the same invite on **WhatsApp** with
-   one tap. You are emailed that your mentor is confirmed.
-3. On their mentor page the mentor must **agree to our privacy rules** (use your details only for the
-   sessions, share them with no one, no groups, delete the chat afterwards). Only then do they see your
-   WhatsApp number or email. They send you their **Calendly booking link** and press "I've sent my booking
-   link"; your mentorship page then says it's on its way.
-4. After the session the admin presses **Session done**. Your **review** opens (`/mentorship/review`, the
-   link is in your match email): a rating out of 10, "did it help you decide?", "would you recommend this
-   mentor?", and a box. One review per session; the admin sees each mentor's average.
-5. **Report a problem with my mentor** is on `/mentorship` and the review page at any time: what happened,
-   then your choice — **another mentor** or **a refund**. You are told to block them on WhatsApp straight
-   away. Another mentor puts you back in matching on a new clock, and that mentor is never offered to you
-   again; the admin can also pause the mentor for everyone.
-6. **Another session** (paid, at the Mentor Only price) can be booked once a session is done: a new career
-   or role, or the same one with a **different** mentor (last time's mentor is kept away).
+**Choosing, matching and the session, step by step (Round 34, owner — replaces Round 28's steps):**
+1. **One page, sent once.** On `/mentorship/choose` the student fills everything — the job role, what help
+   they want (career / interest / both), what they want to know, the languages they're comfortable in, and
+   how we may reach them (WhatsApp or email, with consent) — then presses one **Send my choice** at the end
+   and confirms. After that it is read-only ("What you sent us"). To change it they message us on WhatsApp
+   **within 7 days**; the admin's **Reset choice** works only inside that week and emails the student.
+2. **20 business days.** The admin first asks the mentor on WhatsApp to open slots on their two **Calendly
+   links** (stored in the mentor's profile), then presses **Match**. A mentor with no Calendly link can't be
+   matched. The mentor is emailed a "new student" note (read the brief within 2.5 days, keep the slots free);
+   the student is emailed that their mentor is confirmed, and `/mentorship` shows the two booking buttons.
+3. **The student books.** Within 2.5 days, or it counts as a no-show: the 1-hour main session in the next 4
+   days, the 20-minute follow-up on day 5 or 6 (not booking it means they don't want it; the mentor also asks
+   at the end of the main session). Our team sends a reminder an hour before. Rescheduling goes through us on
+   WhatsApp. Students and mentors never message each other on the platform.
+4. **The mentor's brief.** On their dashboard the mentor sees the student's first name, the career and role,
+   what they want to know, their languages and a few Virtual Career Counselling highlights (education,
+   interests, achievements, challenges — never family or beliefs; support needs only if the student chose to
+   share them). The contact shows only after the mentor agrees to the privacy rules.
+5. **Session done.** The mentor tells us on WhatsApp; the admin presses **Session done** (one step — the old
+   "main session / follow-up" pair is gone). The student's **feedback form** opens on `/mentorship/review`,
+   as a notification and by email. It asks, once, after both sessions: did the mentor cover the five parts
+   (the profession, their journey, how it relates to you, what success needs, resources), how the mentor was
+   (empathetic, knowledgeable, clear, gave clarity, would recommend), a rating out of 10, and whether they
+   stayed within limits. The mentor never sees it. Feedback in = the ticket closes and the **mentor's payout
+   is due**. A "no" on limits, or a concern, emails the admin.
+6. **Student no-show** (didn't book in 2.5 days, or 10+ minutes late): the admin presses **Student
+   no-show** — the ticket closes, no refund, the mentor is paid.
+7. **Report a problem with my mentor** (a small link on `/mentorship`): what happened, then **a refund** of
+   the mentor part (the amount comes from the server) or **a new mentor** (back to matching for **15 business
+   days**, that mentor kept away). It acts the moment it is sent; the admin then records whether it was
+   **upheld** (a strike on the mentor, no payout for that session, no automatic Tier 2) and can pause the
+   mentor. The refund itself is sent from the ticket (Mentor matches → Close or change this ticket → Refund
+   the mentor part).
+8. **Another session** (paid, at the Mentor Only price) can be booked once a session is done, as before.
+
+**Mentors, step by step (Round 34).** Sign up → the profile (including where they live — India or abroad,
+which sets their pay — their two Calendly links, and how we pay them: UPI or bank and PAN in India, bank or
+another method abroad; only our team sees these) → three short **training documents** (what Freshmxn is,
+how to get onboarded with Calendly, how to mentor) → a **test**: 7 multiple-choice questions drawn from 32,
+the five steps in order, their two Calendly links, and a 5–10 minute video mentoring a sample student
+(uploaded privately to Cloudflare R2, or a link pasted when R2 isn't set up). The admin reviews it (Admin →
+Mentors section → Mentors → **Review test**), approves or rejects with a reason, and the **video is deleted**
+then (and after 30 days at most, by a nightly job). Only then can they be matched.
+
+**Mentor pay (Round 34).** Paid per main session, when the student's feedback arrives; the first follow-up
+is included, a later one pays 30% of the main rate.
+
+| Tier | Indian | International |
+|---|---|---|
+| Tier 1 (approved) | ₹1,000 | ₹1,500 ($15) |
+| Tier 2 (automatic: 7 sessions with feedback, average 8/10+, no upheld report) | ₹1,300 | ₹1,900 ($19) |
+| Tier 3 (the admin's call: 10+ sessions, average 8+, a skills roadmap and a review of their profession's data) | ₹1,500+ | ₹2,200+ ($22) |
+
+A mentor's **first** payout waits for the admin's "Keep" (or "Remove" — they're taken off). Payouts are
+**recorded, not sent**: the admin pays by UPI or bank and presses **Mark paid** with the reference; the mentor
+is emailed. The **skills roadmap** sits on the mentor's "My profession" tab: steps from the basics (skill,
+resource, link, cost, time).
+
+**The admin's Mentors section** (`/admin/mentors`, Round 34): its own page with tabs — Mentor matches,
+Mentors, Payouts, Session feedback, Profession data. The main admin page links to it.
 
 Mentors can also sign up and log in **with Google** (Round 28); a new Google account started from the
 mentor page becomes a mentor, an existing account keeps what it is.
@@ -622,7 +663,7 @@ mentor page becomes a mentor, an existing account keeps what it is.
   their roles as one group). Under **"What do you want from your mentor?"** the page lists what the
   sessions cover — the day-to-day work, drawbacks and perks, the real picture and the mentor's own story,
   how to get in and the skills, and your questions — with a box for anything specific (600 characters)
-  that the admin passes to the mentor (Round 18, `PUT /mentorWaitlist/saveMyHelp`).
+  that goes to the mentor (since Round 34 it is sent with the choice, once).
 - **The mentorship page** (Round 26) shows where things stand, then a **How it works** button that opens
   its own page (`/mentorship/how-it-works`: who your mentor will be, the sessions, the 20-business-day
   policy), then a folded **How else can we help you?**.
@@ -669,8 +710,8 @@ mentor page becomes a mentor, an existing account keeps what it is.
   alone.**
 - A student on the mentor plan opens their matched careers and picks **one job role** inside one of
   them (the roles that suit them best are listed first). That starts a
-  **20-business-day** clock. The admin matches a mentor by hand in V1 and the student is told on
-  WhatsApp. If no mentor can be found, the money rolls over — or, if you ask, you move back to
+  **20-business-day** clock. The admin matches a mentor by hand in V1 and the student is told by email and on
+  their dashboard. If no mentor can be found, the money rolls over — or, if you ask, you move back to
   Career Discovery and get **the difference between the two plans** refunded.
 - A **Mentor Only** student does the same without a report: they search any of our 223 careers, pick a
   job role (or "something else"), add an industry if they have one in mind, or describe a career we

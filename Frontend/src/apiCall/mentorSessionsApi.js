@@ -1,6 +1,6 @@
 import axiosInstance from "./axiosInstance"
 
-// Round 28: around a mentor session — the mentor's invite steps, the student's review and report
+// Rounds 28 and 34: around a mentor session — the mentor's students, the student's feedback and report
 
 const call = async (request) => {
     try {
@@ -13,7 +13,6 @@ const call = async (request) => {
 // the mentor
 export const getMyStudents = () => call(() => axiosInstance.get("/mentorSessions/getMyStudents"))
 export const acceptPrivacy = (id) => call(() => axiosInstance.put(`/mentorSessions/acceptPrivacy/${id}`, { accept: true }))
-export const markBookingLinkSent = (id) => call(() => axiosInstance.put(`/mentorSessions/markBookingLinkSent/${id}`, {}))
 
 // the student
 export const getMySessionState = () => call(() => axiosInstance.get("/mentorSessions/getMine"))

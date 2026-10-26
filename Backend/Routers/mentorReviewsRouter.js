@@ -151,7 +151,8 @@ const buildSheet = (profession, overrides, studyOverrides) => {
     }
 }
 
-// a mentor's answers, whitelisted and checked. Returns { items, skillsMissing } or { error }.
+// a mentor's answers, whitelisted and checked. Returns { items, skillsMissing, roadmap } or { error }.
+const ROADMAP_MAX = 15
 const cleanReview = (body, qualities) => {
     const text = (value, max) => (typeof value === "string" ? value.trim().slice(0, max) : "")
     const link = (value) => {
@@ -181,14 +182,26 @@ const cleanReview = (body, qualities) => {
     }
 
     const skillsMissing = text(body.skillsMissing, NOTE_MAX)
-    if (items.length === 0 && skillsMissing === "") return { error: "Please answer at least one section" }
-    return { items, skillsMissing }
+    const roadmap = []
+    for (const raw of Array.isArray(body.roadmap) ? body.roadmap.slice(0, ROADMAP_MAX) : []) {
+        const step = { skill: text(raw.skill, 120), resource: text(raw.resource, 160), link: link(raw.link), cost: text(raw.cost, 40), time: text(raw.time, 40) }
+        if (!step.skill && !step.resource && !step.link) continue   // an empty row is skipped
+        if (step.link === null) return { error: "A roadmap link must start with https://" }
+        if (!step.skill || !step.resource || !step.time) return { error: "Each roadmap step needs the skill, the resource and the time it takes" }
+        roadmap.push(step)
+    }
+    if (items.length === 0 && skillsMissing === "" && roadmap.length === 0) return { error: "Please answer at least one section" }
+    return { items, skillsMissing, roadmap }
 }
 
 // A mentor's opinions from their answers (Round 17): "needs a change" and "should be higher / lower"
 // with their notes, a missing skill — and "looks right" / "about right" too, as agreement with what we
 // show, because the consensus counts both sides.
-const opinionsOf = (items, skillsMissing) => [
+// the roadmap travels as one opinion on the profession's "skills" topic, in words, so the monthly look
+// and the admin weigh it like any other suggestion
+const roadmapText = (roadmap) => (roadmap || []).map((step, index) => `${index + 1}. ${step.skill} — ${step.resource}${step.link ? ` (${step.link})` : ""}, ${step.cost || "free"}, ${step.time}`).join("\n")
+
+const opinionsOf = (items, skillsMissing, roadmap = []) => [
     ...items.map(({ section, verdict, factor, direction, note, sourceUrl }) => {
         const agrees = section === "qualities" ? direction === "right" : verdict === "right"
         return {
@@ -200,7 +213,7 @@ const opinionsOf = (items, skillsMissing) => [
             sourceUrl: agrees ? "" : sourceUrl || "",
         }
     }),
-    ...(skillsMissing ? [{ section: "skills_missing", agrees: false, note: skillsMissing, sourceUrl: "" }] : []),
+    ...(skillsMissing || roadmap.length ? [{ section: "skills_missing", agrees: false, note: [roadmap.length ? `Starter skills roadmap:\n${roadmapText(roadmap)}` : "", skillsMissing].filter(Boolean).join("\n\n").slice(0, 2400), sourceUrl: "" }] : []),
 ]
 
 // how this mentor's opinions stand: still waiting for the monthly look, or already weighed
@@ -251,6 +264,7 @@ router.get("/getMyReviewSheet", authMiddleware, mentorAuthMiddleware, async (req
                     ? {
                         items: review.items.map(({ decision, ...item }) => item),
                         skillsMissing: review.skillsMissing,
+                        roadmap: review.roadmap || [],
                         submittedAt: review.submittedAt,
                         ...standingOf(row, req.user._id),
                     }
@@ -282,7 +296,7 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
 
         // the profession's one row of suggested changes, with this mentor's part brought up to date
         const row = await ProfessionSuggestions.findOne({ professionId: profession.id }).lean()
-        const opinions = opinionsOf(cleaned.items, cleaned.skillsMissing).map((opinion) => ({ ...opinion, mentorName: mentor.name }))
+        const opinions = opinionsOf(cleaned.items, cleaned.skillsMissing, cleaned.roadmap).map((opinion) => ({ ...opinion, mentorName: mentor.name }))
         const stack = mergeOpinions(stackOf(row), req.user._id, opinions)
         await ProfessionSuggestions.findOneAndUpdate(
             { professionId: profession.id },
@@ -297,6 +311,7 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
                     professionName: profession.profession,
                     items: cleaned.items,
                     skillsMissing: cleaned.skillsMissing,
+                    roadmap: cleaned.roadmap,
                     status: "open",
                     submittedAt: new Date(),
                 },
@@ -310,6 +325,7 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
             data: {
                 items: review.items.map(({ decision, ...item }) => item),
                 skillsMissing: review.skillsMissing,
+                roadmap: review.roadmap || [],
                 submittedAt: review.submittedAt,
                 ...standingOf({ ...(row || {}), mentor_suggestions: stack, processed: [] }, req.user._id),
             },
