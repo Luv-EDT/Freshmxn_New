@@ -4912,7 +4912,9 @@ const fixtures = [
             if (!/hasMentorPlan\(req\.user\)/.test(save)) problems.push("saveMyHelp is open to students without a mentor plan")
             if (!/const HELP_MAX = 600/.test(router) || !/cleanText\(req\.body\.helpWanted, HELP_MAX\)/.test(save)) problems.push("the help text is not cleaned and capped at 600")
             if (!/req\.body\.abroadHelpWaitlist === true/.test(save)) problems.push("the abroad tick is not read as a strict yes")
-            if (/choiceSentAt/.test(save)) problems.push("saving the help text touches the clock")
+            // Round 34 (owner): the answers are sent once, with the choice — saveMyHelp reads the clock to refuse, never sets it
+            if (/\$set: \{[^}]*choiceSentAt/.test(save)) problems.push("saving the help text touches the clock")
+            if (!/choiceSentAt: \{ \$ne: null \}/.test(save)) problems.push("the help text can still be changed after the choice is sent")
             if (!/helpWanted: "", abroadHelpWaitlist: ""/.test(router)) problems.push("a re-joined place keeps the old help text")
             if (!/helpWanted:/.test(model) || !/abroadHelpWaitlist:/.test(model)) problems.push("the model has no help fields")
             ;["What the work is like day to day", "The drawbacks and the perks", "mentor's own story", "How to get in, and the skills", "Your questions, answered"]
@@ -5171,8 +5173,9 @@ const fixtures = [
             const app = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "App.js"), "utf8")
             const problems = []
             if (!/path="\/mentorship\/choose"/.test(app)) problems.push("no /mentorship/choose route")
-            if (/<textarea|type="radio"|CareerRolePicker|<HelpWanted/.test(main)) problems.push("an input is still on /mentorship")
-            if (!/<HelpWanted/.test(choose) || !/CareerRolePicker/.test(choose) || !/name="jobRole"/.test(choose)) problems.push("the inputs are not on /mentorship/choose")
+            if (/<textarea|type="radio"|CareerRolePicker|<HelpWanted|<HelpFields/.test(main)) problems.push("an input is still on /mentorship")
+            // Round 34 (owner): one page, one "Send my choice" at the end — the help questions are HelpFields
+            if (!/<HelpFields/.test(choose) || !/CareerRolePicker/.test(choose) || !/name="jobRole"/.test(choose)) problems.push("the inputs are not on /mentorship/choose")
             // Round 26 (owner): "How it works" is a button to its own page, which holds the framing, who your
             // mentor will be, the sessions and the policy; "How else can we help you?" folds below it
             const standing = main.indexOf("We're finding your mentor")
@@ -5186,8 +5189,9 @@ const fixtures = [
                 if (!howPage.includes(part)) problems.push(`${part} is not on the How it works page`)
                 if (main.includes(part)) problems.push(`${part} is still on /mentorship`)
             })
-            if (!/Need to change your choice\?/.test(main)) problems.push("the WhatsApp line for changing a choice is gone")
-            if (!/You chose <strong>\{chosenText\}/.test(choose)) problems.push("a sent choice is not shown on the choose page")
+            const parts = read("mentorshipParts.js")
+            if (!/<HelpLine \/>/.test(main) || !/Need to change your choice\?/.test(parts)) problems.push("the WhatsApp line for changing a choice is gone")
+            if (!/What you sent us/.test(choose) || !/Job role: <strong>\{chosenText\}/.test(choose)) problems.push("a sent choice is not shown on the choose page")
             const nav = fs.readFileSync(path.join(__dirname, "..", "..", "..", "Frontend", "src", "pages", "Navbar.js"), "utf8")
             if (!/>Dashboard<\/NavLink>/.test(nav) || /to="\/mentorship"/.test(nav)) problems.push("the menu bar should say Dashboard and carry no Mentorship link")
             return problems.length > 0 ? problems.join("; ") : null
@@ -5635,7 +5639,7 @@ const fixtures = [
             const payments = read("Routers/paymentsRouter.js")
             const problems = []
             const complete = waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || ""
-            if (!/\$push: \{ sessions: session \}/.test(complete.slice(0, 2500)) || !/matchStatus: "completed"/.test(complete.slice(0, 2500))) problems.push("a done session is not logged")
+            if (!/\$push: \{ sessions: session[,\s}]/.test(complete.slice(0, 2500)) || !/matchStatus: "completed"/.test(complete.slice(0, 2500))) problems.push("a done session is not logged")
             const another = waitlist.split('router.post("/startAnotherSession"')[1] || ""
             if (!/status\(402\)/.test(another.slice(0, 2500))) problems.push("another session starts without a credit")
             if (!/const MENTOR_SESSION_INR = TIER_PRICE_INR\[3\]/.test(payments)) problems.push("the session price is not the Mentor Only price")
@@ -5710,8 +5714,10 @@ const fixtures = [
             if (!/excludedMentors/.test(match.slice(0, 3000)) || !/status: "onboarded"/.test(match.slice(0, 3000))) problems.push("a kept-away or paused mentor can be matched")
             if (!/"mentorInvite"/.test(match) || !/"mentorConfirmed"/.test(match)) problems.push("the match does not email the mentor and the student")
             const sessions = read("Routers/mentorSessionsRouter.js")
-            if (!/const showContact = current && Boolean\(row\.mentorPrivacyAcceptedAt\)/.test(sessions)) problems.push("the mentor sees the contact before accepting privacy")
-            if (!/if \(!row\.mentorPrivacyAcceptedAt\)/.test(sessions.split('router.put("/markBookingLinkSent/:id"')[1] || "")) problems.push("a booking link can be marked sent before privacy is accepted")
+            if (!/const showContact = Boolean\(row\.mentorPrivacyAcceptedAt\)/.test(sessions) || !/contact: showContact \?/.test(sessions)) problems.push("the mentor sees the contact before accepting privacy")
+            // Round 34 (owner): no booking link is sent any more — the student books from the mentor's Calendly links on match
+            if (/markBookingLinkSent/.test(sessions)) problems.push("the old booking-link step is still there")
+            if (!/if \(!mentor\.calendlyMain\)/.test(match.slice(0, 3000))) problems.push("a mentor without Calendly links can be matched")
             if (!/excludedMentors \|\| \[\]\)\.some/.test(fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/MentorMatchesList.js"), "utf8"))) problems.push("the admin picker offers a kept-away mentor")
             return problems.length ? problems.join("; ") : null
         },
@@ -5741,8 +5747,9 @@ const fixtures = [
             const sessions = fs.readFileSync(path.join(__dirname, "../../Routers/mentorSessionsRouter.js"), "utf8")
             const report = sessions.split('router.post("/reportMentor"')[1] || ""
             if (!/MentorReport\.REASONS\.includes\(reason\)/.test(report) || !/\["refund", "new_mentor"\]\.includes\(wants\)/.test(report)) problems.push("a report goes in without a reason or a choice")
+            // Round 34 (owner): the report acts the moment it is sent — the ticket changes and that mentor is kept away
             const resolve = sessions.split('router.put("/resolveReportForAdmin/:id"')[1] || ""
-            if (!/\$addToSet: \{ excludedMentors: report\.mentor \}/.test(resolve)) problems.push("\"another mentor\" can match the same mentor again")
+            if (!/\$addToSet: \{ excludedMentors: row\.assignedMentor \}/.test(report.split("router.")[0])) problems.push("\"another mentor\" can match the same mentor again")
             if (!/status: "paused"/.test(resolve)) problems.push("a mentor can't be paused")
             const waitlist = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
             if (!/"reviewOpen"/.test(waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || "")) problems.push("the student is not asked for a review when the session is done")
@@ -5862,7 +5869,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 29 — the admin sees each student's mentorship stage in words (with the cycle number from the second session), and a session closes in two steps: main session, then follow-up or close without one",
+        name: "ROUND 29 — the admin sees each student's mentorship stage in words (with the cycle number from the second session); Round 34 (owner change): one \"Session done\" after the mentor confirms, then the student's feedback closes it",
         run: async () => {
             const { mentorStage } = require("../../utils/mentorStage")
             const problems = []
@@ -5872,13 +5879,14 @@ const fixtures = [
                 [{ tier: 2, row: null }, "not started"],
                 [{ tier: 3, row: { matchStatus: "awaiting_choice" } }, "not started"],
                 [{ tier: 2, row: { matchStatus: "matching" }, dueBy: new Date("2026-10-20T00:00:00"), now }, "20-day wait · 5 days left"],
-                [{ tier: 2, row: { matchStatus: "matched" } }, "found mentor — waiting for mentor to reply"],
-                [{ tier: 2, row: { matchStatus: "matched", bookingLinkSentAt: now } }, "booking link sent"],
-                [{ tier: 2, row: { matchStatus: "matched", bookingLinkSentAt: now, mainSessionAt: now } }, "main session taken"],
-                [{ tier: 2, row: { matchStatus: "completed", sessions: [{ followUp: true }] } }, "follow-up taken"],
-                [{ tier: 2, row: { matchStatus: "completed", sessions: [{ followUp: false }] }, reviewed: [0] }, "review given"],
-                [{ tier: 2, row: { matchStatus: "matching", sessions: [{ followUp: true }] } }, "2 · 20-day wait"],
-                [{ tier: 2, row: { matchStatus: "completed", sessions: [{}, { followUp: true }] } }, "2 · follow-up taken"],
+                [{ tier: 2, row: { matchStatus: "matching", matchBusinessDays: 15 } }, "15-day wait (new mentor)"],
+                [{ tier: 2, row: { matchStatus: "matched" } }, "matched — session to happen"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{}] } }, "session done — waiting for feedback"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{}] }, reviewed: [0] }, "feedback in · closed"],
+                [{ tier: 2, row: { matchStatus: "matching", sessions: [{}] } }, "2 · 20-day wait"],
+                [{ tier: 2, row: { matchStatus: "completed", sessions: [{}, {}] } }, "2 · session done — waiting for feedback"],
+                [{ tier: 2, row: { matchStatus: "closed", resolution: "refund_requested" } }, "refund asked for"],
+                [{ tier: 2, row: { matchStatus: "closed", resolution: "student_no_show", sessions: [{ noShow: true }] } }, "closed · student no-show"],
                 [{ tier: 2, row: { matchStatus: "unmatchable", resolution: "refunded" } }, "closed"],
             ]
             cases.forEach(([input, expected]) => {
@@ -5887,9 +5895,9 @@ const fixtures = [
             })
             const waitlist = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
             const complete = waitlist.split('router.put("/completeSessionForAdmin/:id"')[1] || ""
-            if (!/!row\.mainSessionAt/.test(complete)) problems.push("a session can close before the main session is marked held")
-            if (!/followUp: req\.body\.followUp === true/.test(complete)) problems.push("whether the follow-up was held is not recorded")
-            if (!/router\.put\("\/mainSessionDoneForAdmin\/:id"/.test(waitlist)) problems.push("there is no main-session step")
+            if (!/row\.matchStatus !== "matched"/.test(complete.slice(0, 800))) problems.push("a session can be marked done without a match")
+            if (!/sessionDoneAt: now/.test(complete) || !/"session_done"/.test(complete)) problems.push("Session done is not dated and written to the ticket history")
+            if (/mainSessionDoneForAdmin/.test(waitlist)) problems.push("the old two-step session close is still there")
             const students = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/StudentsList.js"), "utf8")
             ;["Assessment", "Mentorship", "Report updates"].forEach((title) => { if (!students.includes(`title: "${title}"`)) problems.push(`the Students tab has no "${title}" column`) })
             if (!/sectionsDone\(/.test(students)) problems.push("the admin's assessment count is not the student's own")
@@ -6392,6 +6400,133 @@ const fixtures = [
             if (textOf('<p>Hi,</p><p><a href="https://x.com/a?b=1&amp;c=2">Confirm</a></p>') !== "Hi,\nConfirm (https://x.com/a?b=1&c=2)") problems.push("the text part loses words or links")
             const mailer = fs.readFileSync(path.join(__dirname, "../../utils/mailer.js"), "utf8")
             if (!/text: textOf\(html\)/.test(mailer)) problems.push("emails are sent without a text part")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 34 — mentor pay: the rate table by tier and region, a later follow-up pays 30%, a Tier 3 custom rate counts only above the table's; Tier 2 is automatic at 7 sessions averaging 8+, Tier 3 says what is missing",
+        run: () => {
+            const { mainRate, payoutAmount, tier2Due, tier3Missing, statsOf, RATES } = require("../../utils/mentorTiers")
+            const problems = []
+            const table = [["indian", 1, 1000], ["indian", 2, 1300], ["indian", 3, 1500], ["international", 1, 1500], ["international", 2, 1900], ["international", 3, 2200]]
+            table.forEach(([region, tier, inr]) => { if (mainRate({ region, tier }).inr !== inr) problems.push(`${region} tier ${tier} pays ${mainRate({ region, tier }).inr}, not ${inr}`) })
+            if (RATES.international[1].usd !== 15 || RATES.international[2].usd !== 19 || RATES.international[3].usd !== 22) problems.push("the dollar rates are wrong")
+            if (mainRate({}).inr !== 1000) problems.push("a mentor with no region or tier is not Indian Tier 1")
+            if (payoutAmount({ region: "indian", tier: 2 }, "followup").inr !== 390) problems.push("a later follow-up does not pay 30% of the main rate")
+            if (payoutAmount({ region: "international", tier: 1 }, "followup").usd !== 4.5) problems.push("an international follow-up is not 30% in dollars")
+            if (mainRate({ region: "indian", tier: 3, customRateInr: 1200 }).inr !== 1500 || mainRate({ region: "indian", tier: 3, customRateInr: 1800 }).inr !== 1800) problems.push("a Tier 3 custom rate is not counted only above the table")
+            if (mainRate({ region: "indian", tier: 2, customRateInr: 5000 }).inr !== 1300) problems.push("a custom rate counts below Tier 3")
+            const seven = statsOf(Array.from({ length: 7 }, () => ({ rating: 8 })))
+            if (!tier2Due({ tier: 1 }, seven, 0)) problems.push("7 sessions averaging 8 do not move a mentor to Tier 2")
+            if (tier2Due({ tier: 1 }, statsOf(Array.from({ length: 6 }, () => ({ rating: 10 }))), 0)) problems.push("6 sessions move a mentor to Tier 2")
+            if (tier2Due({ tier: 1 }, statsOf([...Array.from({ length: 6 }, () => ({ rating: 8 })), { rating: 7 }]), 0)) problems.push("an average under 8 moves a mentor to Tier 2")
+            if (tier2Due({ tier: 1 }, seven, 1)) problems.push("an upheld report still moves a mentor to Tier 2")
+            const ten = statsOf(Array.from({ length: 10 }, () => ({ rating: 9 })))
+            if (tier3Missing({ tier: 2 }, ten, { roadmapSteps: 3, dataReviewed: true }).length !== 0) problems.push("a mentor who meets the Tier 3 rule still has something missing")
+            const missing = tier3Missing({ tier: 2 }, ten, { roadmapSteps: 0, dataReviewed: false }).join(" | ")
+            if (!/skills roadmap/.test(missing) || !/profession's data/.test(missing)) problems.push(`Tier 3 does not name the roadmap and the data review: ${missing}`)
+            const payouts = fs.readFileSync(path.join(__dirname, "../../utils/mentorPayouts.js"), "utf8")
+            if (!/needsApproval/.test(payouts)) problems.push("a mentor's first session is not held for approval")
+            const model = fs.readFileSync(path.join(__dirname, "../../model/mentorPayoutsModel.js"), "utf8")
+            if (!/\{ waitlist: 1, sessionIndex: 1, kind: 1 \}, \{ unique: true/.test(model)) problems.push("one session can be paid twice")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorPayoutsRouter.js"), "utf8")
+            const markPaid = (router.split('router.put("/markPaidForAdmin/:id"')[1] || "").split("router.")[0]
+            if (!/adminAuthMiddleware/.test(markPaid.slice(0, 120)) || !/reference/.test(markPaid)) problems.push("Mark paid is not admin-only with a reference")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 34 — the mentor test: 32 different questions, 7 drawn, each mentor's options in their own order, answers never sent to the mentor, marked as shown; the video is deleted on the decision and after 30 days at most",
+        run: () => {
+            const { BANK, STEPS, DRAWN, draw, publicQuestion, markTest } = require("../../mentors/testBank")
+            const problems = []
+            if (BANK.length !== 32 || new Set(BANK.map((question) => question.id)).size !== 32) problems.push(`the bank has ${BANK.length} questions or a repeated id`)
+            if (BANK.some((question) => question.options.length !== 4 || !(question.answer >= 0 && question.answer <= 3))) problems.push("a question is not four options with one right answer")
+            if (DRAWN !== 7 || STEPS.length !== 5) problems.push("not 7 drawn questions and a 5-step flow")
+            const picked = draw(BANK, DRAWN)
+            if (picked.length !== 7 || new Set(picked.map((question) => question.id)).size !== 7) problems.push("the draw repeats a question")
+            const question = BANK[0]
+            const test = { drawnIds: [question.id], orders: { [question.id]: [3, 2, 1, 0] }, answers: {}, stepOrder: STEPS.map((step) => step.id) }
+            const shown = publicQuestion(test, question)
+            if ("answer" in shown || shown.options[0] !== question.options[3]) problems.push("a shown question carries its answer, or the options are not in the mentor's order")
+            test.answers[question.id] = shown.options.indexOf(question.options[question.answer])
+            const marked = markTest(test)
+            if (marked.correct !== 1 || marked.of !== 1 || !marked.stepsInOrder) problems.push(`a right answer in shuffled order is not marked right: ${JSON.stringify(marked)}`)
+            if (markTest({ ...test, stepOrder: [...test.stepOrder].reverse() }).stepsInOrder) problems.push("steps out of order are marked in order")
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/mentorTestRouter.js"), "utf8")
+            const forMentor = (router.split("const forMentor = (test) => ({")[1] || "").split("\n})")[0]
+            if (!forMentor || /answer:|\.answer\b|autoScore|decidedBy/.test(forMentor)) problems.push("the mentor's copy of the test carries answers or our marking")
+            const decide = (router.split('router.put("/decideForAdmin/:mentorUserId"')[1] || "").split("router.")[0]
+            if (!/r2\.removeObject\(key\)/.test(decide) || !/deletedAt: new Date\(\)/.test(decide)) problems.push("the video is not deleted on the decision")
+            if (!/Please give the mentor a reason/.test(decide)) problems.push("a mentor can be rejected without a reason")
+            if (!/30 \* 864e5/.test(router)) problems.push("an undecided video is kept beyond 30 days")
+            const housekeeping = fs.readFileSync(path.join(__dirname, "../housekeepingWorker.js"), "utf8")
+            if (!/mentor_video_cleanup/.test(housekeeping)) problems.push("the 30-day video clean-up is not scheduled")
+            const mentors = fs.readFileSync(path.join(__dirname, "../../Routers/mentorsRouter.js"), "utf8")
+            const approve = (mentors.split('router.put("/approveForAdmin/:id"')[1] || "").split("router.")[0]
+            if (!/pending_review|test_submitted/.test(approve)) problems.push("a new mentor can be approved without the test")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 34 — the student's choice is sent once with every answer (help, languages) and locked; the admin can reset it only within 7 days; a new mentor after a report means 15 business days; a mentor without Calendly links can't be matched",
+        run: () => {
+            const { canResetChoice, cleanLanguages } = require("../../Routers/mentorWaitlistRouter")
+            const problems = []
+            const sent = new Date("2026-10-01T10:00:00")
+            if (!canResetChoice({ choiceSentAt: sent }, new Date("2026-10-07T10:00:00"))) problems.push("a choice can't be reset within the week")
+            if (canResetChoice({ choiceSentAt: sent }, new Date("2026-10-09T10:00:00"))) problems.push("a choice can be reset after the week")
+            if (canResetChoice({ choiceSentAt: null })) problems.push("an unsent choice can be reset")
+            const languages = cleanLanguages({ languages: ["Hindi", "Klingon", "Hindi"], languageOther: "  Assamese " })
+            if (languages.join() !== "Hindi,Assamese") problems.push(`languages are not cleaned: ${languages.join()}`)
+            const waitlist = fs.readFileSync(path.join(__dirname, "../../Routers/mentorWaitlistRouter.js"), "utf8")
+            const choose = (waitlist.split('router.post("/chooseProfession"')[1] || "").split("\nrouter.")[0]
+            if (!/if \(!helpFocus\)/.test(choose) || !/languages\.length === 0/.test(choose)) problems.push("a choice can be sent without the help or the languages")
+            const reset = (waitlist.split('router.put("/resetChoiceForAdmin/:id"')[1] || "").split("\nrouter.")[0]
+            if (!/if \(!canResetChoice\(row\)\)/.test(reset) || !/"choiceReset"/.test(reset)) problems.push("a reset is not refused after the week, or the student is not told")
+            const newMentor = (waitlist.split('router.put("/newMentorForAdmin/:id"')[1] || "").split("\nrouter.")[0]
+            if (!/NEW_MENTOR_BUSINESS_DAYS/.test(newMentor) || !/excludedMentors/.test(newMentor)) problems.push("a new mentor is not 15 days, or the old mentor can be matched again")
+            if (!/const NEW_MENTOR_BUSINESS_DAYS = 15/.test(waitlist)) problems.push("the new-mentor wait is not 15 business days")
+            const page = ["MentorshipChoose.js", "mentorshipParts.js", "Mentorship.js", "ReportMentor.js", "MentorshipReview.js"].map((name) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User", name), "utf8")).join("\n")
+            if ((page.match(/Send my choice/g) || []).length < 1 || /saveMyHelp/.test(page)) problems.push("the choose page still saves answers one at a time")
+            if (/optional/i.test(page.replace(/\/\/.*$/gm, ""))) problems.push("a mentorship page says \"optional\"")
+            if (/payout|accountNumber|\bpan\b|ifsc/i.test(page.replace(/\/\/.*$/gm, ""))) problems.push("a student page reads a mentor's payout details")
+            if (!/\.select\("name currentRole discipline calendlyMain calendlyFollowUp"\)/.test(waitlist)) problems.push("the student's view of their mentor reads more than name, role and booking links")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 34 — the session feedback: only after both sessions, every question answered, a 1–10 rating; feedback makes the payout due; a skills roadmap step needs the skill, the resource and the time; the admin's mentor section is its own page",
+        run: () => {
+            const { cleanFeedback } = require("../../Routers/mentorSessionsRouter")
+            const SessionReview = require("../../model/sessionReviewsModel")
+            const { cleanReview } = require("../../Routers/mentorReviewsRouter")
+            const problems = []
+            const all = (keys, answer) => Object.fromEntries(keys.map((key) => [key, answer]))
+            const good = { bothDone: true, rating: 9, covered: all(SessionReview.COVERED, "yes"), qualities: all(SessionReview.QUALITIES, "yes"), withinLimits: "yes" }
+            if (cleanFeedback(good).error) problems.push(`good feedback is refused: ${cleanFeedback(good).error}`)
+            if (!cleanFeedback({ ...good, bothDone: false }).error) problems.push("feedback goes in before the sessions are over")
+            if (!cleanFeedback({ ...good, rating: 11 }).error || !cleanFeedback({ ...good, rating: 0 }).error) problems.push("a rating outside 1–10 goes in")
+            if (!cleanFeedback({ ...good, covered: { overview: "yes" } }).error) problems.push("feedback goes in with questions unanswered")
+            if (!cleanFeedback({ ...good, withinLimits: undefined }).error) problems.push("the limits question can be skipped")
+            const sessions = fs.readFileSync(path.join(__dirname, "../../Routers/mentorSessionsRouter.js"), "utf8")
+            const save = (sessions.split('router.post("/saveMyReview"')[1] || "").split("\nrouter.")[0]
+            if (!/writeSessionPayout\(/.test(save) || !/refreshTier\(/.test(save) || !/"feedback_in"/.test(save)) problems.push("feedback does not make the payout due, check the tier, or write the ticket history")
+            const step = { skill: "Excel basics", resource: "Free course", link: "https://example.com/excel", cost: "free", time: "2 weeks" }
+            const ok = cleanReview({ roadmap: [step, { skill: "", resource: "", link: "" }] }, [])
+            if (ok.error || ok.roadmap.length !== 1) problems.push(`a good roadmap is refused or an empty row is kept: ${JSON.stringify(ok)}`)
+            if (!cleanReview({ roadmap: [{ ...step, time: "" }] }, []).error) problems.push("a roadmap step goes in without the time")
+            if (!cleanReview({ roadmap: [{ ...step, link: "http://x.com" }] }, []).error) problems.push("a roadmap link without https goes in")
+            const app = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/App.js"), "utf8")
+            if (!/path="\/admin\/mentors"/.test(app)) problems.push("there is no /admin/mentors page")
+            const admin = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/AdminMentors.js"), "utf8")
+            ;["Mentor matches", "Mentors", "Payouts", "Session feedback"].forEach((tab) => { if (!admin.includes(`"${tab}"`)) problems.push(`the mentor section has no "${tab}" tab`) })
+            const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
+            if (/app\.use\("\/admin/.test(server)) problems.push("an API prefix equals the /admin page URL")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
