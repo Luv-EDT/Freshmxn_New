@@ -5,8 +5,9 @@ import { useState } from "react"
 // owner's Calendly screenshots and their markings (~20 min), 3) how to run a session (~15 min). All three
 // start folded. A new mentor reads them before the profile and the test; an approved one comes back any time.
 //
-// The screenshots live in public/mentor-training/ (calendly-01.png …), in the order the owner's document
-// shows them. A missing one is simply not shown.
+// The screenshots live in public/mentor-training/ (calendly-01.png … calendly-16.png), cut from the owner's
+// document in its order with the owner's red marks kept (Round 35; the owner's email blurred on 05). A
+// missing one is simply not shown.
 
 const WHATSAPP = "+91 8882756287"
 
@@ -69,22 +70,27 @@ const Onboarding = () => (
         <p>The profile form on your dashboard — with your two Calendly links and how we pay you.</p>
 
         <h4>2. Set up Calendly</h4>
-        <p>Students book from your links, so nobody passes messages back and forth. Sign up at <a href="https://calendly.com/signup" target="_blank" rel="noreferrer">calendly.com/signup</a> and choose what the screenshots show.</p>
-        <Shot n={1} caption="Calendly's first setup screen — choose as marked" />
-        <Shot n={2} caption="The next setup screen — choose as marked" />
+        <p>Students book from your links, so nobody passes messages back and forth. Sign up at <a href="https://calendly.com/signup" target="_blank" rel="noreferrer">calendly.com/signup</a> with Google, Microsoft or your email, then choose what each setup screen shows.</p>
+        <Shot n={1} caption="Sign up with Google, Microsoft or your email" />
+        <Shot n={2} caption="How you plan to use Calendly — choose as shown" />
+        <Shot n={3} caption="Your role — choose as shown" />
+        <Shot n={4} caption="Connect the calendar you use (Google here)" />
+        <Shot n={5} caption="How your calendar will be used — keep the sync ticked" />
+        <Shot n={6} caption="Your usual availability — you'll change it for each student" />
+        <Shot n={7} caption="How you'd like to meet — Google Meet" />
 
         <h4>3. The 1-hour main session</h4>
         <ol>
             <li><strong>Scheduling → + Create → One-on-one.</strong></li>
             <li>Duration <strong>1 hour</strong>, location <strong>Google Meet</strong>, Availability → date range <strong>4 days</strong>.</li>
-            <li>Weekly hours → <strong>+ Hours</strong>: add the slots you're free on each of the next 4 days → <strong>Apply</strong>.</li>
+            <li>Weekly hours → the pencil → <strong>+ Hours</strong>: pick each of the next 4 days and add the slots you're free → <strong>Apply</strong>.</li>
         </ol>
-        <Shot n={3} caption="Create → One-on-one" />
-        <Shot n={4} caption="1 hour, Google Meet, date range 4 days" />
-        <Shot n={5} caption="Weekly hours, inside Availability" />
-        <Shot n={6} caption="+ Hours" />
-        <Shot n={7} caption="Choose a day and add the hours you're free" />
-        <Shot n={8} caption="Four days set up — busy days can stay empty" />
+        <Shot n={8} caption="Create → One-on-one" />
+        <Shot n={9} caption="1 hour, Google Meet, date range 4 days" />
+        <Shot n={10} caption="Weekly hours, inside Availability — press the pencil" />
+        <Shot n={11} caption="+ Hours" />
+        <Shot n={12} caption="Choose a day, add the hours you're free with +, then Apply" />
+        <Shot n={13} caption="Four days set up — busy days can stay empty" />
 
         <h4>4. The 20-minute follow-up</h4>
         <ol>
@@ -92,12 +98,12 @@ const Onboarding = () => (
             <li>Open slots on <strong>days 3 to 6</strong> — the student picks one after their main session.</li>
             <li>Add <strong>Phone call</strong> beside Google Meet.</li>
         </ol>
-        <Shot n={9} caption="The 20-minute follow-up — date range 6 days" />
-        <Shot n={10} caption="Phone as a location as well" />
+        <Shot n={14} caption="The 20-minute follow-up — date range 6 days" />
+        <Shot n={15} caption="Phone as a location as well" />
 
         <h4>5. Save your links</h4>
-        <p>Copy each session's link into <strong>My profile</strong>.</p>
-        <Shot n={11} caption="Copy each session's link" />
+        <p>Save, then copy each session's link into <strong>My profile</strong>.</p>
+        <Shot n={16} caption="Copy each session's link" />
 
         <h4>Each time we have a student for you</h4>
         <ul className="training-ticks">
