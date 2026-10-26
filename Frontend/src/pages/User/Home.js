@@ -52,7 +52,7 @@ function Home() {
                 <p>Your plan: <span className="chip">{TIER_NAMES[user.currentTier] || TIER_NAMES[0]}</span></p>
                 {/* Round 29 (owner) */}
                 {notifications > 0 && (
-                    <p className="dashboard-notifications">🔔 You have <Link to="/profile#notifications">{notifications} {notifications === 1 ? "notification" : "notifications"}</Link></p>
+                    <p className="dashboard-notifications">🔔 You have <Link to="/profile#notifications">{notifications} new {notifications === 1 ? "notification" : "notifications"}</Link></p>
                 )}
             </section>
 
@@ -119,7 +119,8 @@ function Home() {
                     {/* owner, Round 25: once Career Discovery has delivered its matches, ask how else we can help */}
                     {user.currentTier === 1 && user.progress?.report === "ready" && <CareerHelpBox />}
 
-                    <UpgradeToMentorship user={user} />
+                    {/* Round 35 (owner): on Career Discovery, just the Mentor tab — the long offer stays on the report */}
+                    <UpgradeToMentorship user={user} tab />
                 </div>
             )}
             </main>

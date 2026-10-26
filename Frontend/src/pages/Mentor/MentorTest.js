@@ -6,7 +6,9 @@ import { getMyTest, saveMyTest, getVideoUploadUrl, submitMyTest } from "../../ap
 // team approves a new mentor: the 5-step flow in order, their two Calendly links, a 5–10 minute video
 // for a sample student, and 7 multiple-choice questions drawn for them. Answers save as they go; it is
 // sent once. The video goes straight from the browser to our private storage and is deleted once we
-// decide (or within 30 days).
+// decide (or within 30 days). Round 35 (owner): every part is compulsory — the five steps put in order,
+// both Calendly links, the video and every question. "Save and come back later" is always there; "Send
+// my test" appears only once nothing is missing (and the server refuses a test with anything missing).
 function MentorTest({ onSubmitted }) {
     const [test, setTest] = useState(null)
     const [busy, setBusy] = useState(false)
@@ -96,7 +98,28 @@ function MentorTest({ onSubmitted }) {
     }
 
     const answered = test.questions.filter((question) => Number.isInteger(test.answers[question.id])).length
-    const ready = answered === test.questions.length && test.calendlyMain && test.calendlyFollowUp && (test.video.uploaded || test.video.link)
+    const CALENDLY = /^https:\/\/calendly\.com\/\S+$/   // the same check as the server's
+    const missing = [
+        !test.stepsArranged && "the 5-step mentor flow in order",
+        !(CALENDLY.test(test.calendlyMain || "") && CALENDLY.test(test.calendlyFollowUp || "")) && "both Calendly links",
+        !(test.video.uploaded || test.video.link) && "your video",
+        answered < test.questions.length && `${test.questions.length - answered} multiple-choice question${test.questions.length - answered === 1 ? "" : "s"}`,
+    ].filter(Boolean)
+    const ready = missing.length === 0
+
+    const saveAll = async () => {
+        if (await save({ calendlyMain: test.calendlyMain || "", calendlyFollowUp: test.calendlyFollowUp || "", ...(test.uploadsOn ? {} : { videoLink: test.video.link || "" }), answers: test.answers })) {
+            message.success("Saved — come back any time to finish")
+        }
+    }
+
+    const trySend = () => {
+        if (!ready) {
+            message.error(`Please complete ${missing.join(", ")} first`)
+            return
+        }
+        send()
+    }
 
     return (
         <section className="mentor-test">
@@ -108,7 +131,7 @@ function MentorTest({ onSubmitted }) {
 
             <ol className="mentor-test-list">
                 <li>
-                    <h3>Put the 5-step mentor flow in order</h3>
+                    <h3>Put the 5-step mentor flow in order <span className="test-must">required</span></h3>
                     <ol className="step-order">
                         {test.steps.map((step, index) => (
                             <li key={step.id}>
@@ -120,11 +143,14 @@ function MentorTest({ onSubmitted }) {
                             </li>
                         ))}
                     </ol>
+                    {test.stepsArranged
+                        ? <p className="report-small">✓ Order saved. Move a step to change it.</p>
+                        : <button type="button" className="btn btn-ghost btn-sm" onClick={() => save({ stepOrder: test.steps.map((step) => step.id) })}>This order is right</button>}
                 </li>
 
                 <li>
-                    <h3>Your Calendly links</h3>
-                    <p>From your logged-in Calendly, with slots open in the next 6 days: main sessions in days 1–4, follow-ups on days 5–6 (Training → How to get onboarded).</p>
+                    <h3>Your Calendly links <span className="test-must">required</span></h3>
+                    <p>From your Calendly, with slots open in the next 6 days: main sessions on days 1–4, follow-ups on days 3–6 (Training → How to get onboarded).</p>
                     <label htmlFor="test-main">1-hour main session</label>
                     <input id="test-main" type="url" placeholder="https://calendly.com/your-name/1-hour" value={test.calendlyMain || ""} onChange={(event) => setTest({ ...test, calendlyMain: event.target.value })} onBlur={() => save({ calendlyMain: test.calendlyMain })} />
                     <label htmlFor="test-follow">20-minute follow-up</label>
@@ -132,7 +158,7 @@ function MentorTest({ onSubmitted }) {
                 </li>
 
                 <li>
-                    <h3>A 5–10 minute video for this student</h3>
+                    <h3>A 5–10 minute video for this student <span className="test-must">required</span></h3>
                     <blockquote className="sample-student">{test.sample}</blockquote>
                     <p>Record yourself talking to them, as you would in a session. Cover:</p>
                     <ul>
@@ -183,8 +209,13 @@ function MentorTest({ onSubmitted }) {
 
             <div className="mentor-send">
                 <p>{answered} of {test.questions.length} multiple-choice questions answered.</p>
-                <p className="report-small">After you send it, it takes around a couple of days for our team to review your profile and test and let you know whether you're onboarded.</p>
-                <button type="button" className="btn btn-primary tap" disabled={!ready || busy} onClick={send}>{busy ? "Sending…" : "Send my test"}</button>
+                {ready
+                    ? <p className="report-small">Everything's done. After you send it, it takes around a couple of days for our team to review your profile and test and let you know whether you're onboarded.</p>
+                    : <p className="test-missing" role="status">Still to do before you can send: {missing.join(", ")}.</p>}
+                <div className="btn-row">
+                    <button type="button" className="btn btn-ghost tap" onClick={saveAll}>Save and come back later</button>
+                    {ready && <button type="button" className="btn btn-primary tap" disabled={busy} onClick={trySend}>{busy ? "Sending…" : "Send my test"}</button>}
+                </div>
             </div>
         </section>
     )

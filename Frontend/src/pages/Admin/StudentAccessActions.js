@@ -1,23 +1,44 @@
 import { useState } from "react"
 import { Button, Modal, Select, Input, message } from "antd"
-import { grantFreeForAdmin } from "../../apiCall/paymentsApi"
+import { grantFreeForAdmin, grantMentorSessionForAdmin } from "../../apiCall/paymentsApi"
 import { deleteAccountForAdmin } from "../../apiCall/userApi"
 import { PLAN_NAMES } from "../plans"
 
 // Two admin actions on a student row (owner, Round 26):
 // • GIVE FREE ACCESS — a plan without paying (a scholarship, a tester, a friend). It is recorded as a ₹0
 //   payment marked "free, by admin", so the student's plan and history read the normal way and there is
-//   nothing to refund.
+//   nothing to refund. Round 35 (owner): on EVERY student, offering what fits where they are — any plan
+//   for someone who hasn't paid; mentorship (one session) on top of Career Discovery; Career Discovery on
+//   top of Mentor Only; and another mentor session, free, once the current one is done.
 // • DELETE ACCOUNT — the account and everything stored for it, in every collection. Type the email to
 //   confirm; admin accounts are refused by the server.
+const freeChoices = (student) => {
+    if (!student.paid) return [1, 2, 3].map((tier) => ({ value: `plan:${tier}`, label: PLAN_NAMES[tier] }))
+    const tier = Number(student.currentTier)
+    if (tier === 1) return [{ value: "plan:2", label: "Add mentorship — one mentor session (moves them to Discovery + Mentor)" }]
+    if (tier === 3) return [
+        { value: "session", label: "Another mentor session, free (once the current one is done)" },
+        { value: "plan:2", label: "Add Career Discovery (moves them to Discovery + Mentor)" },
+    ]
+    return [{ value: "session", label: "Another mentor session, free (once the current one is done)" }]
+}
+
 export function GiveFreeAccess({ student, onDone }) {
     const [open, setOpen] = useState(false)
-    const [tier, setTier] = useState(1)
+    const choices = freeChoices(student)
+    const [choice, setChoice] = useState(choices[0].value)
     const [note, setNote] = useState("")
 
     const give = async () => {
         try {
-            const response = await grantFreeForAdmin(student._id, tier, note)
+            if (choice === "session") {
+                const response = await grantMentorSessionForAdmin(student._id, { free: true, note })
+                message.success(`${response.data.message} — the student starts it from their mentorship page`)
+                setOpen(false)
+                onDone({ _id: student._id })
+                return
+            }
+            const response = await grantFreeForAdmin(student._id, Number(choice.split(":")[1]), note)
             message.success(response.data.message)
             setOpen(false)
             onDone(response.data.data.user)
@@ -28,10 +49,10 @@ export function GiveFreeAccess({ student, onDone }) {
 
     return (
         <>
-            <Button size="small" onClick={() => setOpen(true)}>Give free access</Button>
-            <Modal open={open} title={`Give ${student.name} a plan for free`} okText="Give it free" onOk={give} onCancel={() => setOpen(false)}>
+            <Button size="small" onClick={() => { setChoice(choices[0].value); setOpen(true) }}>Give free access</Button>
+            <Modal open={open} title={`Give ${student.name} something free`} okText="Give it free" onOk={give} onCancel={() => setOpen(false)}>
                 <p>Recorded as a ₹0 payment marked "free, by admin". Nothing to refund later.</p>
-                <Select value={tier} onChange={setTier} style={{ width: "100%" }} options={[1, 2, 3].map((value) => ({ value, label: PLAN_NAMES[value] }))} />
+                <Select value={choice} onChange={setChoice} style={{ width: "100%" }} options={choices} />
                 <Input.TextArea style={{ marginTop: 12 }} rows={2} maxLength={300} placeholder="Why (for your records) — e.g. scholarship, tester" value={note} onChange={(event) => setNote(event.target.value)} />
             </Modal>
         </>

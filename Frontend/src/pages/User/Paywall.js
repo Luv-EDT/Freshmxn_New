@@ -2,12 +2,10 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
 import { message } from "antd"
-import { getPricing, getQuote, getMyRequests, createOrder, getMyFinancialAid } from "../../apiCall/paymentsApi"
+import { getPricing, getQuote, createOrder, getMyFinancialAid, claimFree } from "../../apiCall/paymentsApi"
 import { getCurrentUser, resendVerification } from "../../apiCall/userApi"
 import { setUser } from "../../store/userSlice"
-import RequestAccessForm from "./RequestAccessForm"
 import FinancialAidForm from "./FinancialAidForm"
-import { formatCallback } from "./callbackOptions"
 import Navbar from "../Navbar"
 import { formatInr } from "../Public/usePricing"
 
@@ -32,13 +30,12 @@ function Paywall() {
     const [coupon, setCoupon] = useState("")
     const [couponError, setCouponError] = useState("")
     const [quote, setQuote] = useState(null)
-    const [pendingRequest, setPendingRequest] = useState(null)
     const [aidRequests, setAidRequests] = useState([])
-    const [showForm, setShowForm] = useState(false)
+    const [claiming, setClaiming] = useState(false)
     const [showAidForm, setShowAidForm] = useState(false)
     const [loading, setLoading] = useState(false)
 
-    // ─── Fetch pricing + any pending request on mount ────────────────────────
+    // ─── Fetch pricing + any financial aid on mount ──────────────────────────
     useEffect(() => {
         fetchPaywallData()
     }, [])
@@ -57,13 +54,11 @@ function Paywall() {
     const fetchPaywallData = async () => {
         try {
             setLoading(true)
-            const [pricingRes, requestsRes, aidRes] = await Promise.all([
+            const [pricingRes, aidRes] = await Promise.all([
                 getPricing(),
-                getMyRequests(),
                 getMyFinancialAid(),
             ])
             setPricing(pricingRes.data.data)
-            setPendingRequest(requestsRes.data.data.find((request) => request.status === "pending") || null)
             setAidRequests(aidRes.data.data)
         } catch (error) {
             message.error("Failed to fetch pricing")
@@ -177,9 +172,20 @@ function Paywall() {
         message.warning("Payment is still being confirmed. Please refresh in a minute.")
     }
 
-    const handleAddSuccess = (newRequest) => {
-        setPendingRequest(newRequest)
-        setShowForm(false)
+    // Round 35 (owner): a plan the server prices at ₹0 (a 100% coupon, aid at ₹0) is given at once —
+    // there is no request to wait on any more
+    const handleClaimFree = async () => {
+        try {
+            setClaiming(true)
+            const response = await claimFree({ tier: quote.tier, coupon: quote.coupon })
+            dispatch(setUser({ user: response.data.data.user }))
+            message.success(response.data.message)
+            navigate("/dashboard")
+        } catch (error) {
+            message.error(error.response?.data?.message || "Could not give you the plan")
+        } finally {
+            setClaiming(false)
+        }
     }
 
     const handleAidSuccess = (newAidRequest) => {
@@ -224,19 +230,8 @@ function Paywall() {
                 <p>You already have {planName(2)} — everything we offer. <button type="button" onClick={() => navigate("/dashboard")}>Go home</button></p>
             )}
 
-            {/* Pending request */}
-            {pendingRequest && (
-                <div>
-                    <p>
-                        <strong>Your request is pending.</strong> {planName(pendingRequest.requestedTier)} —
-                        {formatInr(pendingRequest.finalAmountInr)}. We'll call you
-                        ({formatCallback(pendingRequest.callbackDay, pendingRequest.callbackSlot)}) to complete the payment.
-                    </p>
-                </div>
-            )}
-
             {/* Offerings */}
-            {!isOnTierTwo && !pendingRequest && (
+            {!isOnTierTwo && (
                 <div>
                     <div className="plan-grid">
                     {current !== 3 && (
@@ -311,12 +306,13 @@ function Paywall() {
                                 <strong>{formatInr(quote.finalAmountInr)}</strong>
                             </p>
 
-                            {/* a 100% coupon makes it ₹0 — nothing to pay online, so it is a request the admin
-                                grants, in either payment mode (Round 26) */}
-                            {pricing.paymentMode === "razorpay" && quote.finalAmountInr > 0 ? (
+                            {/* Round 35 (owner): ₹0 is given at once; everything else is paid through Razorpay */}
+                            {quote.finalAmountInr === 0 ? (
+                                <button type="button" className="btn btn-primary" disabled={claiming} onClick={handleClaimFree}>{claiming ? "Unlocking…" : "Get it free"}</button>
+                            ) : pricing.paymentMode === "razorpay" ? (
                                 <button type="button" className="btn btn-primary" onClick={handlePayNow}>Pay {formatInr(quote.finalAmountInr)}</button>
                             ) : (
-                                <button type="button" className="btn btn-primary" onClick={() => setShowForm(true)}>Request access</button>
+                                <p>Online payments are paused for a moment — message us on <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">WhatsApp</a> and we'll help.</p>
                             )}
                         </div>
                     )}
@@ -344,15 +340,6 @@ function Paywall() {
                     )}
                 </div>
             )}
-
-            <RequestAccessForm
-                visible={showForm}
-                onClose={() => setShowForm(false)}
-                quote={quote}
-                defaultName={user.name}
-                defaultPhone={user.phone}
-                onAddSuccess={handleAddSuccess}
-            />
 
             <FinancialAidForm
                 visible={showAidForm}

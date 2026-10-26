@@ -24,10 +24,15 @@ const clean = (value, max) => (typeof value === "string" ? value.trim().slice(0,
 router.get("/getMine", authMiddleware, mentorAuthMiddleware, async (req, res) => {
     try {
         const payouts = await MentorPayout.find({ mentor: req.user._id, status: { $ne: "cancelled" } })
-            .select("kind tier region amountInr amountUsd status paidAt reference createdAt")
+            .select("kind tier region amountInr amountUsd status paidAt reference createdAt studentStatus note")
             .sort({ createdAt: -1 })
             .lean()
-        return res.status(200).json({ success: true, message: "Your payouts", data: payouts })
+        // Round 35 (owner): what happened with the student beside each row (rows before Round 35 carry it in the note)
+        const data = payouts.map(({ note, ...payout }) => ({
+            ...payout,
+            studentStatus: payout.kind === "followup" ? "follow-up" : payout.studentStatus || (/no-show/.test(note || "") ? "no_show" : "completed"),
+        }))
+        return res.status(200).json({ success: true, message: "Your payouts", data })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to load your payouts", error: error.message })

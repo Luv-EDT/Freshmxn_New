@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
 import { getMyNotifications } from "../apiCall/notificationsApi"
 
-// How many notifications a student has, for the bell in the menu bar (Round 29). Refreshed when the
-// Profile clears some.
+// How many NEW notifications a student has, for the bell in the menu bar (Round 29). Round 35 (owner):
+// only the ones not seen yet — opening the notifications marks them seen, and the count starts again
+// from the next one. Refreshed when the Profile clears or sees them.
 const useNotificationCount = (enabled) => {
     const [count, setCount] = useState(0)
 
@@ -10,7 +11,7 @@ const useNotificationCount = (enabled) => {
         if (!enabled) return undefined
         let live = true
         const load = () => getMyNotifications().then((response) => {
-            if (live) setCount((response && response.data && response.data.data && response.data.data.length) || 0)
+            if (live) setCount(((response && response.data && response.data.data) || []).filter((item) => !item.seen).length)
         })
         load()
         window.addEventListener("notifications-changed", load)

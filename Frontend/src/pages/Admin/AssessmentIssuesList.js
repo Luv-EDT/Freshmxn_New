@@ -133,8 +133,10 @@ function AssessmentIssuesList({ dataVersion, onDataChanged, onOpenCount }) {
     }
 
     const columns = [
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 220, render: (_, record) => record.user?.email || "—" },
         { title: "When", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY, HH:mm") },
-        { title: "Student", render: (_, record) => (record.user ? `${record.user.name} (${record.user.email})` : "—") },
         { title: "Test", dataIndex: "moduleName" },
         { title: "What happened", render: (_, record) => KIND_LABELS[record.kind] || record.kind },
         { title: "Detail", dataIndex: "detail" },

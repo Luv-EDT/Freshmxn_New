@@ -129,7 +129,7 @@ Then put your local `.env` back.
 
 1. Open the URL on your laptop. (First load after idle can take ~50 s — the free plan was asleep.)
 2. Register → verify email → log in.
-3. Request access (manual mode) → log in as admin → grant it.
+3. Buy a plan with Razorpay (or a 100% coupon → **Get it free**).
 4. Interest form → assessment → submit.
 5. In **Logs**, watch for `score_profile … scored` then `generate_report … release …`.
 6. The report page shows the report.

@@ -17,7 +17,9 @@ const reportSchema = new mongoose.Schema(
         note: { type: String, default: "" },
         wants: { type: String, enum: ["refund", "new_mentor"], required: true },
         status: { type: String, enum: ["open", "resolved"], default: "open" },
-        outcome: { type: String, default: null },   // new_mentor | refund | no_action
+        outcome: { type: String, default: null },   // new_mentor | refund | no_action | mistake (Round 35: the report was a mistake — closed, nothing against the mentor)
+        // Round 35: the ticket as it was before the report changed it, so "by mistake" can put it back
+        ticketBefore: { type: mongoose.Schema.Types.Mixed, default: null },
         mentorPaused: { type: Boolean, default: false },
         upheld: { type: Boolean, default: false },   // Round 34: the admin found it true — a strike, no payout, and it blocks Tier 2
         adminNote: { type: String, default: "" },

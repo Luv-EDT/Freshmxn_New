@@ -164,8 +164,20 @@ Round 26 the mode is set on Render (`PAYMENT_MODE`), and the steps to go live ar
 
 **Giving a plan for free (Round 26):** the admin presses **Give free access** on the student's row and
 picks a plan. It is recorded as a ₹0 payment marked "free, by admin", so the plan and the history read the
-normal way and there is nothing to refund. A 100% coupon also works: the price shows ₹0 and the student
-presses **Request access** instead of paying.
+normal way and there is nothing to refund. Since Round 35 it is on **every** student's row and offers
+what fits: any plan for someone who hasn't paid, **mentorship (one session)** on top of Career Discovery,
+Career Discovery on top of Mentor Only, and **another mentor session, free**, once the current one is done.
+
+**₹0 plans are given at once (Round 35, owner).** There is no "Request access" any more and no Access
+requests tab: every payment goes through Razorpay. When the server's own quote is ₹0 — a 100% coupon, or
+financial aid approved at ₹0 — the student presses **Get it free** and the plan unlocks straight away
+(`POST /payments/claimFree`, recorded as a ₹0 payment with the coupon, so it counts as a use). If online
+payments are ever switched off, the paywall says to message us on WhatsApp.
+
+**Refunds say what they cover (Round 35).** A Discovery + Mentor student chooses **only the mentor part**
+(they keep Career Discovery) or **the whole plan**, and sees what they paid beside what each gives back —
+both amounts from the server. A refund never deletes anything: the student's answers, scores and report
+stay, so if they buy again later everything is still there.
 
 **Deleting an account (Round 26):** the admin presses **Delete account** and types the email. The account
 and everything stored for it — answers, scores, report, payments, requests, consent, mentor place — are
@@ -183,7 +195,9 @@ use a code again.
 
 **Notifications** (Round 29): every email we send you about something that changed also appears as a
 notification — a bell with a count in the menu bar, a line on your dashboard, and a list at the top of your
-Profile. Clear one with ✕, or all at once; cleared ones are deleted. Emails show as from "Freshmxn". We can
+Profile. The bell counts only what's **new** (Round 35): opening your notifications marks them seen, so the
+count starts again from the next one, and new ones carry a "New" tag. Clear one with ✕, or **Clear all
+notifications**; cleared ones are deleted. Emails show as from "Freshmxn". We can
 send about 90 a day on our email plan; above that only reminders wait for the next day (their notification
 still appears) — anything you are waiting on always goes.
 
@@ -591,10 +605,19 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
    links** (stored in the mentor's profile), then presses **Match**. A mentor with no Calendly link can't be
    matched. The mentor is emailed a "new student" note (read the brief within 2.5 days, keep the slots free);
    the student is emailed that their mentor is confirmed, and `/mentorship` shows the two booking buttons.
-3. **The student books.** Within 2.5 days, or it counts as a no-show: the 1-hour main session in the next 4
-   days, the 20-minute follow-up on day 5 or 6 (not booking it means they don't want it; the mentor also asks
-   at the end of the main session). Our team sends a reminder an hour before. Rescheduling goes through us on
+3. **The student books.** Within 2.5 days, with a **countdown** on `/mentorship`: the 1-hour main session in
+   the next 4 days, the 20-minute follow-up on day 3, 4, 5 or 6 — after the main one (not booking it means
+   they don't want it; the mentor also asks at the end of the main session). **One slot per link** — more than
+   one counts as no session chosen, the mentor reports it, and it can cost the whole mentorship. Can't find a
+   slot? WhatsApp +91 8882756287. Our team sends a reminder an hour before. Rescheduling goes through us on
    WhatsApp. Students and mentors never message each other on the platform.
+   **Booked (Round 35).** The mentor tells us on WhatsApp — three times: slots opened, the student's booking
+   (with both dates and times), session done. The admin presses **Sessions booked…** on Mentor matches and
+   enters the times; the booking buttons give way to "Your sessions are booked" with the times, the mentor's
+   dashboard shows them too, and the student is emailed. **Not booked after 3 days** (the student is shown 2.5;
+   the half day is grace): the student's page says the chance is lost and it's recorded as a no-show — message
+   us to arrange it again — and the admin's row says "booking time missed". The admin checks with the mentor
+   and presses **Student no-show**; nothing closes by itself.
 4. **The mentor's brief.** On their dashboard the mentor sees the student's first name, the career and role,
    what they want to know, their languages and a few Virtual Career Counselling highlights (education,
    interests, achievements, challenges — never family or beliefs; support needs only if the student chose to
@@ -606,20 +629,27 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
    (empathetic, knowledgeable, clear, gave clarity, would recommend), a rating out of 10, and whether they
    stayed within limits. The mentor never sees it. Feedback in = the ticket closes and the **mentor's payout
    is due**. A "no" on limits, or a concern, emails the admin.
-6. **Student no-show** (didn't book in 2.5 days, or 10+ minutes late): the admin presses **Student
-   no-show** — the ticket closes, no refund, the mentor is paid.
+6. **Student no-show** (didn't book in time, or 10+ minutes late): the admin presses **Student no-show** —
+   the ticket closes, no refund, the mentor is paid. A no-show **doesn't count towards the mentor's tier**
+   (tiers count sessions with feedback) and the mentor's Payouts show it as "Student no-show". If it was the
+   mentor's first student, the "keep this mentor?" question waits for their next held session. If the student
+   still wants the session and the mentor agrees, the admin's ticket menu has **Re-arrange with the same
+   mentor** (a fresh 2.5 days to book); the admin can also give another session free.
 7. **Report a problem with my mentor** (a small link on `/mentorship`): what happened, then **a refund** of
    the mentor part (the amount comes from the server) or **a new mentor** (back to matching for **15 business
    days**, that mentor kept away). It acts the moment it is sent; the admin then records whether it was
    **upheld** (a strike on the mentor, no payout for that session, no automatic Tier 2) and can pause the
    mentor. The refund itself is sent from the ticket (Mentor matches → Close or change this ticket → Refund
-   the mentor part).
+   the mentor part). A report sent **by mistake** (Round 35) is closed with nothing against the mentor, and the
+   student's ticket is put back as it was — unless a refund was sent or a new mentor matched meanwhile.
 8. **Another session** (paid, at the Mentor Only price) can be booked once a session is done, as before.
 
-**Mentors, step by step (Round 34).** Sign up → the profile (including where they live — India or abroad,
+**Mentors, step by step (Round 34; Round 35: the training comes first).** Sign up → three short **training
+documents**, folded, with their reading times (about 10, 20 and 15 minutes) → the profile (including where they live — India or abroad,
 which sets their pay — their two Calendly links, and how we pay them: UPI or bank and PAN in India, bank or
-another method abroad; only our team sees these) → three short **training documents** (what Freshmxn is,
-how to get onboarded with Calendly, how to mentor) → a **test**: 7 multiple-choice questions drawn from 32,
+another method abroad; only our team sees these) → a **test**, every part compulsory (the questions, the five
+steps put in order, both Calendly links and the video) — it can be saved and finished later, and **Send**
+appears only when nothing is missing: 7 multiple-choice questions drawn from 32,
 the five steps in order, their two Calendly links, and a 5–10 minute video mentoring a sample student
 (uploaded privately to Cloudflare R2, or a link pasted when R2 isn't set up). The admin reviews it (Admin →
 Mentors section → Mentors → **Review test**), approves or rejects with a reason, and the **video is deleted**

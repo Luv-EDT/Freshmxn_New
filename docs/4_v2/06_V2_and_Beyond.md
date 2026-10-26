@@ -175,7 +175,7 @@ V1 has mentor onboarding, a paid waitlist and admin matching within 20 business 
 - in-app scheduling for the two sessions (a 1-hour clarity session and a 20-minute follow-up);
 - mentor payouts **sent** through RazorpayX (Round 34 records them and the admin pays by hand), with TDS handled as the CA advises;
 - automatic WhatsApp (Meta Business API and approved templates) for the "new student" note and the one-hour reminder — Round 34 sends them by hand;
-- Calendly webhooks, so a booking (or a missed booking in 2.5 days) is seen without the mentor telling us;
+- Calendly webhooks or Workflows (a paid Calendly plan per mentor, or our own Calendly Teams account), so a booking is logged without the mentor telling us on WhatsApp and the admin pressing "Sessions booked" (Round 35);
 - a proper session recording policy (consent for minors) before any recording is asked of mentors;
 - **a mentor / counsellor portal** for `mentor_overrides` (a schema field with no interface today),
   and the loop that refreshes the baseline ratings from those overrides. Fifty logged overrides will

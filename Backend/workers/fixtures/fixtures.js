@@ -5405,7 +5405,12 @@ const fixtures = [
             if (!/authMiddleware, adminAuthMiddleware/.test(route.split("\n")[0])) problems.push("the route is not admin-only")
             if (!/grantAccess\(student\._id, tier, 0, null, \{[\s\S]*freeByAdmin: true/.test(route)) problems.push("free access does not go through grantAccess at ₹0, marked free")
             if (!/purchaseProblem\(/.test(route)) problems.push("a plan the student already has is not refused")
-            if (!/paymentMode === "razorpay" && quote\.finalAmountInr > 0/.test(paywall)) problems.push("a ₹0 quote in Razorpay mode still shows 'Pay'")
+            // Round 35 (owner change): no request any more — a ₹0 quote is given at once, never "Pay ₹0", and
+            // only when the SERVER's quote is ₹0
+            if (!/quote\.finalAmountInr === 0 \? \([\s\S]*?handleClaimFree[\s\S]*?\) : pricing\.paymentMode === "razorpay"/.test(paywall)) problems.push("a ₹0 quote still shows 'Pay' (or isn't given at once)")
+            const claim = (router.split('router.post("/claimFree"')[1] || "").split("\nrouter.")[0]
+            if (!/calculateQuote\(req\.user/.test(claim) || !/quote\.finalAmountInr !== 0/.test(claim) || !/grantAccess\(req\.user\._id, quote\.tier, 0,/.test(claim)) problems.push("a free plan is given without the server's own ₹0 quote")
+            if (/router\.(post|put|get)\("\/(requestAccess|grantForAdmin|overturnGrantForAdmin|declineForAdmin)/.test(router)) problems.push("the access-request routes are still there")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
@@ -6058,7 +6063,8 @@ const fixtures = [
             const riya = { name: "Riya Sharma", email: "riya.s@gmail.com" }
             if (!matchesStudent(riya, "") || !matchesStudent(riya, "SHARMA") || !matchesStudent(riya, "riya gmail") || matchesStudent(riya, "riya yahoo")) problems.push("the name/email match is wrong")
             if (matchesStudent(null, "riya") || !matchesStudent(null, "  ")) problems.push("a deleted student's row is mishandled")
-            ;["AccessRequestsList", "RefundRequestsList", "FinancialAidList", "MentorMatchesList", "SessionFeedbackList", "AssessmentIssuesList", "FollowUpsList", "StudyAbroadList", "CareerHelpList"].forEach((name) => {
+            // Round 35 (owner): AccessRequestsList is gone
+            ;["RefundRequestsList", "FinancialAidList", "MentorMatchesList", "SessionFeedbackList", "AssessmentIssuesList", "FollowUpsList", "StudyAbroadList", "CareerHelpList"].forEach((name) => {
                 const source = fs.readFileSync(path.join(ADMIN, `${name}.js`), "utf8")
                 if (!/<StudentSearch value=\{search\} onChange=\{setSearch\} \/>/.test(source) || !/matchesStudent\(row\.(user|student), search\)/.test(source)) problems.push(`${name} has no student search`)
             })
@@ -6527,6 +6533,113 @@ const fixtures = [
             ;["Mentor matches", "Mentors", "Payouts", "Session feedback"].forEach((tab) => { if (!admin.includes(`"${tab}"`)) problems.push(`the mentor section has no "${tab}" tab`) })
             const server = fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8")
             if (/app\.use\("\/admin/.test(server)) problems.push("an API prefix equals the /admin page URL")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 35 — booking: the student sees 2.5 days and a countdown, the chance is lost only after 3 days with nothing logged; the admin logs the booked times (follow-up after the main) and the student is emailed; a new match clears them",
+        run: () => {
+            const { bookBy, bookingMissed } = require("../../Routers/mentorWaitlistRouter")
+            const problems = []
+            const matchedAt = new Date("2026-10-20T10:00:00Z")
+            const row = { matchStatus: "matched", matchedAt }
+            if (bookBy(row).getTime() !== matchedAt.getTime() + 60 * 36e5) problems.push("the booking time shown is not 2.5 days")
+            if (bookingMissed(row, new Date(matchedAt.getTime() + 71 * 36e5))) problems.push("the chance is lost before 3 days")
+            if (!bookingMissed(row, new Date(matchedAt.getTime() + 73 * 36e5))) problems.push("the chance is not lost after 3 days")
+            if (bookingMissed({ ...row, sessionsBookedAt: new Date() }, new Date(matchedAt.getTime() + 99 * 36e5))) problems.push("a booked ticket reads as missed")
+            if (bookingMissed({ ...row, matchStatus: "completed" }, new Date(matchedAt.getTime() + 99 * 36e5))) problems.push("a finished ticket reads as missed")
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const waitlist = read("Routers/mentorWaitlistRouter.js")
+            const route = (waitlist.split('router.put("/sessionsBookedForAdmin/:id"')[1] || "").split("\nrouter.")[0]
+            if (!/adminAuthMiddleware/.test(route.slice(0, 120)) || !/followUpAt <= mainAt/.test(route) || !/"sessionsBooked"/.test(route)) problems.push("the booking is not admin-only, checked, and told to the student")
+            ;[waitlist, read("Routers/mentorSessionsRouter.js")].forEach((source) => {
+                if (!/FRESH_MATCH_STEPS = \{[^}]*sessionsBookedAt: null, bookedMainAt: null, bookedFollowUpAt: null/.test(source)) problems.push("a new match keeps the old booking")
+            })
+            const page = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/Mentorship.js"), "utf8")
+            if (!/waitlist\.bookedMainAt \?/.test(page) || !/waitlist\.bookingMissed \?/.test(page) || !/<BookingCountdown until=\{waitlist\.bookBy\}/.test(page)) problems.push("the page doesn't show booked / missed / the countdown")
+            if (!/Pick one slot on each link/.test(page) || !/\+91 8882756287/.test(page)) problems.push("the one-slot rule or the help number is missing under the booking buttons")
+            const parts = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/mentorshipParts.js"), "utf8")
+            if (!/<details className="faq-item mentor-help-fold mentor-next">\s*<summary>What happens next<\/summary>/.test(parts)) problems.push("'What happens next' is not folded")
+            const { TEMPLATES } = require("../../utils/statusEmails")
+            const copy = [page, parts, TEMPLATES.mentorConfirmed({ mentorName: "A", calendlyMain: "https://calendly.com/a/1", calendlyFollowUp: "https://calendly.com/a/2" }).body].join("\n")
+            if (/day 5 or 6|days 5–6|days 5 and 6/.test(copy) || !/day 3/.test(copy)) problems.push("the follow-up still says day 5 or 6")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 35 — the mentor invite asks for three WhatsApp updates (slots open, the booking with its times, session done) and drops the long privacy list; a report sent by mistake closes with nothing against the mentor and the ticket put back; a no-show's payout never asks the first-session question",
+        run: () => {
+            const { whatsappText, TELL_US } = require("../../utils/mentorInvite")
+            const { TEMPLATES } = require("../../utils/statusEmails")
+            const problems = []
+            const facts = { firstName: "Riya", profession: "Architect", jobRole: "Urban designer", focus: "", helpWanted: "" }
+            const text = whatsappText(facts)
+            const email = TEMPLATES.mentorInvite(facts).body
+            if (TELL_US.length !== 3 || !TELL_US.every((step) => text.includes(step) && email.includes(step.replace(/'/g, "&#39;")) || email.includes(step))) problems.push("the invite doesn't ask for the three updates")
+            if (!/date and time/.test(TELL_US[1])) problems.push("the booking update doesn't ask for the date and time")
+            if (/Delete the chat|add the student to a group|Use the student's name and contact only/.test(text + email)) problems.push("the removed privacy points are still in the invite")
+            const sessions = fs.readFileSync(path.join(__dirname, "../../Routers/mentorSessionsRouter.js"), "utf8")
+            const resolve = (sessions.split('router.put("/resolveReportForAdmin/:id"')[1] || "").split("\nrouter.")[0]
+            const mistake = (resolve.split("if (req.body.mistake === true) {")[1] || "").split("const upheld")[0]
+            if (!mistake || /strikes|status: "paused"|cancelled/.test(mistake) || !/report\.outcome = "mistake"/.test(mistake)) problems.push("a mistaken report still acts against the mentor")
+            if (!/ticketBefore: \{ \.\.\.ticketSnapshot\(row\)/.test(sessions) || !/\$pull: \{ excludedMentors: report\.mentor \}/.test(mistake)) problems.push("a mistaken report can't put the ticket back")
+            const payouts = fs.readFileSync(path.join(__dirname, "../../utils/mentorPayouts.js"), "utf8")
+            if (!/needsApproval: !noShow && !asked/.test(payouts) || !/studentStatus: noShow \? "no_show" : "completed"/.test(payouts)) problems.push("a no-show asks the first-session question, or isn't marked as a no-show")
+            const tiers = fs.readFileSync(path.join(__dirname, "../../utils/mentorPayouts.js"), "utf8")
+            if (!/SessionReview\.find\(\{ mentor: mentorUserId \}\)/.test(tiers)) problems.push("tiers no longer count sessions with feedback only")
+            const mentorPage = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Mentor/MentorPayouts.js"), "utf8")
+            if (!/<th>Student<\/th>/.test(mentorPage) || !/Earned \(paid to you\)/.test(mentorPage)) problems.push("the mentor's payouts lack the student column or the total earned")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 35 — mentors: training before the profile, three folded documents with their reading times, the test sent only with every part done (the steps put in order too); the current student folded to one line; My profession is two folded cards",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Mentor", file), "utf8")
+            const problems = []
+            const home = read("MentorHome.js")
+            const firstSteps = (home.split("if (!profile) {")[1] || "").split("const approved")[0]
+            if (!(firstSteps.indexOf('key: "training"') > 0 && firstSteps.indexOf('key: "training"') < firstSteps.indexOf('key: "profile"'))) problems.push("the training doesn't come before 'Tell us about yourself'")
+            const training = read("MentorTraining.js")
+            if (!/minutes: 10[\s\S]*minutes: 20[\s\S]*minutes: 15/.test(training) || /<details[^>]*\bopen\b/.test(training)) problems.push("the documents aren't folded with 10 / 20 / 15 minutes")
+            if (!/Two slots on one link\?/.test(training) || /recording/i.test(training)) problems.push("the two-slots rule is missing, or recording is mentioned")
+            const test = read("MentorTest.js")
+            if (!/\{ready && <button[^>]*onClick=\{trySend\}/.test(test) || !/Save and come back later/.test(test)) problems.push("Send shows before the test is complete, or there's no save")
+            const testRouter = fs.readFileSync(path.join(__dirname, "../../Routers/mentorTestRouter.js"), "utf8")
+            if (!/!test\.stepsArrangedAt && "the 5-step mentor flow in order"/.test(testRouter)) problems.push("the server sends a test whose steps were never put in order")
+            const students = read("MentorStudents.js")
+            if (!/<details key=\{student\.id\} className="mentor-student">\s*<summary/.test(students)) problems.push("the current student isn't folded")
+            const sheet = read("MentorReviewSheet.js")
+            if ((sheet.match(/<details className="profession-fold">/g) || []).length !== 2 || !/Suggest a starter skills roadmap/.test(sheet)) problems.push("My profession isn't two folded cards")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 35 — students and admin: Career Discovery sees a Mentor tab, not the long offer; the bell counts only unseen notifications and opening them marks them seen; refunds say what they cover; Access requests are gone; Give free access on every student; name and email stay in view",
+        run: () => {
+            const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src", file), "utf8")
+            const problems = []
+            if (!/<UpgradeToMentorship user=\{user\} tab \/>/.test(read("pages/User/Home.js"))) problems.push("the dashboard still shows the long mentor offer")
+            if (!/filter\(\(item\) => !item\.seen\)/.test(read("pages/useNotificationCount.js"))) problems.push("the bell counts seen notifications")
+            const notes = read("pages/User/Notifications.js")
+            if (!/markNotificationsSeen\(\)/.test(notes) || !/items\.length > 0 && <button[^>]*>Clear all notifications/.test(notes)) problems.push("opening doesn't mark them seen, or Clear all isn't always there")
+            const notifyRouter = fs.readFileSync(path.join(__dirname, "../../Routers/notificationsRouter.js"), "utf8")
+            if (!/router\.put\("\/markAllSeen"/.test(notifyRouter) || !/seen: Boolean\(seenAt && /.test(notifyRouter)) problems.push("the server doesn't know what was seen")
+            const refund = read("pages/User/RequestRefundForm.js")
+            if (!/Only the mentor part/.test(refund) || !/The whole Discovery \+ Mentor plan/.test(refund) || !/options\.paidInr/.test(refund)) problems.push("the refund choices don't say what they cover or what was paid")
+            if (fs.existsSync(path.join(__dirname, "../../../Frontend/src/pages/Admin/AccessRequestsList.js")) || /accessRequests/.test(read("pages/Admin/AdminHome.js"))) problems.push("the Access requests tab is still there")
+            const students = read("pages/Admin/StudentsList.js")
+            if (/currentTier !== 2 && \(\s*<>\{" "\}<GiveFreeAccess/.test(students) || !/\{ title: "Name", dataIndex: "name", fixed: "left"/.test(students)) problems.push("Give free access is hidden for some students, or the name isn't fixed")
+            const free = read("pages/Admin/StudentAccessActions.js")
+            if (!/value: "session"/.test(free) || !/Add mentorship — one mentor session/.test(free)) problems.push("free access can't add mentorship or another session")
+            ;["pages/Admin/RefundRequestsList.js", "pages/Admin/FinancialAidList.js", "pages/Admin/MentorMatchesList.js"].forEach((file) => {
+                if (!/title: "Email", fixed: "left"/.test(read(file))) problems.push(`${file}: the email isn't fixed`)
+            })
+            if (!/\.admin-tabs > \.ant-tabs-nav \.ant-tabs-nav-wrap \{ overflow-x: auto/.test(read("styles/app.css"))) problems.push("the admin tab bar doesn't scroll sideways")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

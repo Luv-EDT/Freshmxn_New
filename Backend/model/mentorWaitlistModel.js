@@ -67,7 +67,7 @@ const mentorWaitlistSchema = new mongoose.Schema(
         history: {
             type: [{
                 at: Date,
-                event: String,       // choice_sent | choice_reset | new_mentor | reassigned | refund_requested | refunded | student_no_show | session_done
+                event: String,       // choice_sent | choice_reset | new_mentor | reassigned | refund_requested | refunded | student_no_show | sessions_booked | booking_cleared | session_done | report_withdrawn
                 by: String,          // student | admin
                 note: String,
                 profession: String,
@@ -153,6 +153,11 @@ const mentorWaitlistSchema = new mongoose.Schema(
         mentorPrivacyAcceptedAt: { type: Date, default: null },   // the mentor accepted the privacy rules
         bookingLinkSentAt: { type: Date, default: null },         // the mentor sent their booking (Calendly) link
         mainSessionAt: { type: Date, default: null },             // Round 29: the admin marked the main session held
+        // Round 35 (owner): the mentor tells us on WhatsApp that the student has booked, with the times;
+        // the admin logs it, and both dashboards say the sessions are booked
+        sessionsBookedAt: { type: Date, default: null },
+        bookedMainAt: { type: Date, default: null },              // when the 1-hour session is
+        bookedFollowUpAt: { type: Date, default: null },          // when the 20-minute follow-up is (none booked: null)
     },
     {
         timestamps: true,

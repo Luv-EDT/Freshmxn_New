@@ -44,6 +44,7 @@ const testFor = async (mentorUserId) => {
 const forMentor = (test) => ({
     questions: test.drawnIds.map((id) => byId.get(id)).filter(Boolean).map((question) => publicQuestion(test, question)),
     steps: test.stepOrder.map((id) => STEPS.find((step) => step.id === id)).filter(Boolean),
+    stepsArranged: Boolean(test.stepsArrangedAt),
     sample: (SAMPLES.find((sample) => sample.id === test.sampleId) || SAMPLES[0]).text,
     answers: test.answers || {},
     calendlyMain: test.calendlyMain,
@@ -116,6 +117,7 @@ router.put("/saveMine", authMiddleware, mentorAuthMiddleware, async (req, res) =
                 return res.status(400).json({ success: false, message: "Please keep all five steps" })
             }
             test.stepOrder = order
+            test.stepsArrangedAt = new Date()
         }
         for (const key of ["calendlyMain", "calendlyFollowUp"]) {
             if (body[key] === undefined) continue
@@ -194,8 +196,11 @@ router.post("/submitMine", authMiddleware, mentorAuthMiddleware, async (req, res
             return res.status(400).json({ success: false, message: "Your test is already sent" })
         }
 
+        // Round 35 (owner): every part is compulsory — the questions, the five steps put in order, both
+        // Calendly links and the video; the page shows Send only when all are done, and this refuses otherwise
         const missing = [
             test.drawnIds.some((id) => !Number.isInteger((test.answers || {})[id])) && "every multiple-choice question",
+            !test.stepsArrangedAt && "the 5-step mentor flow in order",
             (!CALENDLY.test(test.calendlyMain || "") || !CALENDLY.test(test.calendlyFollowUp || "")) && "both Calendly links",
             !(test.video && (test.video.key || test.video.link)) && "your video",
         ].filter(Boolean)

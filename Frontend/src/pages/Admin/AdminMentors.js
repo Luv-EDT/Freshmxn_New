@@ -35,7 +35,7 @@ function AdminMentors() {
                 <p><Link to="/admin">← Admin</Link></p>
                 <h2>Mentors</h2>
                 <LogoutButton />
-                <Tabs items={items} />
+                <Tabs className="admin-tabs" items={items} />
             </div>
         </div>
     )

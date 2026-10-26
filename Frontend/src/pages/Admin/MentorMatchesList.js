@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
-import { Table, Button, Popconfirm, Segmented, Select, Modal, Input, Checkbox, Dropdown, message } from "antd"
+import { Table, Button, Popconfirm, Segmented, Select, Modal, Input, Checkbox, Dropdown, DatePicker, message } from "antd"
 import dayjs from "dayjs"
-import { getWaitlistForAdmin, matchForAdmin, resetChoiceForAdmin, completeSessionForAdmin, newMentorForAdmin, studentNoShowForAdmin } from "../../apiCall/mentorWaitlistApi"
+import { getWaitlistForAdmin, matchForAdmin, resetChoiceForAdmin, completeSessionForAdmin, newMentorForAdmin, studentNoShowForAdmin, sessionsBookedForAdmin, reopenSameMentorForAdmin } from "../../apiCall/mentorWaitlistApi"
 import { grantMentorSessionForAdmin, refundMentorPartForAdmin } from "../../apiCall/paymentsApi"
 import { getAllMentorsForAdmin } from "../../apiCall/mentorsApi"
 import { markWhatsappInviteForAdmin } from "../../apiCall/mentorSessionsApi"
@@ -13,6 +13,10 @@ import StudentSearch, { matchesStudent } from "./StudentSearch"
 //   Match         — after asking the mentor on WhatsApp to open Calendly slots; the student then sees the
 //                   links and books. A mentor without Calendly links can't be matched.
 //   WhatsApp      — opens WhatsApp with the mentor's "new student" message typed in
+//   Sessions booked — Round 35: the mentor tells us on WhatsApp the student booked, with the times; both
+//                   dashboards then say so and the student is emailed. 3 days after the match with nothing
+//                   logged, the row says "booking time missed" (the student's page says so too) — then
+//                   check with the mentor and press Student no-show
 //   Session done  — after the mentor tells us on WhatsApp; the student's feedback form opens
 //   Student no-show — closes the ticket with no refund; the mentor is still paid
 //   Close or change this ticket — one menu, each choice doing the whole job and telling the student:
@@ -51,6 +55,7 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
     const [loading, setLoading] = useState(false)
     const [statusFilter, setStatusFilter] = useState("matching") // awaiting_choice | matching | matched | unmatchable | all
     const [chosenMentor, setChosenMentor] = useState({}) // studentId → mentor user id
+    const [booking, setBooking] = useState(null)         // { record, mainAt, followUpAt } while the booking box is open
 
     useEffect(() => {
         fetchAll()
@@ -80,6 +85,24 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         }
     }
 
+    const openBooking = (record) => setBooking({
+        record,
+        mainAt: record.bookedMainAt ? dayjs(record.bookedMainAt) : null,
+        followUpAt: record.bookedFollowUpAt ? dayjs(record.bookedFollowUpAt) : null,
+    })
+
+    const saveBooking = async (clear) => {
+        try {
+            const payload = clear ? { clear: true } : { mainAt: booking.mainAt ? booking.mainAt.toISOString() : null, followUpAt: booking.followUpAt ? booking.followUpAt.toISOString() : null }
+            const response = await sessionsBookedForAdmin(booking.record.student?._id, payload)
+            message.success(response.data.message)
+            setBooking(null)
+            fetchAll()
+        } catch (error) {
+            message.error(error.response?.data?.message || "Could not save the booking")
+        }
+    }
+
     const handleNoShow = async (studentId) => {
         try {
             const response = await studentNoShowForAdmin(studentId, {})
@@ -106,6 +129,11 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                 title: "Reset the career choice?",
                 text: "The choice, the clock and any match are cleared; the student chooses again and is emailed. Kept in the ticket's history.",
                 run: () => resetChoiceForAdmin(studentId, { adminNote: note }),
+            },
+            same_mentor: {
+                title: "Re-arrange with the same mentor?",
+                text: "After a no-show: the student asked on WhatsApp and the mentor agreed. The ticket is matched again with that mentor, the student gets a new 2.5 days to book, and both are emailed. The no-show stays paid; this session is paid in its turn.",
+                run: () => reopenSameMentorForAdmin(studentId, { adminNote: note }),
             },
             refund: {
                 title: "Refund the mentor part?",
@@ -165,7 +193,9 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
     }
 
     const columns = [
-        { title: "Student", render: (_, record) => `${record.student?.name} (${record.student?.email})` },
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.student?.name || "—" },
+        { title: "Email", fixed: "left", width: 200, render: (_, record) => record.student?.email || "—" },
         { title: "Phone", render: (_, record) => record.student?.phone || "—" },
         { title: "Plan", dataIndex: "plan" },
         {
@@ -198,6 +228,16 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
         },
         { title: "Status", dataIndex: "matchStatus", render: (value, record) => `${STATUS_WORDS[value] || value}${(record.sessions || []).length ? ` · ${record.sessions.length} done` : ""}${record.sameFieldNewMentor ? " · different mentor wanted" : ""}${record.resolution === "refund_requested" ? " · refund asked for" : ""}` },
         { title: "Mentor", render: (_, record) => record.assignedMentor?.name || "—" },
+        // Round 35: booked (with the times the mentor gave us), waiting, or the booking time missed
+        {
+            title: "Booking",
+            render: (_, record) => {
+                if (record.matchStatus !== "matched") return record.bookedMainAt ? `Was booked for ${dayjs(record.bookedMainAt).format("DD MMM, h:mm a")}` : "—"
+                if (record.bookedMainAt) return `Booked · main ${dayjs(record.bookedMainAt).format("DD MMM, h:mm a")}${record.bookedFollowUpAt ? ` · follow-up ${dayjs(record.bookedFollowUpAt).format("DD MMM, h:mm a")}` : " · no follow-up"}`
+                if (record.bookingMissed) return <strong className="admin-alert">Booking time missed — check with the mentor, then Student no-show</strong>
+                return `Not booked yet · book by ${record.bookBy ? dayjs(record.bookBy).format("DD MMM, h:mm a") : "—"}`
+            },
+        },
         // Round 28: how the mentor may reach the student, and where this match's steps stand
         { title: "Contact", render: (_, record) => (record.contactConsented ? (record.contactVia === "email" ? "Email" : "WhatsApp") : "Waiting for consent") },
         // rows written before Round 13 carry the old, unclear wording
@@ -233,11 +273,14 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                             <><Button size="small" onClick={() => sendWhatsapp(record)}>{record.whatsappInviteAt ? "Message the mentor again" : "Message the mentor on WhatsApp"}</Button>{" "}</>
                         )}
                         {record.matchStatus === "matched" && (
+                            <><Button size="small" type={record.bookedMainAt ? "default" : "primary"} onClick={() => openBooking(record)}>{record.bookedMainAt ? "Change booking" : "Sessions booked…"}</Button>{" "}</>
+                        )}
+                        {record.matchStatus === "matched" && (
                             <>
                                 <Popconfirm title="Has the mentor told you the session is done? The student's feedback form opens now." onConfirm={() => handleDone(studentId)}>
                                     <Button type="primary" size="small">Session done</Button>
                                 </Popconfirm>{" "}
-                                <Popconfirm title="The student didn't book within 2.5 days or didn't join? The ticket closes with no refund; the mentor is still paid." onConfirm={() => handleNoShow(studentId)}>
+                                <Popconfirm title="The student didn't book in time or didn't join? The ticket closes with no refund; the mentor is still paid." onConfirm={() => handleNoShow(studentId)}>
                                     <Button size="small">Student no-show</Button>
                                 </Popconfirm>{" "}
                             </>
@@ -252,13 +295,14 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
                                 </Popconfirm>{" "}
                             </>
                         )}
-                        {(record.choiceSentAt || record.resolution === "refund_requested") && (
+                        {(record.choiceSentAt || ["refund_requested", "student_no_show"].includes(record.resolution)) && (
                             <Dropdown
                                 trigger={["click"]}
                                 menu={{
                                     items: [
                                         record.choiceSentAt && { key: "new_mentor", label: "Find another mentor" },
                                         record.canResetChoice && { key: "reset", label: "Reset the career choice (within 7 days)" },
+                                        record.matchStatus === "closed" && record.resolution === "student_no_show" && { key: "same_mentor", label: "Re-arrange with the same mentor (after a no-show)" },
                                         { key: "refund", label: "Refund the mentor part", danger: true },
                                     ].filter(Boolean),
                                     onClick: ({ key }) => changeTicket(record, key),
@@ -286,6 +330,25 @@ function MentorMatchesList({ dataVersion, onDataChanged }) {
 
             <StudentSearch value={search} onChange={setSearch} />
             <Table rowKey={(record) => record.student?._id} loading={loading} columns={columns} dataSource={visibleRows.filter((row) => matchesStudent(row.student, search))} scroll={{ x: "max-content" }} />
+
+            <Modal
+                open={Boolean(booking)}
+                title={booking ? `Sessions booked — ${booking.record.student?.name}` : ""}
+                onCancel={() => setBooking(null)}
+                footer={booking ? [
+                    booking.record.bookedMainAt && <Button key="clear" danger onClick={() => saveBooking(true)}>Not booked after all</Button>,
+                    <Button key="cancel" onClick={() => setBooking(null)}>Cancel</Button>,
+                    <Button key="save" type="primary" disabled={!booking.mainAt} onClick={() => saveBooking(false)}>Save — tell the student</Button>,
+                ].filter(Boolean) : null}
+            >
+                {booking && (
+                    <div className="booking-form">
+                        <p>From the mentor's WhatsApp message (your local time):</p>
+                        <label>Main session (1 hour)<DatePicker showTime={{ format: "h:mm a", minuteStep: 5 }} format="DD MMM YYYY, h:mm a" value={booking.mainAt} onChange={(value) => setBooking((prev) => ({ ...prev, mainAt: value }))} /></label>
+                        <label>Follow-up (20 minutes) — leave empty if none was booked<DatePicker showTime={{ format: "h:mm a", minuteStep: 5 }} format="DD MMM YYYY, h:mm a" value={booking.followUpAt} onChange={(value) => setBooking((prev) => ({ ...prev, followUpAt: value }))} /></label>
+                    </div>
+                )}
+            </Modal>
         </div>
     )
 }

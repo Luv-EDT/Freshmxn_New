@@ -72,6 +72,18 @@ export async function completeSessionForAdmin(studentId, payload) {
     return response
 }
 
+// Round 35: after a student no-show, the same mentor again (the student asked, the mentor agreed)
+export async function reopenSameMentorForAdmin(studentId, payload) {
+    const response = await axiosInstance.put(`/mentorWaitlist/reopenSameMentorForAdmin/${studentId}`, payload || {})
+    return response
+}
+
+// Round 35: the mentor told us on WhatsApp the student booked — the times, or { clear: true }
+export async function sessionsBookedForAdmin(studentId, payload) {
+    const response = await axiosInstance.put(`/mentorWaitlist/sessionsBookedForAdmin/${studentId}`, payload || {})
+    return response
+}
+
 // Round 28: how the mentor may reach the student — WhatsApp or email, with their consent
 export async function saveMyContact(payload) {
     try {

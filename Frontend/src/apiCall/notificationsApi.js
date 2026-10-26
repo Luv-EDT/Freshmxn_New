@@ -11,4 +11,5 @@ const call = async (request) => {
 
 export const getMyNotifications = () => call(() => axiosInstance.get("/notifications/getMine"))
 export const clearNotification = (id) => call(() => axiosInstance.delete(`/notifications/clearMine/${id}`))
+export const markNotificationsSeen = () => call(() => axiosInstance.put("/notifications/markAllSeen", {}))
 export const clearAllNotifications = () => call(() => axiosInstance.delete("/notifications/clearAllMine"))

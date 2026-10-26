@@ -35,6 +35,11 @@ const userSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        // Round 35 (owner): when they last looked at their notifications — the bell counts only newer ones
+        notificationsSeenAt: {
+            type: Date,
+            default: null,
+        },
         // Round 28 (owner): how many of the three updates from the student's OWN changes are used
         // (utils/selfUpdates.js). Updates because our matching changed never count.
         selfUpdatesUsed: {

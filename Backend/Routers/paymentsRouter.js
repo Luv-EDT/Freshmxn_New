@@ -3,7 +3,6 @@ const crypto = require("crypto")
 const Razorpay = require("razorpay")
 const User = require("../model/userModel")
 const Payment = require("../model/paymentsModel")
-const AccessRequest = require("../model/accessRequestsModel")
 const RefundRequest = require("../model/refundRequestsModel")
 const FinancialAidRequest = require("../model/financialAidRequestsModel")
 const Coupon = require("../model/couponsModel")
@@ -240,7 +239,8 @@ const MENTOR_SESSION_INR = TIER_PRICE_INR[3]
 const mentorSessionProblem = async (user) => {
     if (!(user.paid === true && grants(Number(user.currentTier)).mentor)) return "Mentor sessions come with a mentor plan"
     const row = await MentorWaitlist.findOne({ user: user._id }).select("matchStatus extraSessionsPaid extraSessionsUsed").lean()
-    if (!row || row.matchStatus !== "completed") return "You can book another session once your current one is done"
+    // Round 35: "closed" too — a student no-show who still wants a session (owner)
+    if (!row || !["completed", "closed"].includes(row.matchStatus)) return "Another session can start once the current one is done"
     if ((row.extraSessionsPaid || 0) > (row.extraSessionsUsed || 0)) return "You already have a session paid for — choose it on your mentorship page"
     return null
 }
@@ -737,94 +737,48 @@ router.post("/getQuote", express.json(), authMiddleware, async (req, res) => {
 
 
 // ========================
-// Request Access (manual mode)
+// Claim A Free Plan (owner, Round 35)
 // ========================
 
-router.post("/requestAccess", express.json(), authMiddleware, async (req, res) => {
+// THE "REQUEST ACCESS" STEP IS GONE (owner, Round 35): every payment goes through Razorpay, and a plan the
+// SERVER's own quote prices at ₹0 — a 100% coupon, or financial aid approved at ₹0 — is given at once and
+// recorded as a ₹0 payment (with the coupon, so it counts as a use). Anything above ₹0 is refused here.
+router.post("/claimFree", express.json(), authMiddleware, async (req, res) => {
     try {
-        const { tier, coupon, name, phone, callbackDay, callbackSlot } = req.body
-
         if (await parentConsentMissing(req.user)) {
             return res.status(403).json(PARENT_CONSENT_REPLY)
         }
 
-        // an address nobody can open must never be attached to money — see /user/verifyEmail
+        // an address nobody can open must never be attached to a plan — see /user/verifyEmail
         if (req.user.isEmailVerified !== true) {
-            return res.status(403).json({
-                success: false,
-                message: "Please confirm your email first"
-            })
+            return res.status(403).json({ success: false, message: "Please confirm your email first" })
         }
 
-        if (!name || !name.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "Please fill in your name"
-            })
-        }
-
-        if (!CALLBACK_DAYS.includes(callbackDay) || !CALLBACK_SLOTS.includes(callbackSlot)) {
-            return res.status(400).json({
-                success: false,
-                message: "Please choose when we should call you"
-            })
-        }
-
-        if (!phoneRegex.test(phone || "")) {
-            return res.status(400).json({
-                success: false,
-                message: "Enter a valid 10-digit phone number"
-            })
-        }
-
-        const existingRequest = await AccessRequest.findOne({ user: req.user._id, status: "pending" })
-
-        if (existingRequest) {
-            return res.status(400).json({
-                success: false,
-                message: "You already have a pending request"
-            })
-        }
-
-        // the amount is always recomputed here — any finalAmountInr in the body is ignored
-        const { quote, error } = await calculateQuote(req.user, tier, coupon)
-
+        const { quote, error } = await calculateQuote(req.user, req.body.tier, req.body.coupon)
         if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error
-            })
+            return res.status(400).json({ success: false, message: error })
+        }
+        if (quote.finalAmountInr !== 0) {
+            return res.status(400).json({ success: false, message: "This plan isn't free — please pay online" })
         }
 
-        const newAccessRequest = await AccessRequest.create({
-            user: req.user._id,     // taken from auth middleware, not from req.body
-            requestedTier: quote.tier,
-            isUpgrade: quote.isUpgrade,
-            coupon: quote.coupon || undefined,
-            discountPct: quote.discountPct,
-            finalAmountInr: quote.finalAmountInr,
-            name: name.trim(),
-            phone,
-            callbackDay,
-            callbackSlot,
-            status: "pending",      // always starts as pending
+        const grantResult = await grantAccess(req.user._id, quote.tier, 0, quote.coupon || null, {
+            mode: "free",
+            discountPct: quote.discountPct || 0,
+            adminNote: quote.isFinancialAid ? "financial aid at ₹0" : `${quote.coupon || "coupon"} — 100%`,
         })
+        if (grantResult.error) {
+            return res.status(400).json({ success: false, message: grantResult.error })
+        }
 
-        // the user document is the one copy the admin tables read, so keep it current
-        await User.findByIdAndUpdate(req.user._id, { phone })
-
-        return res.status(201).json({
+        return res.status(200).json({
             success: true,
-            message: "Access request submitted successfully",
-            data: newAccessRequest,
+            message: `${PLAN_NAMES[quote.tier]} is yours`,
+            data: { user: grantResult.user, payment: grantResult.payment },
         })
 
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to submit access request",
-            error: error.message,
-        })
+        return res.status(500).json({ success: false, message: "Failed to give the plan", error: error.message })
     }
 })
 
@@ -923,31 +877,6 @@ router.post("/create-order", express.json(), authMiddleware, async (req, res) =>
 
 
 // ========================
-// Get My Access Requests
-// ========================
-
-router.get("/getMyRequests", authMiddleware, async (req, res) => {
-    try {
-        const accessRequests = await AccessRequest.find({ user: req.user._id })  // ← filter by logged in user
-            .sort({ createdAt: -1 })
-
-        return res.status(200).json({
-            success: true,
-            message: "Access requests fetched successfully",
-            data: accessRequests,
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch access requests",
-            error: error.message,
-        })
-    }
-})
-
-
-// ========================
 // Get My Payments
 // ========================
 
@@ -966,110 +895,6 @@ router.get("/getMyPayments", authMiddleware, async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to fetch payments",
-            error: error.message,
-        })
-    }
-})
-
-
-// ========================
-// Get All Access Requests For Admin
-// ========================
-
-router.get("/getAllRequestsForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
-    try {
-        const accessRequests = await AccessRequest.find({})
-            .populate("user", "-password")
-            .populate("handledByAdmin", "name email")
-            .sort({ createdAt: -1 })
-
-        return res.status(200).json({
-            success: true,
-            message: "Access requests fetched successfully",
-            data: accessRequests,
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch access requests",
-            error: error.message,
-        })
-    }
-})
-
-
-// ========================
-// Grant Access For Admin
-// ========================
-
-router.put("/grantForAdmin/:id", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params   // :id is an ACCESS REQUEST id
-
-        const accessRequest = await AccessRequest.findById(id)
-
-        if (!accessRequest) {
-            return res.status(404).json({
-                success: false,
-                message: "Access request not found",
-            })
-        }
-
-        if (accessRequest.status !== "pending") {
-            return res.status(400).json({
-                success: false,
-                message: "Access request already handled",
-            })
-        }
-
-        const grantResult = await grantAccess(
-            accessRequest.user,
-            accessRequest.requestedTier,
-            accessRequest.finalAmountInr,
-            accessRequest.coupon,
-            {
-                mode: "manual",
-                discountPct: accessRequest.discountPct,
-                grantedByAdmin: req.user._id,
-                accessRequest: accessRequest._id,
-            }
-        )
-
-        if (grantResult.error) {
-            return res.status(404).json({
-                success: false,
-                message: grantResult.error,
-            })
-        }
-
-        if (grantResult.isAlreadyGranted) {
-            return res.status(400).json({
-                success: false,
-                message: "Student already has this tier — decline this request instead",
-            })
-        }
-
-        const updatedAccessRequest = await AccessRequest.findByIdAndUpdate(
-            id,
-            { status: "granted", handledByAdmin: req.user._id, handledAt: new Date() },
-            { returnDocument: "after" }
-        )
-
-        return res.status(200).json({
-            success: true,
-            message: "Access granted successfully",
-            data: {
-                accessRequest: updatedAccessRequest,
-                user: grantResult.user,
-                payment: grantResult.payment,
-            },
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to grant access",
             error: error.message,
         })
     }
@@ -1128,168 +953,6 @@ router.put("/grantFreeForAdmin/:userId", express.json(), authMiddleware, adminAu
         return res.status(500).json({
             success: false,
             message: "Failed to give free access",
-            error: error.message,
-        })
-    }
-})
-
-
-// ========================
-// Overturn Grant For Admin — the grant was a mistake and the money never arrived
-// ========================
-
-// NOT a refund: nothing was collected, so nothing may be recorded as going back. Access is revoked,
-// the payment row is marked "reversed" (never deleted — it stays as the record that this happened),
-// and the request returns to pending so it can be granted properly once the money really comes in.
-router.put("/overturnGrantForAdmin/:id", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params   // :id is an ACCESS REQUEST id
-
-        const accessRequest = await AccessRequest.findById(id)
-
-        if (!accessRequest) {
-            return res.status(404).json({
-                success: false,
-                message: "Access request not found",
-            })
-        }
-
-        if (accessRequest.status !== "granted") {
-            return res.status(400).json({
-                success: false,
-                message: "Only a granted request can be overturned",
-            })
-        }
-
-        // a request that was overturned and then granted again has several rows against it, so take
-        // the live one — an older reversed row must not be mistaken for the current grant
-        const grantPayment = await Payment.findOne({
-            accessRequest: accessRequest._id,
-            action: { $in: ["purchase", "upgrade"] },
-            status: "paid",
-        }).sort({ createdAt: -1 })
-
-        if (!grantPayment) {
-            return res.status(400).json({
-                success: false,
-                message: "No live payment found for this grant — it may already have been overturned",
-            })
-        }
-
-        // money has already moved on this payment — that is a refund, not a mistake
-        const balance = await getRefundableBalance(grantPayment)
-
-        if (balance < grantPayment.amountInr) {
-            return res.status(400).json({
-                success: false,
-                message: "This payment has already been refunded — handle it through Refund Requests",
-            })
-        }
-
-        // unwinding an earlier grant from underneath a later one would leave the tier wrong
-        const laterPayment = await Payment.findOne({
-            user: grantPayment.user,
-            action: { $in: ["purchase", "upgrade"] },
-            status: "paid",
-            createdAt: { $gt: grantPayment.createdAt },
-        })
-
-        if (laterPayment) {
-            return res.status(400).json({
-                success: false,
-                message: "This student has paid again since. Overturn the newer grant first, or use Refund Requests",
-            })
-        }
-
-        // an upgrade drops them back to the plan they upgraded from, still paid; a first purchase
-        // closes access entirely
-        const isUpgrade = grantPayment.action === "upgrade"
-        const backTo = isUpgrade ? (grantPayment.fromTier || 1) : 0
-
-        const updatedUser = await User.findByIdAndUpdate(
-            grantPayment.user,
-            {
-                paid: isUpgrade,
-                currentTier: backTo,
-                "progress.mentor": backTo && grants(backTo).mentor ? "waitlisted" : "not_applicable",
-            },
-            { returnDocument: "after" }
-        ).select("-password")
-
-        await Payment.findByIdAndUpdate(grantPayment._id, { status: "reversed" })
-
-        // the coupon gives its use back by itself: a reversed payment no longer counts (couponUses)
-
-        await FinancialAidRequest.findOneAndUpdate(
-            { user: grantPayment.user, requestedTier: accessRequest.requestedTier, status: "approved" },
-            { usedAt: null }
-        )
-
-        const updatedAccessRequest = await AccessRequest.findByIdAndUpdate(
-            id,
-            { status: "pending", handledByAdmin: null, handledAt: null },
-            { returnDocument: "after" }
-        )
-
-        return res.status(200).json({
-            success: true,
-            message: "Grant overturned — the request is pending again and no refund was recorded",
-            data: {
-                accessRequest: updatedAccessRequest,
-                user: updatedUser,
-            },
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to overturn grant",
-            error: error.message,
-        })
-    }
-})
-
-
-// ========================
-// Decline Access For Admin
-// ========================
-
-router.put("/declineForAdmin/:id", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params   // :id is an ACCESS REQUEST id
-
-        const accessRequest = await AccessRequest.findById(id)
-
-        if (!accessRequest) {
-            return res.status(404).json({
-                success: false,
-                message: "Access request not found",
-            })
-        }
-
-        if (accessRequest.status !== "pending") {
-            return res.status(400).json({
-                success: false,
-                message: "Access request already handled",
-            })
-        }
-
-        const updatedAccessRequest = await AccessRequest.findByIdAndUpdate(
-            id,
-            { status: "declined", handledByAdmin: req.user._id, handledAt: new Date() },
-            { returnDocument: "after" }
-        )
-
-        return res.status(200).json({
-            success: true,
-            message: "Access request declined",
-            data: updatedAccessRequest,
-        })
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to decline access request",
             error: error.message,
         })
     }
@@ -1432,6 +1095,9 @@ router.get("/getRefundOptions", authMiddleware, requirePaid, async (req, res) =>
         // coupon): offering "move back and get ₹0" only to refuse it on submit helps nobody
         const rolloverAmountInr = req.user.currentTier === 2 ? await getRefundAmount(req.user, "rollover") : 0
         const canRollover = req.user.currentTier === 2 && rolloverAmountInr > 0
+        // Round 35 (owner): what they actually paid, beside what each choice gives back
+        const paidInr = (await Payment.find({ user: req.user._id, status: "paid", action: { $in: ["purchase", "upgrade", "mentor_session"] } }).select("amountInr").lean())
+            .reduce((sum, payment) => sum + (payment.amountInr || 0), 0)
 
         return res.status(200).json({
             success: true,
@@ -1441,6 +1107,7 @@ router.get("/getRefundOptions", authMiddleware, requirePaid, async (req, res) =>
                 canRollover,
                 fullAmountInr: await getFullRefundAmount(req.user),
                 rolloverAmountInr,
+                paidInr,
             },
         })
 

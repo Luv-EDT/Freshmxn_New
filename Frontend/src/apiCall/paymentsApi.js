@@ -10,18 +10,14 @@ export async function getQuote(payload) {
     return response
 }
 
-export async function requestAccess(payload) {
-    const response = await axiosInstance.post("/payments/requestAccess", payload)
+// Round 35 (owner): a plan the server prices at ₹0 is given at once
+export async function claimFree(payload) {
+    const response = await axiosInstance.post("/payments/claimFree", payload)
     return response
 }
 
 export async function createOrder(payload) {
     const response = await axiosInstance.post("/payments/create-order", payload)
-    return response
-}
-
-export async function getMyRequests() {
-    const response = await axiosInstance.get("/payments/getMyRequests")
     return response
 }
 
@@ -52,26 +48,6 @@ export async function getMyFinancialAid() {
 
 export async function getMyRefundRequests() {
     const response = await axiosInstance.get("/payments/getMyRefundRequests")
-    return response
-}
-
-export async function getAllRequestsForAdmin() {
-    const response = await axiosInstance.get("/payments/getAllRequestsForAdmin")
-    return response
-}
-
-export async function grantAccessForAdmin(id) {
-    const response = await axiosInstance.put(`/payments/grantForAdmin/${id}`, {})
-    return response
-}
-
-export async function declineAccessForAdmin(id) {
-    const response = await axiosInstance.put(`/payments/declineForAdmin/${id}`, {})
-    return response
-}
-
-export async function overturnGrantForAdmin(id) {
-    const response = await axiosInstance.put(`/payments/overturnGrantForAdmin/${id}`, {})
     return response
 }
 

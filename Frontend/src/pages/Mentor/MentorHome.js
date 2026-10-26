@@ -14,9 +14,10 @@ import logo from "../../assets/brand/logo.png"
 // THE MENTOR DASHBOARD (owner, Round 34). Before the profile is in: the onboarding form. Then six tabs —
 // Home (the current student and the history), Training (the three documents), Test (before approval),
 // My profile, My profession (our data to check, and the starter skills roadmap) and Payouts. A new
-// mentor goes profile → training → test → our approval before any student is matched.
+// mentor goes training → profile → test → our approval before any student is matched (Round 35, owner:
+// the training documents come before "Tell us about yourself").
 const STATUS_TEXT = {
-    pending_review: "Next: read the three training documents, then take your test (Test tab). Our team approves mentors after the test.",
+    pending_review: "Next: take your test (Test tab). Our team approves mentors after the test.",
     test_submitted: "Your test is with our team. It usually takes a couple of days — we'll let you know by email.",
     onboarded: "You're approved. Before we match you with a student, we'll message you on WhatsApp so you can open slots on your Calendly links.",
     rejected: "We couldn't approve you this time — see the Test tab for our note.",
@@ -31,6 +32,7 @@ function MentorHome() {
     const [profile, setProfile] = useState(null)
     const [loading, setLoading] = useState(true)
     const [editing, setEditing] = useState(false)
+    const [firstTab, setFirstTab] = useState("training")   // before the profile: training, then "Tell us about yourself"
 
     const load = async () => {
         const response = await getMyMentorProfile()
@@ -45,7 +47,7 @@ function MentorHome() {
             message.error(response?.data?.message || "Could not save your profile")
             return
         }
-        message.success("Thanks — next, read the training documents and take your test")
+        message.success("Thanks — next, take your test")
         load()
     }
 
@@ -77,10 +79,41 @@ function MentorHome() {
         return (
             <div>
                 {header}
-                <main className="page">
-                    <h2 className="page-title-center">Tell us about yourself</h2>
-                    <p>A few questions first. Then you'll read three short training documents and take a test; our team approves every mentor before matching them with a student.</p>
-                    <MentorOnboarding defaultName={user.name} defaultEmail={user.email} submitLabel="Submit my profile" onSubmit={handleOnboard} />
+                <main className="page mentor-dashboard">
+                    <h2 className="page-title-center">Welcome, mentor</h2>
+                    <ol className="mentor-path" aria-label="Your first steps">
+                        <li className={firstTab === "training" ? "current" : "done"}>Read the training</li>
+                        <li className={firstTab === "profile" ? "current" : ""}>Tell us about yourself</li>
+                        <li>Take the test</li>
+                        <li>Our approval</li>
+                    </ol>
+                    <Tabs
+                        activeKey={firstTab}
+                        onChange={setFirstTab}
+                        items={[
+                            {
+                                key: "training",
+                                label: "1. Training",
+                                children: (
+                                    <>
+                                        <MentorTraining />
+                                        <p><button type="button" className="btn btn-primary tap" onClick={() => setFirstTab("profile")}>I've read them — tell us about yourself →</button></p>
+                                    </>
+                                ),
+                            },
+                            {
+                                key: "profile",
+                                label: "2. Tell us about yourself",
+                                children: (
+                                    <>
+                                        <p>A few questions, then your test. Our team approves every mentor before matching them with a student.</p>
+                                        <MentorOnboarding defaultName={user.name} defaultEmail={user.email} submitLabel="Submit my profile" onSubmit={handleOnboard} />
+                                    </>
+                                ),
+                            },
+                        ]}
+                    />
+                    <p className="help-line">Any doubt? WhatsApp <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">+91 8882756287</a> or email <a href="mailto:luvgoel@freshmxn.com">luvgoel@freshmxn.com</a></p>
                 </main>
             </div>
         )
@@ -146,7 +179,7 @@ function MentorHome() {
             <main className="page mentor-dashboard">
                 <h2 className="page-title-center">Your mentor dashboard</h2>
                 <p className={`mentor-status-line status-${profile.status}`}>{STATUS_TEXT[profile.status]}</p>
-                <Tabs items={items} defaultActiveKey={approved ? "home" : "training"} />
+                <Tabs items={items} defaultActiveKey={approved ? "home" : "test"} />
                 <p className="help-line">Any doubt? WhatsApp <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">+91 8882756287</a> or email <a href="mailto:luvgoel@freshmxn.com">luvgoel@freshmxn.com</a></p>
             </main>
         </div>
