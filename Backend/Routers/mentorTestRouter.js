@@ -267,6 +267,37 @@ router.post("/submitMine", authMiddleware, mentorAuthMiddleware, async (req, res
 // ========================
 
 // everything, with the right answers and a 15-minute link to watch the video
+// CHECK THE VIDEO STORAGE (owner, Round 35): the server's own write with the keys on Render, the bucket's CORS
+// rules, and a signed link for the admin's browser to try a tiny upload from our site — the one thing only
+// a browser can test. The test files are deleted straight away.
+router.get("/storageCheckForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const result = await r2.check()
+        if (result.configured) {
+            const key = `storage-check/browser-${Date.now()}.txt`
+            result.browserTest = { key, url: await r2.uploadUrl(key, "text/plain") }
+        }
+        return res.status(200).json({ success: true, message: "Storage checked", data: result })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to check the storage", error: error.message })
+    }
+})
+
+router.put("/storageCleanupForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const key = clean(req.body.key, 200)
+        if (!key.startsWith("storage-check/")) {
+            return res.status(400).json({ success: false, message: "Only a storage-check file can be removed here" })
+        }
+        const result = await r2.removeObject(key)
+        return res.status(200).json({ success: true, message: result.deleted ? "Test file removed" : "Test file not removed", data: result })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to remove the test file", error: error.message })
+    }
+})
+
 router.get("/getForAdmin/:mentorUserId", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const test = await MentorTest.findOne({ mentor: req.params.mentorUserId }).lean()
