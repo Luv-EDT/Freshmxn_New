@@ -39,9 +39,10 @@ function StudyAbroadList() {
     }
 
     const columns = [
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 220, render: (_, record) => record.user?.email || "—" },
         { title: "Asked", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Student", render: (_, record) => (record.user ? record.user.name : "—") },
-        { title: "Email", render: (_, record) => (record.user ? record.user.email : "—") },
         { title: "Phone", render: (_, record) => (record.user && record.user.phone) || "—" },
         // Round 18: the report now offers a waitlist (help with a master's abroad, later), not a partner
         { title: "Asked for", dataIndex: "kind", render: (value) => (value === "waitlist" ? "Master's-abroad waitlist" : "Partner connection") },

@@ -40,9 +40,10 @@ function CareerHelpList() {
     }
 
     const columns = [
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 220, render: (_, record) => record.user?.email || "—" },
         { title: "Asked", dataIndex: "updatedAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Student", render: (_, record) => (record.user ? record.user.name : "—") },
-        { title: "Email", render: (_, record) => (record.user ? record.user.email : "—") },
         { title: "Phone", render: (_, record) => (record.user && record.user.phone) || "—" },
         { title: "Plan", dataIndex: "planTier", render: (value) => PLAN_NAMES[value] || "—" },
         { title: "Career", dataIndex: "careerName", render: (value) => value || "Not sure yet" },

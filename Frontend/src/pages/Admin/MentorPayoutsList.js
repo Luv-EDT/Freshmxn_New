@@ -87,10 +87,12 @@ function MentorPayoutsList() {
     const dueTotal = rows.filter((row) => row.status === "due").reduce((sum, row) => sum + row.amountInr, 0)
 
     const columns = [
+        { title: "Mentor", dataIndex: "mentorName", fixed: "left", width: 140 },
         { title: "Date", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Mentor", dataIndex: "mentorName" },
         { title: "Student", render: (_, row) => (row.student ? `${row.student.name} (${row.student.email})` : "—") },
-        { title: "Kind", render: (_, row) => (row.kind === "followup" ? "Later follow-up" : row.note === "student no-show" ? "Main (student no-show)" : "Main session") },
+        { title: "Kind", render: (_, row) => (row.kind === "followup" ? "Later follow-up" : "Main session") },
+        // Round 35 (owner): the session held, or the student didn't show (paid either way)
+        { title: "Student status", render: (_, row) => (row.kind === "followup" ? "—" : row.studentStatus === "no_show" || /no-show/.test(row.note || "") ? "Student no-show" : "Session completed") },
         { title: "Tier · region", render: (_, row) => `Tier ${row.tier} · ${row.region === "international" ? "International" : "Indian"}` },
         { title: "Amount", render: (_, row) => `${inr(row.amountInr)}${row.amountUsd ? ` ($${row.amountUsd})` : ""}` },
         { title: "Rating", dataIndex: "rating", render: (value) => value || "—" },

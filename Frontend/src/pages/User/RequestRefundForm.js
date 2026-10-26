@@ -3,7 +3,8 @@ import { Form, Input, Modal, Radio, Popconfirm, message } from "antd"
 import { requestRefund, getRefundOptions } from "../../apiCall/paymentsApi"
 
 // The student says why, and — if they're on Tier 2 — whether they want everything back or just
-// the Mentorship part. Both amounts come from the server; the browser never names a figure.
+// the Mentorship part. Both amounts come from the server; the browser never names a figure. Round 35
+// (owner): the two choices say plainly what they cover, beside what the student actually paid.
 function RequestRefundForm({ visible, onClose, onAddSuccess }) {
     const [form] = Form.useForm()
     const [options, setOptions] = useState(null)
@@ -65,7 +66,7 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
                 <Popconfirm
                     key="submit"
                     title={refundType === "rollover"
-                        ? `Ask to move back to Career Discovery and get ${inr(chosenAmountInr)} back?`
+                        ? `Ask for a refund of only the mentor part — ${inr(chosenAmountInr)}?`
                         : `Ask for a full refund of ${inr(chosenAmountInr)}? This ends your access.`}
                     okText="Send request"
                     cancelText="Not yet"
@@ -76,6 +77,7 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
             ]}
         >
             <p>Please tell us why. Our team reads every request and will get back to you.</p>
+            {options && options.paidInr > 0 && <p>You paid <strong>{inr(options.paidInr)}</strong> in all.</p>}
 
             <Form form={form} layout="vertical" initialValues={{ refundType: "full" }}>
                 {options && options.canRollover && (
@@ -83,11 +85,11 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
                         {/* Round 13: each choice is one aligned card — radio and words on one line */}
                         <Radio.Group className="refund-options" onChange={(e) => setRefundType(e.target.value)}>
                             <Radio value="rollover" className="refund-option">
-                                <strong>Move back to Career Discovery</strong>
-                                <span>Get {inr(options.rolloverAmountInr)} back and keep your Career Discovery access.</span>
+                                <strong>Only the mentor part</strong>
+                                <span>Get {inr(options.rolloverAmountInr)} back. You keep Career Discovery — your assessment and report.</span>
                             </Radio>
                             <Radio value="full" className="refund-option">
-                                <strong>Full refund</strong>
+                                <strong>The whole Discovery + Mentor plan</strong>
                                 <span>Get {inr(options.fullAmountInr)} back. Your access ends.</span>
                             </Radio>
                         </Radio.Group>

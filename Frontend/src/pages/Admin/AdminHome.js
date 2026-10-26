@@ -3,7 +3,6 @@ import { Tabs, Badge } from "antd"
 import { Link } from "react-router-dom"
 import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
-import AccessRequestsList from "./AccessRequestsList"
 import RefundRequestsList from "./RefundRequestsList"
 import StudentsList from "./StudentsList"
 import FinancialAidList from "./FinancialAidList"
@@ -35,12 +34,9 @@ function AdminHome() {
             .catch(() => setOpenIssues(0))
     }, [dataVersion])
 
+    // Round 35 (owner): "Access requests" is gone — every payment goes through Razorpay and a ₹0 plan is
+    // given at once (/payments/claimFree); a free plan by hand is Students → Give free access
     const items = [
-        {
-            key: "accessRequests",
-            label: "Access Requests",
-            children: <AccessRequestsList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
-        },
         {
             key: "refundRequests",
             label: "Refund Requests",
@@ -112,7 +108,7 @@ function AdminHome() {
                 {/* Round 34 (owner): all mentor work — matches, mentors, payouts, feedback — on its own page */}
                 <p><Link to="/admin/mentors" className="btn btn-primary tap">Mentors section →</Link></p>
                 <AiUsageCard />
-                <Tabs items={items} />
+                <Tabs className="admin-tabs" items={items} />
             </div>
         </div>
     )

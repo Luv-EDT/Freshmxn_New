@@ -37,8 +37,10 @@ function FollowUpsList({ dataVersion }) {
     }
 
     const columns = [
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 220, render: (_, record) => record.user?.email || "—" },
         { title: "Sent", dataIndex: "sentAt", render: (value) => (value ? dayjs(value).format("DD MMM YYYY") : "—") },
-        { title: "Student", render: (_, record) => (record.user ? `${record.user.name} (${record.user.email})` : "—") },
         { title: "Wave", render: (_, record) => `${record.wave} months` },
         { title: "Answered", render: (_, record) => (record.respondedAt ? dayjs(record.respondedAt).format("DD MMM YYYY") : "Not yet") },
         { title: "Doing now", render: (_, record) => DOING[record.answers?.doingNow] || "—" },

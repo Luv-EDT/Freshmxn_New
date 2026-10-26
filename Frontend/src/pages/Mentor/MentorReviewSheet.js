@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import { message } from "antd"
 import { getMyReviewSheet, saveMyReview } from "../../apiCall/mentorReviewsApi"
 
-// "Check our data for {profession}" (owner, Round 12). An approved mentor reads what students are
+// "Check our data for {profession}" (owner, Round 12; Round 35: folded, with the starter skills roadmap as
+// its own folded card beside it — both send the same answers). An approved mentor reads what students are
 // told about their own profession and says, section by section, whether it looks right — and, for
 // every quality the work is rated on (the eight that matter most open), whether we have them right. Nothing changes from here:
 // our team goes through every answer first.
@@ -222,70 +223,79 @@ function MentorReviewSheet() {
         fill(response.data.data)
     }
 
+    const sendLabel = saving ? "Sending…" : submittedAt ? "Send again" : "Send"
+
+    // Round 35 (owner): two folded cards, each with its own Send — the data check, and the roadmap
     return (
-        <details className="faq-item mentor-review" open>
-            <summary>Check our data for {sheet.profession}</summary>
-            <p>
-                This is what students read about your profession. These details come from our research and AI, and are
-                improved with suggestions from mentors like you. Answer the sections you can; skip any you're unsure of.
-                Only what you say needs changing goes to our team.
-            </p>
-            {/* Round 16 (owner): always open to a re-send — the latest answers replace what was still waiting */}
-            {submittedAt && (
+        <section className="mentor-profession">
+            <details className="profession-fold">
+                <summary>
+                    <span className="training-head">
+                        <strong>Check our data for {sheet.profession}</strong>
+                        <span>What students read about your work — say what's right and what isn't</span>
+                    </span>
+                    <span className="training-time">{submittedAt ? "Sent ✓" : "~15 min"}</span>
+                </summary>
                 <p className="report-small">
-                    You sent this on {new Date(submittedAt).toLocaleDateString("en-IN")}. Change anything and send again — it replaces what you sent.
-                    {" "}Your suggestions are kept and weighed each month together with other mentors' in your field.
-                    {progress.waiting > 0 && ` ${progress.waiting} ${progress.waiting === 1 ? "is" : "are"} waiting for this month's look.`}
+                    From our research and AI, improved by mentors. Answer what you can; only what needs a change goes to our team.
+                    {submittedAt && ` Sent on ${new Date(submittedAt).toLocaleDateString("en-IN")} — change anything and send again.`}
+                    {progress.waiting > 0 && ` ${progress.waiting} waiting for this month's look.`}
                     {progress.checked > 0 && ` ${progress.checked} already weighed — thank you.`}
                 </p>
-            )}
 
-            <form onSubmit={handleSubmit} className="mentor-form">
-                {Object.keys(SECTION_TITLES).map((id) => (
-                    <fieldset key={id} className="review-section">
-                        <legend>{SECTION_TITLES[id]}</legend>
-                        <SectionBody id={id} value={sheet.sections[id]} />
-                        <div className="review-choices">
-                            {[["right", "Looks right"], ["change", "Needs a change"]].map(([value, label]) => (
-                                <label key={value} className="choice">
-                                    <input type="radio" name={`section-${id}`} value={value} checked={answers[id]?.verdict === value} onChange={setSection(id, "verdict")} />
-                                    <span>{label}</span>
-                                </label>
-                            ))}
-                        </div>
-                        {answers[id]?.verdict === "change" && (
-                            <>
-                                <label>What should it say?</label>
-                                <textarea maxLength={600} value={answers[id]?.note || ""} onChange={setSection(id, "note")} required />
-                                <label>A link that shows it (if you have one)</label>
-                                <input type="url" placeholder="https://" value={answers[id]?.sourceUrl || ""} onChange={setSection(id, "sourceUrl")} />
-                            </>
+                <form onSubmit={handleSubmit} className="mentor-form">
+                    {Object.keys(SECTION_TITLES).map((id) => (
+                        <fieldset key={id} className="review-section">
+                            <legend>{SECTION_TITLES[id]}</legend>
+                            <SectionBody id={id} value={sheet.sections[id]} />
+                            <div className="review-choices">
+                                {[["right", "Looks right"], ["change", "Needs a change"]].map(([value, label]) => (
+                                    <label key={value} className="choice">
+                                        <input type="radio" name={`section-${id}`} value={value} checked={answers[id]?.verdict === value} onChange={setSection(id, "verdict")} />
+                                        <span>{label}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            {answers[id]?.verdict === "change" && (
+                                <>
+                                    <label>What should it say?</label>
+                                    <textarea maxLength={600} value={answers[id]?.note || ""} onChange={setSection(id, "note")} required />
+                                    <label>A link that shows it (if you have one)</label>
+                                    <input type="url" placeholder="https://" value={answers[id]?.sourceUrl || ""} onChange={setSection(id, "sourceUrl")} />
+                                </>
+                            )}
+                        </fieldset>
+                    ))}
+
+                    <fieldset className="review-section">
+                        <legend>Qualities this work needs most</legend>
+                        {sheet.qualities.filter((quality) => quality.main).map(renderQuality)}
+                        {/* Round 13 (owner): every quality, not only the top eight — the rest folded away */}
+                        {sheet.qualities.some((quality) => !quality.main) && (
+                            <details className="review-more">
+                                <summary className="tap">The other {sheet.qualities.filter((quality) => !quality.main).length} qualities</summary>
+                                {sheet.qualities.filter((quality) => !quality.main).map(renderQuality)}
+                            </details>
                         )}
                     </fieldset>
-                ))}
 
-                <fieldset className="review-section">
-                    <legend>Qualities this work needs most</legend>
-                    <p className="report-small">How much each one matters in this profession, as we have it today.</p>
-                    {sheet.qualities.filter((quality) => quality.main).map(renderQuality)}
-                    {/* Round 13 (owner): every quality, not only the top eight — the rest folded away */}
-                    {sheet.qualities.some((quality) => !quality.main) && (
-                        <details className="review-more">
-                            <summary className="tap">The other {sheet.qualities.filter((quality) => !quality.main).length} qualities</summary>
-                            {sheet.qualities.filter((quality) => !quality.main).map(renderQuality)}
-                        </details>
-                    )}
-                </fieldset>
+                    <p><button type="submit" className="btn btn-primary" disabled={saving}>{sendLabel}</button></p>
+                </form>
+            </details>
 
-                {/* Round 34 (owner): a starter skills roadmap, as a table only */}
-                <fieldset className="review-section roadmap">
-                    <legend>Suggest a starter skills roadmap</legend>
-                    <p className="roadmap-tier">A good roadmap is one of the requirements for Tier 3 — it can get you there in 10 sessions.</p>
-                    <p>
-                        Suggest free or cheap resources (YouTube, Coursera, Udemy and others) that give someone the first
-                        20% of skills to start in your field, and find out whether it's for them. Put them in the order they
-                        should be done. Assume the person knows nothing about the field, so start from the basics.
-                    </p>
+            <details className="profession-fold">
+                <summary>
+                    <span className="training-head">
+                        <strong>Suggest a starter skills roadmap</strong>
+                        <span>A good roadmap is one of the requirements for Tier 3 — it can get you there in 10 sessions</span>
+                    </span>
+                    <span className="training-time">{roadmap.some((step) => step.skill) && submittedAt ? "Sent ✓" : "~20 min"}</span>
+                </summary>
+                <p className="report-small">
+                    Free or cheap resources (YouTube, Coursera, Udemy…) for the first 20% of skills in your field, in order.
+                    Assume the person knows nothing about it — start from the basics.
+                </p>
+                <form onSubmit={handleSubmit} className="mentor-form roadmap">
                     <div className="table-scroll">
                         <table className="roadmap-table">
                             <thead>
@@ -313,11 +323,10 @@ function MentorReviewSheet() {
                             <textarea maxLength={600} value={skillsMissing} onChange={(e) => setSkillsMissing(e.target.value)} />
                         </>
                     )}
-                </fieldset>
-
-                <p><button type="submit" className="btn btn-primary" disabled={saving}>{saving ? "Sending…" : submittedAt ? "Send again" : "Send my review"}</button></p>
-            </form>
-        </details>
+                    <p><button type="submit" className="btn btn-primary" disabled={saving}>{sendLabel}</button></p>
+                </form>
+            </details>
+        </section>
     )
 }
 

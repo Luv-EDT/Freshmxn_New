@@ -99,8 +99,10 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
     }
 
     const columns = [
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 220, render: (_, record) => record.user?.email || "—" },
         { title: "Requested", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY, HH:mm") },
-        { title: "Student", render: (_, record) => `${record.user?.name || "N/A"} (${record.user?.email || "N/A"})` },
         { title: "Phone", render: (_, record) => record.user?.phone || record.phone || "—" },
         { title: "Call at", render: (_, record) => formatCallback(record.callbackDay, record.callbackSlot) },
         { title: "Tier", dataIndex: "requestedTier", render: (value) => `${value} · ${PLAN_NAMES[value] || ""}` },
@@ -164,7 +166,7 @@ function FinancialAidList({ dataVersion, onDataChanged }) {
             <Button onClick={fetchAidRequests}>Refresh</Button>
 
             <StudentSearch value={search} onChange={setSearch} />
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests.filter((row) => matchesStudent(row.user, search))} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests.filter((row) => matchesStudent(row.user, search))}  scroll={{ x: "max-content" }} />
 
             <ReasonModal
                 open={declining !== null}

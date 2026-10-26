@@ -86,9 +86,10 @@ function StudentsList({ dataVersion, onDataChanged }) {
 
     // ─── Columns ─────────────────────────────────────────────────────────────
     const columns = [
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", dataIndex: "name", fixed: "left", width: 140 },
+        { title: "Email", fixed: "left", width: 220, render: (_, record) => `${record.email}${record.isEmailVerified ? " ✓" : " (unconfirmed)"}` },
         { title: "Joined", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Name", dataIndex: "name" },
-        { title: "Email", render: (_, record) => `${record.email}${record.isEmailVerified ? " ✓" : " (unconfirmed)"}` },
         { title: "Phone", render: (_, record) => record.phone || "—" },
         { title: "Role", dataIndex: "role" },
         { title: "Age", dataIndex: "age" },
@@ -107,7 +108,8 @@ function StudentsList({ dataVersion, onDataChanged }) {
                 <>
                     <Button size="small" onClick={() => setEditingStudent(record)}>Edit</Button>
                     {/* Round 26 (owner): a plan for free, and deleting an account with everything in it */}
-                    {record.role === "student" && record.currentTier !== 2 && (
+                    {/* Round 35 (owner): on every student — what it offers depends on their plan */}
+                    {record.role === "student" && (
                         <>{" "}<GiveFreeAccess student={record} onDone={handleSaved} /></>
                     )}
                     {record.role !== "admin" && (

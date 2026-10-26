@@ -109,8 +109,10 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
         : `${refundMoneyText} The student loses access now.`
 
     const columns = [
+        // Round 35 (owner): name and email stay in view while the table scrolls sideways
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 220, render: (_, record) => record.user?.email || "—" },
         { title: "Requested", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY, HH:mm") },
-        { title: "Student", render: (_, record) => `${record.user?.name || "N/A"} (${record.user?.email || "N/A"})` },
         { title: "Tier", dataIndex: "tierAtRequest", render: (value) => `${value} · ${PLAN_NAMES[value] || ""}` },
         {
             title: "Type",
@@ -192,13 +194,13 @@ function RefundRequestsList({ dataVersion, onDataChanged }) {
             <Button onClick={fetchRefunds}>Refresh</Button>
 
             <StudentSearch value={search} onChange={setSearch} />
-            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests.filter((row) => matchesStudent(row.user, search))} />
+            <Table rowKey="_id" loading={loading} columns={columns} dataSource={visibleRequests.filter((row) => matchesStudent(row.user, search))}  scroll={{ x: "max-content" }} />
 
             {failedRefunds.length > 0 && (
                 <>
                     <h3>Failed Razorpay refunds</h3>
                     <p>A downgrade whose refund failed can be retried by clicking Downgrade again on the Students tab.</p>
-                    <Table rowKey="_id" columns={failedColumns} dataSource={failedRefunds.filter((row) => matchesStudent(row.user, search))} pagination={false} />
+                    <Table rowKey="_id" columns={failedColumns} dataSource={failedRefunds.filter((row) => matchesStudent(row.user, search))} pagination={false}  scroll={{ x: "max-content" }} />
                 </>
             )}
 

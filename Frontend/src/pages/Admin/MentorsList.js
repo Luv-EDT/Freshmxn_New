@@ -75,14 +75,17 @@ function MentorsList({ dataVersion, onDataChanged }) {
     }
 
     const columns = [
+        { title: "Name", dataIndex: "name", fixed: "left", width: 140 },
+        { title: "Email", dataIndex: "email", fixed: "left", width: 200 },
         { title: "Joined", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Mentor", render: (_, record) => `${record.name} (${record.email})` },
         { title: "Phone", dataIndex: "phone" },
         { title: "Status", render: (_, record) => STATUS_WORDS[record.status] || record.status },
         { title: "Region", render: (_, record) => (record.region === "international" ? "International" : record.region === "indian" ? "Indian" : "—") },
         { title: "Tier · rate", render: (_, record) => `Tier ${record.tier || 1} · ${inr(record.mainRate && record.mainRate.inr)}${record.mainRate && record.mainRate.usd ? ` ($${record.mainRate.usd})` : ""}` },
         { title: "Sessions · average", render: (_, record) => `${record.standing ? record.standing.sessions : 0}${record.standing && record.standing.average ? ` · ${record.standing.average}/10` : ""}` },
         { title: "Strikes", render: (_, record) => (record.strikes || []).length || "—" },
+        // Round 35 (owner): what we've paid them, what's due, and no-shows (paid, not counted towards a tier)
+        { title: "Earned · due", render: (_, record) => `${inr(record.earnings && record.earnings.paidInr)} paid · ${inr(record.earnings && record.earnings.dueInr)} due${record.earnings && record.earnings.noShows ? ` · ${record.earnings.noShows} no-show${record.earnings.noShows === 1 ? "" : "s"}` : ""}` },
         { title: "Test", render: (_, record) => (record.test ? (record.test.decision ? record.test.decision : record.test.submittedAt ? `sent · ${record.test.autoScore ? `${record.test.autoScore.correct}/${record.test.autoScore.of}` : ""}` : "started") : "—") },
         { title: "Profession", render: (_, record) => record.professionName || record.discipline },
         { title: "Job role", render: (_, record) => `${record.jobRole || record.currentRole}${record.jobRoleOther ? " (their words)" : ""}` },

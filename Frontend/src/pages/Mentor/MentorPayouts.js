@@ -3,8 +3,10 @@ import dayjs from "dayjs"
 import { getMyPayouts } from "../../apiCall/mentorPayoutsApi"
 
 // THE MENTOR'S PAYOUTS (owner, Round 34): each session's amount — fixed at their tier and region the day
-// the student's feedback came in — and whether we've paid it, with our reference.
+// the student's feedback came in — and whether we've paid it, with our reference. Round 35 (owner): what
+// happened with the student beside the status (a no-show is paid too), and what they've earned in all.
 const inr = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`
+const STUDENT_WORDS = { completed: "Session completed", no_show: "Student no-show", "follow-up": "Follow-up held" }
 
 function MentorPayouts({ standing }) {
     const [rows, setRows] = useState(null)
@@ -21,9 +23,16 @@ function MentorPayouts({ standing }) {
             {!rows && <div className="skeleton skeleton-block" />}
             {rows && rows.length === 0 && <p className="report-small">No payouts yet.</p>}
             {rows && rows.length > 0 && (
+                <div className="payout-totals">
+                    <p><span>Earned (paid to you)</span><strong>{inr(rows.filter((row) => row.status === "paid").reduce((sum, row) => sum + row.amountInr, 0))}</strong></p>
+                    <p><span>Due to you</span><strong>{inr(rows.filter((row) => row.status === "due").reduce((sum, row) => sum + row.amountInr, 0))}</strong></p>
+                    <p><span>Total</span><strong>{inr(rows.reduce((sum, row) => sum + row.amountInr, 0))}</strong></p>
+                </div>
+            )}
+            {rows && rows.length > 0 && (
                 <div className="table-scroll">
                     <table className="training-table">
-                        <thead><tr><th>Date</th><th>Session</th><th>Tier</th><th>Amount</th><th>Status</th><th>Reference</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Session</th><th>Tier</th><th>Amount</th><th>Status</th><th>Student</th><th>Reference</th></tr></thead>
                         <tbody>
                             {rows.map((row) => (
                                 <tr key={row._id}>
@@ -32,6 +41,7 @@ function MentorPayouts({ standing }) {
                                     <td>{row.tier}</td>
                                     <td>{inr(row.amountInr)}{row.amountUsd ? ` ($${row.amountUsd})` : ""}</td>
                                     <td>{row.status === "paid" ? `Paid ${dayjs(row.paidAt).format("D MMM")}` : "Due"}</td>
+                                    <td>{STUDENT_WORDS[row.studentStatus] || "—"}</td>
                                     <td>{row.reference || "—"}</td>
                                 </tr>
                             ))}

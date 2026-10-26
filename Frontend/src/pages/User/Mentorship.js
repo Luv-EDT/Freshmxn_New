@@ -3,12 +3,14 @@ import { useSelector } from "react-redux"
 import Navbar from "../Navbar"
 import BackToDashboard from "../BackToDashboard"
 import { hasMentor } from "../plans"
-import { formatDate, useMentorWaitlist, HelpLine, NextSteps } from "./mentorshipParts"
+import dayjs from "dayjs"
+import { formatDate, useMentorWaitlist, HelpLine, NextSteps, BookingCountdown, WHATSAPP } from "./mentorshipParts"
 import CareerHelpBox from "./CareerHelpBox"
 import AnotherSession from "./AnotherSession"
 import { getMyWaitlist } from "../../apiCall/mentorWaitlistApi"
 import { ContactCard } from "./ContactChoice"
 import ReportMentor from "./ReportMentor"
+import UpgradeToMentorship from "../UpgradeToMentorship"
 
 // STEP 4, MENTORSHIP (owner, Rounds 20 and 34). WHERE THINGS STAND first — choose your mentor's job role,
 // we're finding your mentor, book your session from your mentor's links, or fill your feedback — then
@@ -16,7 +18,10 @@ import ReportMentor from "./ReportMentor"
 // one-time form lives on /mentorship/choose (MentorshipChoose.js).
 //
 // Students and mentors never message each other to arrange a session: once matched, the mentor's two
-// Calendly links show here. Everything else goes through us on WhatsApp.
+// Calendly links show here, with a countdown to book (2.5 days). Round 35 (owner): the mentor tells us on
+// WhatsApp when the student has booked and the admin logs it — the links then give way to the session
+// times. Three days after the match with nothing logged, this page says the chance is lost (a no-show).
+// Everything else goes through us on WhatsApp.
 function Mentorship() {
     const navigate = useNavigate()
     const { user } = useSelector((state) => state.user)
@@ -33,7 +38,8 @@ function Mentorship() {
                 <BackToDashboard />
                 <main className="page">
                     <h2 className="page-title-center">Mentorship</h2>
-                    <p>Mentorship comes with the Discovery + Mentor and Mentor Only plans.</p>
+                    {/* Round 35: the dashboard's Mentor tab lands here — the full offer, from the report's own careers when there are any */}
+                    {Number(user.currentTier) === 1 ? <UpgradeToMentorship user={user} to="/paywall" /> : <p>Mentorship comes with the Discovery + Mentor and Mentor Only plans.</p>}
                     <HelpLine />
                     <button type="button" className="tap" onClick={() => navigate("/paywall")}>See plans</button>
                 </main>
@@ -102,23 +108,49 @@ function Mentorship() {
 
                 {status === "matched" && (
                     <section className="mentor-status mentor-matched">
-                        <h3>Your mentor is confirmed — book your session</h3>
-                        {mentor && (
-                            <p>
-                                <strong>{mentor.name}</strong> — {mentor.currentRole}{mentor.discipline ? `, ${mentor.discipline}` : ""}
-                            </p>
+                        {waitlist.bookedMainAt ? (
+                            <>
+                                <h3>Your sessions are booked</h3>
+                                {mentor && <p><strong>{mentor.name}</strong> — {mentor.currentRole}{mentor.discipline ? `, ${mentor.discipline}` : ""}</p>}
+                                <ul className="booked-times">
+                                    <li><span>Main session (1 hour)</span><strong>{dayjs(waitlist.bookedMainAt).format("ddd D MMM, h:mm a")}</strong></li>
+                                    <li><span>Follow-up (20 minutes)</span><strong>{waitlist.bookedFollowUpAt ? dayjs(waitlist.bookedFollowUpAt).format("ddd D MMM, h:mm a") : "Not booked"}</strong></li>
+                                </ul>
+                                <p>Now wait for the time you chose. You may also have a confirmation email from your mentor's Calendly.</p>
+                                <p className="report-small">Join on time — more than 10 minutes late counts as a no-show. To reschedule, message us on WhatsApp.</p>
+                            </>
+                        ) : waitlist.bookingMissed ? (
+                            <>
+                                <h3>The booking time has passed</h3>
+                                <p>
+                                    You've lost the chance of booking within the time given, and it has been recorded as a no-show. If you
+                                    still want the mentorship session, message us on WhatsApp and we'll try to arrange it with your mentor again.
+                                </p>
+                                <p><a className="btn btn-primary tap" href={WHATSAPP} target="_blank" rel="noreferrer">Message us on WhatsApp</a></p>
+                            </>
+                        ) : (
+                            <>
+                                <h3>Your mentor is confirmed — book your sessions</h3>
+                                {mentor && <p><strong>{mentor.name}</strong> — {mentor.currentRole}{mentor.discipline ? `, ${mentor.discipline}` : ""}</p>}
+                                <p>Career: {chosen}.</p>
+                                <p>Book within <strong>2.5 days</strong>, or it counts as a no-show. Book both together:</p>
+                                {waitlist.bookBy && <BookingCountdown until={waitlist.bookBy} />}
+                                <div className="btn-row booking-links">
+                                    {mentor && mentor.calendlyMain && (
+                                        <a className="btn btn-primary tap" href={mentor.calendlyMain} target="_blank" rel="noreferrer">Book the 1-hour session (next 4 days)</a>
+                                    )}
+                                    {mentor && mentor.calendlyFollowUp && (
+                                        <a className="btn btn-ghost tap" href={mentor.calendlyFollowUp} target="_blank" rel="noreferrer">Book the 20-min follow-up (day 3–6, after your main session)</a>
+                                    )}
+                                </div>
+                                <p className="booking-rule"><strong>Pick one slot on each link.</strong> More than one slot on a link counts as no session chosen — your mentor reports it to us, and it can cost you your whole mentorship.</p>
+                                <p className="report-small">
+                                    Can't find a slot that works? Message us on WhatsApp at{" "}
+                                    <a href={WHATSAPP} target="_blank" rel="noreferrer">+91 8882756287</a> and we'll help you directly.
+                                    Add both to your calendar; joining more than 10 minutes late counts as a no-show.
+                                </p>
+                            </>
                         )}
-                        <p>Career: {chosen}.</p>
-                        <p>Book within <strong>2.5 days</strong>, or it counts as a no-show. Book both together:</p>
-                        <div className="btn-row booking-links">
-                            {mentor && mentor.calendlyMain && (
-                                <a className="btn btn-primary tap" href={mentor.calendlyMain} target="_blank" rel="noreferrer">Book the 1-hour session (next 4 days)</a>
-                            )}
-                            {mentor && mentor.calendlyFollowUp && (
-                                <a className="btn btn-ghost tap" href={mentor.calendlyFollowUp} target="_blank" rel="noreferrer">Book the 20-min follow-up (day 5 or 6, if you'd like)</a>
-                            )}
-                        </div>
-                        <p className="report-small">Add both to your calendar. Joining more than 10 minutes late counts as a no-show. To reschedule, message us on WhatsApp.</p>
                     </section>
                 )}
 
@@ -137,7 +169,7 @@ function Mentorship() {
                             {waitlist.resolution === "refund_requested"
                                 ? <>You asked for a refund of the mentor part{waitlist.mentorRefundInr ? ` (₹${Number(waitlist.mentorRefundInr).toLocaleString("en-IN")})` : ""}. We'll email you when it's on its way.</>
                                 : waitlist.resolution === "student_no_show"
-                                    ? "Your session was marked a no-show — it wasn't booked within 2.5 days, or nobody joined within 10 minutes."
+                                    ? <>Your session was marked a no-show — it wasn't booked in time, or nobody joined within 10 minutes. If you still want the mentorship session, <a href={WHATSAPP} target="_blank" rel="noreferrer">message us on WhatsApp</a> and we'll try to arrange it with your mentor again.</>
                                     : "We've refunded the mentor part. You'll find it under Profile → Payment history."}
                         </p>
                     </section>
@@ -157,7 +189,7 @@ function Mentorship() {
                 )}
 
                 {/* Round 28: a finished session is logged; another can be booked (paid) */}
-                {status === "completed" && <AnotherSession waitlist={waitlist} onChanged={reload} />}
+                {(status === "completed" || (status === "closed" && waitlist.resolution === "student_no_show" && waitlist.extraSessionCredit > 0)) && <AnotherSession waitlist={waitlist} onChanged={reload} />}
 
                 {/* 2. WHAT HAPPENS NEXT — from the moment the choice is sent until the session is done */}
                 {["matching", "matched"].includes(status) && <NextSteps />}

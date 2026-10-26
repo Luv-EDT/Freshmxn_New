@@ -15,13 +15,28 @@ import { useNavigate } from "react-router-dom"
 // are spending family money, and a manufactured deadline on a career decision is indefensible. The
 // offer is stated once, plainly, with what it costs and what it does.
 
-function UpgradeToMentorship({ user, professions = [], compact = false }) {
+// `tab` (owner, Round 35): on the dashboard, just a "Mentor" tab in the brand's pink that opens the
+// mentorship page — the long card stays on the report.
+function UpgradeToMentorship({ user, professions = [], compact = false, tab = false, to = "/mentorship" }) {
     const navigate = useNavigate()
 
     // Tier 2 already: nothing to sell.
     if (!user || user.currentTier !== 1) return null
 
     const named = professions.filter(Boolean).slice(0, 3)
+
+    if (tab) {
+        return (
+            <button type="button" className="mentor-tab" onClick={() => navigate("/mentorship")}>
+                <span className="mentor-tab-icon" aria-hidden="true">🤝</span>
+                <span className="mentor-tab-text">
+                    <strong>Mentor</strong>
+                    <span>Talk it through with someone who does the job</span>
+                </span>
+                <span className="mentor-tab-arrow" aria-hidden="true">→</span>
+            </button>
+        )
+    }
 
     if (compact) {
         return (
@@ -70,7 +85,7 @@ function UpgradeToMentorship({ user, professions = [], compact = false }) {
             <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => navigate("/mentorship")}
+                onClick={() => navigate(to)}
             >
                 See what Discovery + Mentor includes
             </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { Table, Button, Checkbox, Input, Modal, message } from "antd"
+import { Table, Button, Checkbox, Input, Modal, Radio, message } from "antd"
 import dayjs from "dayjs"
 import { getMentorFeedbackForAdmin, resolveMentorReportForAdmin } from "../../apiCall/mentorSessionsApi"
 import StudentSearch, { matchesStudent } from "./StudentSearch"
@@ -10,9 +10,11 @@ import StudentSearch, { matchesStudent } from "./StudentSearch"
 // the verdict:
 //   Upheld        — a strike on the mentor, no payout for that session, no automatic Tier 2
 //   Pause mentor  — they are not offered to anyone until un-paused (Mentors tab)
+//   By mistake    — Round 35 (owner): closed with nothing against the mentor; the student's ticket goes back
+//                   to how it was, if nothing has happened to it since (no refund sent, no new mentor matched)
 // A refund the student asked for is sent from their ticket (Mentor matches → Close or change → Refund).
 const REASON_NAMES = { inappropriate: "Behaved inappropriately", privacy: "Didn't respect privacy", no_show: "Didn't turn up / stopped replying", other: "Something else" }
-const OUTCOME_NAMES = { new_mentor: "A new mentor", refund: "A refund", no_action: "No action" }
+const OUTCOME_NAMES = { new_mentor: "A new mentor", refund: "A refund", no_action: "No action", mistake: "Closed — by mistake" }
 const COVERED_NAMES = { overview: "profession", journey: "journey", relate: "relating", success: "success needs", resources: "resources" }
 const QUALITY_NAMES = { empathetic: "empathetic", knowledgeable: "knowledgeable", clear: "clear", clarity: "gave clarity", recommend: "recommend" }
 
@@ -35,7 +37,7 @@ function SessionFeedbackList() {
     useEffect(() => { fetchAll() }, [fetchAll])
 
     const resolve = (record) => {
-        let upheld = false
+        let verdict = "not_upheld"   // upheld | not_upheld | mistake
         let pauseMentor = false
         let adminNote = ""
         Modal.confirm({
@@ -43,14 +45,18 @@ function SessionFeedbackList() {
             content: (
                 <div>
                     <p>The student asked for: <strong>{OUTCOME_NAMES[record.wants]}</strong> — their ticket has already changed.{record.wants === "refund" ? " Send the refund from their ticket on Mentor matches." : ""}</p>
-                    <p><Checkbox onChange={(event) => { upheld = event.target.checked }}>Upheld — it's true (a strike, and no payout for that session)</Checkbox></p>
-                    <p><Checkbox onChange={(event) => { pauseMentor = event.target.checked }}>Pause this mentor (no new students)</Checkbox></p>
+                    <Radio.Group className="report-verdict" defaultValue="not_upheld" onChange={(event) => { verdict = event.target.value }}>
+                        <Radio value="upheld">Upheld — it's true (a strike, and no payout for that session)</Radio>
+                        <Radio value="not_upheld">Not upheld — the student's ticket stays as it is now</Radio>
+                        <Radio value="mistake">The report was by mistake — close it; the mentor stays as they are and the ticket goes back</Radio>
+                    </Radio.Group>
+                    <p><Checkbox onChange={(event) => { pauseMentor = event.target.checked }}>Pause this mentor (no new students) — not with "by mistake"</Checkbox></p>
                     <Input.TextArea rows={3} placeholder="A note for the student (emailed)" onChange={(event) => { adminNote = event.target.value }} />
                 </div>
             ),
             okText: "Resolve",
             onOk: async () => {
-                const response = await resolveMentorReportForAdmin(record._id, { upheld, pauseMentor, adminNote })
+                const response = await resolveMentorReportForAdmin(record._id, verdict === "mistake" ? { mistake: true, adminNote } : { upheld: verdict === "upheld", pauseMentor, adminNote })
                 if (!response || response.data.success === false) {
                     message.error(response?.data?.message || "Could not resolve")
                     return
@@ -62,18 +68,20 @@ function SessionFeedbackList() {
     }
 
     const reportColumns = [
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 200, render: (_, record) => record.user?.email || "deleted" },
         { title: "Date", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Student", render: (_, record) => `${record.user?.name || "—"} (${record.user?.email || "deleted"})` },
         { title: "Mentor", dataIndex: "mentorName", render: (value) => value || "—" },
         { title: "What happened", render: (_, record) => `${REASON_NAMES[record.reason]}${record.note ? ` — ${record.note}` : ""}` },
         { title: "Wants", dataIndex: "wants", render: (value) => OUTCOME_NAMES[value] },
-        { title: "Status", render: (_, record) => (record.status === "open" ? "Open" : `Resolved${record.upheld ? " · upheld" : " · not upheld"}${record.mentorPaused ? " · mentor paused" : ""}`) },
+        { title: "Status", render: (_, record) => (record.status === "open" ? "Open" : record.outcome === "mistake" ? "Closed · by mistake" : `Resolved${record.upheld ? " · upheld" : " · not upheld"}${record.mentorPaused ? " · mentor paused" : ""}`) },
         { title: "Action", render: (_, record) => (record.status === "open" ? <Button type="primary" size="small" onClick={() => resolve(record)}>Resolve</Button> : null) },
     ]
 
     const reviewColumns = [
+        { title: "Name", fixed: "left", width: 140, render: (_, record) => record.user?.name || "—" },
+        { title: "Email", fixed: "left", width: 200, render: (_, record) => record.user?.email || "deleted" },
         { title: "Date", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Student", render: (_, record) => record.user?.email || "deleted" },
         { title: "Mentor", dataIndex: "mentorName", render: (value) => value || "—" },
         { title: "Career — role", render: (_, record) => `${record.profession || "—"}${record.jobRole ? ` — ${record.jobRole}` : ""}` },
         { title: "Rating", dataIndex: "rating", render: (value) => `${value}/10` },

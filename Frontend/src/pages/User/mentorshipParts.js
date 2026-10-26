@@ -8,7 +8,7 @@ import { getMyWaitlist } from "../../apiCall/mentorWaitlistApi"
 
 export const formatDate = (date) => (date ? dayjs(date).format("D MMM YYYY") : "")
 
-const WHATSAPP = "https://wa.me/918882756287"
+export const WHATSAPP = "https://wa.me/918882756287"
 
 // WHAT THE SESSIONS COVER (owner, Round 18) — so a student knows what to ask for
 export const SESSION_TOPICS = [
@@ -167,20 +167,42 @@ export function HelpFields({ value, onChange }) {
 
 export const helpReady = (value) => Boolean(value && value.helpFocus && ((value.languages || []).length > 0 || (value.languageOther || "").trim().length >= 2))
 
-// WHAT HAPPENS NEXT (owner, Round 34) — on the page from the moment a choice is sent
+// WHAT HAPPENS NEXT (owner, Rounds 34–35) — on the page from the moment a choice is sent, folded like
+// "How else can we help you?"
 export const NextSteps = () => (
-    <section className="mentor-next">
-        <h3>What happens next</h3>
+    <details className="faq-item mentor-help-fold mentor-next">
+        <summary>What happens next</summary>
         <ul>
             <li><strong>We find your mentor within 20 business days.</strong> You'll hear from us by email, on WhatsApp and here on your dashboard.</li>
-            <li><strong>Once matched, your mentor's booking links appear here</strong> (and in the email). Book within <strong>2.5 days</strong>, or it counts as a no-show. The 1-hour main session is in the next 4 days; the 20-minute follow-up on day 5 or 6.</li>
+            <li><strong>Once matched, your mentor's booking links appear here</strong> (and in the email). Book within <strong>2.5 days</strong>, or it counts as a no-show. The 1-hour main session is in the next 4 days; the 20-minute follow-up on day 3, 4, 5 or 6 (after your main session).</li>
+            <li><strong>Pick one slot on each link.</strong> More than one slot on a link counts as no session chosen — your mentor reports it to us, and it can cost you your whole mentorship.</li>
             <li><strong>Book both together.</strong> If you don't pick a follow-up slot with the main one, we take it that you don't want it — it's your choice, for your own questions, on a call or Google Meet. Your mentor will also ask at the end of the main session, and you can book it then.</li>
-            <li><strong>Add both to your calendar.</strong> The main session covers a day in the job, the bad parts, your mentor's journey, how it relates to you, and what it takes.</li>
+            <li><strong>Once your mentor tells us you've booked,</strong> this page shows your session times. The main session covers a day in the job, the bad parts, your mentor's journey, how it relates to you, and what it takes.</li>
             <li><strong>If you chose WhatsApp,</strong> we'll send you one reminder an hour before.</li>
             <li><strong>Rescheduling</strong> happens only if your mentor agrees — message us on WhatsApp and we'll ask them. Otherwise the booked time stands.</li>
             <li><strong>Not joined within 10 minutes</strong> of the start counts as a no-show.</li>
             <li><strong>After your session(s), fill the feedback form.</strong> It appears here, and by email, once your mentor tells us the session is done. Don't share it with your mentor — it's how we judge the mentor.</li>
             <li><strong>Want to change the career?</strong> Message us on WhatsApp within <strong>7 days</strong> of sending your choice; we reset it, you choose again, and the 20 business days start again. After 7 days it can't be changed.</li>
         </ul>
-    </section>
+    </details>
 )
+
+// THE BOOKING COUNTDOWN (owner, Round 35): 2.5 days from the match, ticking each minute
+export function BookingCountdown({ until }) {
+    const [now, setNow] = useState(() => Date.now())
+    useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), 30000)
+        return () => clearInterval(timer)
+    }, [])
+    const left = new Date(until).getTime() - now
+    if (left <= 0) return <p className="booking-countdown booking-countdown-late" role="status">Your booking time is up — book now, or message us on WhatsApp.</p>
+    const days = Math.floor(left / 864e5)
+    const hours = Math.floor((left % 864e5) / 36e5)
+    const minutes = Math.floor((left % 36e5) / 6e4)
+    return (
+        <p className="booking-countdown" role="timer">
+            <span>Time left to book</span>
+            <strong>{days > 0 ? `${days}d ` : ""}{hours}h {String(minutes).padStart(2, "0")}m</strong>
+        </p>
+    )
+}
