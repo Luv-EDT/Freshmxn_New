@@ -7,7 +7,7 @@
 // is false and the test page asks for a link (Loom, Google Drive) instead — nothing breaks.
 
 const LINK_SECONDS = 15 * 60
-const MAX_BYTES = 300 * 1024 * 1024
+const MAX_BYTES = 1024 * 1024 * 1024   // Round 35: 1 GB — a 10-minute phone video (.MOV) is often 400–700 MB
 const VIDEO_TYPES = { "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm" }
 
 let client = null
@@ -21,6 +21,11 @@ const s3 = () => {
             region: "auto",
             endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
             credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY },
+            // Round 35: newer AWS SDKs bake a checksum of the EMPTY body into every signed upload link,
+            // so R2 refused the real video ("The upload didn't finish"). Checksums only when an
+            // operation needs one.
+            requestChecksumCalculation: "WHEN_REQUIRED",
+            responseChecksumValidation: "WHEN_REQUIRED",
         })
     }
     return client

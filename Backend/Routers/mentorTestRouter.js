@@ -79,11 +79,11 @@ router.get("/getMine", authMiddleware, mentorAuthMiddleware, async (req, res) =>
         // mentors approved before the test existed don't take it
         const existing = await MentorTest.findOne({ mentor: req.user._id })
         if (!existing && profile.status === "onboarded") {
-            return res.status(200).json({ success: true, message: "No test needed", data: { notNeeded: true } })
+            return res.status(200).json({ success: true, message: "No test needed", data: { notNeeded: true, bookingLinks: { calendlyMain: profile.calendlyMain || "", calendlyFollowUp: profile.calendlyFollowUp || "" } } })
         }
 
         const test = existing || await testFor(req.user._id)
-        return res.status(200).json({ success: true, message: "Your test", data: forMentor(test) })
+        return res.status(200).json({ success: true, message: "Your test", data: { ...forMentor(test), bookingLinks: { calendlyMain: profile.calendlyMain || "", calendlyFollowUp: profile.calendlyFollowUp || "" } } })
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "Failed to load your test", error: error.message })
@@ -174,7 +174,7 @@ router.post("/videoUploadUrl", authMiddleware, mentorAuthMiddleware, async (req,
         }
         const size = Number(req.body.size)
         if (!Number.isFinite(size) || size <= 0 || size > r2.MAX_BYTES) {
-            return res.status(400).json({ success: false, message: "The video must be under 300 MB — about 10 minutes from a phone" })
+            return res.status(400).json({ success: false, message: "The video must be under 1 GB — record at 1080p rather than 4K" })
         }
 
         const key = `mentor-tests/${req.user._id}/${Date.now()}.${ext}`
@@ -186,6 +186,32 @@ router.post("/videoUploadUrl", authMiddleware, mentorAuthMiddleware, async (req,
 })
 
 // SEND IT: everything answered, then it waits for our team (a couple of days)
+// THE BOOKING LINKS AFTER THE TEST (owner, Round 35): the links live on the Test tab only. Once the test is
+// sent — or for a mentor approved before the test existed — this changes them; students book from them.
+router.put("/saveMyLinks", authMiddleware, mentorAuthMiddleware, async (req, res) => {
+    try {
+        const profile = await loadOwn(req, res)
+        if (!profile) return
+
+        const test = await MentorTest.findOne({ mentor: req.user._id }).select("submittedAt").lean()
+        if (!(test && test.submittedAt) && profile.status !== "onboarded") {
+            return res.status(400).json({ success: false, message: "Put your Calendly links in the test — they're saved with it" })
+        }
+
+        const calendlyMain = clean(req.body.calendlyMain, 300)
+        const calendlyFollowUp = clean(req.body.calendlyFollowUp, 300)
+        if (!CALENDLY.test(calendlyMain) || !CALENDLY.test(calendlyFollowUp)) {
+            return res.status(400).json({ success: false, message: "Both links look like https://calendly.com/your-name/…" })
+        }
+
+        await Mentor.updateOne({ user: req.user._id }, { $set: { calendlyMain, calendlyFollowUp } })
+        return res.status(200).json({ success: true, message: "Booking links saved — students book from these", data: { calendlyMain, calendlyFollowUp } })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to save your links", error: error.message })
+    }
+})
+
 router.post("/submitMine", authMiddleware, mentorAuthMiddleware, async (req, res) => {
     try {
         const profile = await loadOwn(req, res)
@@ -212,14 +238,15 @@ router.post("/submitMine", authMiddleware, mentorAuthMiddleware, async (req, res
         test.autoScore = markTest(test)
         await test.save()
 
-        // the links they tested with become their booking links, unless they already set others
+        // Round 35 (owner): the Calendly links are asked only in the test — the ones they send become their
+        // booking links
         await Mentor.updateOne(
             { user: req.user._id },
             {
                 $set: {
                     status: profile.status === "onboarded" ? "onboarded" : "test_submitted",
-                    ...(profile.calendlyMain ? {} : { calendlyMain: test.calendlyMain }),
-                    ...(profile.calendlyFollowUp ? {} : { calendlyFollowUp: test.calendlyFollowUp }),
+                    calendlyMain: test.calendlyMain,
+                    calendlyFollowUp: test.calendlyFollowUp,
                 },
             }
         )
