@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { Tabs, Badge } from "antd"
+import { Link } from "react-router-dom"
 import Navbar from "../Navbar"
 import LogoutButton from "../LogoutButton"
 import AccessRequestsList from "./AccessRequestsList"
@@ -7,10 +8,6 @@ import RefundRequestsList from "./RefundRequestsList"
 import StudentsList from "./StudentsList"
 import FinancialAidList from "./FinancialAidList"
 import CouponsList from "./CouponsList"
-import MentorsList from "./MentorsList"
-import MentorMatchesList from "./MentorMatchesList"
-import MentorReviewsList from "./MentorReviewsList"
-import SessionFeedbackList from "./SessionFeedbackList"
 import AssessmentIssuesList from "./AssessmentIssuesList"
 import FollowUpsList from "./FollowUpsList"
 import DataUpdatesList from "./DataUpdatesList"
@@ -58,26 +55,6 @@ function AdminHome() {
             key: "students",
             label: "Students",
             children: <StudentsList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
-        },
-        {
-            key: "mentors",
-            label: "Mentors",
-            children: <MentorsList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
-        },
-        {
-            key: "mentorMatches",
-            label: "Mentor Matches",
-            children: <MentorMatchesList dataVersion={dataVersion} onDataChanged={handleDataChanged} />,
-        },
-        {
-            key: "sessionFeedback",
-            label: "Session feedback",
-            children: <SessionFeedbackList />,
-        },
-        {
-            key: "mentorReviews",
-            label: "Mentor reviews",
-            children: <MentorReviewsList />,
         },
         {
             key: "assessmentIssues",
@@ -132,6 +109,8 @@ function AdminHome() {
             <div className="page">
                 <h2>Admin</h2>
                 <LogoutButton />
+                {/* Round 34 (owner): all mentor work — matches, mentors, payouts, feedback — on its own page */}
+                <p><Link to="/admin/mentors" className="btn btn-primary tap">Mentors section →</Link></p>
                 <AiUsageCard />
                 <Tabs items={items} />
             </div>

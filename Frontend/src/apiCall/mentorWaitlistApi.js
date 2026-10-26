@@ -29,8 +29,14 @@ export async function matchForAdmin(studentId, payload) {
     return response
 }
 
-export async function resolveForAdmin(studentId, payload) {
-    const response = await axiosInstance.put(`/mentorWaitlist/resolveForAdmin/${studentId}`, payload)
+// Round 34: the ticket menu — another mentor (with a strike when the mentor was at fault), or a student no-show
+export async function newMentorForAdmin(studentId, payload) {
+    const response = await axiosInstance.put(`/mentorWaitlist/newMentorForAdmin/${studentId}`, payload || {})
+    return response
+}
+
+export async function studentNoShowForAdmin(studentId, payload) {
+    const response = await axiosInstance.put(`/mentorWaitlist/studentNoShowForAdmin/${studentId}`, payload || {})
     return response
 }
 
@@ -60,12 +66,7 @@ export async function startAnotherSession(payload) {
     }
 }
 
-// Round 28: the admin marks a matched session done (it is logged on the student's place)
-export async function mainSessionDoneForAdmin(studentId) {
-    const response = await axiosInstance.put(`/mentorWaitlist/mainSessionDoneForAdmin/${studentId}`)
-    return response
-}
-
+// Round 34: one "Session done" — the session is logged and the student's feedback form opens
 export async function completeSessionForAdmin(studentId, payload) {
     const response = await axiosInstance.put(`/mentorWaitlist/completeSessionForAdmin/${studentId}`, payload || {})
     return response

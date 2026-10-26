@@ -80,6 +80,12 @@ export async function downgradeUserForAdmin(id) {
     return response
 }
 
+// Round 34: "Refund the mentor part" on a mentor ticket — the money and the ticket in one step
+export async function refundMentorPartForAdmin(userId, payload) {
+    const response = await axiosInstance.put(`/payments/refundMentorPartForAdmin/${userId}`, payload || {})
+    return response
+}
+
 export async function getAllRefundRequestsForAdmin() {
     const response = await axiosInstance.get("/payments/getAllRefundRequestsForAdmin")
     return response

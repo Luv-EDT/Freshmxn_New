@@ -2981,3 +2981,127 @@ hr.story-end {
 /* Round 31: several students match a name in Activity matches */
 .admin-choices { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
 .admin-choices p { width: 100%; margin: 0; }
+
+/* ── Round 34: Step 4 Mentorship and the mentor dashboard ─────────────────────────────────────────── */
+
+/* a page's heading, centred with room above it (owner) */
+.page-title-center {
+    text-align: center;
+    margin-top: var(--space-5);
+    margin-bottom: var(--space-4);
+}
+
+/* contribution and interest, with Maslow's pyramid beside it (below it on a phone) */
+.mentor-framing {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+@media (min-width: 760px) {
+    .mentor-framing { grid-template-columns: 1fr 300px; }
+}
+
+.mentor-framing .maslow { width: 100%; max-width: 320px; justify-self: center; }
+
+.mentor-status {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--teal-tint);
+    margin-bottom: var(--space-4);
+}
+
+.mentor-status h3 { margin-top: 0; }
+
+.booking-links { flex-wrap: wrap; gap: var(--space-2); margin: var(--space-3) 0; }
+
+.mentor-next ul { padding-left: 1.2em; display: grid; gap: var(--space-2); max-width: 46em; }
+
+.mentor-once-note {
+    padding: var(--space-3);
+    border-left: 4px solid var(--teal);
+    background: var(--cream);
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.language-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 4px var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.mentor-languages { border: 0; padding: 0; margin: var(--space-4) 0 0; }
+.mentor-languages input[type="text"] { max-width: 280px; }
+
+.contact-note {
+    margin: 6px 0 var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius);
+    background: var(--cream);
+    font-size: 0.92rem;
+}
+
+.mentor-send {
+    margin: var(--space-5) 0;
+    padding: var(--space-4);
+    border: 2px solid var(--teal);
+    border-radius: var(--radius-lg);
+}
+
+.mentor-sent ul { padding-left: 1.2em; display: grid; gap: 6px; }
+
+/* the report button is small now (owner) */
+.report-mentor { margin: var(--space-3) 0; }
+button.link-button.report-mentor-toggle { font-size: 0.85rem; font-weight: 400; color: var(--navy-soft); }
+.report-mentor-form { margin-top: var(--space-2); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); }
+
+/* the feedback form: compact answer rows */
+.feedback-q { border: 0; padding: 0; margin: 0 0 var(--space-3); }
+.feedback-q legend { font-weight: 600; margin-bottom: 4px; }
+.feedback-choices { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.feedback-choice { min-height: 40px; }
+.feedback-gate { padding: var(--space-4); border-radius: var(--radius-lg); background: var(--teal-tint); }
+
+/* the mentor dashboard (Round 34) */
+.mentor-status-line { padding: var(--space-3); border-radius: var(--radius); background: var(--cream); border-left: 4px solid var(--teal); }
+.mentor-tier { padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--teal-tint); margin-bottom: var(--space-4); }
+.mentor-tier p { margin: 0 0 4px; }
+.mentor-student { padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-lg); margin-bottom: var(--space-4); }
+.mentor-student-head { font-size: 1.1rem; }
+.prepare-by { padding: var(--space-2) var(--space-3); border-radius: var(--radius); background: var(--teal-tint); }
+.student-brief { display: grid; gap: var(--space-2); margin: var(--space-3) 0; }
+.student-brief dt { font-weight: 700; }
+.student-brief dd { margin: 0; }
+.mentor-privacy { margin: var(--space-3) 0; }
+.mentor-profile-list { padding-left: 1.2em; display: grid; gap: 4px; }
+.mentor-payout, .mentor-calendly { border: 0; padding: 0; margin: var(--space-4) 0; display: grid; gap: 6px; max-width: 480px; }
+.mentor-payout legend, .mentor-calendly legend { font-weight: 700; margin-bottom: 6px; }
+
+/* training documents */
+.training-fold { margin-bottom: var(--space-3); }
+.training-doc { max-width: 46em; }
+.training-doc h4 { margin: var(--space-4) 0 var(--space-2); }
+.training-shot { margin: var(--space-3) 0; }
+.training-shot img { max-width: 100%; border: 1px solid var(--line); border-radius: var(--radius); }
+.training-shot figcaption { font-size: 0.85rem; color: var(--navy-soft); margin-top: 4px; }
+.training-table { width: 100%; border-collapse: collapse; }
+.training-table th, .training-table td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--line); }
+.training-quote { font-style: italic; border-left: 4px solid var(--pink); padding-left: var(--space-3); }
+
+/* the test */
+.mentor-test-list { padding-left: 1.4em; display: grid; gap: var(--space-5); }
+.mentor-test-list > li h3 { margin-top: 0; }
+.mentor-test-list input[type="url"] { width: 100%; max-width: 480px; display: block; margin-bottom: var(--space-2); }
+.step-order { padding-left: 1.4em; display: grid; gap: 6px; }
+.step-order li span:first-child { margin-right: var(--space-2); }
+.step-moves { display: inline-flex; gap: 4px; }
+.sample-student { margin: var(--space-3) 0; padding: var(--space-3); border-left: 4px solid var(--teal); background: var(--cream); }
+.mentor-test-status { padding: var(--space-4); border-radius: var(--radius-lg); background: var(--teal-tint); }
+
+/* the roadmap table */
+.roadmap-tier { font-weight: 700; color: var(--teal-dark); }
+.roadmap-table { border-collapse: collapse; min-width: 720px; }
+.roadmap-table th, .roadmap-table td { padding: 4px; text-align: left; }
+.roadmap-table input { width: 100%; min-width: 90px; }

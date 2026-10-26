@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react"
-import { Table, Button, Popconfirm, message } from "antd"
+import { Table, Button, message } from "antd"
 import dayjs from "dayjs"
 import { getAllUsersForAdmin } from "../../apiCall/userApi"
-import { downgradeUserForAdmin, getPricing } from "../../apiCall/paymentsApi"
 import StudentEditForm from "./StudentEditForm"
 import { GiveFreeAccess, DeleteAccount } from "./StudentAccessActions"
 import { PLAN_NAMES } from "../plans"
@@ -49,7 +48,6 @@ function StudentsList({ dataVersion, onDataChanged }) {
     const [users, setUsers] = useState([])
     const [progress, setProgress] = useState({})
     const [loading, setLoading] = useState(false)
-    const [paymentMode, setPaymentMode] = useState("manual")
     const [search, setSearch] = useState("")
     const [editingStudent, setEditingStudent] = useState(null)
 
@@ -61,14 +59,12 @@ function StudentsList({ dataVersion, onDataChanged }) {
     const fetchUsers = async () => {
         try {
             setLoading(true)
-            const [usersRes, pricingRes, progressRes] = await Promise.all([
+            const [usersRes, progressRes] = await Promise.all([
                 getAllUsersForAdmin(),
-                getPricing(),
                 getProgressForAdmin(),
             ])
             setUsers(usersRes.data.data)
             setProgress(progressRes.data.data || {})
-            setPaymentMode(pricingRes.data.data.paymentMode)
         } catch (error) {
             message.error("Failed to fetch students")
         } finally {
@@ -76,22 +72,8 @@ function StudentsList({ dataVersion, onDataChanged }) {
         }
     }
 
-    // ─── Downgrade (Tier 2 → Tier 1, refunds the Tier-2 part) ────────────────
-    const handleDowngrade = async (id) => {
-        try {
-            const response = await downgradeUserForAdmin(id)
-            message.success(response.data.message)
-            const updatedUser = response.data.data.user
-            setUsers((prev) =>
-                prev.map((user) =>
-                    user._id === id ? { ...user, ...updatedUser } : user
-                )
-            )
-            onDataChanged()
-        } catch (error) {
-            message.error(error.response?.data?.message || "Failed to downgrade")
-        }
-    }
+    // Round 34 (owner): "Downgrade to Tier 1" moved to the mentor ticket — Admin → Mentors → Mentor
+    // matches → Close or change this ticket → Refund the mentor part does the same thing in one place
 
     // the edit writes the user document every other tab reads, so they all have to be told
     const handleSaved = (updatedUser) => {
@@ -103,10 +85,6 @@ function StudentsList({ dataVersion, onDataChanged }) {
     }
 
     // ─── Columns ─────────────────────────────────────────────────────────────
-    const downgradeConfirmText = paymentMode === "razorpay"
-        ? "Move to Tier 1. Razorpay will refund the Tier-2 part automatically."
-        : "Move to Tier 1. Send the Tier-2 part back yourself, then confirm."
-
     const columns = [
         { title: "Joined", dataIndex: "createdAt", render: (value) => dayjs(value).format("DD MMM YYYY") },
         { title: "Name", dataIndex: "name" },
@@ -127,13 +105,6 @@ function StudentsList({ dataVersion, onDataChanged }) {
             title: "Action",
             render: (_, record) => (
                 <>
-                    {record.paid && record.currentTier === 2 && (
-                        <>
-                            <Popconfirm title={downgradeConfirmText} onConfirm={() => handleDowngrade(record._id)}>
-                                <Button size="small" danger>Downgrade to Tier 1</Button>
-                            </Popconfirm>{" "}
-                        </>
-                    )}
                     <Button size="small" onClick={() => setEditingStudent(record)}>Edit</Button>
                     {/* Round 26 (owner): a plan for free, and deleting an account with everything in it */}
                     {record.role === "student" && record.currentTier !== 2 && (

@@ -23,6 +23,19 @@ const OPEN_REFUND_STATUSES = ["pending", "refund_pending", "refund_failed"]
 
 // Account + money. Refunds are payment rows, so purchases, upgrades and refunds all sit in the
 // one Payment history table rather than being split across two.
+// Round 34: the mentor ticket's history, in words
+const MENTOR_EVENTS = {
+    choice_sent: "Choice sent",
+    matched: "Mentor matched",
+    choice_reset: "Choice reset",
+    new_mentor: "New mentor requested",
+    session_done: "Session done",
+    feedback_in: "Feedback sent",
+    refund_requested: "Refund asked for",
+    refunded: "Mentor part refunded",
+    student_no_show: "Marked a no-show",
+}
+
 function Profile() {
     const dispatch = useDispatch()
     const { user } = useSelector((state) => state.user)
@@ -33,6 +46,7 @@ function Profile() {
     const [showForm, setShowForm] = useState(false)
     const [editing, setEditing] = useState(false)
     const [mentorSessions, setMentorSessions] = useState([])   // Round 28: sessions done, from the waitlist place
+    const [mentorHistory, setMentorHistory] = useState([])     // Round 34: everything that happened to the mentor ticket
 
     useEffect(() => {
         fetchHistory()
@@ -40,7 +54,11 @@ function Profile() {
 
     useEffect(() => {
         if (!hasMentor(user)) return
-        getMyWaitlist().then((response) => setMentorSessions((response?.data?.data && response.data.data.sessions) || [])).catch(() => setMentorSessions([]))
+        getMyWaitlist().then((response) => {
+            const place = response?.data?.data || {}
+            setMentorSessions(place.sessions || [])
+            setMentorHistory(place.history || [])
+        }).catch(() => setMentorSessions([]))
     }, [user])
 
     const fetchHistory = async () => {
@@ -238,10 +256,24 @@ function Profile() {
         panels.push({
             key: "mentor-sessions",
             label: "Mentor sessions",
-            children: mentorSessions.length === 0
+            children: mentorSessions.length === 0 && mentorHistory.length === 0
                 ? <p>No sessions done yet. <Link to="/mentorship">See where your mentor match stands →</Link></p>
                 : (
                     <>
+                        {mentorHistory.length > 0 && (
+                            <>
+                                <p><strong>Your mentor ticket</strong></p>
+                                <ul className="refund-request-list">
+                                    {mentorHistory.map((entry, index) => (
+                                        <li key={`${entry.event}-${index}`}>
+                                            {dayjs(entry.at).format("DD MMM YYYY")} · {MENTOR_EVENTS[entry.event] || entry.event}
+                                            {entry.jobRole || entry.profession ? ` · ${entry.jobRole ? `${entry.jobRole} (${entry.profession})` : entry.profession}` : ""}
+                                            {entry.mentorName ? ` · ${entry.mentorName}` : ""}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
                         <ul className="refund-request-list">
                             {mentorSessions.map((session, index) => (
                                 <li key={`${session.profession}-${index}`}>

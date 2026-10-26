@@ -48,3 +48,14 @@ export async function approveMentorForAdmin(id) {
     const response = await axiosInstance.put(`/mentors/approveForAdmin/${id}`)
     return response
 }
+
+// Round 34: Tier 3 (the admin's call), and a mentor's region and Tier-3 rate
+export async function setTier3ForAdmin(mentorProfileId) {
+    const response = await axiosInstance.put(`/mentors/setTier3ForAdmin/${mentorProfileId}`, {})
+    return response
+}
+
+export async function updateMentorTermsForAdmin(mentorProfileId, payload) {
+    const response = await axiosInstance.put(`/mentors/updateTermsForAdmin/${mentorProfileId}`, payload)
+    return response
+}

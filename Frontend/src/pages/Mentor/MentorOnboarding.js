@@ -3,9 +3,10 @@ import { ACADEMIC_OPTIONS } from "../Interest/BackgroundInfo"
 import { getProfessionOptions } from "../../apiCall/professionsApi"
 import CareerRolePicker, { pickerComplete } from "../CareerRolePicker"
 
-// The 12-field mentor onboarding form (PRD §B.9 / Master Plan §6.4). Used for the first
+// The mentor onboarding form (PRD §B.9 / Master Plan §6.4; Round 34 adds where they live, how we pay
+// them and their Calendly links). Used for the first
 // submission and for later edits — `initial` is the saved profile when editing.
-// Fields 11 and 12 are ADMIN-ONLY: never shown to a student, used for payouts.
+// Where they live and how we pay them are ADMIN-ONLY: never shown to a student, used for payouts.
 //
 // Round 12 (owner): profession, job role and industries come from OUR lists — the 223 careers,
 // their job roles (or "something else" in the mentor's own words) and the industry list — so a
@@ -35,7 +36,21 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
         transitionCategory: initial?.transitionCategory || "",
         preferredCurrency: initial?.preferredCurrency || "",
         residenceCitizenship: initial?.residenceCitizenship || "",
+        // Round 34 (owner): where they live sets their pay; how we pay them; the links students book from
+        region: initial?.region || "",
+        payout: {
+            upiId: initial?.payout?.upiId || "",
+            accountName: initial?.payout?.accountName || "",
+            accountNumber: initial?.payout?.accountNumber || "",
+            ifsc: initial?.payout?.ifsc || "",
+            pan: initial?.payout?.pan || "",
+            intlMethod: initial?.payout?.intlMethod || "",
+        },
+        calendlyMain: initial?.calendlyMain || "",
+        calendlyFollowUp: initial?.calendlyFollowUp || "",
     })
+    const regionLocked = Boolean(initial && initial.status === "onboarded" && initial.region)
+    const updatePayout = (field) => (e) => setForm((prev) => ({ ...prev, payout: { ...prev.payout, [field]: e.target.value } }))
     const [saving, setSaving] = useState(false)
 
     const update = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))
@@ -156,17 +171,56 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
                 ))}
             </fieldset>
 
-            <p><strong>Only our team sees these two — they're used for payouts.</strong></p>
+            {/* Round 34 (owner): India or abroad — an Indian living abroad is an International mentor */}
+            <fieldset>
+                <legend>11. Where do you live?</legend>
+                {[["indian", "In India"], ["international", "Abroad (an Indian living abroad)"]].map(([value, label]) => (
+                    <label key={value} className="choice">
+                        <input type="radio" name="region" value={value} checked={form.region === value} onChange={update("region")} disabled={regionLocked} required />
+                        <span>{label}</span>
+                    </label>
+                ))}
+                <p className="report-small">
+                    This sets your payment rates (Indian or International).{regionLocked ? " To change it now, message us on WhatsApp." : ""}
+                </p>
+            </fieldset>
             <div>
-                <label>11. Preferred payment currency</label>
-                <br />
-                <input placeholder="e.g. INR" value={form.preferredCurrency} onChange={update("preferredCurrency")} required />
-            </div>
-            <div>
-                <label>12. Country of residence / citizenship</label>
+                <label>12. Country you live in</label>
                 <br />
                 <input value={form.residenceCitizenship} onChange={update("residenceCitizenship")} required />
             </div>
+
+            <fieldset className="mentor-payout">
+                <legend>13. How should we pay you? <span className="report-small">Only our team sees this.</span></legend>
+                {form.region !== "international" ? (
+                    <>
+                        <label>UPI ID</label>
+                        <input placeholder="name@okbank" value={form.payout.upiId} onChange={updatePayout("upiId")} />
+                        <p className="report-small">Or a bank account:</p>
+                    </>
+                ) : (
+                    <>
+                        <label>How we can pay you — an Indian NRE/NRO account (below), or Wise / PayPal (email)</label>
+                        <input placeholder="e.g. Wise: me@example.com" value={form.payout.intlMethod} onChange={updatePayout("intlMethod")} />
+                    </>
+                )}
+                <label>Account holder's name</label>
+                <input value={form.payout.accountName} onChange={updatePayout("accountName")} />
+                <label>Account number</label>
+                <input inputMode="numeric" value={form.payout.accountNumber} onChange={updatePayout("accountNumber")} />
+                <label>IFSC</label>
+                <input placeholder="HDFC0001234" value={form.payout.ifsc} onChange={updatePayout("ifsc")} />
+                <label>PAN (for tax)</label>
+                <input placeholder="ABCDE1234F" value={form.payout.pan} onChange={updatePayout("pan")} />
+            </fieldset>
+
+            <fieldset className="mentor-calendly">
+                <legend>14. Your Calendly links <span className="report-small">— students book from these. See "How to get onboarded" under Training.</span></legend>
+                <label>1-hour main session</label>
+                <input type="url" placeholder="https://calendly.com/your-name/1-hour" value={form.calendlyMain} onChange={update("calendlyMain")} />
+                <label>20-minute follow-up</label>
+                <input type="url" placeholder="https://calendly.com/your-name/20-min" value={form.calendlyFollowUp} onChange={update("calendlyFollowUp")} />
+            </fieldset>
 
             {showMissing && !careerReady && (
                 <p className="form-missing" role="alert">To save, choose {missing.join(", ")} in questions 4–6 above.</p>
