@@ -67,6 +67,15 @@ const CHANGE_WINDOW_DAYS = 7
 const changeableUntil = (row) => (row && row.choiceSentAt ? new Date(new Date(row.choiceSentAt).getTime() + CHANGE_WINDOW_DAYS * 864e5) : null)
 const canResetChoice = (row, now = new Date()) => Boolean(row && row.choiceSentAt && changeableUntil(row) > now)
 
+// BOOKING WINDOW (owner, Round 35): the student is told to book within 2.5 days of the match and sees a
+// countdown to it; only after 3 days with no booking logged does their page say the chance is lost and
+// the admin sees "booking time missed" (the admin then presses Student no-show — never automatic)
+const BOOK_SHOWN_HOURS = 60
+const BOOK_ENFORCED_HOURS = 72
+const bookBy = (row) => (row && row.matchedAt ? new Date(new Date(row.matchedAt).getTime() + BOOK_SHOWN_HOURS * 36e5) : null)
+const bookingMissed = (row, now = new Date()) => Boolean(row && row.matchStatus === "matched" && row.matchedAt && !row.sessionsBookedAt
+    && now.getTime() > new Date(row.matchedAt).getTime() + BOOK_ENFORCED_HOURS * 36e5)
+
 // the languages a student may ask for (owner, Round 34); "Other" carries their own word
 const LANGUAGES = ["English", "Hindi", "Bengali", "Marathi", "Tamil", "Telugu", "Gujarati", "Kannada", "Malayalam", "Punjabi", "Odia"]
 const cleanLanguages = (body) => {
@@ -106,7 +115,7 @@ const contactChoice = (body) => (CONTACT_VIA.includes(body.contactVia) && body.c
 const CONTACT_NEEDED = "Choose how your mentor should contact you, and tick that we may share it with them"
 
 // every new match starts its steps again
-const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null, sessionDoneAt: null }
+const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null, sessionDoneAt: null, sessionsBookedAt: null, bookedMainAt: null, bookedFollowUpAt: null }
 
 // what a student may see about their assigned mentor — the profile-visible name and role, and once
 // matched the two Calendly links they book from (Round 34). Contact details, payout details, currency
@@ -186,6 +195,12 @@ router.get("/getMyWaitlist", authMiddleware, async (req, res) => {
                 mentor: await mentorSummary(row.assignedMentor, row.matchStatus === "matched"),
                 languages: row.languages || [],
                 sessionDoneAt: row.sessionDoneAt || null,
+                // Round 35: the booking window, and the sessions once the admin has logged them
+                bookBy: row.matchStatus === "matched" ? bookBy(row) : null,
+                bookingMissed: bookingMissed(row),
+                sessionsBookedAt: row.sessionsBookedAt || null,
+                bookedMainAt: row.bookedMainAt || null,
+                bookedFollowUpAt: row.bookedFollowUpAt || null,
                 changeableUntil: changeableUntil(row),
                 // Round 34: what "refund me" would give back, for the report form — from the server, never copy
                 mentorRefundInr: row.assignedMentor && ["matched", "completed"].includes(row.matchStatus)
@@ -496,6 +511,8 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
                 whatsappInvite: mentorPhone ? whatsappLink(mentorPhone, inviteFacts(row, student)) : null,
                 canResetChoice: canResetChoice(row),
                 changeableUntil: changeableUntil(row),
+                bookBy: row.matchStatus === "matched" ? bookBy(row) : null,
+                bookingMissed: bookingMissed(row),
             }
         })
 
@@ -520,7 +537,7 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 // ========================
 
 // Before matching, the admin asks the mentor on WhatsApp to open slots on their Calendly links (main
-// session in the next 4 days, follow-up on days 5–6). The match then shows the student those links on
+// session in the next 4 days, follow-up on day 3, 4, 5 or 6 — after the main one). The match then shows the student those links on
 // their dashboard, by email and as a notification — students and mentors never message each other to
 // arrange it (owner, Round 34).
 router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
@@ -698,6 +715,66 @@ router.put("/newMentorForAdmin/:id", authMiddleware, adminAuthMiddleware, async 
 
 
 // ========================
+// Sessions booked (owner, Round 35)
+// ========================
+
+// The mentor tells us on WhatsApp that the student has booked, with the dates and times; the admin logs
+// them here and both dashboards say the sessions are booked (the student is emailed too). Sent again it
+// corrects the times; `clear: true` takes the booking off (e.g. logged by mistake).
+const bookingTime = (value) => {
+    if (value === null || value === undefined || value === "") return null
+    const at = new Date(value)
+    return Number.isNaN(at.getTime()) ? undefined : at
+}
+
+router.put("/sessionsBookedForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params   // :id is the STUDENT's user id
+        const row = await MentorWaitlist.findOne({ user: id }).lean()
+
+        if (!row || row.matchStatus !== "matched" || !row.assignedMentor) {
+            return res.status(400).json({ success: false, message: "Only a matched student's sessions can be logged as booked" })
+        }
+
+        if (req.body.clear === true) {
+            const updated = await MentorWaitlist.findOneAndUpdate(
+                { _id: row._id },
+                { $set: { sessionsBookedAt: null, bookedMainAt: null, bookedFollowUpAt: null }, $push: { history: historyEntry(row, "booking_cleared", "admin", cleanText(req.body.adminNote, 500)) } },
+                { returnDocument: "after" }
+            )
+            return res.status(200).json({ success: true, message: "Booking taken off — the student sees their booking links again", data: updated })
+        }
+
+        const mainAt = bookingTime(req.body.mainAt)
+        const followUpAt = bookingTime(req.body.followUpAt)
+        if (!mainAt) {
+            return res.status(400).json({ success: false, message: "Please give the date and time of the main session" })
+        }
+        if (followUpAt === undefined || (followUpAt && followUpAt <= mainAt)) {
+            return res.status(400).json({ success: false, message: "The follow-up must be after the main session (or leave it empty if none was booked)" })
+        }
+
+        const mentor = await mentorSummary(row.assignedMentor)
+        const updated = await MentorWaitlist.findOneAndUpdate(
+            { _id: row._id, matchStatus: "matched" },
+            {
+                $set: { sessionsBookedAt: row.sessionsBookedAt || new Date(), bookedMainAt: mainAt, bookedFollowUpAt: followUpAt },
+                $push: { history: historyEntry(row, "sessions_booked", "admin", "", mentor ? mentor.name : null) },
+            },
+            { returnDocument: "after" }
+        )
+
+        notifyStudent(await User.findById(id).select("email").lean(), "sessionsBooked", { mainAt, followUpAt })
+
+        return res.status(200).json({ success: true, message: "Logged as booked — the student and the mentor see it on their dashboards, and the student has been emailed", data: updated })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to log the booking", error: error.message })
+    }
+})
+
+
+// ========================
 // Session done, and student no-shows (owner, Round 34)
 // ========================
 
@@ -789,6 +866,46 @@ router.put("/studentNoShowForAdmin/:id", authMiddleware, adminAuthMiddleware, as
     }
 })
 
+// AFTER A STUDENT NO-SHOW, THE SAME MENTOR AGAIN (owner, Round 35): the student asked on WhatsApp and the
+// mentor agreed. The ticket is matched again with that mentor on a fresh booking window; the no-show
+// stays in the history (and stays paid), and this session is paid in its turn.
+router.put("/reopenSameMentorForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params   // :id is the STUDENT's user id
+        const row = await MentorWaitlist.findOne({ user: id }).lean()
+        const last = row && (row.sessions || [])[row.sessions.length - 1]
+
+        if (!row || row.matchStatus !== "closed" || row.resolution !== "student_no_show" || !last || !last.mentor) {
+            return res.status(400).json({ success: false, message: "Only a ticket closed as a student no-show can be re-arranged with the same mentor" })
+        }
+
+        const mentor = await Mentor.findOne({ user: last.mentor, status: "onboarded" })
+        if (!mentor || !mentor.calendlyMain) {
+            return res.status(400).json({ success: false, message: "That mentor isn't available (not approved, or no Calendly links) — use Find another mentor instead" })
+        }
+
+        const note = cleanText(req.body.adminNote, 500)
+        const updated = await MentorWaitlist.findOneAndUpdate(
+            { _id: row._id, matchStatus: "closed" },
+            {
+                $set: { matchStatus: "matched", assignedMentor: mentor.user, matchedAt: new Date(), resolution: "matched", adminNote: note || "Re-arranged with the same mentor after a no-show", ...FRESH_MATCH_STEPS },
+                $push: { history: historyEntry(row, "reassigned", "admin", note || "same mentor again after a no-show", mentor.name) },
+            },
+            { returnDocument: "after" }
+        )
+
+        const student = await User.findById(id).select("name email").lean()
+        const mentorUser = await User.findById(mentor.user).select("email").lean()
+        notifyStudent(mentorUser, "mentorInvite", inviteFacts(updated, student))
+        notifyStudent(student, "mentorConfirmed", { mentorName: mentor.name, calendlyMain: mentor.calendlyMain, calendlyFollowUp: mentor.calendlyFollowUp })
+
+        return res.status(200).json({ success: true, message: `Matched again with ${mentor.name} — both have been emailed, and the student has a new 2.5 days to book`, data: updated })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to re-arrange", error: error.message })
+    }
+})
+
 // The student starts another session with one they've paid for: a fresh choice (any of their
 // recommendations — or any career on Mentor Only), or `sameField` — the same career and role, with a
 // different mentor, which goes straight to matching on a new 20-business-day clock.
@@ -799,7 +916,7 @@ router.post("/startAnotherSession", authMiddleware, async (req, res) => {
         }
 
         const row = await MentorWaitlist.findOne({ user: req.user._id }).lean()
-        if (!row || row.matchStatus !== "completed") {
+        if (!row || !["completed", "closed"].includes(row.matchStatus)) {
             return res.status(400).json({ success: false, message: "You can book another session once your current one is done" })
         }
         if ((row.extraSessionsPaid || 0) <= (row.extraSessionsUsed || 0)) {
@@ -821,7 +938,7 @@ router.post("/startAnotherSession", authMiddleware, async (req, res) => {
                 $inc: { extraSessionsUsed: 1 },
             }
 
-        const updated = await MentorWaitlist.findOneAndUpdate({ _id: row._id, matchStatus: "completed" }, update, { returnDocument: "after" })
+        const updated = await MentorWaitlist.findOneAndUpdate({ _id: row._id, matchStatus: row.matchStatus }, update, { returnDocument: "after" })
 
         return res.status(200).json({
             success: true,
@@ -841,3 +958,5 @@ module.exports.dueByFor = dueByFor
 module.exports.canResetChoice = canResetChoice
 module.exports.cleanLanguages = cleanLanguages
 module.exports.LANGUAGES = LANGUAGES
+module.exports.bookBy = bookBy
+module.exports.bookingMissed = bookingMissed

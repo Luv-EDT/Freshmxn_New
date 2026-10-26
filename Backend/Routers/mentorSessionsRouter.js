@@ -28,7 +28,11 @@ const router = express.Router()
 //   their mentor: a refund, or a new mentor.
 
 const cleanText = (value, max) => (typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max) : "")
-const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null, sessionDoneAt: null }
+const FRESH_MATCH_STEPS = { whatsappInviteAt: null, mentorPrivacyAcceptedAt: null, bookingLinkSentAt: null, mainSessionAt: null, sessionDoneAt: null, sessionsBookedAt: null, bookedMainAt: null, bookedFollowUpAt: null }
+
+// what a report changes on the ticket — kept on the report so "by mistake" can put it back (Round 35)
+const TICKET_FIELDS = "matchStatus resolution chosenProfessionId chosenProfessionName chosenJobRole jobRoleIsOther chosenIndustryCode otherRequest choiceSentAt helpWanted helpFocus languages assignedMentor matchedAt matchBusinessDays sameFieldNewMentor adminNote whatsappInviteAt mentorPrivacyAcceptedAt sessionDoneAt sessionsBookedAt bookedMainAt bookedFollowUpAt".split(" ")
+const ticketSnapshot = (row) => Object.fromEntries(TICKET_FIELDS.map((field) => [field, row[field] === undefined ? null : row[field]]))
 
 
 // ========================
@@ -65,6 +69,9 @@ router.get("/getMyStudents", authMiddleware, mentorAuthMiddleware, async (req, r
                     languages: row.languages || [],
                     matchedAt: row.matchedAt,
                     prepareBy: row.matchedAt ? new Date(new Date(row.matchedAt).getTime() + 2.5 * 864e5) : null,
+                    // Round 35: logged by the admin once the mentor tells us the student booked
+                    bookedMainAt: row.bookedMainAt || null,
+                    bookedFollowUpAt: row.bookedFollowUpAt || null,
                     brief: studentBrief(student, subs.get(String(row.user)), degreeLabelFor),
                     privacyAccepted: Boolean(row.mentorPrivacyAcceptedAt),
                     contact: showContact ? { via: row.contactVia, value: row.contactVia === "email" ? student.email : student.phone } : null,
@@ -257,6 +264,7 @@ router.post("/reportMentor", authMiddleware, async (req, res) => {
             reason,
             note,
             wants,
+            ticketBefore: { ...ticketSnapshot(row), excludedBefore: (row.excludedMentors || []).some((id) => String(id) === String(row.assignedMentor)) },
         })
 
         // THE TICKET CHANGES AT ONCE (owner, Round 34). A refund: the choice is cleared and kept in the
@@ -362,6 +370,42 @@ router.put("/resolveReportForAdmin/:id", authMiddleware, adminAuthMiddleware, as
         }
         if (report.status !== "open") {
             return res.status(400).json({ success: false, message: "This report has already been handled" })
+        }
+
+        // Round 35 (owner): THE REPORT WAS A MISTAKE — closed with nothing against the mentor, and the ticket
+        // put back as it was if nothing has happened to it since (no refund sent, no new mentor matched)
+        if (req.body.mistake === true) {
+            const row = report.waitlist ? await MentorWaitlist.findById(report.waitlist).lean() : null
+            const before = report.ticketBefore
+            const untouched = row && before && (
+                (report.wants === "refund" && row.matchStatus === "closed" && row.resolution === "refund_requested")
+                || (report.wants === "new_mentor" && row.matchStatus === "matching" && !row.assignedMentor)
+            )
+            if (untouched) {
+                const restore = Object.fromEntries(TICKET_FIELDS.map((field) => [field, before[field] === undefined ? null : before[field]]))
+                await MentorWaitlist.updateOne(
+                    { _id: row._id },
+                    {
+                        $set: restore,
+                        ...(before.excludedBefore ? {} : { $pull: { excludedMentors: report.mentor } }),
+                        $push: { history: { at: new Date(), event: "report_withdrawn", by: "admin", note: "the report was a mistake — ticket put back", profession: before.chosenProfessionName || null, jobRole: before.chosenJobRole || null, mentorName: report.mentorName } },
+                    }
+                )
+            }
+            report.status = "resolved"
+            report.outcome = "mistake"
+            report.upheld = false
+            report.adminNote = cleanText(req.body.adminNote, 500)
+            report.handledAt = new Date()
+            await report.save()
+            notifyStudent(await User.findById(report.user).select("email").lean(), "mentorReportResolved", { outcome: "mistake", note: report.adminNote })
+            return res.status(200).json({
+                success: true,
+                message: untouched
+                    ? "Closed as a mistake — nothing against the mentor, and the student's ticket is back as it was"
+                    : "Closed as a mistake — nothing against the mentor. The ticket had already moved on (a refund sent or a new mentor matched), so it was left as it is",
+                data: report,
+            })
         }
 
         const upheld = req.body.upheld === true

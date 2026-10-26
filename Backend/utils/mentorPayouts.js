@@ -44,8 +44,9 @@ const refreshTier = async (mentorUserId) => {
     return { mentor, standing, tier3Missing: tier3Missing(mentor, standing, standing) }
 }
 
-// the payout for one session. kind "main"; the first one a mentor ever earns waits for the admin's
-// "keep this mentor" (it is still paid either way).
+// the payout for one session. kind "main". The mentor's first HELD session waits for the admin's "keep
+// this mentor" (it is still paid either way). Round 35 (owner): a student no-show can't show how the
+// mentor mentors, so it is paid without the question — the question waits for their next held session.
 const writeSessionPayout = async ({ row, sessionIndex, rating = null, note = "" }) => {
     try {
         const session = (row.sessions || [])[sessionIndex]
@@ -53,7 +54,8 @@ const writeSessionPayout = async ({ row, sessionIndex, rating = null, note = "" 
         if (!mentorUserId) return null
         const mentor = await Mentor.findOne({ user: mentorUserId }).lean()
         if (!mentor) return null
-        const earlier = await MentorPayout.countDocuments({ mentor: mentorUserId, kind: "main" })
+        const noShow = session.noShow === "student"
+        const asked = await MentorPayout.exists({ mentor: mentorUserId, needsApproval: true })
         const amount = payoutAmount(mentor, "main")
         const payout = await MentorPayout.create({
             mentor: mentorUserId,
@@ -67,7 +69,8 @@ const writeSessionPayout = async ({ row, sessionIndex, rating = null, note = "" 
             amountInr: amount.inr,
             amountUsd: amount.usd || null,
             rating,
-            needsApproval: earlier === 0 && mentor.firstSessionApproved === null,
+            studentStatus: noShow ? "no_show" : "completed",
+            needsApproval: !noShow && !asked && (mentor.firstSessionApproved === null || mentor.firstSessionApproved === undefined),
             note,
         })
         return payout

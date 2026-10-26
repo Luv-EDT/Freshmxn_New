@@ -1,7 +1,7 @@
 const { sendEmail, escapeHtml } = require("./mailer")
 const Notification = require("../model/notificationsModel")
 const { mayEmail } = require("./emailBudget")
-const { PRIVACY_RULES } = require("./mentorInvite")
+const { PRIVACY_RULES, TELL_US } = require("./mentorInvite")
 
 // EVERY STATUS A STUDENT IS WAITING ON GETS AN EMAIL (owner, Round 28): payments, refunds, financial
 // aid and retake requests. One place for the wording, so it reads the same everywhere. "Hi," with no
@@ -12,6 +12,8 @@ const { PRIVACY_RULES } = require("./mentorInvite")
 const site = () => process.env.FRONTEND_URL || "https://www.freshmxn.com"
 const inr = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`
 const line = (label, value) => (value ? `<p>${label}: <strong>${escapeHtml(value)}</strong></p>` : "")
+// a session time as the student reads it — India time, e.g. "Tue 28 Oct, 6:30 pm"
+const whenText = (at) => (at ? `${new Date(at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} (India time)` : "")
 
 // money emails point to the payment history, where the same status and ids are shown
 const HISTORY = (link) => `<p>You can see this any time under Profile → Payment history: <a href="${link}/profile">${link}/profile</a></p>`
@@ -134,11 +136,15 @@ const TEMPLATES = {
     // ── mentor sessions (Rounds 28 and 34) ──
     mentorInvite: ({ firstName, profession, jobRole, focus, helpWanted }) => ({
         subject: "You have a new student",
-        body: `<p>We've matched you with a student. You have <strong>2.5 days</strong> to read their brief and prepare — about 30 minutes, and much less with practice.</p>${line("Student", firstName)}${line("Career", profession)}${line("Job role", jobRole)}${line("Help with", focus)}${line("They'd like to know", helpWanted)}<p>Read the full brief on your mentor page: <a href="${site()}/mentor">${site()}/mentor</a></p><p>The student books from your Calendly links, so keep the slots you opened free and honour every booking. After the session, tell us on WhatsApp (8882756287) that it's done — we then send the student the feedback form, and your payment follows their feedback.</p><p><strong>Privacy rules</strong></p><ul>${PRIVACY_RULES.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>`,
+        body: `<p>We've matched you with a student. You have <strong>2.5 days</strong> to read their brief and prepare — about 30 minutes, and much less with practice.</p>${line("Student", firstName)}${line("Career", profession)}${line("Job role", jobRole)}${line("Help with", focus)}${line("They'd like to know", helpWanted)}<p>Read the full brief on your mentor page: <a href="${site()}/mentor">${site()}/mentor</a></p><p>The student books from your Calendly links, so keep the slots you opened free and honour every booking. ${escapeHtml(PRIVACY_RULES.join(" "))}</p><p><strong>Please tell us on WhatsApp (8882756287):</strong></p><ol>${TELL_US.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ol><p>After the session is done we send the student the feedback form, and your payment follows their feedback.</p>`,
     }),
     mentorConfirmed: ({ mentorName, calendlyMain, calendlyFollowUp }) => ({
         subject: "Your mentor is confirmed — book your session",
-        body: `<p>Your mentor${mentorName ? `, <strong>${escapeHtml(mentorName)}</strong>,` : ""} is confirmed. Book your session from these links within <strong>2.5 days</strong>, or it counts as a no-show:</p>${calendlyMain ? `<p>1-hour main session (in the next 4 days): <a href="${escapeHtml(calendlyMain)}">${escapeHtml(calendlyMain)}</a></p>` : ""}${calendlyFollowUp ? `<p>20-minute follow-up (day 5 or 6, if you'd like one): <a href="${escapeHtml(calendlyFollowUp)}">${escapeHtml(calendlyFollowUp)}</a></p>` : ""}<p>Book both together — if you don't pick a follow-up slot now, we take it that you don't want it (your mentor will also offer it at the end of your session). Add both to your calendar. Joining more than 10 minutes late counts as a no-show. To reschedule, message us on WhatsApp (8882756287) and we'll ask your mentor.</p><p>The links are also on your dashboard: <a href="${site()}/mentorship">${site()}/mentorship</a></p><p>After your session we'll send you a short feedback form. Please fill it only after the session, and don't share it with your mentor — it's for you to tell us, and for us to judge the mentor.</p>`,
+        body: `<p>Your mentor${mentorName ? `, <strong>${escapeHtml(mentorName)}</strong>,` : ""} is confirmed. Book your sessions from these links within <strong>2.5 days</strong>, or it counts as a no-show:</p>${calendlyMain ? `<p>1-hour main session (in the next 4 days): <a href="${escapeHtml(calendlyMain)}">${escapeHtml(calendlyMain)}</a></p>` : ""}${calendlyFollowUp ? `<p>20-minute follow-up (day 3, 4, 5 or 6 — after your main session): <a href="${escapeHtml(calendlyFollowUp)}">${escapeHtml(calendlyFollowUp)}</a></p>` : ""}<p><strong>Pick one slot on each link.</strong> More than one slot on a link counts as no session chosen — your mentor reports it to us, and it can cost you your whole mentorship.</p><p>Book both together — if you don't pick a follow-up slot now, we take it that you don't want it (your mentor will also offer it at the end of your session). Add both to your calendar. Joining more than 10 minutes late counts as a no-show. To reschedule, or if you can't find a slot that works, message us on WhatsApp (8882756287) and we'll help.</p><p>The links are also on your dashboard: <a href="${site()}/mentorship">${site()}/mentorship</a></p><p>After your session we'll send you a short feedback form. Please fill it only after the session, and don't share it with your mentor — it's for you to tell us, and for us to judge the mentor.</p>`,
+    }),
+    sessionsBooked: ({ mainAt, followUpAt }) => ({
+        subject: "Your mentor sessions are booked",
+        body: `<p>Your mentor has told us your sessions are booked.</p>${line("Main session (1 hour)", whenText(mainAt))}${line("Follow-up (20 minutes)", followUpAt ? whenText(followUpAt) : "")}<p>Please join on time — more than 10 minutes late counts as a no-show. You may also have a confirmation email from your mentor's Calendly. To reschedule, message us on WhatsApp (8882756287).</p><p>It's on your dashboard too: <a href="${site()}/mentorship">${site()}/mentorship</a></p>`,
     }),
     reviewOpen: () => ({
         subject: "How was your mentor session? Your feedback form is open",
@@ -152,7 +158,7 @@ const TEMPLATES = {
     }),
     mentorReportResolved: ({ outcome, note }) => ({
         subject: "About your report",
-        body: `<p>${outcome === "new_mentor" ? "We've looked into your report. We're finding you a different mentor — the one you reported will not be matched with you again." : outcome === "refund" ? "We've looked into your report. Your refund of the mentor part is being processed — you'll get a separate email when it is on its way." : "We've looked into your report."}</p>${line("Note from our team", note)}`,
+        body: `<p>${outcome === "mistake" ? "We've closed your report as sent by mistake, and your mentor ticket is as it was before." : outcome === "new_mentor" ? "We've looked into your report. We're finding you a different mentor — the one you reported will not be matched with you again." : outcome === "refund" ? "We've looked into your report. Your refund of the mentor part is being processed — you'll get a separate email when it is on its way." : "We've looked into your report."}</p>${line("Note from our team", note)}`,
     }),
     choiceReset: () => ({
         subject: "Choose your mentor's job role again",
@@ -164,7 +170,7 @@ const TEMPLATES = {
     }),
     studentNoShow: () => ({
         subject: "Your mentor session was marked a no-show",
-        body: `<p>Your mentor session was marked a no-show — it wasn't booked within 2.5 days, or nobody joined within 10 minutes of the start. Your mentor ticket is now closed. If something went wrong, message us on WhatsApp (8882756287).</p>`,
+        body: `<p>Your mentor session was marked a no-show — it wasn't booked in time, or nobody joined within 10 minutes of the start. Your mentor ticket is now closed. If you still want a mentor session, message us on WhatsApp (8882756287) and we'll try to arrange it with your mentor again.</p>`,
     }),
     // ── for mentors (Round 34) ──
     mentorTestReceived: () => ({

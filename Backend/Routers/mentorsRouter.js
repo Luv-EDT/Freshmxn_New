@@ -4,6 +4,7 @@ const { startSession } = require("../utils/sessionToken")
 const User = require("../model/userModel")
 const Mentor = require("../model/mentorsModel")
 const MentorTest = require("../model/mentorTestsModel")
+const MentorPayout = require("../model/mentorPayoutsModel")
 const { standingOf } = require("../utils/mentorPayouts")
 const { tier3Missing, mainRate, payoutAmount } = require("../utils/mentorTiers")
 const { notifyStudent } = require("../utils/statusEmails")
@@ -368,6 +369,11 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
     try {
         const mentors = await Mentor.find({}).sort({ status: -1, createdAt: -1 }).lean()
         const tests = new Map((await MentorTest.find({ mentor: { $in: mentors.map((mentor) => mentor.user) } }).select("mentor submittedAt decision autoScore").lean()).map((test) => [String(test.mentor), test]))
+        // Round 35 (owner): what each has earned — paid so far, and due
+        const earnings = new Map((await MentorPayout.aggregate([
+            { $match: { status: { $in: ["paid", "due"] } } },
+            { $group: { _id: "$mentor", paidInr: { $sum: { $cond: [{ $eq: ["$status", "paid"] }, "$amountInr", 0] } }, dueInr: { $sum: { $cond: [{ $eq: ["$status", "due"] }, "$amountInr", 0] } }, noShows: { $sum: { $cond: [{ $eq: ["$studentStatus", "no_show"] }, 1, 0] } } } },
+        ])).map((row) => [String(row._id), row]))
 
         // Round 34: how each stands against the tier rules — sessions with feedback, average, strikes
         const data = await Promise.all(mentors.map(async (mentor) => {
@@ -378,6 +384,7 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
                 tier3Missing: tier3Missing(mentor, standing, standing),
                 mainRate: mainRate(mentor),
                 test: tests.get(String(mentor.user)) || null,
+                earnings: earnings.get(String(mentor.user)) || { paidInr: 0, dueInr: 0, noShows: 0 },
             }
         }))
 

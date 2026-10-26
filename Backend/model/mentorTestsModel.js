@@ -19,6 +19,7 @@ const testSchema = new mongoose.Schema(
         orders: { type: Object, default: {} },              // { questionId: [shown → bank option index] } — each mentor's own option order
         answers: { type: Object, default: {} },             // { questionId: optionIndex AS SHOWN }
         stepOrder: { type: [String], default: [] },         // the mentor's order of the 5 steps
+        stepsArrangedAt: { type: Date, default: null },     // Round 35: when the mentor last put (or confirmed) the order — required to send
         calendlyMain: { type: String, default: "" },
         calendlyFollowUp: { type: String, default: "" },
         video: {

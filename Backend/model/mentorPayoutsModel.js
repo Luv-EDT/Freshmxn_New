@@ -21,6 +21,8 @@ const payoutSchema = new mongoose.Schema(
         amountInr: { type: Number, required: true },
         amountUsd: { type: Number, default: null },
         rating: { type: Number, default: null },
+        // Round 35 (owner): what happened with the student — the session held, or they didn't show (paid either way)
+        studentStatus: { type: String, enum: ["completed", "no_show", null], default: null },
         // the mentor's first session: the admin reads the feedback and keeps them, or removes them
         // (the first session is paid either way)
         needsApproval: { type: Boolean, default: false },
