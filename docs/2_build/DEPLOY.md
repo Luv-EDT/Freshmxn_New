@@ -275,6 +275,28 @@ Built and **off until these two keys exist**. Nothing else changes when they are
 The DNS records are not touched (keep them grey-cloud, MX/TXT as they are). To switch the check off,
 delete both keys and redeploy.
 
+## Cloudflare R2 — the mentor test video (Round 34)
+
+Built and **off until these four values exist**: without them a mentor pastes a video link (Loom, Google
+Drive) instead of uploading. Free tier: 10 GB stored; each video is deleted once you decide, and after 30
+days at most.
+
+1. **dash.cloudflare.com** → left menu **R2 Object Storage** → (first time: add a payment method; the free
+   tier isn't charged) → **Create bucket** → name `freshmxn-mentor-tests`, location Automatic → **Create**.
+   Leave public access **off**.
+2. In the bucket → **Settings** → **CORS policy** → **Add CORS policy**, paste:
+   ```json
+   [{ "AllowedOrigins": ["https://www.freshmxn.com", "https://freshmxn.com"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+   ```
+3. R2 overview → **Manage R2 API Tokens** → **Create API token** → permission **Object Read & Write**,
+   **Apply to specific buckets only** → `freshmxn-mentor-tests` → **Create**. Copy the Access Key ID and the
+   Secret Access Key now (shown once). Your **Account ID** is on the R2 overview page.
+4. **Render → the service → Environment**: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
+   `R2_BUCKET` (= `freshmxn-mentor-tests`) → **Save** (Render restarts the service; no rebuild needed).
+5. Check: log in as a test mentor → **Test** tab — the video question now shows **Upload**, not a link box.
+
+Keys go into Render only — never chat or git.
+
 ## Custom domain — www.freshmxn.com (original plan — superseded by the Cloudflare section above)
 
 ### Phase A — now: `beta.freshmxn.com` (your current site is untouched)
