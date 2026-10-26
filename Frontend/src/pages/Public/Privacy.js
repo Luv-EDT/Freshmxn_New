@@ -78,8 +78,13 @@ const SECTIONS = [
                 <p>
                     <strong>If you are a mentor,</strong> we also collect your professional details (current role,
                     discipline, sectors, years of experience, languages, why you want to mentor, the kind of career
-                    transition you made) and, for payouts only, your preferred currency and country of residence.
-                    Students see only your name, current role and discipline.
+                    transition you made), whether you live in India or abroad, and your Calendly booking links. To pay
+                    you, we keep your payout details (UPI ID or bank account and IFSC, or how you're paid abroad, and
+                    your PAN) — these are used only to pay you and are seen only by our team. Before we approve you,
+                    you take a short test: your answers and the short video you record are stored privately, seen
+                    only by our team, and the video is deleted once we approve or decline you, and within 30 days at
+                    most. Students see only your name, current role and discipline, and your Calendly links once
+                    they're matched with you.
                 </p>
             </>
         ),
@@ -209,9 +214,12 @@ const SECTIONS = [
                 <p>
                     We also share data where the law requires it — for example, with a court or government
                     authority acting lawfully. When we match you with a mentor, we share only what they need to
-                    prepare: your first name, the career and role you chose and what you'd like help with. Your
-                    WhatsApp number <em>or</em> email — whichever you choose — is shared only with your agreement,
-                    and only after the mentor has agreed to keep it private and use it just to arrange your sessions.
+                    prepare: your first name, the career and role you chose, what you'd like to know, the languages
+                    you're comfortable in, and a few highlights from your Virtual Career Counselling (your interests,
+                    achievements, challenges and education — never your family details or beliefs, and support needs
+                    only if you chose to share them with a mentor). Your WhatsApp number <em>or</em> email — whichever
+                    you choose — is shared only with your agreement, and only after the mentor has agreed to keep it
+                    private and use it just to arrange and hold your sessions.
                     Reviews you leave after a session, and any report about a mentor, are seen by our team only.
                 </p>
                 <p>

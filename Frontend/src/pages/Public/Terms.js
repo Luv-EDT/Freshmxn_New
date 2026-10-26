@@ -145,7 +145,10 @@ const SECTIONS = [
                 Mentors are independent working professionals, not our employees, and their views are their own.
                 We check who they are and match them to you carefully, and we arrange the sessions. Please be
                 respectful; tell us straight away if anything in a session makes you uncomfortable, and we will act
-                on it.
+                on it. If your mentor doesn't turn up, report it from your Mentorship page and choose a refund of the
+                mentor part or a new mentor (within 15 business days). If you don't join within 10 minutes of a
+                booked session, the session counts as held and isn't refunded. You can change your choice within a
+                week of sending it by messaging us on WhatsApp.
             </p>
         ),
     },
