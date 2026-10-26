@@ -13,6 +13,9 @@ const call = async (request) => {
 export const getMyTest = () => call(() => axiosInstance.get("/mentorTest/getMine"))
 export const saveMyTest = (payload) => call(() => axiosInstance.put("/mentorTest/saveMine", payload))
 export const getVideoUploadUrl = (payload) => call(() => axiosInstance.post("/mentorTest/videoUploadUrl", payload))
+// Round 35: the admin's check of the video storage, and removing its test file
+export const storageCheckForAdmin = () => call(() => axiosInstance.get("/mentorTest/storageCheckForAdmin"))
+export const storageCleanupForAdmin = (key) => call(() => axiosInstance.put("/mentorTest/storageCleanupForAdmin", { key }))
 // Round 35: the booking links after the test (they're asked only on the Test tab)
 export const saveMyLinks = (payload) => call(() => axiosInstance.put("/mentorTest/saveMyLinks", payload))
 export const submitMyTest = () => call(() => axiosInstance.post("/mentorTest/submitMine", {}))

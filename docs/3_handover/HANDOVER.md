@@ -2624,3 +2624,16 @@ a 403 or "connection dropped" usually means the R2 CORS rule (DEPLOY.md → Clou
 **Fixtures:** 248/248 (the Round 35 mentor fixture rewritten for the owner's new layout). **Checked locally:** the mentor home before the
 profile (Test locked), after it, and approved, plus the profile view, at 360 and 1280 — Log out only in the profile view. Build: the 7
 known warning files.
+
+### Round 35d — the mentor page after onboarding, list spacing, and diagnosing the video upload (2026-10-26)
+| Item | What shipped |
+|---|---|
+| **One tab bar** | The display-only step chips above the tabs are gone (owner). Until the test is sent: 1. Training · 2. Tell us about yourself · 3. Test (locked until the profile is in). After it: **Home** (the test's status, or once approved the tier and the current student) · My profession data · Payouts (approved) |
+| **Profile section** | Behind the round profile icon: the profile and Edit, **Your Calendly links** (changed here), the **training documents** to refer back to, and Log out |
+| **Training** | Opens with "Read them carefully — your test, and setting up your profile and Calendly properly, depend on them; they stay saved for you to refer to later" |
+| **Lists** | More indent, and more room between each number or bullet and its text, on every mentor page |
+| **Video upload** | The upload links now use R2's path form (`<account>.r2.cloudflarestorage.com/<bucket>/…`), and the R2 values on Render are trimmed (an account id pasted as the whole endpoint is accepted). New **Admin → Mentors section → Check video storage**: our server writes with the keys, reads the bucket's CORS rules, and the admin's own browser uploads a tiny file from our site — then it says in plain words what to fix (keys/bucket wrong, or the CORS rule, with the exact policy to paste) |
+
+**Owner gate:** after this deploy, press **Check video storage** on `/admin/mentors` from the same address mentors use. If it says the CORS
+rule blocks uploads, paste the policy it shows into R2 → the bucket → Settings → CORS policy, save, and run it again.
+**Fixtures:** 248/248 (the Round 35 mentor fixture extended). Build: the 7 known warning files.

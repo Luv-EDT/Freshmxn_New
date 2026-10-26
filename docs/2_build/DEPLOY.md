@@ -286,14 +286,15 @@ days at most.
    Leave public access **off**.
 2. In the bucket → **Settings** → **CORS policy** → **Add CORS policy**, paste:
    ```json
-   [{ "AllowedOrigins": ["https://www.freshmxn.com", "https://freshmxn.com"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
+   [{ "AllowedOrigins": ["https://www.freshmxn.com", "https://freshmxn.com"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["*"], "MaxAgeSeconds": 3600 }]
    ```
 3. R2 overview → **Manage R2 API Tokens** → **Create API token** → permission **Object Read & Write**,
    **Apply to specific buckets only** → `freshmxn-mentor-tests` → **Create**. Copy the Access Key ID and the
    Secret Access Key now (shown once). Your **Account ID** is on the R2 overview page.
 4. **Render → the service → Environment**: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
    `R2_BUCKET` (= `freshmxn-mentor-tests`) → **Save** (Render restarts the service; no rebuild needed).
-5. Check: log in as a test mentor → **Test** tab — the video question now shows **Upload**, not a link box.
+5. Check: Admin → **Mentors section** → **Check video storage** (Round 35d). It tests the keys, the bucket and the CORS rule
+   from your browser, and says exactly what to fix. Then log in as a test mentor → **Test** tab — the video question shows **Upload**.
 
 Keys go into Render only — never chat or git.
 

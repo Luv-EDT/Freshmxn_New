@@ -9,9 +9,9 @@ import { getMyTest, saveMyTest, getVideoUploadUrl, submitMyTest, saveMyLinks } f
 // decide (or within 30 days). Round 35 (owner): every part is compulsory — the five steps put in order,
 // both Calendly links, the video and every question. "Save and come back later" is always there; "Send
 // my test" appears only once nothing is missing (and the server refuses a test with anything missing).
-// YOUR BOOKING LINKS (owner, Round 35): the Calendly links live on this tab only — in the test, then here
-// once it's sent (or for a mentor approved before the test existed)
-function BookingLinks({ initial, onSaved }) {
+// YOUR BOOKING LINKS (owner, Round 35): asked in the test; once onboarding is done they live in the
+// mentor's profile section (MentorHome), where this box changes them
+export function BookingLinks({ initial, onSaved }) {
     const [links, setLinks] = useState({ calendlyMain: (initial && initial.calendlyMain) || "", calendlyFollowUp: (initial && initial.calendlyFollowUp) || "" })
     const [busy, setBusy] = useState(false)
     const save = async () => {
@@ -51,8 +51,7 @@ function MentorTest({ onSubmitted }) {
     if (test.notNeeded) {
         return (
             <section className="mentor-test">
-                <p>You were approved before the test existed — there's nothing to take.</p>
-                <BookingLinks initial={test.bookingLinks} onSaved={onSubmitted} />
+                <p>You were approved before the test existed — there's nothing to take. Your Calendly links are in your profile (the round icon at the top right).</p>
             </section>
         )
     }
@@ -135,7 +134,6 @@ function MentorTest({ onSubmitted }) {
                 {test.decision === "approved" && <p className="mentor-test-status"><strong>You passed — you're approved.</strong> {test.decisionNote}</p>}
                 {test.decision === "rejected" && <p className="mentor-test-status"><strong>We couldn't approve you this time.</strong> {test.decisionNote}</p>}
                 {test.decision && <p className="report-small">As promised, your video has been deleted.</p>}
-                <BookingLinks initial={test.bookingLinks} onSaved={onSubmitted} />
             </section>
         )
     }

@@ -8,6 +8,7 @@ import MentorMatchesList from "./MentorMatchesList"
 import MentorPayoutsList from "./MentorPayoutsList"
 import SessionFeedbackList from "./SessionFeedbackList"
 import MentorReviewsList from "./MentorReviewsList"
+import StorageCheck from "./StorageCheck"
 
 // THE ADMIN'S MENTOR SECTION (owner, Round 34) — its own page, so all mentor work happens in one place:
 //   Mentors           approve from the test, Tier 3, region and rate
@@ -34,7 +35,9 @@ function AdminMentors() {
             <div className="page">
                 <p><Link to="/admin">← Admin</Link></p>
                 <h2>Mentors</h2>
-                <LogoutButton />
+                <LogoutButton />{" "}
+                {/* Round 35: when mentors' video uploads fail — tests the keys, the bucket and its CORS rule */}
+                <StorageCheck />
                 <Tabs className="admin-tabs" items={items} />
             </div>
         </div>
