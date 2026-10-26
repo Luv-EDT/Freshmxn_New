@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { message } from "antd"
-import { getMyTest, saveMyTest, getVideoUploadUrl, submitMyTest } from "../../apiCall/mentorTestApi"
+import { getMyTest, saveMyTest, getVideoUploadUrl, submitMyTest, saveMyLinks } from "../../apiCall/mentorTestApi"
 
 // THE MENTOR COMPETENCE TEST (owner, Round 34) — 10 questions after the training documents, before our
 // team approves a new mentor: the 5-step flow in order, their two Calendly links, a 5–10 minute video
@@ -9,6 +9,35 @@ import { getMyTest, saveMyTest, getVideoUploadUrl, submitMyTest } from "../../ap
 // decide (or within 30 days). Round 35 (owner): every part is compulsory — the five steps put in order,
 // both Calendly links, the video and every question. "Save and come back later" is always there; "Send
 // my test" appears only once nothing is missing (and the server refuses a test with anything missing).
+// YOUR BOOKING LINKS (owner, Round 35): the Calendly links live on this tab only — in the test, then here
+// once it's sent (or for a mentor approved before the test existed)
+function BookingLinks({ initial, onSaved }) {
+    const [links, setLinks] = useState({ calendlyMain: (initial && initial.calendlyMain) || "", calendlyFollowUp: (initial && initial.calendlyFollowUp) || "" })
+    const [busy, setBusy] = useState(false)
+    const save = async () => {
+        setBusy(true)
+        const response = await saveMyLinks(links)
+        setBusy(false)
+        if (!response || response.data.success === false) {
+            message.error(response?.data?.message || "Could not save your links")
+            return
+        }
+        message.success(response.data.message)
+        if (onSaved) onSaved()
+    }
+    return (
+        <section className="booking-links-box">
+            <h3>Your Calendly links</h3>
+            <p className="report-small">Students book from these. They stay the same for every student — you only change the weekly hours (Training → How to get onboarded).</p>
+            <label htmlFor="links-main">1-hour main session</label>
+            <input id="links-main" type="url" placeholder="https://calendly.com/your-name/1-hour" value={links.calendlyMain} onChange={(event) => setLinks({ ...links, calendlyMain: event.target.value })} />
+            <label htmlFor="links-follow">20-minute follow-up</label>
+            <input id="links-follow" type="url" placeholder="https://calendly.com/your-name/20-min" value={links.calendlyFollowUp} onChange={(event) => setLinks({ ...links, calendlyFollowUp: event.target.value })} />
+            <p><button type="button" className="btn btn-ghost tap" disabled={busy} onClick={save}>{busy ? "Saving…" : "Save my links"}</button></p>
+        </section>
+    )
+}
+
 function MentorTest({ onSubmitted }) {
     const [test, setTest] = useState(null)
     const [busy, setBusy] = useState(false)
@@ -19,7 +48,14 @@ function MentorTest({ onSubmitted }) {
 
     if (!test) return <div className="skeleton skeleton-block" />
     if (test.failed) return <p>We couldn't load your test. Please refresh.</p>
-    if (test.notNeeded) return <p>You were approved before the test existed — there's nothing to take.</p>
+    if (test.notNeeded) {
+        return (
+            <section className="mentor-test">
+                <p>You were approved before the test existed — there's nothing to take.</p>
+                <BookingLinks initial={test.bookingLinks} onSaved={onSubmitted} />
+            </section>
+        )
+    }
 
     const sent = Boolean(test.submittedAt)
 
@@ -44,28 +80,34 @@ function MentorTest({ onSubmitted }) {
 
     const uploadVideo = async (file) => {
         if (!file) return
-        const ready = await getVideoUploadUrl({ contentType: file.type, size: file.size })
+        // some browsers (Windows especially) give a .MOV no type at all — go by the file's ending
+        const ending = (file.name.split(".").pop() || "").toLowerCase()
+        const type = file.type || { mov: "video/quicktime", mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm" }[ending] || ""
+        const ready = await getVideoUploadUrl({ contentType: type, size: file.size })
         if (!ready || ready.data.success === false) {
             message.error(ready?.data?.message || "Could not start the upload")
             return
         }
         // straight to storage, with progress
         setUpload({ percent: 0 })
-        const ok = await new Promise((resolve) => {
+        const status = await new Promise((resolve) => {
             const request = new XMLHttpRequest()
             request.open("PUT", ready.data.data.url)
-            request.setRequestHeader("Content-Type", file.type)
+            request.setRequestHeader("Content-Type", type)
             request.upload.onprogress = (event) => event.lengthComputable && setUpload({ percent: Math.round((event.loaded / event.total) * 100) })
-            request.onload = () => resolve(request.status >= 200 && request.status < 300)
-            request.onerror = () => resolve(false)
+            request.onload = () => resolve(request.status)
+            request.onerror = () => resolve(0)
             request.send(file)
         })
         setUpload(null)
-        if (!ok) {
-            message.error("The upload didn't finish — please try again")
+        if (status < 200 || status >= 300) {
+            // say why, so a stuck mentor (or our team) knows where to look
+            message.error(status === 0
+                ? "The upload didn't finish — the connection dropped or our storage refused it. Please try again, or paste a link to your video and tell us on WhatsApp."
+                : `The upload didn't finish (storage said ${status}). Please try again — if it keeps happening, tell us on WhatsApp.`, 8)
             return
         }
-        if (await save({ videoKey: ready.data.data.key, videoType: file.type })) message.success("Video uploaded")
+        if (await save({ videoKey: ready.data.data.key, videoType: type })) message.success("Video uploaded")
     }
 
     const send = async () => {
@@ -93,6 +135,7 @@ function MentorTest({ onSubmitted }) {
                 {test.decision === "approved" && <p className="mentor-test-status"><strong>You passed — you're approved.</strong> {test.decisionNote}</p>}
                 {test.decision === "rejected" && <p className="mentor-test-status"><strong>We couldn't approve you this time.</strong> {test.decisionNote}</p>}
                 {test.decision && <p className="report-small">As promised, your video has been deleted.</p>}
+                <BookingLinks initial={test.bookingLinks} onSaved={onSubmitted} />
             </section>
         )
     }
@@ -169,10 +212,18 @@ function MentorTest({ onSubmitted }) {
                     </ul>
                     {test.uploadsOn ? (
                         <>
-                            <label htmlFor="test-video">Upload your video (MP4, MOV or WebM, under 300 MB)</label>
-                            <input id="test-video" type="file" accept="video/mp4,video/quicktime,video/webm" onChange={(event) => uploadVideo(event.target.files[0])} disabled={Boolean(upload)} />
+                            <label htmlFor="test-video">Upload your video (MP4, MOV or WebM, under 1 GB)</label>
+                            <input id="test-video" type="file" accept="video/mp4,video/quicktime,video/webm,.mov,.mp4,.m4v,.webm" onChange={(event) => uploadVideo(event.target.files[0])} disabled={Boolean(upload)} />
                             {upload && <p role="status">Uploading… {upload.percent}%</p>}
                             {test.video.uploaded && !upload && <p>✓ Video uploaded. Upload again to replace it.</p>}
+                            {/* Round 35: never stuck — a link works too if an upload won't go through */}
+                            {!test.video.uploaded && (
+                                <details className="video-link-fallback">
+                                    <summary>Upload not working? Paste a link instead</summary>
+                                    <label htmlFor="test-video-link">A link to your video (Loom, Google Drive — anyone with the link can view)</label>
+                                    <input id="test-video-link" type="url" placeholder="https://" value={test.video.link || ""} onChange={(event) => setTest({ ...test, video: { ...test.video, link: event.target.value } })} onBlur={() => save({ videoLink: test.video.link || "" })} />
+                                </details>
+                            )}
                         </>
                     ) : (
                         <>

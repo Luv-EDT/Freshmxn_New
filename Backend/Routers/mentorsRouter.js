@@ -43,7 +43,6 @@ const toList = (value) => {
 // international one an Indian (NRE/NRO) account or how they'd like to be paid (Wise, PayPal email). PAN
 // is asked for tax (TDS) and checked only for its shape.
 const { REGIONS } = require("../utils/mentorTiers")
-const CALENDLY = /^https:\/\/calendly\.com\/[^\s]+$/
 const cleanPayout = (raw, region) => {
     const text = (value, max) => (typeof value === "string" ? value.trim().slice(0, max) : "")
     const payout = {
@@ -80,9 +79,9 @@ const cleanOnboarding = (body) => {
         preferredCurrency: text(body.preferredCurrency),
         residenceCitizenship: text(body.residenceCitizenship),
         region: REGIONS.includes(body.region) ? body.region : null,
-        calendlyMain: text(body.calendlyMain).slice(0, 300),
-        calendlyFollowUp: text(body.calendlyFollowUp).slice(0, 300),
     }
+    // Round 35 (owner): the Calendly links are not part of the profile — they're asked in the test
+    // (mentorTestRouter), so a profile save never touches them
 
     if (!fields.name) return { error: "Please enter your full name" }
     if (!emailRegex.test(fields.email)) return { error: "Please enter a valid email" }
@@ -124,10 +123,6 @@ const cleanOnboarding = (body) => {
     const payout = cleanPayout(body.payout || {}, fields.region)
     if (payout.error) return { error: payout.error }
     fields.payout = payout.payout
-    for (const key of ["calendlyMain", "calendlyFollowUp"]) {
-        if (fields[key] && !CALENDLY.test(fields[key])) return { error: "Calendly links look like https://calendly.com/your-name/…" }
-    }
-
     return { fields }
 }
 

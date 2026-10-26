@@ -583,7 +583,7 @@ router.put("/matchForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req
         if (!mentor.calendlyMain) {
             return res.status(400).json({
                 success: false,
-                message: `${mentor.name} hasn't added their Calendly links yet — ask them to add them on their dashboard (My profile), then match`
+                message: `${mentor.name} hasn't added their Calendly links yet — ask them to add them on their dashboard (Test tab → Your Calendly links), then match`
             })
         }
 

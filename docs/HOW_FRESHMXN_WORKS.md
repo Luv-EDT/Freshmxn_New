@@ -645,9 +645,14 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
    student's ticket is put back as it was — unless a refund was sent or a new mentor matched meanwhile.
 8. **Another session** (paid, at the Mentor Only price) can be booked once a session is done, as before.
 
+**The mentor's page (Round 35c, owner)** is one step-by-step home: the steps at the top, then tabs — 1. Training,
+2. Tell us about yourself, 3. Test (locked until the profile is in) and, once approved, My students, My profession
+data and Payouts. The profile and **Log out** open from the round profile icon. The **Calendly links are asked only
+in the test**; sending it makes them the booking links, and the Test tab keeps a box to change them later.
+
 **Mentors, step by step (Round 34; Round 35: the training comes first).** Sign up → three short **training
 documents**, folded, with their reading times (about 10, 20 and 15 minutes) → the profile (including where they live — India or abroad,
-which sets their pay — their two Calendly links, and how we pay them: UPI or bank and PAN in India, bank or
+which sets their pay — and how we pay them: UPI or bank and PAN in India, bank or
 another method abroad; only our team sees these) → a **test**, every part compulsory (the questions, the five
 steps put in order, both Calendly links and the video) — it can be saved and finished later, and **Send**
 appears only when nothing is missing: 7 multiple-choice questions drawn from 32,

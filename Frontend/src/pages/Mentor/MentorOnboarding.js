@@ -3,8 +3,8 @@ import { ACADEMIC_OPTIONS } from "../Interest/BackgroundInfo"
 import { getProfessionOptions } from "../../apiCall/professionsApi"
 import CareerRolePicker, { pickerComplete } from "../CareerRolePicker"
 
-// The mentor onboarding form (PRD §B.9 / Master Plan §6.4; Round 34 adds where they live, how we pay
-// them and their Calendly links). Used for the first
+// The mentor onboarding form (PRD §B.9 / Master Plan §6.4; Round 34 adds where they live and how we pay
+// them; Round 35, owner: the Calendly links moved to the test). Used for the first
 // submission and for later edits — `initial` is the saved profile when editing.
 // Where they live and how we pay them are ADMIN-ONLY: never shown to a student, used for payouts.
 //
@@ -46,8 +46,6 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
             pan: initial?.payout?.pan || "",
             intlMethod: initial?.payout?.intlMethod || "",
         },
-        calendlyMain: initial?.calendlyMain || "",
-        calendlyFollowUp: initial?.calendlyFollowUp || "",
     })
     const regionLocked = Boolean(initial && initial.status === "onboarded" && initial.region)
     const updatePayout = (field) => (e) => setForm((prev) => ({ ...prev, payout: { ...prev.payout, [field]: e.target.value } }))
@@ -214,13 +212,7 @@ function MentorOnboarding({ initial, defaultName, defaultEmail, submitLabel, onS
                 <input placeholder="ABCDE1234F" value={form.payout.pan} onChange={updatePayout("pan")} />
             </fieldset>
 
-            <fieldset className="mentor-calendly">
-                <legend>14. Your Calendly links <span className="report-small">— students book from these. See "How to get onboarded" under Training.</span></legend>
-                <label>1-hour main session</label>
-                <input type="url" placeholder="https://calendly.com/your-name/1-hour" value={form.calendlyMain} onChange={update("calendlyMain")} />
-                <label>20-minute follow-up</label>
-                <input type="url" placeholder="https://calendly.com/your-name/20-min" value={form.calendlyFollowUp} onChange={update("calendlyFollowUp")} />
-            </fieldset>
+            {/* Round 35 (owner): the Calendly links are asked in the test, not here */}
 
             {showMissing && !careerReady && (
                 <p className="form-missing" role="alert">To save, choose {missing.join(", ")} in questions 4–6 above.</p>

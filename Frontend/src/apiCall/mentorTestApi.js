@@ -13,6 +13,8 @@ const call = async (request) => {
 export const getMyTest = () => call(() => axiosInstance.get("/mentorTest/getMine"))
 export const saveMyTest = (payload) => call(() => axiosInstance.put("/mentorTest/saveMine", payload))
 export const getVideoUploadUrl = (payload) => call(() => axiosInstance.post("/mentorTest/videoUploadUrl", payload))
+// Round 35: the booking links after the test (they're asked only on the Test tab)
+export const saveMyLinks = (payload) => call(() => axiosInstance.put("/mentorTest/saveMyLinks", payload))
 export const submitMyTest = () => call(() => axiosInstance.post("/mentorTest/submitMine", {}))
 
 export const getMentorTestForAdmin = (mentorUserId) => call(() => axiosInstance.get(`/mentorTest/getForAdmin/${mentorUserId}`))

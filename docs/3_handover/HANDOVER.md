@@ -2610,3 +2610,17 @@ Build: the 7 known warning files.
 
 **Fixtures:** workers 247 → 248. **Checked locally:** all 16 screenshots load on the mentor training page at 360 and 1280. Build: the
 7 known warning files.
+
+### Round 35c — one step-by-step mentor home; Calendly links only in the test; the video upload fixed (2026-10-26)
+| Item | What shipped |
+|---|---|
+| **Mentor home** | The "Welcome, mentor" layout is the only one: the four steps at the top (training → profile → test → our approval), then one tab bar — 1. Training, 2. Tell us about yourself (✓ once sent), 3. Test (🔒 until the profile is in), and once approved My students, **My profession data** (shown once the test is sent; it opens on approval) and Payouts |
+| **Profile** | No longer a tab: it opens from the round profile icon at the top right, and **Log out** lives only there |
+| **Calendly links** | Asked only in the test (owner). The profile form and a profile save no longer touch them; sending the test makes them the booking links; afterwards (and for mentors approved before the test) the Test tab has "Your Calendly links" to change them (`PUT /mentorTest/saveMyLinks`) |
+| **Video upload (bug)** | Every upload failed with "The upload didn't finish": the AWS SDK (v3.1156) signs each upload link with a checksum of an empty body, which R2 refuses. Turned off (`requestChecksumCalculation: "WHEN_REQUIRED"`), checked on a signed link. Also: a .MOV with no type (Windows) is recognised by its ending, the cap is 1 GB (phone .MOVs run 400–700 MB for 10 minutes), the error says what failed, and "Upload not working? Paste a link instead" is always there |
+
+**Owner to check after the deploy:** upload a short .MOV on the Test tab. If it still fails, the message now shows the storage's code —
+a 403 or "connection dropped" usually means the R2 CORS rule (DEPLOY.md → Cloudflare R2, step 2) doesn't list the address you're on.
+**Fixtures:** 248/248 (the Round 35 mentor fixture rewritten for the owner's new layout). **Checked locally:** the mentor home before the
+profile (Test locked), after it, and approved, plus the profile view, at 360 and 1280 — Log out only in the profile view. Build: the 7
+known warning files.

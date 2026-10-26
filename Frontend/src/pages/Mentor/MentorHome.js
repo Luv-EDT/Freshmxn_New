@@ -11,13 +11,17 @@ import MentorPayouts from "./MentorPayouts"
 import LogoutButton from "../LogoutButton"
 import logo from "../../assets/brand/logo.png"
 
-// THE MENTOR DASHBOARD (owner, Round 34). Before the profile is in: the onboarding form. Then six tabs —
-// Home (the current student and the history), Training (the three documents), Test (before approval),
-// My profile, My profession (our data to check, and the starter skills roadmap) and Payouts. A new
-// mentor goes training → profile → test → our approval before any student is matched (Round 35, owner:
-// the training documents come before "Tell us about yourself").
+// THE MENTOR DASHBOARD (owner, Rounds 34–35). ONE PAGE, STEP BY STEP, from sign-up to approval and after:
+// the four steps at the top (training → profile → test → our approval), then one tab bar —
+//   1. Training                  always
+//   2. Tell us about yourself    the profile form; once sent, "done" and a pointer to the profile icon
+//   3. Test                      locked until the profile is in
+//   My students                  once approved: the current student and the history
+//   My profession data           once the test is sent (it opens on approval): our data to check, the roadmap
+//   Payouts                      once approved
+// The profile itself (and Log out) opens only from the profile icon in the header (owner, Round 35).
 const STATUS_TEXT = {
-    pending_review: "Next: take your test (Test tab). Our team approves mentors after the test.",
+    pending_review: "Next: take your test (step 3). Our team approves mentors after the test.",
     test_submitted: "Your test is with our team. It usually takes a couple of days — we'll let you know by email.",
     onboarded: "You're approved. Before we match you with a student, we'll message you on WhatsApp so you can open slots on your Calendly links.",
     rejected: "We couldn't approve you this time — see the Test tab for our note.",
@@ -26,13 +30,15 @@ const STATUS_TEXT = {
 }
 
 const REGION_WORDS = { indian: "Indian", international: "International" }
+const TEST_SENT = ["test_submitted", "onboarded", "rejected", "paused", "removed"]
 
 function MentorHome() {
     const { user } = useSelector((state) => state.user)
     const [profile, setProfile] = useState(null)
     const [loading, setLoading] = useState(true)
     const [editing, setEditing] = useState(false)
-    const [firstTab, setFirstTab] = useState("training")   // before the profile: training, then "Tell us about yourself"
+    const [view, setView] = useState("dashboard")   // dashboard | profile (from the profile icon)
+    const [tab, setTab] = useState(null)
 
     const load = async () => {
         const response = await getMyMentorProfile()
@@ -48,6 +54,7 @@ function MentorHome() {
             return
         }
         message.success("Thanks — next, take your test")
+        setTab("test")
         load()
     }
 
@@ -64,123 +71,161 @@ function MentorHome() {
 
     if (!user || loading) return <div className="page">Loading...</div>
 
+    const status = profile ? profile.status : null
+    const approved = status === "onboarded"
+    const testSent = TEST_SENT.includes(status)
+    const standing = (profile && profile.standing) || {}
+
     const header = (
         <>
-            <nav className="nav-row">
+            <nav className="nav-row mentor-nav">
                 <img src={logo} alt="Freshmxn" height="32" />
-                <span>Mentor · {user.name}</span>
-                <LogoutButton />
+                <span>Mentor</span>
+                <button
+                    type="button"
+                    className={`nav-profile mentor-profile-icon${view === "profile" ? " is-open" : ""}`}
+                    aria-label="My profile"
+                    title="My profile"
+                    onClick={() => setView(view === "profile" ? "dashboard" : "profile")}
+                >
+                    <span className="nav-avatar" aria-hidden="true">{(user.name || "?").trim().charAt(0).toUpperCase()}</span>
+                </button>
             </nav>
             <hr />
         </>
     )
 
-    if (!profile) {
+    const helpLine = <p className="help-line">Any doubt? WhatsApp <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">+91 8882756287</a> or email <a href="mailto:luvgoel@freshmxn.com">luvgoel@freshmxn.com</a></p>
+
+    // ─── the profile, from the profile icon only — with Log out ──────────────
+    if (view === "profile") {
         return (
             <div>
                 {header}
                 <main className="page mentor-dashboard">
-                    <h2 className="page-title-center">Welcome, mentor</h2>
-                    <ol className="mentor-path" aria-label="Your first steps">
-                        <li className={firstTab === "training" ? "current" : "done"}>Read the training</li>
-                        <li className={firstTab === "profile" ? "current" : ""}>Tell us about yourself</li>
-                        <li>Take the test</li>
-                        <li>Our approval</li>
-                    </ol>
-                    <Tabs
-                        activeKey={firstTab}
-                        onChange={setFirstTab}
-                        items={[
-                            {
-                                key: "training",
-                                label: "1. Training",
-                                children: (
-                                    <>
-                                        <MentorTraining />
-                                        <p><button type="button" className="btn btn-primary tap" onClick={() => setFirstTab("profile")}>I've read them — tell us about yourself →</button></p>
-                                    </>
-                                ),
-                            },
-                            {
-                                key: "profile",
-                                label: "2. Tell us about yourself",
-                                children: (
-                                    <>
-                                        <p>A few questions, then your test. Our team approves every mentor before matching them with a student.</p>
-                                        <MentorOnboarding defaultName={user.name} defaultEmail={user.email} submitLabel="Submit my profile" onSubmit={handleOnboard} />
-                                    </>
-                                ),
-                            },
-                        ]}
-                    />
-                    <p className="help-line">Any doubt? WhatsApp <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">+91 8882756287</a> or email <a href="mailto:luvgoel@freshmxn.com">luvgoel@freshmxn.com</a></p>
+                    <p><button type="button" className="btn btn-ghost btn-sm" onClick={() => { setEditing(false); setView("dashboard") }}>← Back to dashboard</button></p>
+                    <h2 className="page-title-center">My profile</h2>
+                    {!profile ? (
+                        <>
+                            <ul className="mentor-profile-list">
+                                <li><strong>Name:</strong> {user.name}</li>
+                                <li><strong>Email:</strong> {user.email}</li>
+                            </ul>
+                            <p className="report-small">Your full profile appears here once you've sent it (step 2 on your dashboard).</p>
+                        </>
+                    ) : editing ? (
+                        <MentorOnboarding initial={profile} submitLabel="Save changes" onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
+                    ) : (
+                        <>
+                            {!profile.calendlyMain && <p className="form-missing">Your Calendly links go in on the Test tab — students book from them.</p>}
+                            <ul className="mentor-profile-list">
+                                <li><strong>Name:</strong> {profile.name}</li>
+                                <li><strong>Email:</strong> {profile.email}</li>
+                                <li><strong>Contact:</strong> {profile.phone}</li>
+                                <li><strong>Role:</strong> {profile.currentRole}</li>
+                                <li><strong>Profession:</strong> {profile.discipline}</li>
+                                <li><strong>Industries:</strong> {(profile.sectors || []).join(", ")}</li>
+                                <li><strong>Experience:</strong> {profile.yearsExperience} years</li>
+                                <li><strong>Languages:</strong> {(profile.languages || []).join(", ")}</li>
+                                <li><strong>Why you mentor:</strong> {profile.motivation}</li>
+                                <li><strong>High school → college:</strong> {profile.transitionCategory}</li>
+                                <li><strong>Where you live:</strong> {profile.region === "international" ? "Abroad" : profile.region === "indian" ? "India" : "—"}{profile.residenceCitizenship ? ` (${profile.residenceCitizenship})` : ""}</li>
+                                <li><strong>Calendly — main:</strong> {profile.calendlyMain || "—"}</li>
+                                <li><strong>Calendly — follow-up:</strong> {profile.calendlyFollowUp || "—"} <span className="report-small">(change them on the Test tab)</span></li>
+                                <li><strong>Paid to (only our team sees this):</strong> {profile.payout && (profile.payout.upiId || profile.payout.accountNumber || profile.payout.intlMethod) ? (profile.payout.upiId || profile.payout.intlMethod || `account ending ${String(profile.payout.accountNumber).slice(-4)}`) : "—"}</li>
+                            </ul>
+                            <p><button type="button" className="tap" onClick={() => setEditing(true)}>Edit my profile</button></p>
+                        </>
+                    )}
+                    <div className="mentor-logout"><LogoutButton /></div>
+                    {helpLine}
                 </main>
             </div>
         )
     }
 
-    const approved = profile.status === "onboarded"
-    const standing = profile.standing || {}
+    // ─── the dashboard: the four steps, then the tabs ────────────────────────
+    const steps = [
+        { label: "Read the training", done: Boolean(profile) },
+        { label: "Tell us about yourself", done: Boolean(profile) },
+        { label: "Take the test", done: testSent },
+        { label: "Our approval", done: approved || ["paused", "removed"].includes(status) },
+    ]
+    const currentStep = steps.findIndex((step) => !step.done)
 
     const home = (
         <>
-            {approved && (
-                <section className="mentor-tier">
-                    <p>
-                        <strong>Tier {profile.tier || 1}</strong> · {REGION_WORDS[profile.region] || "Indian"} mentor · {standing.sessions || 0} session{standing.sessions === 1 ? "" : "s"} with feedback
-                        {standing.average ? ` · average ${standing.average}/10` : ""}
-                    </p>
-                    {Number(profile.tier || 1) < 3 && (standing.tier3Missing || []).length > 0 && (
-                        <p className="report-small">For Tier 3: {standing.tier3Missing.join(", ")}. Tier 2 comes by itself after 7 sessions averaging 8/10 or more.</p>
-                    )}
-                </section>
-            )}
-            {approved ? <MentorStudents /> : <p>{STATUS_TEXT[profile.status]}</p>}
-        </>
-    )
-
-    const myProfile = editing ? (
-        <MentorOnboarding initial={profile} submitLabel="Save changes" onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
-    ) : (
-        <>
-            {!profile.calendlyMain && <p className="form-missing">Please add your Calendly links — students book from them.</p>}
-            <ul className="mentor-profile-list">
-                <li><strong>Name:</strong> {profile.name}</li>
-                <li><strong>Email:</strong> {profile.email}</li>
-                <li><strong>Contact:</strong> {profile.phone}</li>
-                <li><strong>Role:</strong> {profile.currentRole}</li>
-                <li><strong>Profession:</strong> {profile.discipline}</li>
-                <li><strong>Industries:</strong> {(profile.sectors || []).join(", ")}</li>
-                <li><strong>Experience:</strong> {profile.yearsExperience} years</li>
-                <li><strong>Languages:</strong> {(profile.languages || []).join(", ")}</li>
-                <li><strong>Why you mentor:</strong> {profile.motivation}</li>
-                <li><strong>High school → college:</strong> {profile.transitionCategory}</li>
-                <li><strong>Where you live:</strong> {profile.region === "international" ? "Abroad" : profile.region === "indian" ? "India" : "—"}{profile.residenceCitizenship ? ` (${profile.residenceCitizenship})` : ""}</li>
-                <li><strong>Calendly — main:</strong> {profile.calendlyMain || "—"}</li>
-                <li><strong>Calendly — follow-up:</strong> {profile.calendlyFollowUp || "—"}</li>
-                <li><strong>Paid to (only our team sees this):</strong> {profile.payout && (profile.payout.upiId || profile.payout.accountNumber || profile.payout.intlMethod) ? (profile.payout.upiId || profile.payout.intlMethod || `account ending ${String(profile.payout.accountNumber).slice(-4)}`) : "—"}</li>
-            </ul>
-            <button type="button" className="tap" onClick={() => setEditing(true)}>Edit my profile</button>
+            <section className="mentor-tier">
+                <p>
+                    <strong>Tier {profile ? profile.tier || 1 : 1}</strong> · {REGION_WORDS[profile && profile.region] || "Indian"} mentor · {standing.sessions || 0} session{standing.sessions === 1 ? "" : "s"} with feedback
+                    {standing.average ? ` · average ${standing.average}/10` : ""}
+                </p>
+                {profile && Number(profile.tier || 1) < 3 && (standing.tier3Missing || []).length > 0 && (
+                    <p className="report-small">For Tier 3: {standing.tier3Missing.join(", ")}. Tier 2 comes by itself after 7 sessions averaging 8/10 or more.</p>
+                )}
+            </section>
+            <MentorStudents />
         </>
     )
 
     const items = [
-        { key: "home", label: "Home", children: home },
-        { key: "training", label: "Training", children: <MentorTraining /> },
-        { key: "test", label: approved ? "Test" : "Test ★", children: <MentorTest onSubmitted={load} /> },
-        { key: "profile", label: "My profile", children: myProfile },
-        { key: "profession", label: "My profession", children: approved ? <MentorReviewSheet /> : <p>This opens once you're approved: our data on your profession to check, and your starter skills roadmap.</p> },
-        { key: "payouts", label: "Payouts", children: <MentorPayouts standing={standing} /> },
-    ]
+        {
+            key: "training",
+            label: "1. Training",
+            children: (
+                <>
+                    <MentorTraining />
+                    {!profile && <p><button type="button" className="btn btn-primary tap" onClick={() => setTab("profile")}>I've read them — tell us about yourself →</button></p>}
+                </>
+            ),
+        },
+        {
+            key: "profile",
+            label: `2. Tell us about yourself${profile ? " ✓" : ""}`,
+            children: profile ? (
+                <p className="mentor-step-done">
+                    ✓ Your profile is in. To see or change it, open your profile with the round icon at the top right.
+                    {!testSent && <> Next: <button type="button" className="link-button" onClick={() => setTab("test")}>take your test →</button></>}
+                </p>
+            ) : (
+                <>
+                    <p>A few questions, then your test. Our team approves every mentor before matching them with a student.</p>
+                    <MentorOnboarding defaultName={user.name} defaultEmail={user.email} submitLabel="Submit my profile" onSubmit={handleOnboard} />
+                </>
+            ),
+        },
+        {
+            key: "test",
+            // Round 35 (owner): locked until the profile is in
+            label: profile ? `3. Test${testSent ? " ✓" : ""}` : "3. Test 🔒",
+            disabled: !profile,
+            children: profile ? <MentorTest onSubmitted={load} /> : null,
+        },
+        approved && { key: "home", label: "My students", children: home },
+        testSent && {
+            key: "profession",
+            label: "My profession data",
+            children: approved ? <MentorReviewSheet /> : <p>This opens once you're approved: our data on your profession to check, and your starter skills roadmap.</p>,
+        },
+        approved && { key: "payouts", label: "Payouts", children: <MentorPayouts standing={standing} /> },
+    ].filter(Boolean)
+
+    const defaultTab = approved ? "home" : !profile ? "training" : !testSent ? "test" : "test"
+    const activeTab = items.some((item) => item.key === tab) ? tab : defaultTab
 
     return (
         <div>
             {header}
             <main className="page mentor-dashboard">
-                <h2 className="page-title-center">Your mentor dashboard</h2>
-                <p className={`mentor-status-line status-${profile.status}`}>{STATUS_TEXT[profile.status]}</p>
-                <Tabs items={items} defaultActiveKey={approved ? "home" : "test"} />
-                <p className="help-line">Any doubt? WhatsApp <a href="https://wa.me/918882756287" target="_blank" rel="noreferrer">+91 8882756287</a> or email <a href="mailto:luvgoel@freshmxn.com">luvgoel@freshmxn.com</a></p>
+                <h2 className="page-title-center">{approved ? "Your mentor dashboard" : "Welcome, mentor"}</h2>
+                <ol className="mentor-path" aria-label="Your steps">
+                    {steps.map((step, index) => (
+                        <li key={step.label} className={step.done ? "done" : index === currentStep ? "current" : ""}>{step.done ? "✓ " : ""}{step.label}</li>
+                    ))}
+                </ol>
+                {status && <p className={`mentor-status-line status-${status}`}>{STATUS_TEXT[status]}</p>}
+                <Tabs className="mentor-tabs" activeKey={activeTab} onChange={setTab} items={items} />
+                {helpLine}
             </main>
         </div>
     )

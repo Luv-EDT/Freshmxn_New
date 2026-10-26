@@ -6600,9 +6600,22 @@ const fixtures = [
         run: () => {
             const read = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Mentor", file), "utf8")
             const problems = []
+            // Round 35c (owner change): ONE step-by-step home — training, profile, test (locked until the profile
+            // is in), then the rest; the profile and Log out only behind the profile icon
             const home = read("MentorHome.js")
-            const firstSteps = (home.split("if (!profile) {")[1] || "").split("const approved")[0]
-            if (!(firstSteps.indexOf('key: "training"') > 0 && firstSteps.indexOf('key: "training"') < firstSteps.indexOf('key: "profile"'))) problems.push("the training doesn't come before 'Tell us about yourself'")
+            const at = (key) => home.indexOf(`key: "${key}"`)
+            if (!(at("training") > 0 && at("training") < at("profile") && at("profile") < at("test"))) problems.push("the steps aren't training → profile → test")
+            if (!/disabled: !profile/.test(home)) problems.push("the test opens before the profile is in")
+            if (/label: "My profile"/.test(home) || !/aria-label="My profile"/.test(home)) problems.push("the profile is a tab instead of behind the profile icon")
+            if ((home.match(/<LogoutButton \/>/g) || []).length !== 1 || home.indexOf("<LogoutButton />") < home.indexOf('if (view === "profile")')) problems.push("Log out isn't only in the profile view")
+            if (!/label: "My profession data"/.test(home)) problems.push("the tab isn't called My profession data")
+            if (/calendly/i.test(read("MentorOnboarding.js").replace(/\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, ""))) problems.push("the profile form still asks for the Calendly links")
+            const mentors = fs.readFileSync(path.join(__dirname, "../../Routers/mentorsRouter.js"), "utf8")
+            if (/calendlyMain: text\(body\.calendlyMain\)/.test(mentors)) problems.push("a profile save still writes the Calendly links")
+            const tests = fs.readFileSync(path.join(__dirname, "../../Routers/mentorTestRouter.js"), "utf8")
+            if (!/calendlyMain: test\.calendlyMain,/.test(tests) || !/router\.put\("\/saveMyLinks"/.test(tests)) problems.push("the test's links don't become the booking links, or can't be changed after")
+            const r2 = fs.readFileSync(path.join(__dirname, "../../utils/r2.js"), "utf8")
+            if (!/requestChecksumCalculation: "WHEN_REQUIRED"/.test(r2)) problems.push("upload links carry a checksum R2 refuses")
             const training = read("MentorTraining.js")
             if (!/minutes: 10[\s\S]*minutes: 20[\s\S]*minutes: 15/.test(training) || /<details[^>]*\bopen\b/.test(training)) problems.push("the documents aren't folded with 10 / 20 / 15 minutes")
             if (!/Two slots on one link\?/.test(training) || /recording/i.test(training)) problems.push("the two-slots rule is missing, or recording is mentioned")
