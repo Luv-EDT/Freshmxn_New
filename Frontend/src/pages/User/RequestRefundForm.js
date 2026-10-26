@@ -22,6 +22,11 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
         try {
             const response = await getRefundOptions()
             setOptions(response.data.data)
+            // Round 35: before Career Discovery is delivered, only the mentor part can be asked for
+            if (response.data.data.canRollover && !response.data.data.canFull) {
+                setRefundType("rollover")
+                form.setFieldsValue({ refundType: "rollover" })
+            }
         } catch (error) {
             message.error(error.response?.data?.message || "Failed to load your refund options")
         }
@@ -88,16 +93,23 @@ function RequestRefundForm({ visible, onClose, onAddSuccess }) {
                                 <strong>Only the mentor part</strong>
                                 <span>Get {inr(options.rolloverAmountInr)} back. You keep Career Discovery — your assessment and report.</span>
                             </Radio>
-                            <Radio value="full" className="refund-option">
+                            <Radio value="full" className="refund-option" disabled={!options.canFull}>
                                 <strong>The whole Discovery + Mentor plan</strong>
-                                <span>Get {inr(options.fullAmountInr)} back. Your access ends.</span>
+                                <span>
+                                    {options.canFull
+                                        ? <>Get {inr(options.fullAmountInr)} back. Your access ends.</>
+                                        : "Opens once your assessment and report are done."}
+                                </span>
                             </Radio>
                         </Radio.Group>
                     </Form.Item>
                 )}
 
-                {options && !options.canRollover && (
+                {options && !options.canRollover && options.canFull && (
                     <p>Amount you'd get back: <strong>{inr(options.fullAmountInr)}</strong>. Your access would end.</p>
+                )}
+                {options && !options.canRollover && !options.canFull && (
+                    <p>A refund opens once your assessment and report are done.</p>
                 )}
 
                 <Form.Item

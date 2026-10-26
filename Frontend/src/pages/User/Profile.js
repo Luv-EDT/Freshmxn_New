@@ -168,7 +168,8 @@ function Profile() {
                     {" "}(₹{openRefundRequest.amountInr}): <strong>{REQUEST_WORDS[openRefundRequest.status] || openRefundRequest.status}</strong>.
                 </p>
             )}
-            {user.paid && !openRefundRequest && hasCompletedTierOne && (
+            {/* Round 35 (owner): on Discovery + Mentor, the mentor part can be asked back at any time */}
+            {user.paid && !openRefundRequest && (hasCompletedTierOne || Number(user.currentTier) === 2) && (
                 <p>
                     Not happy?{" "}
                     <button type="button" onClick={() => setShowForm(true)}>Request a refund</button>
