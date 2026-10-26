@@ -6616,6 +6616,14 @@ const fixtures = [
             if (!/calendlyMain: test\.calendlyMain,/.test(tests) || !/router\.put\("\/saveMyLinks"/.test(tests)) problems.push("the test's links don't become the booking links, or can't be changed after")
             const r2 = fs.readFileSync(path.join(__dirname, "../../utils/r2.js"), "utf8")
             if (!/requestChecksumCalculation: "WHEN_REQUIRED"/.test(r2)) problems.push("upload links carry a checksum R2 refuses")
+            // Round 35c (owner): no second (display-only) step bar; once onboarded, Home / My profession data /
+            // Payouts, with the training and the Calendly links behind the profile icon
+            if (/className="mentor-path"/.test(home)) problems.push("the display-only step bar is still there")
+            if (!/const items = testSent \? afterOnboarding : onboarding/.test(home)) problems.push("the onboarding tabs stay after the test is sent")
+            const profileView = (home.split('if (view === "profile") {')[1] || "").split("// ─── the dashboard")[0]
+            if (!/<BookingLinks /.test(profileView) || !/<MentorTraining \/>/.test(profileView)) problems.push("the Calendly links and the training aren't in the profile section")
+            if (!/forcePathStyle: true/.test(r2) || !/\.trim\(\)/.test(r2)) problems.push("upload links aren't path-style, or the Render values aren't trimmed")
+            if (!/router\.get\("\/storageCheckForAdmin", authMiddleware, adminAuthMiddleware/.test(tests)) problems.push("there is no admin storage check")
             const training = read("MentorTraining.js")
             if (!/minutes: 10[\s\S]*minutes: 20[\s\S]*minutes: 15/.test(training) || /<details[^>]*\bopen\b/.test(training)) problems.push("the documents aren't folded with 10 / 20 / 15 minutes")
             if (!/Two slots on one link\?/.test(training) || /recording/i.test(training)) problems.push("the two-slots rule is missing, or recording is mentioned")
