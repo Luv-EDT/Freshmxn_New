@@ -1089,6 +1089,9 @@ router.get("/getRefundOptions", authMiddleware, requirePaid, async (req, res) =>
         // Mentor Only has no Tier 1 steps to deliver: the promise is a full refund on request if we
         // cannot match a mentor, and the admin decides each request (owner, Round 12)
         const isEligible = Number(req.user.currentTier) === 3 || hasCompletedTierOne(req.user)
+        // Round 35 (owner): a Discovery + Mentor student may ask for the MENTOR PART back at any time; the whole
+        // plan still waits until Career Discovery has been delivered
+        const canFull = isEligible
 
         // a Tier 1 student has nothing to roll back to, so only a full refund is offered — and nor
         // does a Tier 2 student whose Tier-2 money has nothing left to give (financial aid, a 100%
@@ -1103,7 +1106,8 @@ router.get("/getRefundOptions", authMiddleware, requirePaid, async (req, res) =>
             success: true,
             message: "Refund options fetched successfully",
             data: {
-                isEligible,
+                isEligible: isEligible || canRollover,
+                canFull,
                 canRollover,
                 fullAmountInr: await getFullRefundAmount(req.user),
                 rolloverAmountInr,
@@ -1129,11 +1133,13 @@ router.post("/requestRefund", express.json(), authMiddleware, requirePaid, async
     try {
         const { reason, refundType } = req.body
 
-        // refunds open only once Tier 1 has actually been delivered (Mentor Only: any time — see above)
-        if (Number(req.user.currentTier) !== 3 && !hasCompletedTierOne(req.user)) {
+        // a full refund opens only once Tier 1 has actually been delivered (Mentor Only: any time — see above);
+        // the mentor part of Discovery + Mentor can be asked for at any time (owner, Round 35)
+        const wantsMentorPart = refundType === "rollover" && Number(req.user.currentTier) === 2
+        if (!wantsMentorPart && Number(req.user.currentTier) !== 3 && !hasCompletedTierOne(req.user)) {
             return res.status(403).json({
                 success: false,
-                message: "Refunds open once all three Tier 1 steps are complete"
+                message: "A refund of the whole plan opens once your assessment and report are done — you can ask for the mentor part back now"
             })
         }
 

@@ -6644,6 +6644,28 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 35b — the owner's 16 marked Calendly screenshots are on the training page in order, and a Discovery + Mentor student can ask for the mentor part back at any time (the whole plan still waits for Career Discovery)",
+        run: () => {
+            const problems = []
+            const dir = path.join(__dirname, "../../../Frontend/public/mentor-training")
+            for (let n = 1; n <= 16; n += 1) {
+                if (!fs.existsSync(path.join(dir, `calendly-${String(n).padStart(2, "0")}.png`))) problems.push(`calendly-${n} is missing`)
+            }
+            const training = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Mentor/MentorTraining.js"), "utf8")
+            const shown = (training.match(/<Shot n=\{(\d+)\}/g) || []).map((tag) => Number(tag.match(/\d+/)[0]))
+            if (shown.join() !== Array.from({ length: 16 }, (unused, index) => index + 1).join()) problems.push(`the screenshots aren't 1–16 in order: ${shown.join()}`)
+            const router = fs.readFileSync(path.join(__dirname, "../../Routers/paymentsRouter.js"), "utf8")
+            const request = (router.split('router.post("/requestRefund"')[1] || "").split("\nrouter.")[0]
+            if (!/const wantsMentorPart = refundType === "rollover" && Number\(req\.user\.currentTier\) === 2/.test(request) || !/!wantsMentorPart && Number\(req\.user\.currentTier\) !== 3 && !hasCompletedTierOne\(req\.user\)/.test(request)) problems.push("the mentor part can't be asked for before Career Discovery is done, or the whole plan can")
+            const options = (router.split('router.get("/getRefundOptions"')[1] || "").split("\nrouter.")[0]
+            if (!/canFull/.test(options)) problems.push("the refund options don't say whether the whole plan can be refunded yet")
+            const profile = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/Profile.js"), "utf8")
+            if (!/\(hasCompletedTierOne \|\| Number\(user\.currentTier\) === 2\)/.test(profile)) problems.push("a Discovery + Mentor student can't open the refund form early")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

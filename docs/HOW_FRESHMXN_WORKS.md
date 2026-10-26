@@ -176,7 +176,8 @@ payments are ever switched off, the paywall says to message us on WhatsApp.
 
 **Refunds say what they cover (Round 35).** A Discovery + Mentor student chooses **only the mentor part**
 (they keep Career Discovery) or **the whole plan**, and sees what they paid beside what each gives back —
-both amounts from the server. A refund never deletes anything: the student's answers, scores and report
+both amounts from the server. The mentor part can be asked for **at any time**; the whole plan only once the
+assessment and report are done (Round 35b). A refund never deletes anything: the student's answers, scores and report
 stay, so if they buy again later everything is still there.
 
 **Deleting an account (Round 26):** the admin presses **Delete account** and types the email. The account
