@@ -3179,3 +3179,19 @@ details.mentor-student[open] > :last-child { margin-bottom: var(--space-4); }
 .booking-form { display: grid; gap: var(--space-3); }
 .booking-form label { display: grid; gap: 6px; }
 .report-verdict { display: grid; gap: 8px; margin-bottom: var(--space-3); }
+
+/* Round 35c (owner): one step-by-step mentor home; the profile (and Log out) behind the profile icon */
+.mentor-nav { align-items: center; }
+.mentor-nav > span { flex: 1; }
+.mentor-profile-icon { border: 0; background: none; cursor: pointer; padding: 0; }
+.mentor-profile-icon.is-open .nav-avatar { box-shadow: 0 0 0 3px var(--pink); }
+.mentor-path li.done { color: var(--teal-dark); border-color: var(--teal-tint); }
+.mentor-path li.done::before { content: ""; }
+.mentor-step-done { padding: var(--space-3); border-radius: var(--radius); background: var(--teal-tint); }
+.mentor-logout { margin: var(--space-5) 0 var(--space-3); }
+.mentor-tabs .ant-tabs-tab-disabled { opacity: 0.6; }
+.booking-links-box { margin-top: var(--space-5); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); display: grid; gap: 6px; max-width: 560px; }
+.booking-links-box h3 { margin: 0; }
+.video-link-fallback { margin-top: var(--space-2); }
+.video-link-fallback summary { cursor: pointer; color: var(--teal-dark); font-size: 0.9rem; }
+.video-link-fallback[open] { display: grid; gap: 6px; }

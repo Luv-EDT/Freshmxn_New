@@ -67,7 +67,7 @@ const Onboarding = () => (
         <p className="training-lead">Done once. After that, each new student needs only a small change to your Calendly slots.</p>
 
         <h4>1. Your profile</h4>
-        <p>The profile form on your dashboard — with your two Calendly links and how we pay you.</p>
+        <p>Step 2 on your dashboard — about you, and how we pay you.</p>
 
         <h4>2. Set up Calendly</h4>
         <p>Students book from your links, so nobody passes messages back and forth. Sign up at <a href="https://calendly.com/signup" target="_blank" rel="noreferrer">calendly.com/signup</a> with Google, Microsoft or your email, then choose what each setup screen shows.</p>
@@ -102,7 +102,7 @@ const Onboarding = () => (
         <Shot n={15} caption="Phone as a location as well" />
 
         <h4>5. Save your links</h4>
-        <p>Save, then copy each session's link into <strong>My profile</strong>.</p>
+        <p>Save, then copy each session's link into your <strong>test</strong> (step 3) — they become your booking links.</p>
         <Shot n={16} caption="Copy each session's link" />
 
         <h4>Each time we have a student for you</h4>
