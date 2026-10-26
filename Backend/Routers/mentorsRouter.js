@@ -3,6 +3,10 @@ const bcrypt = require("bcrypt")
 const { startSession } = require("../utils/sessionToken")
 const User = require("../model/userModel")
 const Mentor = require("../model/mentorsModel")
+const MentorTest = require("../model/mentorTestsModel")
+const { standingOf } = require("../utils/mentorPayouts")
+const { tier3Missing, mainRate, payoutAmount } = require("../utils/mentorTiers")
+const { notifyStudent } = require("../utils/statusEmails")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
 const mentorAuthMiddleware = require("../middlewares/mentorAuthMiddleware")
@@ -34,6 +38,31 @@ const toList = (value) => {
     return items.map((item) => String(item).trim()).filter((item) => item !== "")
 }
 
+// Round 34: where we pay a mentor (admin-only). An Indian mentor gives a UPI ID or a bank account; an
+// international one an Indian (NRE/NRO) account or how they'd like to be paid (Wise, PayPal email). PAN
+// is asked for tax (TDS) and checked only for its shape.
+const { REGIONS } = require("../utils/mentorTiers")
+const CALENDLY = /^https:\/\/calendly\.com\/[^\s]+$/
+const cleanPayout = (raw, region) => {
+    const text = (value, max) => (typeof value === "string" ? value.trim().slice(0, max) : "")
+    const payout = {
+        upiId: text(raw.upiId, 80),
+        accountName: text(raw.accountName, 100),
+        accountNumber: text(raw.accountNumber, 30).replace(/\s/g, ""),
+        ifsc: text(raw.ifsc, 11).toUpperCase(),
+        pan: text(raw.pan, 10).toUpperCase(),
+        intlMethod: text(raw.intlMethod, 200),
+    }
+    const bank = payout.accountName && payout.accountNumber && payout.ifsc
+    if (payout.upiId && !/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(payout.upiId)) return { error: "That UPI ID doesn't look right (like name@okbank)" }
+    if (payout.ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(payout.ifsc)) return { error: "That IFSC doesn't look right (like HDFC0001234)" }
+    if (payout.accountNumber && !/^\d{6,18}$/.test(payout.accountNumber)) return { error: "Please enter the account number in digits" }
+    if (payout.pan && !/^[A-Z]{5}\d{4}[A-Z]$/.test(payout.pan)) return { error: "That PAN doesn't look right (like ABCDE1234F)" }
+    if (region === "indian" && !payout.upiId && !bank) return { error: "Please give a UPI ID, or your bank account name, number and IFSC, so we can pay you" }
+    if (region === "international" && !bank && !payout.intlMethod) return { error: "Please tell us how to pay you — an Indian NRE/NRO account, or Wise / PayPal" }
+    return { payout }
+}
+
 // the 12 onboarding fields, whitelisted and checked. Returns { fields } or { error }.
 // status, user and approval fields are never read from the body.
 const cleanOnboarding = (body) => {
@@ -49,6 +78,9 @@ const cleanOnboarding = (body) => {
         transitionCategory: text(body.transitionCategory),
         preferredCurrency: text(body.preferredCurrency),
         residenceCitizenship: text(body.residenceCitizenship),
+        region: REGIONS.includes(body.region) ? body.region : null,
+        calendlyMain: text(body.calendlyMain).slice(0, 300),
+        calendlyFollowUp: text(body.calendlyFollowUp).slice(0, 300),
     }
 
     if (!fields.name) return { error: "Please enter your full name" }
@@ -85,8 +117,15 @@ const cleanOnboarding = (body) => {
     if (fields.languages.length === 0) return { error: "Please list at least one language" }
     if (!fields.motivation) return { error: "Please tell us why you want to mentor" }
     if (!TRANSITION_CATEGORIES.includes(fields.transitionCategory)) return { error: "Please choose how you approached high school to college" }
-    if (!fields.preferredCurrency) return { error: "Please enter your preferred payment currency" }
-    if (!fields.residenceCitizenship) return { error: "Please enter your country of residence / citizenship" }
+    // Round 34 (owner): where they live sets their pay — India, or abroad (an Indian living abroad)
+    if (!fields.region) return { error: "Please tell us whether you live in India or abroad" }
+    if (!fields.residenceCitizenship) return { error: "Please enter the country you live in" }
+    const payout = cleanPayout(body.payout || {}, fields.region)
+    if (payout.error) return { error: payout.error }
+    fields.payout = payout.payout
+    for (const key of ["calendlyMain", "calendlyFollowUp"]) {
+        if (fields[key] && !CALENDLY.test(fields[key])) return { error: "Calendly links look like https://calendly.com/your-name/…" }
+    }
 
     return { fields }
 }
@@ -236,12 +275,28 @@ router.post("/onboard", authMiddleware, mentorAuthMiddleware, async (req, res) =
 // the mentor's OWN profile, so it does include their own currency / residence answers
 router.get("/getMyMentorProfile", authMiddleware, mentorAuthMiddleware, async (req, res) => {
     try {
-        const profile = await Mentor.findOne({ user: req.user._id })
+        const profile = await Mentor.findOne({ user: req.user._id }).lean()
+
+        // Round 34: their tier, what a session pays them now, and how they stand against the next tier
+        let standing = null
+        if (profile) {
+            const numbers = await standingOf(req.user._id)
+            standing = {
+                sessions: numbers.sessions,
+                average: numbers.average,
+                roadmapSteps: numbers.roadmapSteps,
+                dataReviewed: numbers.dataReviewed,
+                tier3Missing: tier3Missing(profile, numbers, numbers),
+                mainRate: mainRate(profile),
+                followUpRate: payoutAmount(profile, "followup"),
+                strikes: (profile.strikes || []).length,
+            }
+        }
 
         return res.status(200).json({
             success: true,
             message: profile ? "Profile fetched successfully" : "No profile yet",
-            data: profile,
+            data: profile ? { ...profile, strikes: undefined, standing } : null,
         })
 
     } catch (error) {
@@ -269,6 +324,10 @@ router.put("/updateMyMentorProfile", authMiddleware, mentorAuthMiddleware, async
                 message: error
             })
         }
+
+        // where they live sets their pay: once approved, only the admin changes it
+        const existing = await Mentor.findOne({ user: req.user._id }).select("status region").lean()
+        if (existing && existing.status === "onboarded" && existing.region) fields.region = existing.region
 
         const profile = await Mentor.findOneAndUpdate(
             { user: req.user._id },
@@ -307,12 +366,25 @@ router.put("/updateMyMentorProfile", authMiddleware, mentorAuthMiddleware, async
 // mentor themself
 router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
-        const mentors = await Mentor.find({}).sort({ status: -1, createdAt: -1 })
+        const mentors = await Mentor.find({}).sort({ status: -1, createdAt: -1 }).lean()
+        const tests = new Map((await MentorTest.find({ mentor: { $in: mentors.map((mentor) => mentor.user) } }).select("mentor submittedAt decision autoScore").lean()).map((test) => [String(test.mentor), test]))
+
+        // Round 34: how each stands against the tier rules — sessions with feedback, average, strikes
+        const data = await Promise.all(mentors.map(async (mentor) => {
+            const standing = await standingOf(mentor.user)
+            return {
+                ...mentor,
+                standing: { sessions: standing.sessions, average: standing.average, upheldReports: standing.upheldReports, roadmapSteps: standing.roadmapSteps, dataReviewed: standing.dataReviewed },
+                tier3Missing: tier3Missing(mentor, standing, standing),
+                mainRate: mainRate(mentor),
+                test: tests.get(String(mentor.user)) || null,
+            }
+        }))
 
         return res.status(200).json({
             success: true,
             message: "Mentors fetched successfully",
-            data: mentors,
+            data,
         })
 
     } catch (error) {
@@ -329,9 +401,16 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
 // Approve A Mentor For Admin
 // ========================
 
+// Round 34: a NEW mentor is approved through their test (mentorTestRouter decideForAdmin). This is for
+// bringing back a paused mentor, or one approved before the test existed.
 router.put("/approveForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
     try {
         const { id } = req.params   // :id is a MENTOR PROFILE id
+
+        const current = await Mentor.findById(id).select("status").lean()
+        if (current && ["pending_review", "test_submitted"].includes(current.status)) {
+            return res.status(400).json({ success: false, message: "A new mentor is approved from their test — open Review test" })
+        }
 
         const profile = await Mentor.findByIdAndUpdate(
             id,
@@ -362,4 +441,62 @@ router.put("/approveForAdmin/:id", authMiddleware, adminAuthMiddleware, async (r
 })
 
 
+// ========================
+// Tier 3, region and rate (owner, Round 34)
+// ========================
+
+// TIER 3 IS THE ADMIN'S CALL, and only once the mentor meets the rule (utils/mentorTiers.js)
+router.put("/setTier3ForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const mentor = await Mentor.findById(req.params.id)   // :id is a MENTOR PROFILE id
+        if (!mentor) {
+            return res.status(404).json({ success: false, message: "Mentor not found" })
+        }
+        const standing = await standingOf(mentor.user)
+        const missing = tier3Missing(mentor, standing, standing)
+        if (missing.length > 0) {
+            return res.status(400).json({ success: false, message: `Not yet — still needs ${missing.join(", ")}` })
+        }
+        mentor.tier = 3
+        mentor.tierHistory.push({ tier: 3, at: new Date(), by: "admin" })
+        await mentor.save()
+        notifyStudent(await User.findById(mentor.user).select("email").lean(), "mentorTierUp", { tier: 3 })
+        return res.status(200).json({ success: true, message: `${mentor.name} is now Tier 3`, data: mentor })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to move to Tier 3", error: error.message })
+    }
+})
+
+// where they live (sets their pay) and a Tier-3 rate above the table's
+router.put("/updateTermsForAdmin/:id", authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const update = {}
+        if (req.body.region !== undefined) {
+            if (!REGIONS.includes(req.body.region)) {
+                return res.status(400).json({ success: false, message: "Region must be indian or international" })
+            }
+            update.region = req.body.region
+        }
+        for (const key of ["customRateInr", "customRateUsd"]) {
+            if (req.body[key] === undefined) continue
+            const value = req.body[key] === null || req.body[key] === "" ? null : Number(req.body[key])
+            if (value !== null && (!Number.isFinite(value) || value <= 0 || value > 100000)) {
+                return res.status(400).json({ success: false, message: "Please enter a rate as a number" })
+            }
+            update[key] = value
+        }
+        const mentor = await Mentor.findByIdAndUpdate(req.params.id, { $set: update }, { returnDocument: "after" })
+        if (!mentor) {
+            return res.status(404).json({ success: false, message: "Mentor not found" })
+        }
+        return res.status(200).json({ success: true, message: "Saved", data: mentor })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to save", error: error.message })
+    }
+})
+
+
 module.exports = router
+module.exports.cleanOnboarding = cleanOnboarding

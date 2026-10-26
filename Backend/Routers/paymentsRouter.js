@@ -1626,6 +1626,135 @@ router.get("/getFailedRefundsForAdmin", authMiddleware, adminAuthMiddleware, asy
 })
 
 
+// THE WORK OF A REFUND REQUEST, shared by the Refund Requests tab and the mentor ticket's "Refund the
+// mentor part" (Round 34). Returns { status, message, refundRequest, refunds } or { code, error }.
+const processRefundRequest = async (refundRequest, adminId, adminNote) => {
+    const student = await User.findById(refundRequest.user)
+
+    if (!student) return { code: 404, error: "Student not found" }
+
+    const newRefunds = []
+
+    if (refundRequest.refundType === "rollover") {
+        // Mentorship → Career Discovery: only the Tier-2 part comes back, access continues
+        //
+        // A RETRY AFTER A LATE FAILURE. With Razorpay, the tier drops as soon as the refund is
+        // accepted for processing; if Razorpay later reports it failed, the student is already on
+        // Tier 1 and the "no longer on Tier 2" check refused the retry for good. So a failed
+        // request whose refund row is on file is retried from that row — same payment, same
+        // amount — whatever the student's tier is now.
+        const failedRow = refundRequest.status === "refund_failed"
+            ? await Payment.findOne({ refundRequest: refundRequest._id, action: "refund", status: "failed" }).sort({ createdAt: -1 })
+            : null
+
+        let originalPayment = null
+        let amountInr = 0
+
+        if (failedRow && student.currentTier !== 2) {
+            originalPayment = await Payment.findById(failedRow.refundOfPayment)
+            amountInr = failedRow.amountInr
+        } else {
+            if (student.currentTier !== 2) return { code: 400, error: "This student is no longer on Tier 2" }
+            const rollover = await getRolloverRefund(student)
+            originalPayment = rollover.originalPayment
+            amountInr = rollover.amountInr
+        }
+
+        if (!originalPayment || amountInr <= 0) return { code: 400, error: "There is nothing left to refund on the Tier 2 payment" }
+
+        const rolloverRefund = await sendRefund(originalPayment, amountInr, {
+            tierAfter: 1,
+            grantedByAdmin: adminId,
+            refundRequest: refundRequest._id,
+        })
+
+        newRefunds.push(rolloverRefund)
+
+        // only drop the tier once the money is actually on its way — otherwise a failed refund
+        // would leave them on Tier 1 with nothing back
+        if (rolloverRefund.status !== "failed") {
+            await User.findByIdAndUpdate(refundRequest.user, {
+                currentTier: 1,                         // paid stays true — Tier 1 continues
+                "progress.mentor": "not_applicable",
+            })
+            await closeMentorWaitlist(refundRequest.user)
+        }
+
+    } else if (refundRequest.refundType === "mentor_session") {
+        // Round 34: an extra mentor session we couldn't deliver — its own payment comes back, and
+        // the plan the student has stays as it is
+        const sessionPayment = await Payment.findOne({ user: refundRequest.user, action: "mentor_session", status: "paid" }).sort({ createdAt: -1 })
+        const balance = sessionPayment ? await getRefundableBalance(sessionPayment) : 0
+        if (balance <= 0) return { code: 400, error: "There is nothing left to refund on the extra session" }
+        newRefunds.push(await sendRefund(sessionPayment, balance, {
+            tierAfter: student.currentTier,
+            grantedByAdmin: adminId,
+            refundRequest: refundRequest._id,
+        }))
+
+    } else {
+        // Close Access: from this click on, the student has no tier
+        await User.findByIdAndUpdate(refundRequest.user, {
+            paid: false,
+            currentTier: 0,
+            "progress.mentor": "not_applicable",
+        })
+        await closeMentorWaitlist(refundRequest.user)
+
+        // Refund every payment that still has money on it. On a retry, failed refunds don't count
+        // against the balance, so only the part that failed is attempted again.
+        const paidPayments = await Payment.find({
+            user: refundRequest.user,
+            action: { $in: ["purchase", "upgrade", "mentor_session"] },   // Round 28: extra sessions too
+        })
+
+        for (const payment of paidPayments) {
+            const balance = await getRefundableBalance(payment)
+
+            if (balance <= 0) continue
+
+            newRefunds.push(await sendRefund(payment, balance, {
+                tierAfter: 0,
+                grantedByAdmin: adminId,
+                refundRequest: refundRequest._id,
+            }))
+        }
+    }
+
+    const failedRefund = newRefunds.find((refund) => refund.status === "failed")
+
+    const pendingCount = await Payment.countDocuments({
+        refundRequest: refundRequest._id,
+        status: "refund_pending",
+    })
+
+    let status = "refunded"
+    if (pendingCount > 0) status = "refund_pending"
+    if (failedRefund) status = "refund_failed"
+
+    const updatedRefundRequest = await RefundRequest.findByIdAndUpdate(
+        refundRequest._id,
+        {
+            status,
+            failureMessage: failedRefund ? failedRefund.failureMessage : "",   // clears an old failure on a successful retry
+            adminNote: adminNote || refundRequest.adminNote,
+            handledByAdmin: adminId,
+            handledAt: new Date(),
+        },
+        { returnDocument: "after" }
+    )
+
+    const messageByStatus = {
+        refunded: refundRequest.refundType === "rollover"
+            ? "Moved back to Career Discovery and refund recorded"
+            : "Refund recorded successfully",
+        refund_pending: "Refund sent to Razorpay — waiting for confirmation",
+        refund_failed: `Refund failed: ${failedRefund ? failedRefund.failureMessage : ""}. You can retry.`,
+    }
+
+    return { status, message: messageByStatus[status], refundRequest: updatedRefundRequest, refunds: newRefunds }
+}
+
 // ========================
 // Refund For Admin — full refund, or a rollover from Mentorship back to Career Discovery
 // ========================
@@ -1652,138 +1781,21 @@ router.put("/refundForAdmin/:id", express.json(), authMiddleware, adminAuthMiddl
             })
         }
 
-        const student = await User.findById(refundRequest.user)
+        const result = await processRefundRequest(refundRequest, req.user._id, adminNote)
 
-        if (!student) {
-            return res.status(404).json({
+        if (result.error) {
+            return res.status(result.code).json({
                 success: false,
-                message: "Student not found",
+                message: result.error,
             })
-        }
-
-        const newRefunds = []
-
-        if (refundRequest.refundType === "rollover") {
-            // Mentorship → Career Discovery: only the Tier-2 part comes back, access continues
-            //
-            // A RETRY AFTER A LATE FAILURE. With Razorpay, the tier drops as soon as the refund is
-            // accepted for processing; if Razorpay later reports it failed, the student is already on
-            // Tier 1 and the "no longer on Tier 2" check refused the retry for good. So a failed
-            // request whose refund row is on file is retried from that row — same payment, same
-            // amount — whatever the student's tier is now.
-            const failedRow = refundRequest.status === "refund_failed"
-                ? await Payment.findOne({ refundRequest: refundRequest._id, action: "refund", status: "failed" }).sort({ createdAt: -1 })
-                : null
-
-            let originalPayment = null
-            let amountInr = 0
-
-            if (failedRow && student.currentTier !== 2) {
-                originalPayment = await Payment.findById(failedRow.refundOfPayment)
-                amountInr = failedRow.amountInr
-            } else {
-                if (student.currentTier !== 2) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "This student is no longer on Tier 2",
-                    })
-                }
-                const rollover = await getRolloverRefund(student)
-                originalPayment = rollover.originalPayment
-                amountInr = rollover.amountInr
-            }
-
-            if (!originalPayment || amountInr <= 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: "There is nothing left to refund on the Tier 2 payment",
-                })
-            }
-
-            const rolloverRefund = await sendRefund(originalPayment, amountInr, {
-                tierAfter: 1,
-                grantedByAdmin: req.user._id,
-                refundRequest: refundRequest._id,
-            })
-
-            newRefunds.push(rolloverRefund)
-
-            // only drop the tier once the money is actually on its way — otherwise a failed refund
-            // would leave them on Tier 1 with nothing back
-            if (rolloverRefund.status !== "failed") {
-                await User.findByIdAndUpdate(refundRequest.user, {
-                    currentTier: 1,                         // paid stays true — Tier 1 continues
-                    "progress.mentor": "not_applicable",
-                })
-                await closeMentorWaitlist(refundRequest.user)
-            }
-
-        } else {
-            // Close Access: from this click on, the student has no tier
-            await User.findByIdAndUpdate(refundRequest.user, {
-                paid: false,
-                currentTier: 0,
-                "progress.mentor": "not_applicable",
-            })
-            await closeMentorWaitlist(refundRequest.user)
-
-            // Refund every payment that still has money on it. On a retry, failed refunds don't count
-            // against the balance, so only the part that failed is attempted again.
-            const paidPayments = await Payment.find({
-                user: refundRequest.user,
-                action: { $in: ["purchase", "upgrade", "mentor_session"] },   // Round 28: extra sessions too
-            })
-
-            for (const payment of paidPayments) {
-                const balance = await getRefundableBalance(payment)
-
-                if (balance <= 0) continue
-
-                newRefunds.push(await sendRefund(payment, balance, {
-                    tierAfter: 0,
-                    grantedByAdmin: req.user._id,
-                    refundRequest: refundRequest._id,
-                }))
-            }
-        }
-
-        const failedRefund = newRefunds.find((refund) => refund.status === "failed")
-
-        const pendingCount = await Payment.countDocuments({
-            refundRequest: refundRequest._id,
-            status: "refund_pending",
-        })
-
-        let status = "refunded"
-        if (pendingCount > 0) status = "refund_pending"
-        if (failedRefund) status = "refund_failed"
-
-        const updatedRefundRequest = await RefundRequest.findByIdAndUpdate(
-            id,
-            {
-                status,
-                failureMessage: failedRefund ? failedRefund.failureMessage : "",   // clears an old failure on a successful retry
-                adminNote: adminNote || refundRequest.adminNote,
-                handledByAdmin: req.user._id,
-                handledAt: new Date(),
-            },
-            { returnDocument: "after" }
-        )
-
-        const messageByStatus = {
-            refunded: refundRequest.refundType === "rollover"
-                ? "Moved back to Career Discovery and refund recorded"
-                : "Refund recorded successfully",
-            refund_pending: "Refund sent to Razorpay — waiting for confirmation",
-            refund_failed: `Refund failed: ${failedRefund ? failedRefund.failureMessage : ""}. You can retry.`,
         }
 
         return res.status(200).json({
-            success: status !== "refund_failed",
-            message: messageByStatus[status],
+            success: result.status !== "refund_failed",
+            message: result.message,
             data: {
-                refundRequest: updatedRefundRequest,
-                refunds: newRefunds,
+                refundRequest: result.refundRequest,
+                refunds: result.refunds,
             },
         })
 
@@ -1793,6 +1805,79 @@ router.put("/refundForAdmin/:id", express.json(), authMiddleware, adminAuthMiddl
             message: "Failed to process refund",
             error: error.message,
         })
+    }
+})
+
+
+// ========================
+// The mentor part (Round 34)
+// ========================
+
+// WHAT "REFUND THE MENTOR PART" GIVES BACK, and from which payment. One rule for the student's quote
+// (shown when they report their mentor and ask for a refund) and the admin's one-step refund:
+//     an extra session in progress   → that session's own payment
+//     Discovery + Mentor (tier 2)     → the difference; they keep Career Discovery
+//     Mentor Only (tier 3)            → everything they paid
+const mentorPartOf = async (user, row) => {
+    if (row && (row.extraSessionsUsed || 0) > 0 && (row.sessions || []).length > 0) {
+        const sessionPayment = await Payment.findOne({ user: user._id, action: "mentor_session", status: "paid" }).sort({ createdAt: -1 })
+        return { refundType: "mentor_session", amountInr: sessionPayment ? await getRefundableBalance(sessionPayment) : 0 }
+    }
+    if (Number(user.currentTier) === 2) return { refundType: "rollover", amountInr: (await getRolloverRefund(user)).amountInr }
+    if (Number(user.currentTier) === 3) return { refundType: "full", amountInr: await getFullRefundAmount(user) }
+    return { refundType: null, amountInr: 0 }
+}
+
+router.put("/refundMentorPartForAdmin/:userId", express.json(), authMiddleware, adminAuthMiddleware, async (req, res) => {
+    try {
+        const student = await User.findById(req.params.userId)
+        if (!student) {
+            return res.status(404).json({ success: false, message: "Student not found" })
+        }
+
+        const row = await MentorWaitlist.findOne({ user: student._id }).lean()
+        const { refundType, amountInr } = await mentorPartOf(student, row)
+        if (!refundType || amountInr <= 0) {
+            return res.status(400).json({ success: false, message: "There is nothing left to refund on the mentor part" })
+        }
+
+        const note = typeof req.body.adminNote === "string" ? req.body.adminNote.trim().slice(0, 500) : ""
+        const refundRequest = await RefundRequest.create({
+            user: student._id,
+            reason: `Mentor part refunded by admin${note ? ` — ${note}` : ""}`,
+            refundType,
+            initiatedBy: "admin",
+            tierAtRequest: student.currentTier,
+            amountInr,
+            status: "pending",
+            handledByAdmin: req.user._id,
+            handledAt: new Date(),
+        })
+
+        const result = await processRefundRequest(refundRequest, req.user._id, note)
+        if (result.error) {
+            return res.status(result.code).json({ success: false, message: result.error })
+        }
+
+        // the ticket is closed and remembered; a tier change already closed it as "left_tier2"
+        if (result.status !== "refund_failed") {
+            await MentorWaitlist.updateOne(
+                { user: student._id },
+                {
+                    $set: { matchStatus: "closed", ...(refundType === "mentor_session" ? { resolution: "refunded" } : {}) },
+                    $push: { history: { at: new Date(), event: "refunded", by: "admin", note: `₹${amountInr} — ${note}`.trim() } },
+                }
+            )
+        }
+
+        return res.status(200).json({
+            success: result.status !== "refund_failed",
+            message: result.message,
+            data: { refundRequest: result.refundRequest, refunds: result.refunds, amountInr },
+        })
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Failed to refund the mentor part", error: error.message })
     }
 })
 
@@ -2213,3 +2298,4 @@ router.post(
 
 module.exports = router
 module.exports.couponUses = couponUses
+module.exports.mentorPartOf = mentorPartOf

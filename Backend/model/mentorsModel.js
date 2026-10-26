@@ -3,8 +3,8 @@ const mongoose = require("mongoose")
 // a mentor's onboarding profile (PRD §B.9) — V1 has no booking machinery, this is supply capture.
 // The login itself is a User with role "mentor"; this holds everything the 12-field form collects.
 //
-// preferredCurrency and residenceCitizenship are ADMIN-ONLY. They exist for payouts and must never
-// reach a student-facing response — only the admin list routes select them.
+// preferredCurrency, residenceCitizenship and `payout` are ADMIN-ONLY. They exist for payouts and must
+// never reach a student-facing response — only the admin list routes and the mentor's own profile read them.
 
 const mentorSchema = new mongoose.Schema(
     {
@@ -74,14 +74,49 @@ const mentorSchema = new mongoose.Schema(
             required: true, // 10. "Category A" | "Category B" | "Category C" | "Category D" — the student form's wording
         },
         preferredCurrency: {
-            type: String, // 11. ADMIN-ONLY
+            type: String, // 11. ADMIN-ONLY (before Round 34; the region and payout details below replace it)
         },
         residenceCitizenship: {
-            type: String, // 12. ADMIN-ONLY
+            type: String, // 12. ADMIN-ONLY — the country they live in
+        },
+        // ── Round 34 (owner): where they live, how they're paid, their booking links, their tier ──
+        region: {
+            type: String,      // indian | international (an Indian living abroad) — sets their pay; only an admin changes it after approval
+            default: null,
+        },
+        // ADMIN-ONLY, like 11–12: what we need to pay them by hand today (and RazorpayX later)
+        payout: {
+            upiId: { type: String, default: "" },
+            accountName: { type: String, default: "" },
+            accountNumber: { type: String, default: "" },
+            ifsc: { type: String, default: "" },
+            pan: { type: String, default: "" },
+            intlMethod: { type: String, default: "" },   // international: an Indian NRE/NRO account, Wise or PayPal email — in their words
+        },
+        // the two Calendly links a matched student books from (1-hour main, 20-minute follow-up)
+        calendlyMain: { type: String, default: "" },
+        calendlyFollowUp: { type: String, default: "" },
+        tier: {
+            type: Number,      // 1 | 2 | 3 — utils/mentorTiers.js; 1 → 2 is automatic, 3 is the admin's
+            default: 1,
+        },
+        tierHistory: {
+            type: [{ tier: Number, at: Date, by: String }],   // by: "auto" | "admin"
+            default: [],
+        },
+        customRateInr: { type: Number, default: null },   // Tier 3 "+": a higher rate the admin set
+        customRateUsd: { type: Number, default: null },
+        strikes: {
+            type: [{ at: Date, reason: String, student: { type: mongoose.Schema.Types.ObjectId, ref: "User" } }],   // didn't prepare, respond or turn up
+            default: [],
+        },
+        firstSessionApproved: {
+            type: Boolean,     // after their first feedback the admin approves them to continue (or removes them)
+            default: null,
         },
         status: {
             type: String,
-            default: "pending_review", // pending_review | onboarded | paused (Round 28: after a student's report) — server-owned, only an admin sets it
+            default: "pending_review", // pending_review (profile in; training and test next) | test_submitted | onboarded | rejected | paused (Round 28: after a student's report) | removed (Round 34: not kept after the first session) — server-owned, only an admin moves it past test_submitted
         },
         approvedByAdmin: {
             type: mongoose.Schema.Types.ObjectId,

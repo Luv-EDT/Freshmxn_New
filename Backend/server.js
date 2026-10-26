@@ -37,6 +37,8 @@ const demoRouter = require("./Routers/demoRouter")
 const demoResumeRouter = require("./Routers/demoResumeRouter")
 const mentorReviewsRouter = require("./Routers/mentorReviewsRouter")
 const mentorSessionsRouter = require("./Routers/mentorSessionsRouter")
+const mentorTestRouter = require("./Routers/mentorTestRouter")
+const mentorPayoutsRouter = require("./Routers/mentorPayoutsRouter")
 const notificationsRouter = require("./Routers/notificationsRouter")
 
 const cors = require("cors")
@@ -104,6 +106,8 @@ app.use("/demo", demoRouter)                 // the page is /try-demo
 app.use("/demoResume", demoResumeRouter)
 app.use("/mentorReviews", mentorReviewsRouter)
 app.use("/mentorSessions", mentorSessionsRouter)
+app.use("/mentorTest", mentorTestRouter)         // Round 34: the mentor competence test (page: /mentor)
+app.use("/mentorPayouts", mentorPayoutsRouter)   // Round 34: what we owe mentors (pages: /mentor, /admin/mentors)
 app.use("/notifications", notificationsRouter)   // Round 29: shown on /profile   // Round 28: invite steps, reviews, reports (pages are /mentor and /mentorship)
 
 // serve the built React app — Frontend/build only exists after `npm run build`
