@@ -3195,3 +3195,20 @@ details.mentor-student[open] > :last-child { margin-bottom: var(--space-4); }
 .video-link-fallback { margin-top: var(--space-2); }
 .video-link-fallback summary { cursor: pointer; color: var(--teal-dark); font-size: 0.9rem; }
 .video-link-fallback[open] { display: grid; gap: 6px; }
+.storage-ok { color: var(--teal-dark); }
+.storage-bad { color: #b42318; }
+.storage-cors { background: var(--cream); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--space-3); font-size: 0.8rem; overflow-x: auto; white-space: pre; }
+
+/* Round 35c (owner): numbers and bullets had too little room before the text — more indent, and a gap
+   between the marker and the words, on every list in the mentor pages */
+.mentor-dashboard ol:not(.training-ticks):not(.booked-times),
+.mentor-dashboard ul:not(.training-ticks):not(.booked-times):not(.notification-list) { padding-left: 2em; }
+.mentor-dashboard ol:not(.training-ticks):not(.booked-times) > li,
+.mentor-dashboard ul:not(.training-ticks):not(.booked-times):not(.notification-list) > li { padding-left: 0.45em; }
+.mentor-test-list { gap: var(--space-5); }
+.mentor-test-list > li::marker { font-weight: 700; }
+.step-order { gap: 10px; margin-top: var(--space-2); }
+.step-order > li { display: list-item; }
+.step-order li span:first-child { margin-right: var(--space-3); }
+.training-ticks li { padding-left: 1.8em; }
+.profile-training { margin-top: var(--space-5); }

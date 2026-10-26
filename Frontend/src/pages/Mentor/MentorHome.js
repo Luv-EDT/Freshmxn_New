@@ -6,20 +6,18 @@ import MentorOnboarding from "./MentorOnboarding"
 import MentorReviewSheet from "./MentorReviewSheet"
 import MentorStudents from "./MentorStudents"
 import MentorTraining from "./MentorTraining"
-import MentorTest from "./MentorTest"
+import MentorTest, { BookingLinks } from "./MentorTest"
 import MentorPayouts from "./MentorPayouts"
 import LogoutButton from "../LogoutButton"
 import logo from "../../assets/brand/logo.png"
 
-// THE MENTOR DASHBOARD (owner, Rounds 34–35). ONE PAGE, STEP BY STEP, from sign-up to approval and after:
-// the four steps at the top (training → profile → test → our approval), then one tab bar —
-//   1. Training                  always
-//   2. Tell us about yourself    the profile form; once sent, "done" and a pointer to the profile icon
-//   3. Test                      locked until the profile is in
-//   My students                  once approved: the current student and the history
-//   My profession data           once the test is sent (it opens on approval): our data to check, the roadmap
-//   Payouts                      once approved
-// The profile itself (and Log out) opens only from the profile icon in the header (owner, Round 35).
+// THE MENTOR DASHBOARD (owner, Rounds 34–35). TWO STAGES, ONE TAB BAR (the step chips above it were dropped
+// as a second bar that did nothing):
+//   onboarding (until the test is sent)   1. Training · 2. Tell us about yourself · 3. Test (locked until the profile is in)
+//   after it                               Home (the status, or once approved the current student and history)
+//                                          · My profession data · Payouts (once approved)
+// The profile — and, once onboarded, the training documents and the Calendly links — open from the round
+// profile icon in the header, the only place with Log out (owner, Round 35).
 const STATUS_TEXT = {
     pending_review: "Next: take your test (step 3). Our team approves mentors after the test.",
     test_submitted: "Your test is with our team. It usually takes a couple of days — we'll let you know by email.",
@@ -130,11 +128,16 @@ function MentorHome() {
                                 <li><strong>Why you mentor:</strong> {profile.motivation}</li>
                                 <li><strong>High school → college:</strong> {profile.transitionCategory}</li>
                                 <li><strong>Where you live:</strong> {profile.region === "international" ? "Abroad" : profile.region === "indian" ? "India" : "—"}{profile.residenceCitizenship ? ` (${profile.residenceCitizenship})` : ""}</li>
-                                <li><strong>Calendly — main:</strong> {profile.calendlyMain || "—"}</li>
-                                <li><strong>Calendly — follow-up:</strong> {profile.calendlyFollowUp || "—"} <span className="report-small">(change them on the Test tab)</span></li>
                                 <li><strong>Paid to (only our team sees this):</strong> {profile.payout && (profile.payout.upiId || profile.payout.accountNumber || profile.payout.intlMethod) ? (profile.payout.upiId || profile.payout.intlMethod || `account ending ${String(profile.payout.accountNumber).slice(-4)}`) : "—"}</li>
                             </ul>
                             <p><button type="button" className="tap" onClick={() => setEditing(true)}>Edit my profile</button></p>
+                            {testSent && <BookingLinks initial={{ calendlyMain: profile.calendlyMain, calendlyFollowUp: profile.calendlyFollowUp }} onSaved={load} />}
+                            {testSent && (
+                                <section className="profile-training">
+                                    <h3>Training documents</h3>
+                                    <MentorTraining />
+                                </section>
+                            )}
                         </>
                     )}
                     <div className="mentor-logout"><LogoutButton /></div>
@@ -144,15 +147,7 @@ function MentorHome() {
         )
     }
 
-    // ─── the dashboard: the four steps, then the tabs ────────────────────────
-    const steps = [
-        { label: "Read the training", done: Boolean(profile) },
-        { label: "Tell us about yourself", done: Boolean(profile) },
-        { label: "Take the test", done: testSent },
-        { label: "Our approval", done: approved || ["paused", "removed"].includes(status) },
-    ]
-    const currentStep = steps.findIndex((step) => !step.done)
-
+    // ─── the dashboard ───────────────────────────────────────────────────────
     const home = (
         <>
             <section className="mentor-tier">
@@ -168,7 +163,7 @@ function MentorHome() {
         </>
     )
 
-    const items = [
+    const onboarding = [
         {
             key: "training",
             label: "1. Training",
@@ -185,7 +180,7 @@ function MentorHome() {
             children: profile ? (
                 <p className="mentor-step-done">
                     ✓ Your profile is in. To see or change it, open your profile with the round icon at the top right.
-                    {!testSent && <> Next: <button type="button" className="link-button" onClick={() => setTab("test")}>take your test →</button></>}
+                    {" "}Next: <button type="button" className="link-button" onClick={() => setTab("test")}>take your test →</button>
                 </p>
             ) : (
                 <>
@@ -197,20 +192,23 @@ function MentorHome() {
         {
             key: "test",
             // Round 35 (owner): locked until the profile is in
-            label: profile ? `3. Test${testSent ? " ✓" : ""}` : "3. Test 🔒",
+            label: profile ? "3. Test" : "3. Test 🔒",
             disabled: !profile,
             children: profile ? <MentorTest onSubmitted={load} /> : null,
         },
-        approved && { key: "home", label: "My students", children: home },
-        testSent && {
+    ]
+    const afterOnboarding = [
+        { key: "home", label: "Home", children: approved ? home : <MentorTest onSubmitted={load} /> },
+        {
             key: "profession",
             label: "My profession data",
             children: approved ? <MentorReviewSheet /> : <p>This opens once you're approved: our data on your profession to check, and your starter skills roadmap.</p>,
         },
         approved && { key: "payouts", label: "Payouts", children: <MentorPayouts standing={standing} /> },
     ].filter(Boolean)
+    const items = testSent ? afterOnboarding : onboarding
 
-    const defaultTab = approved ? "home" : !profile ? "training" : !testSent ? "test" : "test"
+    const defaultTab = testSent ? "home" : !profile ? "training" : "test"
     const activeTab = items.some((item) => item.key === tab) ? tab : defaultTab
 
     return (
@@ -218,11 +216,6 @@ function MentorHome() {
             {header}
             <main className="page mentor-dashboard">
                 <h2 className="page-title-center">{approved ? "Your mentor dashboard" : "Welcome, mentor"}</h2>
-                <ol className="mentor-path" aria-label="Your steps">
-                    {steps.map((step, index) => (
-                        <li key={step.label} className={step.done ? "done" : index === currentStep ? "current" : ""}>{step.done ? "✓ " : ""}{step.label}</li>
-                    ))}
-                </ol>
                 {status && <p className={`mentor-status-line status-${status}`}>{STATUS_TEXT[status]}</p>}
                 <Tabs className="mentor-tabs" activeKey={activeTab} onChange={setTab} items={items} />
                 {helpLine}

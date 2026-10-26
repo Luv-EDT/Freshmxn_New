@@ -173,7 +173,11 @@ const DOCS = [
 function MentorTraining() {
     return (
         <section className="mentor-training">
-            <p className="training-intro">Three short reads — about <strong>45 minutes</strong> in all. Read them before your test; come back to them any time.</p>
+            <p className="training-intro">
+                Three short reads — about <strong>45 minutes</strong> in all. <strong>Read them carefully</strong>: your test, and setting up
+                your profile and Calendly properly, depend on them. They stay saved here for you to refer to later — once you're
+                onboarded, under your profile (the round icon at the top right).
+            </p>
             {DOCS.map((doc, index) => (
                 <details key={doc.key} className="training-fold">
                     <summary>
