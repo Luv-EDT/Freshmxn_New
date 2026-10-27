@@ -6317,11 +6317,14 @@ const fixtures = [
             // the code only — comments may say what was removed
             const landing = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Landing.js"), "utf8").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
             const splash = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/DemoSplash.js"), "utf8")
-            const ten = ["Will AI take my job?", "Why do I only know a handful of careers?", "I don't know what I'm interested in — where do I start?", "Will my degree make me job-ready?", "How do I explore without wasting years on a degree or random online courses?", "Is that master's or expensive course worth it?", "How do I get job- or internship-ready fast?", "Can I talk to someone who's done it?", "I've found something new I love — how do I make it real?", "My past choices feel wrong — is it too late?"]
-            const missing = ten.filter((q) => !landing.includes(`q: "${q}"`))
+            // Round 36 (owner): the questions moved into one set per audience plus what everyone asks
+            // (audienceQuestions.js); the ones kept from Round 33 are still asked
+            const bank = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/audienceQuestions.js"), "utf8").replace(/^\s*\/\/.*$/gm, "")
+            const kept = ["Will AI take my job?", "Why do I only know a handful of careers?", "Will my degree make me job-ready?", "Can I talk to someone who's done it?", "I've found something new I love — how do I make it real?", "My past choices feel wrong — is it too late?"]
+            const missing = kept.filter((q) => !bank.includes(`q: "${q}"`))
             if (missing.length) problems.push(`missing: ${missing.join(" | ")}`)
             if (/career gyaan|You need a|What a system does for you|const JOBS|Save time/.test(landing)) problems.push("the old heading or job groups are still there")
-            if (/resume|AI-proof/i.test((landing.match(/export const QUESTIONS = \[[\s\S]*?\n\]/) || [""])[0])) problems.push("an answer promises something that isn't built")
+            if (/resume|AI-proof/i.test(bank)) problems.push("an answer promises something that isn't built")
             if (/See how it works/.test(landing) || !/to="\/try-demo"[^>]*>Try a Free Demo</.test(landing)) problems.push("the hero buttons aren't 'Let's figure out your career' and 'Try a Free Demo'")
             if (/<em>you<\/em>/.test(landing)) problems.push("the closing line is still in italics")
             if (!/!localStorage\.getItem\("token"\) && !splashSeen\(\)/.test(landing) || !/sessionStorage/.test(splash)) problems.push("the invitation isn't once per visit for visitors only")
@@ -6779,6 +6782,34 @@ const fixtures = [
             })
             if (/updateFormState\([^)]*resume/i.test(form) || /resumeActivities/.test(front("Interest/interestFormState.js"))) problems.push("the résumé's activities are written into the answers")
             if (!/readMyResume/.test(front("Interest/InterestIntro.js"))) problems.push("the counselling welcome has no résumé box")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 36c — THE LANDING, BY AUDIENCE: the hero says 'Freshmxn Lab' and stops at 'then help you get there'; who it's for is names and sub-names only, before 'What each of them ask us' (one set per audience, then what everyone asks); a logged-in student sees only their own; every number keeps its source",
+        run: () => {
+            const problems = []
+            // the code only — comments may name what was replaced
+            const landing = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Landing.js"), "utf8").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+            const bank = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/audienceQuestions.js"), "utf8").replace(/^\s*\/\/.*$/gm, "")
+            if (!/hero-brand">Freshmxn Lab</.test(landing) || /mentors who've done it/.test(landing) || !/then help you\s+get there\./.test(landing)) problems.push("the hero isn't the owner's")
+            if (/What students ask us/.test(landing) || landing.indexOf("Who is it for") > landing.indexOf("What each of them ask us")) problems.push("the questions aren't after 'Who is it for', or the old section is still there")
+            if (/item\.body|audience-card[^\n]*\n[^\n]*<p>\{/.test(landing)) problems.push("the audience cards still carry descriptions")
+            if (!/school: \{ title: "School students", tag: "Class 9 to 12"/.test(bank) || !/college: \{ title: "College students", tag: "Any year, any course"/.test(bank) || !/professional: \{ title: "Early professionals", tag: "The first few years of work"/.test(bank)) problems.push("the audience names aren't the owner's")
+            if (!/const mine = user && user\.role === "student" \? AUDIENCE_OF_JOURNEY\[user\.journey\]/.test(landing) || !/\{!mine && \(/.test(landing)) problems.push("a logged-in student doesn't see only their own questions")
+            const { AUDIENCE_OF_JOURNEY } = { AUDIENCE_OF_JOURNEY: JSON.parse((bank.match(/AUDIENCE_OF_JOURNEY = (\{[^}]+\})/) || [null, "{}"])[1].replace(/(\w+):/g, '"$1":')) }
+            if (["class9_10", "class11_12", "college", "early_professional"].map((key) => AUDIENCE_OF_JOURNEY[key]).join() !== "school,school,college,professional") problems.push("a journey maps to the wrong audience")
+            // every number keeps its source; the ones we couldn't source are left out (Round 36)
+            // (the "20% of skills" in the how-to-start steps is a rule of thumb, not a statistic)
+            for (const match of bank.matchAll(/\d+(\.\d+)?%(?! of skills)/g)) {
+                const after = bank.slice(match.index, match.index + 240)
+                if (!/\((India\s+Skills\s+Report|India\s+Today|NITI\s+Aayog)/.test(after)) problems.push(`a number without its source: ${after.replace(/\s+/g, " ").slice(0, 80)}`)
+            }
+            if (/\b(90|50|70)%/.test(bank)) problems.push("an unsourced number from the question bank is shown")
+            const counts = ["school", "college", "professional"].map((key) => ((bank.split(`    ${key}: [`)[1] || "").split("\n    ],")[0].match(/\bq: "/g) || []).length)
+            if (counts.join() !== "9,13,5") problems.push(`each audience doesn't have its questions from the bank: ${counts}`)
+            if (((bank.split("export const COMMON_QUESTIONS")[1] || "").match(/\bq: "/g) || []).length !== 13) problems.push("the common questions aren't the bank's 11 plus the two extras")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
