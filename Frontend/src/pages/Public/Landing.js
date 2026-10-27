@@ -1,149 +1,56 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
+import { useDispatch, useSelector } from "react-redux"
+import { setUser } from "../../store/userSlice"
+import { getCurrentUser } from "../../apiCall/userApi"
 import DemoSplash, { splashSeen } from "./DemoSplash"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
 import HappyStudent from "./HappyStudent"
 import { StepIcon, ArrowDoodle } from "./illustrations"
+import { AUDIENCE_NAMES, AUDIENCE_OF_JOURNEY, AUDIENCE_QUESTIONS, COMMON_QUESTIONS } from "./audienceQuestions"
 
 // The public landing page. Copy comes from landing_page_content_v3.md — every statistic there
 // carries its source, so nothing here is invented or rounded.
 //
-// ROUND 5 (owner, 2026-09-24): the landing page is SHORT. Hero → the problem as four collapsed
-// questions → who it's for → why we're different → the closing band. The promise, the four steps,
+// ROUND 5 (owner, 2026-09-24): the landing page is SHORT. Hero → who it's for → what each of them ask us
+// (Round 36: one set of questions per audience, then what everyone asks) → why we're different → the closing
+// band. A logged-in student sees only their own audience's questions (owner, Round 36). The promise, the four steps,
 // the invitation and pricing moved to /how-it-works; the founder's story is on /about.
 // Teal is the star colour, and the pastel pink is ONE highlighter swipe per section at most.
 
-// THE QUESTIONS STUDENTS ASK THEMSELVES (owner, Round 33) — no "career gyaan" heading any more: the page goes
-// straight to the ten questions school and college students ask most, the ones that hook first on top. Each
-// answer is a hidden fact (with its source kept) and what Freshmxn does about it — never a feature that isn't
-// built: help with internships, jobs and a starter kit is a waitlist, and every career shows its AI exposure
-// rather than claiming any career is "AI-proof".
-export const QUESTIONS = [
-    {
-        q: "Will AI take my job?",
-        a: (
-            <>
-                AI is redrawing the map: AI, data, cloud and cybersecurity are now the most in-demand skills in India,
-                and routine roles are shrinking (India Skills Report 2026). Every career we recommend shows{" "}
-                <strong>how exposed it is to AI</strong> — and which part of the work AI touches — next to how much
-                India needs it, so you can pick work that lasts.
-            </>
-        ),
-    },
-    {
-        q: "Why do I only know a handful of careers?",
-        a: (
-            <>
-                Because nobody shows you the rest. <strong>93% of Indian students are aware of only seven career
-                options</strong> (India Today survey). We rank your matches from <strong>1,000+ careers and job
-                roles</strong> — including ones you've never heard of, and careers that combine two fields.
-            </>
-        ),
-    },
-    {
-        q: "I don't know what I'm interested in — where do I start?",
-        a: (
-            <>
-                With your story, not a quiz. <strong>Virtual Career Counselling</strong> walks through four stages of
-                your life and asks what you did, what stuck and why — small things count. Then we find the thread.
-                Try the free 6-minute demo to see how it works.
-            </>
-        ),
-    },
-    {
-        q: "Will my degree make me job-ready?",
-        a: (
-            <>
-                Not on its own. <strong>About 44% of Indian graduates still aren't considered job-ready</strong>{" "}
-                (India Skills Report 2026). Usually it isn't ability — it's a direction that never fit. We count every
-                career from where you stand: what your degree already covers, and what's left.
-            </>
-        ),
-    },
-    {
-        q: "How do I explore without wasting years on a degree or random online courses?",
-        a: (
-            <>
-                Find the direction before you spend the years and the money. Your matches are ranked from your own story
-                and strengths, each with its road, exams, where to study and <strong>your next 12 months</strong> — and
-                a mentor who has done the job can tell you what it's really like.
-            </>
-        ),
-    },
-    {
-        q: "Is that master's or expensive course worth it?",
-        a: (
-            <>
-                Check before you pay. Each career shows the <strong>cost to qualify, starting and mid-career pay</strong>{" "}
-                in India, and whether a master's is needed, helps, or usually isn't needed.
-            </>
-        ),
-    },
-    {
-        q: "How do I get job- or internship-ready fast?",
-        a: (
-            <>
-                Start with the right first step. Your first steps for each career are right on its card — and help with
-                internships, jobs and a starter skill kit is on our waitlist.
-            </>
-        ),
-    },
-    {
-        q: "Can I talk to someone who's done it?",
-        a: (
-            <>
-                Yes. With a mentor plan you get <strong>a professional in the job role you choose</strong> — a one-hour
-                clarity session and a 20-minute follow-up, matched within 20 business days. Real experience, not generic
-                advice.
-            </>
-        ),
-    },
-    {
-        q: "I've found something new I love — how do I make it real?",
-        a: (
-            <>
-                Every career shows the path and your next 12 months, and your mentor can help you make it your work — or
-                carry it forward as a passion alongside whatever pays.
-            </>
-        ),
-    },
-    {
-        q: "My past choices feel wrong — is it too late?",
-        a: (
-            <>
-                No. Your past doesn't define you. We show what carries over, how many years a switch would leave behind
-                and how long from now each career takes — so a change is a plan, not a leap.
-            </>
-        ),
-    },
-]
-
+// WHO IT'S FOR (owner, Round 36): names and sub-names only. Each card opens that audience's questions below.
 const AUDIENCES = [
-    {
-        icon: "listen",
-        title: "School students",
-        tag: "Class 9–12",
-        body: "Before you pick a stream or a college. Discover careers you've never heard of, see which ones fit how you think, and know the subjects and exams that lead there.",
-    },
-    {
-        icon: "compass",
-        title: "College students",
-        tag: "Any year, any course",
-        body: "Already on a course and not sure it's right? See where your degree and what you've done can actually take you — and which changes are worth making.",
-    },
-    {
-        icon: "mentor",
-        title: "Early professionals",
-        tag: "The first few years of work",
-        body: "In a job that doesn't fit? Find where your experience carries over, what a switch would really cost, and talk to someone who has made the move.",
-    },
+    { key: "school", icon: "listen" },
+    { key: "college", icon: "compass" },
+    { key: "professional", icon: "mentor" },
 ]
 
 function Landing() {
     // the front door (owner, Round 33): visitors first see the demo invitation, once per visit
     const [showSplash, setShowSplash] = useState(() => !localStorage.getItem("token") && !splashSeen())
     const closeSplash = useCallback(() => setShowSplash(false), [])
+
+    // a logged-in student's category (their journey) decides which questions they see (owner, Round 36)
+    const dispatch = useDispatch()
+    const { user } = useSelector((state) => state.user)
+    const hasToken = Boolean(localStorage.getItem("token"))
+    useEffect(() => {
+        if (!hasToken || user) return
+        const load = async () => {
+            const response = await getCurrentUser()
+            if (response && response.data && response.data.success) dispatch(setUser({ user: response.data.userData }))
+        }
+        load()
+    }, [hasToken, user, dispatch])
+    const mine = user && user.role === "student" ? AUDIENCE_OF_JOURNEY[user.journey] || null : null
+    const [picked, setPicked] = useState("school")
+    const audience = mine || picked
+    const asksRef = useRef(null)
+    const openAudience = (key) => {
+        setPicked(key)
+        if (asksRef.current) asksRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
 
     return (
         <div>
@@ -156,13 +63,13 @@ function Landing() {
                     <section className="hero">
                         <div className="page hero-grid">
                             <div>
-                                <p className="hero-brand">Freshmxn's Lab</p>
+                                <p className="hero-brand">Freshmxn Lab</p>
                                 {/* the company tagline leads; "Careers that fit you" closes the page (owner, 2026-09-24) */}
                                 <h1 className="tagline"><span>Explore.</span> <span>Get clarity.</span> <span className="accent">Take action.</span></h1>
                                 <p className="lead">
                                     We match your story and strengths to careers that are{" "}
                                     <strong className="highlight-pink">in demand and AI-resilient</strong>, then help you
-                                    get there with mentors who've done it.
+                                    get there.
                                 </p>
                                 <div className="btn-row">
                                     <Link to="/programs" className="btn btn-primary tap">Let's figure out your career →</Link>
@@ -181,25 +88,7 @@ function Landing() {
                         </div>
                     </section>
 
-                    {/* 2. THE QUESTIONS (owner, Round 33) — straight to what students ask, collapsed: the question
-                        is the hook, the answer one tap away */}
-                    <section className="section problem">
-                        <div className="page">
-                            <div className="section-head">
-                                <h2>What students ask us</h2>
-                            </div>
-                            <div className="faq">
-                                {QUESTIONS.map((item) => (
-                                    <details key={item.q} className="faq-item">
-                                        <summary>{item.q}</summary>
-                                        <p>{item.a}</p>
-                                    </details>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* 3. WHO IT'S FOR */}
+                    {/* 2. WHO IT'S FOR — names and sub-names only (owner, Round 36); a card opens its questions */}
                     <section className="section section-alt">
                         <div className="page">
                             <div className="section-head">
@@ -208,13 +97,66 @@ function Landing() {
                             </div>
                             <div className="audience">
                                 {AUDIENCES.map((item) => (
-                                    <article key={item.title} className="card audience-card">
+                                    <button
+                                        type="button"
+                                        key={item.key}
+                                        className={`card audience-card${audience === item.key ? " is-on" : ""}`}
+                                        onClick={() => openAudience(item.key)}
+                                        disabled={Boolean(mine) && mine !== item.key}
+                                    >
                                         <StepIcon name={item.icon} />
-                                        <h3>{item.title}</h3>
-                                        <p className="audience-tag">{item.tag}</p>
-                                        <p>{item.body}</p>
-                                    </article>
+                                        <h3>{AUDIENCE_NAMES[item.key].title}</h3>
+                                        <p className="audience-tag">{AUDIENCE_NAMES[item.key].tag}</p>
+                                        {mine === item.key && <span className="audience-you">You</span>}
+                                    </button>
                                 ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* 3. WHAT EACH OF THEM ASK US (owner, Round 36) — replaces "What students ask us": their own
+                        questions first, then what everyone asks, collapsed. A logged-in student sees only theirs. */}
+                    <section className="section problem" ref={asksRef}>
+                        <div className="page">
+                            <div className="section-head">
+                                <h2>{mine ? `What ${AUDIENCE_NAMES[mine].short.toLowerCase()} ask us` : "What each of them ask us"}</h2>
+                            </div>
+                            {!mine && (
+                                <div className="asks-tabs" role="tablist" aria-label="Who is asking">
+                                    {AUDIENCES.map((item) => (
+                                        <button
+                                            type="button"
+                                            role="tab"
+                                            key={item.key}
+                                            id={`asks-tab-${item.key}`}
+                                            aria-selected={audience === item.key}
+                                            aria-controls="asks-panel"
+                                            className={`asks-tab${audience === item.key ? " is-on" : ""}`}
+                                            onClick={() => setPicked(item.key)}
+                                        >
+                                            {AUDIENCE_NAMES[item.key].short}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <div id="asks-panel" role={mine ? undefined : "tabpanel"} aria-labelledby={mine ? undefined : `asks-tab-${audience}`}>
+                                <div className="faq">
+                                    {AUDIENCE_QUESTIONS[audience].map((item) => (
+                                        <details key={item.q} className="faq-item">
+                                            <summary>{item.q}</summary>
+                                            <p>{item.a}</p>
+                                        </details>
+                                    ))}
+                                </div>
+                                <h3 className="asks-common">What everyone asks</h3>
+                                <div className="faq">
+                                    {COMMON_QUESTIONS.map((item) => (
+                                        <details key={item.q} className="faq-item">
+                                            <summary>{item.q}</summary>
+                                            <p>{item.a}</p>
+                                        </details>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </section>
