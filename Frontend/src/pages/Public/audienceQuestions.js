@@ -16,6 +16,7 @@ export const AUDIENCE_NAMES = {
 }
 
 export const AUDIENCE_QUESTIONS = {
+    // each list starts with its strongest five — the ones the home page shows (owner, Round 37)
     school: [
         {
             q: "How do I choose a career that AI won't take over?",
@@ -29,13 +30,23 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
-            q: "Everyone is taking the same stream. Should I, despite the competition?",
+            q: "Everyone is picking the same stream or college. Should I, despite the competition?",
             a: (
                 <>
                     A crowded path isn't automatically the safe one. A path with less competition can give you more
                     satisfaction and almost the same financial stability. Your report ranks careers from{" "}
                     <strong>1,000+ careers and job roles</strong> by how they fit <em>you</em> — each with its pay, its
-                    demand in India and the road to it — so you choose with your eyes open, not by headcount.
+                    demand in India and the road to it — so you choose with your eyes open, not by headcount. Not sure yet? The <Link to="/try-demo">free demo</Link> takes 5 minutes.
+                </>
+            ),
+        },
+        {
+            q: "Why should I decide my whole future at 15 to 17 through one stream or one degree?",
+            a: (
+                <>
+                    You shouldn't have to decide it blind. We show you several careers that fit you, the subjects and exams
+                    each needs, and — if you change your mind later — what would carry over and what a switch would cost.
+                    A stream is a step, not a life sentence.
                 </>
             ),
         },
@@ -50,12 +61,12 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
-            q: "Are arts and humanities doomed?",
+            q: "No one at school or home can guide me — no mentors, no older siblings.",
             a: (
                 <>
-                    No. Design, media, performing arts, humanities, education and social impact are all among our 18
-                    professional sectors — and each career in them shows the same facts as any other: pay from start to
-                    mid-career, demand in India and how exposed it is to AI. Judge by the facts, not the rumour.
+                    That's exactly who we built this for. Your counselling, assessment and report are done online at your
+                    own pace, and with a mentor plan you talk one to one with <strong>a professional in the job role you
+                    choose</strong> — like the older sibling who has already walked the road.
                 </>
             ),
         },
@@ -70,26 +81,6 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
-            q: "No one at school or home can guide me — no mentors, no older siblings.",
-            a: (
-                <>
-                    That's exactly who we built this for. Your counselling, assessment and report are done online at your
-                    own pace, and with a mentor plan you talk one to one with <strong>a professional in the job role you
-                    choose</strong> — like the older sibling who has already walked the road.
-                </>
-            ),
-        },
-        {
-            q: "Why should I decide my whole future at 15 to 17 through one stream?",
-            a: (
-                <>
-                    You shouldn't have to decide it blind. We show you several careers that fit you, the subjects and exams
-                    each needs, and — if you change your mind later — what would carry over and what a switch would cost.
-                    A stream is a step, not a life sentence.
-                </>
-            ),
-        },
-        {
             q: "I'm preparing for an entrance exam — but what happens after I get in, and after college?",
             a: (
                 <>
@@ -100,17 +91,37 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
-            q: "Am I just following the crowd?",
+            q: "Are arts and humanities doomed?",
             a: (
                 <>
-                    Find out in five minutes. <Link to="/try-demo">Try the free demo</Link>: tell us a little of your story,
-                    play three short games, and see two careers your answers point to — then decide whether the crowd's
-                    choice is yours too.
+                    No. Design, media, performing arts, humanities, education and social impact are all among our 18
+                    professional sectors — and each career in them shows the same facts as any other: pay from start to
+                    mid-career, demand in India and how exposed it is to AI. Judge by the facts, not the rumour.
                 </>
             ),
         },
     ],
     college: [
+        {
+            q: "Will AI take my job?",
+            a: (
+                <>
+                    AI is redrawing the map: AI, data, cloud and cybersecurity are now the most in-demand skills in India,
+                    and routine roles are shrinking (India Skills Report 2026). Every career we recommend shows{" "}
+                    <strong>how exposed it is to AI</strong> and which part of the work it touches.
+                </>
+            ),
+        },
+        {
+            q: "Will my degree make me job-ready?",
+            a: (
+                <>
+                    Not on its own. <strong>About 44% of Indian graduates still aren't considered job-ready</strong>{" "}
+                    (India Skills Report 2026). Usually it isn't ability — it's a direction that never fit. We count every
+                    career from where you stand: what your degree already covers, and what's left.
+                </>
+            ),
+        },
         {
             q: "Am I buying random courses out of FOMO?",
             a: (
@@ -128,6 +139,17 @@ export const AUDIENCE_QUESTIONS = {
                     The obvious next step isn't always yours. We count every career from where you stand: what your degree
                     already covers, what's left, and how many years a different direction would really take — including
                     careers that combine two fields.
+                </>
+            ),
+        },
+        {
+            q: "Where do I go if I don't make it into the usual competitive paths?",
+            a: (
+                <>
+                    Somewhere better suited, often. <strong>Only 8.25% of Indian graduates work in jobs that match their
+                    qualifications</strong> (NITI Aayog, citing the Economic Survey 2024–25) — so the "usual path" isn't
+                    where most people end up anyway. Your report shows the careers that fit you, beyond the two or three
+                    everyone chases — so "plan B" can be a plan you actually want, not the one you settle for.
                 </>
             ),
         },
@@ -155,6 +177,16 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
+            q: "I have no network, and my parents can't guide me on careers.",
+            a: (
+                <>
+                    Then let the facts and a mentor do it. Your report gives the road, exams, pay, demand and AI exposure
+                    for each career, and a mentor who has done the job tells you what it's really like — the network you
+                    didn't inherit.
+                </>
+            ),
+        },
+        {
             q: "I'm not confident enough to ask seniors or people I know for help.",
             a: (
                 <>
@@ -165,12 +197,11 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
-            q: "I have no network, and my parents can't guide me on careers.",
+            q: "Is that expensive master's or course worth it?",
             a: (
                 <>
-                    Then let the facts and a mentor do it. Your report gives the road, exams, pay, demand and AI exposure
-                    for each career, and a mentor who has done the job tells you what it's really like — the network you
-                    didn't inherit.
+                    Check before you pay. Each career shows the <strong>cost to qualify, starting and mid-career pay</strong>{" "}
+                    in India, and whether a master's is needed, helps, or usually isn't needed.
                 </>
             ),
         },
@@ -185,62 +216,12 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
-            q: "Will AI take my job?",
-            a: (
-                <>
-                    AI is redrawing the map: AI, data, cloud and cybersecurity are now the most in-demand skills in India,
-                    and routine roles are shrinking (India Skills Report 2026). Every career we recommend shows{" "}
-                    <strong>how exposed it is to AI</strong> and which part of the work it touches.
-                </>
-            ),
-        },
-        {
-            q: "Will my degree make me job-ready?",
-            a: (
-                <>
-                    Not on its own. <strong>About 44% of Indian graduates still aren't considered job-ready</strong>{" "}
-                    (India Skills Report 2026). Usually it isn't ability — it's a direction that never fit. We count every
-                    career from where you stand: what your degree already covers, and what's left.
-                </>
-            ),
-        },
-        {
-            q: "Is that expensive master's or course worth it?",
-            a: (
-                <>
-                    Check before you pay. Each career shows the <strong>cost to qualify, starting and mid-career pay</strong>{" "}
-                    in India, and whether a master's is needed, helps, or usually isn't needed.
-                </>
-            ),
-        },
-        {
             q: "How do I get job- and interview-ready?",
             a: (
                 <>
                     Start with the right target. Your first steps for each career are right on its card, a mentor who does
                     the job can tell you what they look for — and help with internships, jobs and a starter skill kit is on
                     our waitlist.
-                </>
-            ),
-        },
-        {
-            q: "Where do I go if I don't make it into the usual competitive paths?",
-            a: (
-                <>
-                    Somewhere better suited, often. <strong>Only 8.25% of Indian graduates work in jobs that match their
-                    qualifications</strong> (NITI Aayog, citing the Economic Survey 2024–25) — so the "usual path" isn't
-                    where most people end up anyway. Your report shows the careers that fit you, beyond the two or three
-                    everyone chases.
-                </>
-            ),
-        },
-        {
-            q: "Nine of us are chasing the same seat. What happens to the rest?",
-            a: (
-                <>
-                    In a batch of ten aiming for the same thing, one gets in — and too often the other nine settle. You
-                    don't have to. We rank careers from 1,000+ by how they fit you, including ones you've never heard of
-                    and careers that combine two fields, so "plan B" can be a plan you actually want.
                 </>
             ),
         },
@@ -258,32 +239,12 @@ export const AUDIENCE_QUESTIONS = {
             ),
         },
         {
-            q: "I don't have a strong network. How do I get a referral and move forward?",
-            a: (
-                <>
-                    Start with one real conversation. A mentor plan connects you with <strong>a professional in the job role
-                    you choose</strong> — a one-hour session and a follow-up. We don't promise referrals; we give you someone
-                    who knows the road and can tell you how people really get in.
-                </>
-            ),
-        },
-        {
             q: "My job isn't what I expected. How do I know the drawbacks before I start the next one?",
             a: (
                 <>
                     Ask before you leap. Each career shows the honest parts too — <strong>what to work on</strong>, the
                     money at each stage, demand and AI exposure, and notes worth knowing — and a mentor who does that job
                     tells you what a normal week is really like.
-                </>
-            ),
-        },
-        {
-            q: "Do I keep upskilling to fit the system — or keep switching paths? Is there a third way?",
-            a: (
-                <>
-                    There is: build your own path. Most people either keep upskilling along the one road their degree
-                    shows, or hop from path to path. We start from your story and strengths, show where your experience
-                    carries over — including careers that combine two fields — and what each move would really cost.
                 </>
             ),
         },
@@ -298,11 +259,32 @@ export const AUDIENCE_QUESTIONS = {
                 </>
             ),
         },
+        {
+            q: "Do I keep upskilling to fit the system — or keep switching paths? Is there a third way?",
+            a: (
+                <>
+                    There is: build your own path. Most people either keep upskilling along the one road their degree
+                    shows, or hop from path to path. We start from your story and strengths, show where your experience
+                    carries over — including careers that combine two fields — and what each move would really cost.
+                </>
+            ),
+        },
+        {
+            q: "I don't have a strong network. How do I get a referral and move forward?",
+            a: (
+                <>
+                    Start with one real conversation. A mentor plan connects you with <strong>a professional in the job role
+                    you choose</strong> — a one-hour session and a follow-up. We don't promise referrals; we give you someone
+                    who knows the road and can tell you how people really get in.
+                </>
+            ),
+        },
     ],
 }
 
-// what all three ask — shown inside each audience's own list, after its questions (owner, Round 37: not a
-// separate block). None repeats a question an audience already asks in its own words.
+// what more than one audience asks — shown inside each audience's own list, after its questions (owner, Round 37:
+// not a separate block, nothing repeated, each relevant to its audience). `for` limits one to the audiences it fits;
+// without it, it fits all three.
 export const COMMON_QUESTIONS = [
     {
         q: "I don't know what I want, what I'm capable of, or what fits my values.",
@@ -316,6 +298,7 @@ export const COMMON_QUESTIONS = [
     },
     {
         q: "I don't know what I'm interested in — I've hardly been exposed to anything.",
+        for: ["school", "college"],
         a: (
             <>
                 With your story, not a quiz. Small things count — what you did at school, at home, with friends. We find the
@@ -329,8 +312,8 @@ export const COMMON_QUESTIONS = [
         a: (
             <>
                 Yes. With a mentor plan you get <strong>a professional in the job role you choose</strong> — a one-hour
-                clarity session and a 20-minute follow-up, matched within 20 business days. Real experience, not generic
-                advice.
+                clarity session and a 20-minute follow-up, matched within 20 business days. A personalised, safe space with a
+                mid-level professional — like an older sibling — chosen for empathy, not just merit.
             </>
         ),
     },
@@ -356,6 +339,7 @@ export const COMMON_QUESTIONS = [
     },
     {
         q: "My parents or society expect something else from me.",
+        for: ["school", "college"],
         a: (
             <>
                 You're not alone, and it doesn't have to be a fight. Your report puts the facts on the table — the road,
@@ -397,6 +381,7 @@ export const COMMON_QUESTIONS = [
     },
     {
         q: "My past choices feel wrong — is it too late?",
+        for: ["school", "college"],
         a: (
             <>
                 No. Your past doesn't define you. We show what carries over, how many years a switch would leave behind and
@@ -414,16 +399,6 @@ export const COMMON_QUESTIONS = [
             </>
         ),
     },
-    {
-        q: "What is a Freshmxn mentor like?",
-        a: (
-            <>
-                A personalised, safe space with someone like an older sibling — <strong>a mid-level professional</strong> in
-                the job role you choose. We choose mentors for how empathetic they are, not just on merit.
-            </>
-        ),
-    },
-    // the practical ones (owner, Round 37) — how long, the price, privacy, and a difficulty never counting against you
     {
         q: "How long does it take?",
         a: (
@@ -492,5 +467,5 @@ const PARENT_QUESTIONS = [
 export const questionsFor = (audience) => [
     ...AUDIENCE_QUESTIONS[audience],
     ...(audience === "school" ? PARENT_QUESTIONS : []),
-    ...COMMON_QUESTIONS.filter((item) => !AUDIENCE_QUESTIONS[audience].some((own) => own.q === item.q)),
+    ...COMMON_QUESTIONS.filter((item) => !item.for || item.for.includes(audience)),
 ]

@@ -105,7 +105,10 @@ Then **Who is it for** — three cards, names only: School students
 **What each of them ask us**: a visitor picks an audience (a tab, or tapping its card) and sees that audience's
 questions first — school students also two for their parents — then the ones every audience asks, in the same
 list (Round 37: no separate block, and no question twice), including how long it takes, financial aid and refunds,
-who sees your answers, and that a learning difficulty never counts against you. The first ten show, then "See all".
+who sees your answers, and that a learning difficulty never counts against you. Each audience sees only questions
+that fit it, none twice. The home page shows each list's first five; **See all questions** opens the **FAQ page**
+(`/faq`, also in the footer) at that audience — all three audiences with every question, or only a logged-in
+student's own.
 Each opens to a short answer with a sourced fact and what Freshmxn does about it (`Public/audienceQuestions.js`). A **logged-in student**
 sees only their own set ("What college students ask us"), their card marked **You** — the category comes from their
 journey. A number is shown only with its source (owner, Round 37: numbers without one are left out).
