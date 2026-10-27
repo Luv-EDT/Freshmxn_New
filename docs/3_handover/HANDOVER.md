@@ -2717,4 +2717,6 @@ No code changed in this part.
 | **Home page** | Five questions per audience, then **See all questions** (no number) → `/faq#<audience>` |
 | **FAQ page** (`Public/FaqPage.js`, `/faq`, footer "Questions we're asked") | Visitors: all three audiences, each with its whole list, jump links at the top. A logged-in student: only their own. The category comes from one hook, `useMyAudience`, shared with the home page |
 
+**Mentor training (owner asked whether the trimmed reads were enough):** three brief additions, reading times unchanged — "Who you'll meet" (the three audiences, what most have already seen in their report), "Do, and don't" (real numbers, no promises of jobs or referrals, no selling, don't decide for them) and "If a conversation gets hard" (stay to what you know; a mentor, not a counsellor; a worry about a student's safety goes to us the same day, never kept secret; under-18 students: professional, booked links only, no personal contact or photos).
+
 **Fixtures:** 253/253 (new ROUND 37b checks no question twice in any audience's list; ROUND 36c updated — the category hook and the merged counts 8 / 12 / 5, an owner change). **Checked locally** at 360 and 1280: five on the home page, the button text, the FAQ page opening at the chosen audience, all three for a visitor and only theirs logged in, no repeats. Build: the 7 known warning files.
