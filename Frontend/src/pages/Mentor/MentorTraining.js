@@ -38,6 +38,13 @@ const Introduction = () => (
             <li><strong>Action</strong> — skills, internships, projects.</li>
         </ol>
 
+        <h4>Who you'll meet</h4>
+        <ul className="training-ticks">
+            <li>School students (Class 9 to 12), college students, and people in their first few years of work.</li>
+            <li>Most have their Freshmxn report and chose your career — and the job role in it — from their list. Mentor Only students come straight to you with a career in mind.</li>
+            <li>They come for the truth of the work: what a week is like, what it pays, what it takes from where they are now.</li>
+        </ul>
+
         <h4>Your role</h4>
         <ul className="training-ticks">
             <li>Show the real work — the good and the hard parts.</li>
@@ -153,6 +160,26 @@ const Session = () => (
 
         <h4>The 20-minute follow-up</h4>
         <p>No preparation: their questions and reflections — they talk more than you.</p>
+
+        <h4>Do, and don't</h4>
+        <div className="table-scroll">
+            <table className="training-table">
+                <thead><tr><th>Do</th><th>Don't</th></tr></thead>
+                <tbody>
+                    <tr><td>Share real numbers — pay, hours, how long things took you.</td><td>Promise a job, an internship or a referral.</td></tr>
+                    <tr><td>Say who the work suits, and who it doesn't.</td><td>Talk them out of a career because it wasn't right for you.</td></tr>
+                    <tr><td>Ask what they want to know, and answer that.</td><td>Sell courses, coaching or your own services.</td></tr>
+                    <tr><td>Give two or three concrete next steps.</td><td>Decide for them — the choice is theirs.</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h4>If a conversation gets hard</h4>
+        <ul className="training-ticks">
+            <li>Pressure from home, fear of failing, tears — listen, stay calm, and keep to what you know: your work and your path.</li>
+            <li>You're a mentor, not a counsellor or a therapist. If a student says something that worries you about their safety or wellbeing, don't promise to keep it secret — tell us on WhatsApp the same day.</li>
+            <li>Some students are under 18: keep every conversation professional and on the booked links, and never ask for personal contact details or photos.</li>
+        </ul>
 
         <h4>Rules</h4>
         <ul className="training-ticks">
