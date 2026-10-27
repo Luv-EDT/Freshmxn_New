@@ -6423,8 +6423,10 @@ const fixtures = [
             if (payoutAmount({ region: "international", tier: 1 }, "followup").usd !== 4.5) problems.push("an international follow-up is not 30% in dollars")
             if (mainRate({ region: "indian", tier: 3, customRateInr: 1200 }).inr !== 1500 || mainRate({ region: "indian", tier: 3, customRateInr: 1800 }).inr !== 1800) problems.push("a Tier 3 custom rate is not counted only above the table")
             if (mainRate({ region: "indian", tier: 2, customRateInr: 5000 }).inr !== 1300) problems.push("a custom rate counts below Tier 3")
-            const seven = statsOf(Array.from({ length: 7 }, () => ({ rating: 8 })))
-            if (!tier2Due({ tier: 1 }, seven, 0)) problems.push("7 sessions averaging 8 do not move a mentor to Tier 2")
+            // Round 35 (owner change): the data check is part of Tier 2
+            const seven = { ...statsOf(Array.from({ length: 7 }, () => ({ rating: 8 }))), dataReviewed: true }
+            if (!tier2Due({ tier: 1 }, seven, 0)) problems.push("7 sessions averaging 8 with the data check do not move a mentor to Tier 2")
+            if (tier2Due({ tier: 1 }, { ...seven, dataReviewed: false }, 0)) problems.push("Tier 2 comes without the data check")
             if (tier2Due({ tier: 1 }, statsOf(Array.from({ length: 6 }, () => ({ rating: 10 }))), 0)) problems.push("6 sessions move a mentor to Tier 2")
             if (tier2Due({ tier: 1 }, statsOf([...Array.from({ length: 6 }, () => ({ rating: 8 })), { rating: 7 }]), 0)) problems.push("an average under 8 moves a mentor to Tier 2")
             if (tier2Due({ tier: 1 }, seven, 1)) problems.push("an upheld report still moves a mentor to Tier 2")
@@ -6608,7 +6610,11 @@ const fixtures = [
             if (!/disabled: !profile/.test(home)) problems.push("the test opens before the profile is in")
             if (/label: "My profile"/.test(home) || !/aria-label="My profile"/.test(home)) problems.push("the profile is a tab instead of behind the profile icon")
             if ((home.match(/<LogoutButton \/>/g) || []).length !== 1 || home.indexOf("<LogoutButton />") < home.indexOf('if (view === "profile")')) problems.push("Log out isn't only in the profile view")
-            if (!/label: "My profession data"/.test(home)) problems.push("the tab isn't called My profession data")
+            // Round 35 (owner change): renamed so a mentor knows why they're there; the tier rules live in that tab
+            if (!/label: "Tier up: data check & roadmap"/.test(home)) problems.push("the tab isn't called 'Tier up: data check & roadmap'")
+            if (/For Tier 3: \{standing\.tier3Missing/.test(home)) problems.push("the Tier 3 line is still on Home")
+            const sheetFile = read("MentorReviewSheet.js")
+            if (!/className="tier-up-intro"/.test(sheetFile) || !/counts towards <strong>Tier 2<\/strong>/.test(sheetFile) || /~20 min/.test(sheetFile)) problems.push("the Tier up tab doesn't explain the tiers first, or the roadmap still gives a time")
             if (/calendly/i.test(read("MentorOnboarding.js").replace(/\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, ""))) problems.push("the profile form still asks for the Calendly links")
             const mentors = fs.readFileSync(path.join(__dirname, "../../Routers/mentorsRouter.js"), "utf8")
             if (/calendlyMain: text\(body\.calendlyMain\)/.test(mentors)) problems.push("a profile save still writes the Calendly links")

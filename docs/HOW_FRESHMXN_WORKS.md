@@ -647,9 +647,10 @@ server was asleep runs as soon as it wakes (Round 22 — before that the calenda
 
 **The mentor's page (Rounds 35c–d, owner)** has one tab bar. Until the test is sent: 1. Training, 2. Tell us about
 yourself, 3. Test (locked until the profile is in). After it: Home (the test's status, or once approved the tier and
-the current student), My profession data and Payouts. The round profile icon opens the profile, the **Calendly links**
+the current student), **Tier up: data check & roadmap** (it opens by saying the data check counts towards Tier 2 and
+the roadmap towards Tier 3, with what each mentor still needs) and Payouts. The round profile icon opens the profile, the **Calendly links**
 (asked first in the test — sending it makes them the booking links — and changed here later), the training documents
-to refer back to, and **Log out**.
+to refer back to — each a folded card — and **Log out**.
 
 **Mentors, step by step (Round 34; Round 35: the training comes first).** Sign up → three short **training
 documents**, folded, with their reading times (about 10, 20 and 15 minutes) → the profile (including where they live — India or abroad,
@@ -668,7 +669,7 @@ is included, a later one pays 30% of the main rate.
 | Tier | Indian | International |
 |---|---|---|
 | Tier 1 (approved) | ₹1,000 | ₹1,500 ($15) |
-| Tier 2 (automatic: 7 sessions with feedback, average 8/10+, no upheld report) | ₹1,300 | ₹1,900 ($19) |
+| Tier 2 (automatic: 7 sessions with feedback, average 8/10+, no upheld report, and — Round 35 — the data check sent) | ₹1,300 | ₹1,900 ($19) |
 | Tier 3 (the admin's call: 10+ sessions, average 8+, a skills roadmap and a review of their profession's data) | ₹1,500+ | ₹2,200+ ($22) |
 
 A mentor's **first** payout waits for the admin's "Keep" (or "Remove" — they're taken off). Payouts are
