@@ -230,7 +230,11 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
 - **Virtual Career Counselling** (the interest form's name for students since Round 28, owner) is where you
   tell us what you love, what you've actually done, problems you care about and what you want to be.
   Each life stage asks you to write down **everything** — even things done once or stopped — and
-  "What still feels like you" then asks which still resonate. **Editing it after you've finished** saves
+  "What still feels like you" then asks which still resonate. **A résumé (Round 36, owner):** on the welcome
+  page a student can attach one (PDF, Word or a photo); the AI lists its activities by stage of life, and each
+  stage's "Stuck?" list then shows them first — "The activity list includes all activities from your résumé,
+  plus others you can choose." They are reminders only, kept in this browser for this student: nothing goes
+  into the answers until the student writes it in, and the file itself is never kept. **Editing it after you've finished** saves
   only when you press **Save changes**: moving between sections saves nothing, no copy is kept in the
   browser, and a refresh, going offline or any link away (the menu bar included) warns first and offers
   Save and go / Leave without saving / Stay. The top button is "← Previous section". Saved changes after a
@@ -516,9 +520,10 @@ and still counts in your matches.
 shows a banner, **"Update my report"** — it never rebuilds by itself. Updating (or resubmitting your
 assessment) asks one question: are you still heading the same way, or looking for something new?
 
-**Three filters** sit beside **"Sort your list"** on the matches page: *Leave out blue-collar careers\**
-(with the note "\* Some of the most AI-proof careers are blue-collar"), *Core engineering only* and
-*Studying abroad helps*. All are off until you turn them on, and the page always says how many
+**The filters** sit beside **"Sort your list"** on the matches page: *Leave out blue-collar careers\**
+(with the note "\* Some of the most AI-proof careers are blue-collar"), *Core engineering only*,
+*Studying abroad helps*, and (Round 36, owner) **Filter by professional sectors**, which opens the 18 sectors,
+each with how many of your careers are in it; pick any and only careers in those sectors stay. All are off until you turn them on, and the page always says how many
 careers they hid, with one tap to show them again. "Sort your list" switches between **Best match** (our
 ranking) and **Best fit, ignoring switching cost** (every career stays in its tier), and can then order
 the whole list by pay, demand, speed, AI exposure (with its value shown) or **least switching cost** (Rounds 20 and 29). **"Compare careers →"** opens a page where you pick 2–3 of the careers recommended to

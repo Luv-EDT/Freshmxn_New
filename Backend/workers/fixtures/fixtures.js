@@ -2173,7 +2173,8 @@ const fixtures = [
             // Round 28 (owner): three, then up to fifteen, then the rest folded (Round 31: "Some other careers you can consider")
             if (!/Show \{Math\.min\(ordered\.length, MAIN_SHOWN\) - TOP_SHOWN\} more/.test(page) || !/Some other careers you can consider/.test(page) || !/splitShown\(groups, MAIN_SHOWN\)/.test(page)) problems.push("the list does not open to fifteen with the rest folded")
             if (!/const TOP_SHOWN = 3/.test(page)) problems.push("the list does not open on three")
-            if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar\]/.test(page)) problems.push("a new sort or filter does not start again at three")
+            // Round 36 (owner): the sectors picked are part of the key too
+            if (!/const sortKey = \[primary, secondary, only\.join\("\+"\), excludeBlueCollar, sectors\.join\("\+"\)\]/.test(page)) problems.push("a new sort or filter does not start again at three")
             if (!/rank=\{ordered\.indexOf\(entry\) \+ 1\}/.test(page)) problems.push("the cards are not numbered in the order shown")
 
             return problems.length > 0 ? problems.join("; ") : null
@@ -6749,6 +6750,35 @@ const fixtures = [
             // the splash: one time line, no tags
             const splash = frontend("pages/Public/DemoSplash.js")
             if (!/It takes just 5 minutes\./.test(splash) || /No login|6 min|splash-meta/.test(splash)) problems.push("the splash still has its tags, or not the 5-minutes line")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 36b — THE REPORT'S SECTOR FILTER AND THE RÉSUMÉ IN COUNSELLING: the 18 sectors match the career data (without their numbers) and keep only careers in the ones picked, saying how many it hid; a résumé's activities show first in each stage's 'Stuck?' list with the owner's line, and never reach the answers",
+        run: () => {
+            const problems = []
+            const { SECTORS, buildList } = loadReportFilters()
+            const { cleanSector } = require("../../Routers/professionsRouter")
+            const inData = new Set(require("../../data/ALL-professions.json").professions.map((profession) => cleanSector(profession.professional_sector)))
+            if (SECTORS.length !== 18 || SECTORS.some((sector) => !inData.has(sector)) || inData.size !== 18) problems.push("the 18 sectors don't match the career data")
+            const ranked = [{ professionId: "a", tier: 1 }, { professionId: "b", tier: 1 }, { professionId: "c", tier: 2 }]
+            const details = { a: { professionalSector: "Healthcare & Medicine" }, b: { professionalSector: "Software & Computing" }, c: { professionalSector: "Healthcare & Medicine" } }
+            const kept = buildList(ranked, "best", null, details, { sectors: ["Healthcare & Medicine"] }).map((entry) => entry.professionId).join()
+            const all = buildList(ranked, "best", null, details, { sectors: [] }).length
+            if (kept !== "a,c" || all !== 3) problems.push(`the sector filter keeps ${kept} (all: ${all})`)
+            const front = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages", file), "utf8")
+            const matches = front("Report/MatchesPage.js")
+            if (!/only\.length === 0 && sectors\.length === 0/.test(matches) || !/setOnly\(\[\]\); setSectors\(\[\]\)/.test(matches)) problems.push("the sectors hide careers without saying so, or 'Show them again' leaves them on")
+            if (!/Filter by professional sectors/.test(front("Report/ReportFilterMenu.js"))) problems.push("no 'Filter by professional sectors' button")
+            const list = front("Interest/ActivityReferenceList.js")
+            if (!/The activity list includes all activities from your résumé, plus others you can choose\./.test(list) || list.indexOf("fromResume.map") > list.indexOf("activities.map")) problems.push("the résumé's activities aren't first, or the owner's line is missing")
+            const form = front("Interest/InterestForm.js")
+            ;["preHighSchool", "highSchool", "college", "postCollege"].forEach((key) => {
+                if (!new RegExp(`resumeList=\\{resumeList\\("${key}"\\)\\}`).test(form)) problems.push(`${key} doesn't get the résumé's activities`)
+            })
+            if (/updateFormState\([^)]*resume/i.test(form) || /resumeActivities/.test(front("Interest/interestFormState.js"))) problems.push("the résumé's activities are written into the answers")
+            if (!/readMyResume/.test(front("Interest/InterestIntro.js"))) problems.push("the counselling welcome has no résumé box")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
