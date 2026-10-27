@@ -43,16 +43,15 @@ function DemoResult({ result }) {
                     </div>
                 ))}
             </div>
+            {/* Round 36 (owner): in this order — the tap hint, the limit in bold, the question, what 5 minutes
+                can't do, then the snapshot with its line underneath */}
             <p className="demo-hint">Tap a career to open everything about it.</p>
-            <p className="demo-two-note">
-                These are <strong>just two careers</strong>. Go through the whole process and we'll give you a much wider
-                spectrum — built from everything you tell us and the complete assessment.
-            </p>
-            {/* owner, Round 33: one line, after the two careers — what 6 minutes can't do */}
-            <p className="demo-fomo">That took 6 minutes. <strong>The full journey takes 3+ hours</strong> — and finds sharper careers, the road to each, and a far deeper you.</p>
+            <p className="demo-limit"><strong>The demo result is limited to two careers.</strong></p>
+            <p className="demo-unhappy">Not happy with the 2 recommendations?</p>
+            <p className="demo-fomo">That took about 5 minutes. <strong>The full journey takes 3+ hours</strong> — and finds sharper careers, the road to each, and a far deeper you.</p>
 
-            <details className="faq-item demo-fold">
-                <summary>Your psychometric snapshot — just {measured.length} of {TOTAL_FACTORS} factors, and even those only partly measured</summary>
+            <details className="faq-item demo-fold demo-snapshot">
+                <summary>Your psychometric snapshot</summary>
                 <p>
                     Seven quick statements, a 90-second focus game and four puzzles touched {measured.length} factors —
                     and none of them fully. The bar shows how much of each we measured; the rest we didn't touch at all.
@@ -93,6 +92,7 @@ function DemoResult({ result }) {
                     <p className="demo-locked-note">The full assessment measures all {TOTAL_FACTORS}.</p>
                 </div>
             </details>
+            <p className="demo-hint demo-snapshot-note">Just {measured.length} of {TOTAL_FACTORS} factors, and even those only partly measured.</p>
 
             <details className="faq-item demo-fold">
                 <summary>What we did differently</summary>
@@ -108,30 +108,31 @@ function DemoResult({ result }) {
                 <p><Link to="/how-it-works">How the full program works →</Link></p>
             </details>
 
-            {/* what the full program adds — three cards that open (owner, Round 33) */}
+            {/* WHAT THE FULL PROGRAM GIVES YOU (owner, Round 36) — what they missed, and how to get there: four
+                crisp points that open to a line or two, then the way to the programs */}
             <section className="demo-adds">
-                <h2>What the full program adds</h2>
+                <h2>What you missed — and what the full program gives you</h2>
                 <details className="demo-add-card">
-                    <summary><span className="demo-add-icon" aria-hidden="true">🧠</span>We measured just {measured.length} of {TOTAL_FACTORS} factors</summary>
+                    <summary><span className="demo-add-icon" aria-hidden="true">🧭</span>A detailed virtual career counselling experience</summary>
+                    <p>Instead of three short questions, it walks through four stages of your life — what you did, what stuck and why — so you understand yourself before any career is named.</p>
+                </details>
+                <details className="demo-add-card">
+                    <summary><span className="demo-add-icon" aria-hidden="true">🧠</span>All {TOTAL_FACTORS} factors, measured completely — not just {measured.length}</summary>
                     <p>
-                        And only partly.{untouched.length > 0 && <> We didn't touch {untouched.join(", ")} at all.</>} The full
-                        assessment measures all {TOTAL_FACTORS}, properly.
+                        The demo touched {measured.length}, and only partly.{untouched.length > 0 && <> It didn't touch {untouched.join(", ")} at all.</>}
+                        {" "}The full assessment measures all {TOTAL_FACTORS}, properly.
                     </p>
                 </details>
                 <details className="demo-add-card">
-                    <summary><span className="demo-add-icon" aria-hidden="true">🧭</span>Virtual Career Counselling</summary>
-                    <p>
-                        It replaces the two-minute questions you just answered: it walks through four stages of your life —
-                        what you did, what stuck and why — and helps you understand yourself before any career is named.
-                    </p>
-                </details>
-                <details className="demo-add-card">
-                    <summary><span className="demo-add-icon" aria-hidden="true">🎯</span>We showed you just 2 careers</summary>
+                    <summary><span className="demo-add-icon" aria-hidden="true">🎯</span>A whole list of careers — not just two</summary>
                     <p>
                         {typeof pointedTo === "number" && pointedTo > 2 && <>Your few words already pointed to {pointedTo}. </>}
-                        The full report ranks every career your story points to, from 1,000+ careers and job roles — each with
-                        its road from where you stand, exams, where to study, money, demand and AI exposure.
+                        The full report ranks every career your story points to, from 1,000+ careers and job roles — each with its road from where you stand, exams, money, demand and AI exposure.
                     </p>
+                </details>
+                <details className="demo-add-card">
+                    <summary><span className="demo-add-icon" aria-hidden="true">🤝</span>Talk to a mentor in one of these two careers</summary>
+                    <p>Someone who does the work, one to one — or find more careers that fit you first, then choose the one to talk to a mentor in.</p>
                 </details>
             </section>
 

@@ -195,7 +195,7 @@ const SECTIONS = [
                             <tr><th>Provider</th><th>What they do for us</th></tr>
                         </thead>
                         <tbody>
-                            <tr><td>Anthropic</td><td>AI that grades written answers, reads uploaded test-result screenshots and drafts your report</td></tr>
+                            <tr><td>Anthropic</td><td>AI that grades written answers, reads uploaded test-result screenshots and drafts your report; reads a résumé you attach to list its activities (the file is not kept)</td></tr>
                             <tr><td>Voyage AI</td><td>Text matching between your answers and careers</td></tr>
                             <tr><td>MongoDB Atlas</td><td>Our database</td></tr>
                             <tr><td>Render</td><td>Hosting for the website and servers</td></tr>
@@ -253,16 +253,30 @@ const SECTIONS = [
     },
     {
         id: "demo",
-        title: "The demo (before you sign up)",
+        title: "The demo, and a résumé you attach",
         body: (
             <>
                 <p>
-                    "Try a Free Demo" is a short taste you can take without an account. It keeps your first name,
-                    what you tell us about yourself and why it stuck, a short result from its three quick tasks (never
-                    your individual answers or timings), and — when you ask to see your result — your email, where you
-                    are now (school, college or work), and whether you are 18 or older. If you are under 18, you confirm
-                    that a parent or guardian knows and agrees; we record when, and which version of this policy you
-                    saw. We keep no address, device details or cookies for it, and nothing for advertising.
+                    "Try a Free Demo" is a short taste you can start without an account. It keeps your first name,
+                    what you tell us about yourself and why it stuck, and a short result from its three quick tasks
+                    (never your individual answers or timings). We keep no address, device details or cookies for it,
+                    and nothing for advertising.
+                </p>
+                <p>
+                    <strong>Seeing your result needs an account.</strong> Before the result you sign up — the same
+                    details as on our sign-up page, including where you are now (school, college or work) and, if you
+                    are under 18, your parent or guardian's details and permission — and confirm your email with a
+                    6-digit code we send; or you log in, if your email already has an account. Your account is made only
+                    when you type that code. You then see the result signed in, and the demo is linked to your account.
+                    If you stop before this step, no account is made and the demo is deleted with the rest after 30 days.
+                </p>
+                <p>
+                    <strong>Your résumé.</strong> On the demo's first step, and at the start of Virtual Career
+                    Counselling, you can attach a résumé (PDF, Word or a photo). Our AI processor (Anthropic) reads it
+                    once to list the activities in it — short names like "Debating" — which you can then remove or add
+                    to. The file itself is never stored, by us or in our database; we keep only the activities you
+                    leave in, like anything else you type. We ask the AI to leave out names, schools, companies and
+                    contact details, and we check its answer for them again.
                 </p>
                 <p>
                     <strong>How long:</strong> a demo is deleted by itself after 30 days. If you later sign up and pay

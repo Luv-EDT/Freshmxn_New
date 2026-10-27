@@ -1438,6 +1438,17 @@
     color: #fff;
     font-size: 1.1rem;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+}
+
+.splash-time {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.75);
 }
 
 .splash-close:hover,
@@ -2127,3 +2138,27 @@
     font-weight: 700;
     cursor: pointer;
 }
+
+/* Round 36 (owner): the demo's results order, and the program finder */
+.demo-limit { margin: var(--space-2) 0 0; font-size: 1.05rem; }
+.demo-unhappy { margin: var(--space-1) 0 0; font-weight: 700; color: var(--teal-dark); }
+.demo-snapshot-note { margin-top: calc(-1 * var(--space-2)); }
+.demo-cta { text-align: center; }
+.demo-cta .demo-programs-btn { background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%); color: #fff; border: 0; padding: 14px 28px; font-size: 1.05rem; box-shadow: 0 8px 22px rgba(0, 117, 130, 0.3); }
+.demo-cta .demo-programs-btn:hover { transform: translateY(-1px); }
+.finder-page { max-width: 880px; }
+.finder-lead { text-align: center; color: var(--navy-soft); }
+.finder-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-3); margin: var(--space-4) 0; }
+.finder-sub { margin-top: 0; padding-left: var(--space-4); border-left: 3px solid var(--pink); }
+.finder-card { display: grid; gap: 6px; text-align: left; padding: var(--space-4); border-radius: var(--radius-lg); border: 2px solid var(--line); background: var(--surface); cursor: pointer; font: inherit; color: var(--navy); }
+.finder-card.is-on { border-color: var(--teal); background: var(--teal-tint); }
+.finder-card strong { font-size: 1.1rem; }
+.finder-card span { color: var(--navy-soft); }
+.finder-tag { justify-self: start; padding: 2px 10px; border-radius: var(--radius-pill); background: var(--pink-tint); color: var(--navy) !important; font-size: 0.8rem; font-weight: 700; }
+.finder-plans h2 { text-align: center; }
+.finder-plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); }
+.finder-plan { padding: var(--space-4); border-radius: var(--radius-lg); border: 1px solid var(--line); background: var(--surface); display: grid; gap: var(--space-2); align-content: start; }
+.finder-plan.is-full { border: 2px solid var(--teal); }
+.finder-plan h3 { margin: 0; }
+.finder-price { font-family: var(--font-display); font-size: 1.6rem; margin: 0; }
+.finder-more { text-align: center; }

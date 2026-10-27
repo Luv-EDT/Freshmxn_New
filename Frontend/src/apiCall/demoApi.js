@@ -23,8 +23,21 @@ export async function saveDemoTests(payload) {
     return axiosInstance.post("/demo/saveTests", payload)
 }
 
-export async function getDemoResult(payload) {
-    return axiosInstance.post("/demo/result", payload)
+// Round 36 (owner): the result only after an account — sign up with an emailed code, or log in
+export async function demoRegister(payload) {
+    return axiosInstance.post("/demoAccount/register", payload)
+}
+
+export async function demoVerify(payload) {
+    return axiosInstance.post("/demoAccount/verify", payload)
+}
+
+export async function demoResendCode(payload) {
+    return axiosInstance.post("/demoAccount/resendCode", payload)
+}
+
+export async function demoLogin(payload) {
+    return axiosInstance.post("/demoAccount/login", payload)
 }
 
 export async function loadDemoResult(token) {
