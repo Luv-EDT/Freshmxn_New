@@ -2701,3 +2701,10 @@ No code changed in this part.
 | **How it works** | The bonus block says "(Coming soon)", like the marketing, not "By invitation only" |
 
 **Fixtures:** 252/252 (new ROUND 37; ROUND 36c updated for the owner's changes — "Freshmxn's Lab", no separate block). **Checked locally** at 360 and 1280: the demo's résumé page → boxes, tap-to-add, the stuck step without the aspiration; counselling Start → résumé page → a tap and a drop into questions; the landing lists (parents for school only, See all, hero → finder). Build: the 7 known warning files.
+
+### Round 37 (part 2) — decks, posters and messages reworked (2026-10-27)
+| Item | What changed |
+|---|---|
+| **Decks** | The step slides centre their heading and text on the right, with more room under the heading. Step 2: the puzzles line, then "the scores don't define what you can do — they show the gaps"; the "Your story goes first" slide now follows step 2 and explains why (interests first, abilities can be built). Step 3: three highlights every recommended career is chosen for (rising demand, strong pay start to mid-career, AI-resilient), how you get there in every detail, the psychometric gaps we can work on with you, and that the career data is revised as trends and the news move. No URL on the cover; www.freshmxn.com on the last slide. College: the skill kit and internship help as "coming soon — join the waitlist" on the method slide |
+| **Posters** | New, general headlines and lines (no source lines), the site's own illustration, a "Sounds like you? Tick it." list, a QR code to the demo, www.freshmxn.com. Two new: core engineering students and core engineering early professionals |
+| **Messages** | General ones: everyone, each audience, parents (school), core engineering students and early professionals — in `docs/5_finalized/content/marketing_round36.md` |
