@@ -1,7 +1,13 @@
+import ResumeAttach from "../ResumeAttach"
+import { readMyResume } from "../../apiCall/resumeApi"
+import { countOf } from "./resumeActivities"
+
 // Shown each time the form is opened. Round 10 (S10): the welcome is down to what a student needs to
 // start; the tips and the privacy note fold away under "How to answer" — they were about 400 words
 // between a student and the first question.
-function InterestIntro({ handleNext, hasSubmitted }) {
+// Round 36 (owner): a résumé can be attached here first — its activities join each stage's activity list.
+function InterestIntro({ handleNext, hasSubmitted, resumeActivities, onResume, onClearResume }) {
+    const kept = countOf(resumeActivities)
     return (
         <div className="if-intro">
             <h2>Welcome to Virtual Career Counselling</h2>
@@ -15,6 +21,19 @@ function InterestIntro({ handleNext, hasSubmitted }) {
                 results. It takes about 60–75 minutes, and your answers save as you go, so you can stop and come
                 back any time.
             </p>
+
+            <ResumeAttach
+                read={readMyResume}
+                onRead={onResume}
+                lead="Attach it and we'll add the activities we find to the activity list of each stage of your life."
+                addedNote={(added) => `Found ${added} activities — each stage's "Stuck?" list now shows them first.`}
+            />
+            {kept > 0 && (
+                <p className="if-resume-kept">
+                    {kept} activities from your résumé are in your stage lists.{" "}
+                    <button type="button" className="link-button" onClick={onClearResume}>Remove them</button>
+                </p>
+            )}
 
             <details className="if-examples if-how">
                 <summary className="if-chip-summary"><span className="if-q" aria-hidden="true">?</span> How to answer</summary>

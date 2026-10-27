@@ -15,6 +15,7 @@ import Challenges from "./Challenges"
 import BackgroundInfo from "./BackgroundInfo"
 import AspirationalProfessions from "./AspirationalProfessions"
 import InterestSubmit from "./InterestSubmit"
+import { loadResumeActivities, keepResumeActivities, cleanLists, countOf } from "./resumeActivities"
 import {
     createInitialFormState,
     normalizeFormState,
@@ -65,6 +66,22 @@ function InterestForm() {
     const [blockedAt, setBlockedAt] = useState(null)           // the stage a refused jump points to
     const [blockedNeeds, setBlockedNeeds] = useState([])       // what that stage still needs, in words
     const lastBlocked = useRef(null)
+    // Round 36 (owner): the activities a résumé gave, per stage — shown first in each stage's list
+    const [resumeActivities, setResumeActivities] = useState(null)
+    useEffect(() => {
+        if (user?._id) setResumeActivities(loadResumeActivities(user._id))
+    }, [user?._id])
+    const takeResume = (found) => {
+        const lists = cleanLists(found)
+        keepResumeActivities(user._id, countOf(lists) ? lists : null)
+        setResumeActivities(countOf(lists) ? lists : null)
+        return countOf(lists)
+    }
+    const clearResume = () => {
+        keepResumeActivities(user._id, null)
+        setResumeActivities(null)
+    }
+    const resumeList = (key) => (resumeActivities || {})[key] || []
 
     const steps = getVisibleSteps(user)
     const currentStepIndex = steps.findIndex((s) => s.key === step)
@@ -442,15 +459,15 @@ function InterestForm() {
     const renderSection = () => {
         switch (steps[currentStepIndex].key) {
             case "intro":
-                return <InterestIntro handleNext={handleNextSection} hasSubmitted={hasSubmitted} />
+                return <InterestIntro handleNext={handleNextSection} hasSubmitted={hasSubmitted} resumeActivities={resumeActivities} onResume={takeResume} onClearResume={clearResume} />
             case "post-college":
-                return <PostCollege {...commonProps} formData={formState.postCollege} updateFormData={(data) => updateFormState("postCollege", data)} reportDraft={(data) => reportSectionDraft({ postCollege: data })} />
+                return <PostCollege {...commonProps} formData={formState.postCollege} updateFormData={(data) => updateFormState("postCollege", data)} reportDraft={(data) => reportSectionDraft({ postCollege: data })} resumeList={resumeList("postCollege")} />
             case "college":
-                return <College {...commonProps} formData={formState.college} updateFormData={(data) => updateFormState("college", data)} reportDraft={(data) => reportSectionDraft({ college: data })} />
+                return <College {...commonProps} formData={formState.college} updateFormData={(data) => updateFormState("college", data)} reportDraft={(data) => reportSectionDraft({ college: data })} resumeList={resumeList("college")} />
             case "high-school":
-                return <HighSchool {...commonProps} formData={formState.highSchool} updateFormData={(data) => updateFormState("highSchool", data)} reportDraft={(data) => reportSectionDraft({ highSchool: data })} />
+                return <HighSchool {...commonProps} formData={formState.highSchool} updateFormData={(data) => updateFormState("highSchool", data)} reportDraft={(data) => reportSectionDraft({ highSchool: data })} resumeList={resumeList("highSchool")} />
             case "pre-high-school":
-                return <PreHighSchool {...commonProps} formData={formState.preHighSchool} updateFormData={(data) => updateFormState("preHighSchool", data)} reportDraft={(data) => reportSectionDraft({ preHighSchool: data })} />
+                return <PreHighSchool {...commonProps} formData={formState.preHighSchool} updateFormData={(data) => updateFormState("preHighSchool", data)} reportDraft={(data) => reportSectionDraft({ preHighSchool: data })} resumeList={resumeList("preHighSchool")} />
             case "current-interests":
                 return (
                     <CurrentInterests

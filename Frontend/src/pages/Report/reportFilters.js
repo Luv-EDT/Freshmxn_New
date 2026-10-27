@@ -285,6 +285,12 @@ export const groupList = (ranked, primary, secondary, details = {}, options = {}
         list = list.filter((entry) => Boolean((details[entry.professionId] || {})[key]))
     })
 
+    // "Filter by professional sectors" (owner, Round 36): with any sectors picked, only careers in one of
+    // them stay. The server sends each career's `professionalSector` without its number.
+    if ((options.sectors || []).length > 0) {
+        list = list.filter((entry) => options.sectors.includes((details[entry.professionId] || {}).professionalSector))
+    }
+
     // "Leave out blue-collar careers" (owner, 2026-09-30), off by default. The list is
     // data/blue_collar.json, reviewed by the owner; the page always says how many were hidden and
     // that some of the most AI-proof careers are among them.
@@ -333,6 +339,29 @@ export const ONLY_FILTERS = [
     { value: "coreEngineering", label: "Core engineering only", hidden: "not core engineering", hint: "Keeps only core engineering careers and the ones built on them." },
     // Round 28 (owner): renamed from "Studying abroad helps"
     { value: "studyAbroadHelps", label: "For studying abroad", hidden: "where studying abroad doesn't help much", hint: "Keeps only careers where a degree or master's abroad is a real advantage." },
+]
+
+// THE 18 PROFESSIONAL SECTORS (owner, Round 36), in ALL-professions.json's order, without the numbers some
+// of them carry there
+export const SECTORS = [
+    "Software & Computing",
+    "Engineering & Making",
+    "Science & Research",
+    "Healthcare & Medicine",
+    "Business, Management & Entrepreneurship",
+    "Finance & Economics",
+    "Law, Governance & Public Service",
+    "Design & Creative Arts",
+    "Media, Film & Storytelling",
+    "Performing Arts & Music",
+    "Sports & Fitness",
+    "Education & Training",
+    "Social Impact & Psychology",
+    "Environment & Sustainability",
+    "Agriculture & Food Systems",
+    "Hospitality, Travel & Culinary",
+    "Humanities, Culture & Belief",
+    "Personal Care & Wellness",
 ]
 
 // HOW MUCH OF THE LIST SHOWS (owner, Round 28: 40+ careers was too much). The top three; then up to
