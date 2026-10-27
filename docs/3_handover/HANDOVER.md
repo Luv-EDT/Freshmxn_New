@@ -122,6 +122,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | Item | Notes |
 |---|---|
 | DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice (Privacy now has the sensitive-answers section, email-verified parental consent, the study-abroad partner on opt-in, the "how else can we help" waitlist and Cloudflare's spam check; since Round 36 also the demo's account step and the résumé reader — policy `v1.9`). Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
+| **Round 36 marketing review** | Nine suggestions in `docs/5_finalized/content/marketing_round36.md` (time it takes, price/refund question, a parents' set, privacy and inclusion questions, link /find-your-program from the hero, "coming soon" vs "by invitation only", "Personalized tracking", real stories, three sources) — the owner picks which to build |
 | **Sources for three landing numbers** (Round 36) | "90% rely on parents and friends", "50% regret their choices by 25" and "70% say their job isn't what they expected" are in the owner's question bank but have no source we could find; the landing answers leave them out. Send a source and they go in (the 36c fixture holds that a shown number carries one) |
 | Human review of the 223 baseline ratings (`baseline_rating.json`) | All still `unreviewed`. They drive matching |
 | **Disability support facts** (`Backend/data/disability_support.json`) | `verified_by_owner: false` — the report's support section stays hidden until the owner checks each row against its official source and sets it to true (Round 10) |
@@ -2680,3 +2681,13 @@ rule blocks uploads, paste the policy it shows into R2 → the bucket → Settin
 | **Numbers** | Every number keeps its source. 8.25% is NITI Aayog's *Reimagining Skilling for Viksit Bharat* (2026), citing the Economic Survey 2024–25. **Owner: no source found for "90% rely on parents and friends", "50% regret by 25" or "70% say their job isn't what they expected"** — the answers make the point without them; send a source and they go in |
 
 **Fixtures:** 251/251 (new ROUND 36c; the Round 33 landing fixture now reads the question bank — an owner change). **Checked locally** at 360 and 1280, logged out (tabs, card → questions) and logged in as a college student. Build: the 7 known warning files.
+
+### Round 36 (part 4) — marketing for the three audiences, and the review (2026-10-27)
+| Item | What shipped |
+|---|---|
+| **Decks** | One per audience (school, college, early professionals), 9–10 slides in the site's type and colours: the hook with its source, their four questions, the 4 steps, how we rank, the free-demo CTA; the skill kit, internships/jobs and master's/abroad help as "coming soon" in small text. Links in `docs/5_finalized/content/marketing_round36.md` |
+| **Posters** | One canvas, three 1080 × 1350 artboards, each with a question hook, one sourced fact, the 4 steps and "Try a Free Demo — 5 min" |
+| **Messages** | One per audience, ending on the demo link (in the same doc) |
+| **Review** | Against Save time · Feel good about it · Make money and the landing: nine things to add (time it takes, price/refund question, parents, privacy and inclusion questions, link the program finder, one wording for the bonus features, replace "Personalized tracking", real stories only, three sources) — in the same doc, for the owner to pick from |
+
+No code changed in this part.

@@ -19,7 +19,7 @@ Every project document, and when to read it. Numbers give the reading order.
 | | Perspective_Section_FINAL.md | The "How you think" section, finalised |
 | | perspective_scoring_final.js · sart_scoring.js | The original scoring references; `Backend/scoring/` holds the ports ("ported unchanged") |
 | **5_finalized/** | STUDY_INFO_RULES.md | What the master's, study-abroad, exam, where-to-study and cut-off lines mean, where each value came from, and how sure we are (checked / published evidence / our judgement) |
-| **5_finalized/content/** | landing_page_content_v3.md · success_stories_page.md · mentor_waitlist_page.md | The public-site copy the pages are built from |
+| **5_finalized/content/** | landing_page_content_v3.md · success_stories_page.md · mentor_waitlist_page.md · marketing_round36.md | The public-site copy the pages are built from; the Round 36 marketing (decks, posters, messages) and its review against the jobs-to-be-done |
 | **6_media/** | founder_photo.jpg · Frontendref1.png · Frontendref2.png | The owner's photo (original; the site uses a crop in `Frontend/public/founder.jpg`) and the two design references |
 
 **Not in `docs/`, on purpose:** `render.yaml` (Render only reads it at the repo root) and
