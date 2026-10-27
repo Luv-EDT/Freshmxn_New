@@ -1,24 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import { useDispatch, useSelector } from "react-redux"
-import { setUser } from "../../store/userSlice"
-import { getCurrentUser } from "../../apiCall/userApi"
 import DemoSplash, { splashSeen } from "./DemoSplash"
 import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
 import HappyStudent from "./HappyStudent"
 import { StepIcon, ArrowDoodle } from "./illustrations"
-import { AUDIENCE_NAMES, AUDIENCE_OF_JOURNEY, questionsFor } from "./audienceQuestions"
+import { AUDIENCE_NAMES, questionsFor } from "./audienceQuestions"
+import useMyAudience from "./useMyAudience"
 
 // The public landing page. Copy comes from landing_page_content_v3.md — every statistic there
 // carries its source, so nothing here is invented or rounded.
 //
 // ROUND 5 (owner, 2026-09-24): the landing page is SHORT. Hero → who it's for → what each of them ask us
-// (Round 36: one set of questions per audience; Round 37: what everyone asks is inside each set, the first ten
-// shown) → why we're different → the closing band. A logged-in student sees only their own audience's questions.
+// (Round 36: one set of questions per audience; Round 37: what everyone asks is inside each set, only the first
+// five here — "See all questions" opens the FAQ page) → why we're different → the closing band. A logged-in student sees only their own audience's questions.
 // The promise, the four steps, the invitation and pricing moved to /how-it-works; the founder's story is on /about.
 // Teal is the star colour, and the pastel pink is ONE highlighter swipe per section at most.
-const FIRST_SHOWN = 10
+const FIRST_SHOWN = 5
 
 // WHO IT'S FOR (owner, Round 36): names and sub-names only. Each card opens that audience's questions below.
 const AUDIENCES = [
@@ -33,25 +31,12 @@ function Landing() {
     const closeSplash = useCallback(() => setShowSplash(false), [])
 
     // a logged-in student's category (their journey) decides which questions they see (owner, Round 36)
-    const dispatch = useDispatch()
-    const { user } = useSelector((state) => state.user)
-    const hasToken = Boolean(localStorage.getItem("token"))
-    useEffect(() => {
-        if (!hasToken || user) return
-        const load = async () => {
-            const response = await getCurrentUser()
-            if (response && response.data && response.data.success) dispatch(setUser({ user: response.data.userData }))
-        }
-        load()
-    }, [hasToken, user, dispatch])
-    const mine = user && user.role === "student" ? AUDIENCE_OF_JOURNEY[user.journey] || null : null
+    const mine = useMyAudience()
     const [picked, setPicked] = useState("school")
-    const [showAll, setShowAll] = useState(false)
     const audience = mine || picked
     const asksRef = useRef(null)
     const openAudience = (key) => {
         setPicked(key)
-        setShowAll(false)
         if (asksRef.current) asksRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
     }
 
@@ -119,7 +104,7 @@ function Landing() {
                     </section>
 
                     {/* 3. WHAT EACH OF THEM ASK US (owner, Rounds 36-37) — one list per audience, what everyone asks
-                        inside it, collapsed; the first ten, then "See all". A logged-in student sees only theirs. */}
+                        inside it, collapsed; the first five, then "See all questions" on the FAQ page. A logged-in student sees only theirs. */}
                     <section className="section problem" ref={asksRef}>
                         <div className="page">
                             <div className="section-head">
@@ -136,7 +121,7 @@ function Landing() {
                                             aria-selected={audience === item.key}
                                             aria-controls="asks-panel"
                                             className={`asks-tab${audience === item.key ? " is-on" : ""}`}
-                                            onClick={() => { setPicked(item.key); setShowAll(false) }}
+                                            onClick={() => setPicked(item.key)}
                                         >
                                             {AUDIENCE_NAMES[item.key].short}
                                         </button>
@@ -145,20 +130,17 @@ function Landing() {
                             )}
                             <div id="asks-panel" role={mine ? undefined : "tabpanel"} aria-labelledby={mine ? undefined : `asks-tab-${audience}`}>
                                 <div className="faq">
-                                    {questionsFor(audience).slice(0, showAll ? undefined : FIRST_SHOWN).map((item) => (
+                                    {questionsFor(audience).slice(0, FIRST_SHOWN).map((item) => (
                                         <details key={item.q} className="faq-item">
                                             <summary>{item.q}</summary>
                                             <p>{item.a}</p>
                                         </details>
                                     ))}
                                 </div>
-                                {!showAll && questionsFor(audience).length > FIRST_SHOWN && (
-                                    <p className="asks-more">
-                                        <button type="button" className="btn btn-ghost tap" onClick={() => setShowAll(true)}>
-                                            See all {questionsFor(audience).length} questions
-                                        </button>
-                                    </p>
-                                )}
+                                {/* the rest on the FAQ page (owner, Round 37), opened at this audience */}
+                                <p className="asks-more">
+                                    <Link to={`/faq#${audience}`} className="btn btn-ghost tap">See all questions</Link>
+                                </p>
                             </div>
                         </div>
                     </section>

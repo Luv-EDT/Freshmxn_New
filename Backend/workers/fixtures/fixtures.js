@@ -6798,7 +6798,9 @@ const fixtures = [
             if (/What students ask us/.test(landing) || landing.indexOf("Who is it for") > landing.indexOf("What each of them ask us")) problems.push("the questions aren't after 'Who is it for', or the old section is still there")
             if (/item\.body|audience-card[^\n]*\n[^\n]*<p>\{/.test(landing)) problems.push("the audience cards still carry descriptions")
             if (!/school: \{ title: "School students", tag: "Class 9 to 12"/.test(bank) || !/college: \{ title: "College students", tag: "Any year, any course"/.test(bank) || !/professional: \{ title: "Early professionals", tag: "The first few years of work"/.test(bank)) problems.push("the audience names aren't the owner's")
-            if (!/const mine = user && user\.role === "student" \? AUDIENCE_OF_JOURNEY\[user\.journey\]/.test(landing) || !/\{!mine && \(/.test(landing)) problems.push("a logged-in student doesn't see only their own questions")
+            // Round 37: the category comes from one hook, shared with the FAQ page
+            const hook = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/useMyAudience.js"), "utf8")
+            if (!/const mine = user && user\.role === "student" \? AUDIENCE_OF_JOURNEY\[user\.journey\]/.test(hook) || !/const mine = useMyAudience\(\)/.test(landing) || !/\{!mine && \(/.test(landing)) problems.push("a logged-in student doesn't see only their own questions")
             const { AUDIENCE_OF_JOURNEY } = { AUDIENCE_OF_JOURNEY: JSON.parse((bank.match(/AUDIENCE_OF_JOURNEY = (\{[^}]+\})/) || [null, "{}"])[1].replace(/(\w+):/g, '"$1":')) }
             if (["class9_10", "class11_12", "college", "early_professional"].map((key) => AUDIENCE_OF_JOURNEY[key]).join() !== "school,school,college,professional") problems.push("a journey maps to the wrong audience")
             // every number keeps its source; the ones we couldn't source are left out (Round 36)
@@ -6809,7 +6811,8 @@ const fixtures = [
             }
             if (/\b(90|50|70)%/.test(bank)) problems.push("an unsourced number from the question bank is shown")
             const counts = ["school", "college", "professional"].map((key) => ((bank.split(`    ${key}: [`)[1] || "").split("\n    ],")[0].match(/\bq: "/g) || []).length)
-            if (counts.join() !== "9,13,5") problems.push(`each audience doesn't have its questions from the bank: ${counts}`)
+            // Round 37 (owner): overlapping questions merged — "following the crowd" into the same-stream one, "nine of us" into "where do I go"
+            if (counts.join() !== "8,12,5") problems.push(`each audience doesn't have its questions from the bank: ${counts}`)
             // Round 37 (owner): what everyone asks sits inside each audience's list, not in a block of its own
             if (/What everyone asks|asks-common/.test(landing) || !/questionsFor\(audience\)/.test(landing)) problems.push("'What everyone asks' is still a separate block")
             return problems.length ? problems.join("; ") : null
@@ -6844,6 +6847,44 @@ const fixtures = [
             if (/Personalized tracking/.test(landing)) problems.push("'Personalized tracking' is still there")
             const how = front("Public/HowItWorks.js")
             if (/By invitation only/.test(how) || !/\(Coming soon\)/.test(how)) problems.push("the bonus isn't 'coming soon'")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 37b — THE QUESTIONS, ONE LIST PER AUDIENCE: no question twice in any audience's list, each common one only where it fits, the home page shows five and 'See all questions' (no number) opens /faq, which shows all three audiences — or only a logged-in student's own",
+        run: () => {
+            const problems = []
+            const front = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src", file), "utf8")
+            const bank = front("pages/Public/audienceQuestions.js")
+            const qsIn = (text) => [...text.matchAll(/\bq: "([^"]+)",(?:\s*for: \[([^\]]*)\])?/g)].map((m) => ({ q: m[1], for: m[2] ? m[2].match(/"(\w+)"/g).map((x) => x.replace(/"/g, "")) : null }))
+            const section = (name) => qsIn((bank.split(`    ${name}: [`)[1] || "").split("\n    ],")[0])
+            const common = qsIn((bank.split("export const COMMON_QUESTIONS = [")[1] || "").split("\n]")[0])
+            const parents = qsIn((bank.split("const PARENT_QUESTIONS = [")[1] || "").split("\n]")[0])
+            const normal = (q) => q.toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim()
+            ;["school", "college", "professional"].forEach((audience) => {
+                const list = [...section(audience), ...(audience === "school" ? parents : []), ...common.filter((item) => !item.for || item.for.includes(audience))]
+                const seen = new Set()
+                list.forEach((item) => {
+                    if (seen.has(normal(item.q))) problems.push(`${audience} asks "${item.q}" twice`)
+                    seen.add(normal(item.q))
+                })
+            })
+            // the overlaps merged away, and the common ones kept to the audiences they fit
+            ;["Am I just following the crowd?", "Nine of us are chasing the same seat. What happens to the rest?", "What is a Freshmxn mentor like?", "I don't have a great network."].forEach((q) => {
+                if (bank.includes(`q: "${q}"`)) problems.push(`"${q}" is still there`)
+            })
+            const fits = Object.fromEntries(common.map((item) => [item.q, item.for ? item.for.join() : "all"]))
+            if (fits["My past choices feel wrong — is it too late?"] !== "school,college") problems.push("'is it too late' repeats the early professionals' own question")
+            if (fits["I don't know what I'm interested in — I've hardly been exposed to anything."] !== "school,college") problems.push("the 'no exposure' question is shown to early professionals")
+            if (!/same stream or college/.test(bank)) problems.push("the school question still says only 'stream'")
+            const landing = front("pages/Public/Landing.js")
+            if (!/const FIRST_SHOWN = 5/.test(landing) || !/questionsFor\(audience\)\.slice\(0, FIRST_SHOWN\)/.test(landing)) problems.push("the home page doesn't show five")
+            if (!/<Link to=\{`\/faq#\$\{audience\}`\} className="btn btn-ghost tap">See all questions<\/Link>/.test(landing) || /See all \{/.test(landing)) problems.push("'See all questions' doesn't open the FAQ page, or names a number")
+            const faq = front("pages/Public/FaqPage.js")
+            if (!/const shown = mine \? \[mine\] : AUDIENCE_KEYS/.test(faq) || !/questionsFor\(key\)\.map/.test(faq) || !/useMyAudience\(\)/.test(faq)) problems.push("the FAQ page doesn't show all three, or only a logged-in student's own")
+            if (!/path="\/faq" element=\{<FaqPage \/>\}/.test(front("App.js"))) problems.push("/faq isn't routed")
+            if (/app\.use\("\/faq"/.test(fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8"))) problems.push("an API prefix equals the /faq page")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
