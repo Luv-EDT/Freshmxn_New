@@ -22,7 +22,7 @@ const PROFESSION_IDS = new Set(require("../data/ALL-professions.json").professio
 const { sendParentCode } = require("../utils/parentConsent")
 
 const JOURNEYS = ["class9_10", "class11_12", "college", "early_professional"]
-const POLICY_VERSION = "v1.8"   // 26 October 2026: mentors — payout details, Calendly links, the test video (deleted after our decision), and the highlights a mentor sees (v1.7, 15 October: the reworked demo — a small result instead of answers, where you are now, the two careers kept for a mentor (v1.6, 14 October: the "Try the demo" taste before sign-up; v1.5, 12 October: the contact shared with a mentor on consent, session reviews and reports (v1.4, 11 October: "how else can we help" waitlist, the spam check; v1.3, 4 October: plans to go abroad, and voice typing; v1.2, 3 October: the study-abroad partner on opt-in; v1.1, 1 October: sensitive answers; email-verified parental consent)))
+const POLICY_VERSION = "v1.9"   // 27 October 2026: the demo's result needs an account (sign up with an emailed code, or log in), and a résumé read once by the AI and never stored (v1.8, 26 October: mentors — payout details, Calendly links, the test video (deleted after our decision), and the highlights a mentor sees (v1.7, 15 October: the reworked demo — a small result instead of answers, where you are now, the two careers kept for a mentor (v1.6, 14 October: the "Try the demo" taste before sign-up; v1.5, 12 October: the contact shared with a mentor on consent, session reviews and reports (v1.4, 11 October: "how else can we help" waitlist, the spam check; v1.3, 4 October: plans to go abroad, and voice typing; v1.2, 3 October: the study-abroad partner on opt-in; v1.1, 1 October: sensitive answers; email-verified parental consent))))
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const phoneRegex = /^[0-9]{10}$/
 
@@ -216,70 +216,91 @@ const checkParentConsent = (age, parentConsentChecked, parentName, parentPhone, 
 // Register
 // ========================
 
+// ONE SIGN-UP, TWO DOORS (Round 36): the register page and the demo's account step (demoAccountRouter)
+// check a new student with the same rules and create them the same way. Returns { error } or { fields }.
+const validateRegistration = (body) => {
+    const { name, email, password, phone, age, journey, parentConsentChecked, parentName, parentPhone, parentEmail } = body
+
+    const nameError = checkName(name)
+    if (nameError) return { error: nameError }
+
+    // Round 25 (owner): a phone number is required — it is how we reach a student about their plan
+    if (!phoneRegex.test(phone || "")) return { error: "Please enter your 10-digit mobile number" }
+    if (!emailRegex.test(email || "")) return { error: "Invalid Email" }
+    if (!password || password.length < 8) return { error: "Password must be at least 8 characters" }
+
+    const ageNumber = Number(age)
+    if (!Number.isInteger(ageNumber) || ageNumber < 8 || ageNumber > 100) return { error: "Please enter a valid age" }
+    if (!JOURNEYS.includes(journey)) return { error: "Please select your current stage" }
+
+    // parent permission: the student's tick now, the parent's own code next
+    const consentError = checkParentConsent(ageNumber, parentConsentChecked, parentName, parentPhone, parentEmail, email)
+    if (consentError) return { error: consentError }
+
+    return {
+        fields: {
+            name: name.trim().replace(/\s+/g, " "),
+            email: email.trim().toLowerCase(),
+            phone,
+            password,
+            age: ageNumber,
+            journey,
+            journeyDetail: cleanJourneyDetail(body.journeyDetail, journey),
+            parent: ageNumber < 18 ? { name: parentName.trim(), phone: parentPhone, email: parentEmail.trim().toLowerCase() } : null,
+        },
+    }
+}
+
+// creates the student (the password hashed here, or already hashed — `passwordHash`), and for an under-18 the
+// self-declared consent and the parent's code. `verified` when the email was already proved (the demo's code).
+const createStudentAccount = async ({ fields, passwordHash, verified = false, ip }) => {
+    const hashed = passwordHash || await bcrypt.hash(fields.password, await bcrypt.genSalt(10))
+    const newUser = await User.create({
+        name: fields.name,
+        email: fields.email,
+        phone: fields.phone,
+        password: hashed,
+        age: fields.age,
+        journey: fields.journey,
+        journeyDetail: fields.journeyDetail,
+        role: "student",        // never taken from the body
+        paid: false,
+        currentTier: 0,
+        isEmailVerified: verified,
+        lastLoginAt: new Date(),
+    })
+    if (fields.parent) {
+        const consent = await Consent.create({
+            user: newUser._id,
+            parentName: fields.parent.name,
+            parentPhone: fields.parent.phone,
+            parentEmail: fields.parent.email,
+            isParentPermissionChecked: true,
+            consentMethod: "self_declared_checkbox",
+            isTemporary: true,
+            consentGivenAt: new Date(),
+            ipAtConsent: ip,
+            policyVersion: POLICY_VERSION,
+        })
+        // never blocks the signup: if the email fails, the parent-consent page sends it again
+        await sendParentCode(consent, newUser)
+    }
+    return newUser
+}
+
 router.post("/register", registerRateLimiter, async (req, res) => {
     try {
-        const { name, email, password, phone, age, journey, journeyDetail, parentConsentChecked, parentName, parentPhone, parentEmail } = req.body
-
         // Round 25: the "website" box is hidden from people; only a bot fills it. It gets the reply a
         // real sign-up would, and nothing is stored or sent.
         if (typeof req.body.website === "string" && req.body.website.trim() !== "") {
             return res.status(201).json({ success: true, message: "Registered Successfully" })
         }
 
-        const nameError = checkName(name)
-        if (nameError) {
+        const { fields, error } = validateRegistration(req.body)
+        if (error) {
             return res.status(400).json({
                 success: false,
-                message: nameError
-            })
-        }
-
-        // Round 25 (owner): a phone number is required — it is how we reach a student about their plan
-        if (!phoneRegex.test(phone || "")) {
-            return res.status(400).json({
-                success: false,
-                message: "Please enter your 10-digit mobile number"
-            })
-        }
-
-        // Validate Email
-        if (!emailRegex.test(email || "")) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid Email"
-            })
-        }
-
-        if (!password || password.length < 8) {
-            return res.status(400).json({
-                success: false,
-                message: "Password must be at least 8 characters"
-            })
-        }
-
-        const ageNumber = Number(age)
-
-        if (!Number.isInteger(ageNumber) || ageNumber < 8 || ageNumber > 100) {
-            return res.status(400).json({
-                success: false,
-                message: "Please enter a valid age"
-            })
-        }
-
-        if (!JOURNEYS.includes(journey)) {
-            return res.status(400).json({
-                success: false,
-                message: "Please select your current stage"
-            })
-        }
-
-        // parent permission: the student's tick now, the parent's own code next
-        const consentError = checkParentConsent(ageNumber, parentConsentChecked, parentName, parentPhone, parentEmail, email)
-
-        if (consentError) {
-            return res.status(400).json({
-                success: false,
-                message: consentError
+                message: error
             })
         }
 
@@ -292,9 +313,7 @@ router.post("/register", registerRateLimiter, async (req, res) => {
             })
         }
 
-        const normalizedEmail = email.trim().toLowerCase()
-
-        const existingUser = await User.findOne({ email: normalizedEmail })
+        const existingUser = await User.findOne({ email: fields.email })
 
         if (existingUser) {
             return res.status(400).json({
@@ -303,41 +322,7 @@ router.post("/register", registerRateLimiter, async (req, res) => {
             })
         }
 
-        // Hash Password
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(password, salt)
-
-        const newUser = await User.create({
-            name: name.trim().replace(/\s+/g, " "),
-            email: normalizedEmail,
-            phone,
-            password: hashedPassword,
-            age: ageNumber,
-            journey,
-            journeyDetail: cleanJourneyDetail(journeyDetail, journey),
-            role: "student",        // never taken from the body
-            paid: false,
-            currentTier: 0,
-            lastLoginAt: new Date(),
-        })
-
-        // record the self-declared permission, then ask the parent to confirm it themselves
-        if (ageNumber < 18) {
-            const consent = await Consent.create({
-                user: newUser._id,
-                parentName: parentName.trim(),
-                parentPhone,
-                parentEmail: parentEmail.trim().toLowerCase(),
-                isParentPermissionChecked: true,
-                consentMethod: "self_declared_checkbox",
-                isTemporary: true,
-                consentGivenAt: new Date(),
-                ipAtConsent: req.ip,
-                policyVersion: POLICY_VERSION,
-            })
-            // never blocks the signup: if the email fails, the parent-consent page sends it again
-            await sendParentCode(consent, newUser)
-        }
+        const newUser = await createStudentAccount({ fields, ip: req.ip })
 
         // they can log in and look around straight away; paying is what waits for the link
         await sendVerificationEmail(newUser)
@@ -1033,3 +1018,6 @@ module.exports = router
 module.exports.POLICY_VERSION = POLICY_VERSION
 module.exports.registerRateLimiter = registerRateLimiter
 module.exports.cleanJourneyDetail = cleanJourneyDetail
+module.exports.validateRegistration = validateRegistration
+module.exports.createStudentAccount = createStudentAccount
+module.exports.withoutPassword = withoutPassword

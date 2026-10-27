@@ -2,6 +2,8 @@ import { useState } from "react"
 import ChipListInput from "../Interest/ChipListInput"
 import ActivityReferenceList from "../Interest/ActivityReferenceList"
 import { ACTIVITY_REFERENCE_LISTS } from "../Interest/activityReferenceLists"
+import ResumeAttach from "../ResumeAttach"
+import { readResumeForDemo } from "../../apiCall/resumeApi"
 
 // THE STORY QUESTION (owner, Round 33) — one common question, asked across three timelines: school or
 // college (the near and far past), now, and what they aspire to. The inputs are the real Virtual Career
@@ -10,18 +12,17 @@ import { ACTIVITY_REFERENCE_LISTS } from "../Interest/activityReferenceLists"
 // words — the activity step reads it like any other (owner, Round 33: no separate career picker).
 const MAX_THINGS = 12
 
-const short = (text) => String(text).split(" (")[0].trim()
-const examples = (lists) => lists.flatMap((key) => ACTIVITY_REFERENCE_LISTS[key] || []).filter((text) => !/^Other/.test(text)).map(short)
-
+// Round 36 (owner): each box's tap-to-add examples fit its own question — things done in the past, things
+// liked now, and things to become (the aspiration box had activity examples, and "now" had "Internships")
 const BOXES = [
-    { when: "past", label: "In school or college — the near or far past", placeholder: "e.g. drawing, debating, fixing gadgets", chips: examples(["preHighSchool", "highSchool"]).slice(0, 8) },
-    { when: "present", label: "Now — what you like or are interested in", placeholder: "e.g. coding, cricket, reading about space", chips: examples(["college"]).slice(0, 8) },
-    { when: "future", label: "What you aspire to do or become — don't worry about whether you can", placeholder: "e.g. design games, start a café, become a doctor", chips: [] },
+    { when: "past", label: "In school or college — the near or far past", placeholder: "e.g. drawing, debating, fixing gadgets", chips: ["Drawing", "Cricket", "Debating", "Music", "Science projects", "Reading stories", "Dancing", "Building things"] },
+    { when: "present", label: "Now — what you like or are interested in", placeholder: "e.g. coding, cricket, reading about space", chips: ["Coding", "Football", "Reading about space", "Photography", "Writing", "Gaming", "Cooking", "Helping people"] },
+    { when: "future", label: "What you aspire to do or become — don't worry about whether you can", placeholder: "e.g. design games, start a café, become a doctor", chips: ["Become a doctor", "Design video games", "Start my own business", "Make films", "Become a pilot", "Teach", "Work with animals", "Build robots"] },
 ]
 
 const filled = (list) => (list || []).map((text) => String(text).trim()).filter(Boolean)
 
-function DemoPulls({ initial, onNext, busy }) {
+function DemoPulls({ initial, onNext, busy, token }) {
     const start = (when) => (initial.draws || []).filter((draw) => draw.when === when).map((draw) => draw.text)
     const [lists, setLists] = useState({ past: start("past"), present: start("present"), future: start("future") })
 
@@ -29,6 +30,24 @@ function DemoPulls({ initial, onNext, busy }) {
     const addChip = (when, text) => {
         if (total >= MAX_THINGS || filled(lists[when]).includes(text)) return
         setLists({ ...lists, [when]: [...filled(lists[when]), text] })
+    }
+
+    // Round 36 (owner): a résumé fills the past and present boxes; they remove or add from there
+    const fromResume = (found) => {
+        let room = MAX_THINGS - total
+        let added = 0
+        const next = { ...lists }
+        ;["past", "present"].forEach((when) => {
+            ;(found[when] || []).forEach((text) => {
+                const have = filled(next[when]).map((item) => item.toLowerCase())
+                if (room <= 0 || have.includes(text.toLowerCase())) return
+                next[when] = [...filled(next[when]), text]
+                room -= 1
+                added += 1
+            })
+        })
+        setLists(next)
+        return added
     }
 
     const draws = ["past", "present", "future"]
@@ -46,6 +65,7 @@ function DemoPulls({ initial, onNext, busy }) {
                 passions — things you grew through, got noticed for, solved a problem with, or that simply felt good.
             </p>
             <p className="demo-lead">Anything counts — from when you were small, in high school or college, now, or in your dreams.</p>
+            <ResumeAttach read={(payload) => readResumeForDemo({ token, ...payload })} onRead={fromResume} lead="Attach it and we'll put the activities we find into the boxes below." />
 
             {BOXES.map((box) => (
                 <div key={box.when} className="demo-box">
@@ -59,7 +79,8 @@ function DemoPulls({ initial, onNext, busy }) {
                     />
                     {box.chips.length > 0 && (
                         <div className="demo-chips" aria-label="Examples — tap to add">
-                            {box.chips.map((chip) => (
+                            {/* an example already in the box (typed, tapped or from the résumé) isn't offered again */}
+                            {box.chips.filter((chip) => !filled(lists[box.when]).some((item) => item.toLowerCase() === chip.toLowerCase())).map((chip) => (
                                 <button type="button" key={chip} className="demo-chip" onClick={() => addChip(box.when, chip)}>+ {chip}</button>
                             ))}
                         </div>

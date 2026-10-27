@@ -35,6 +35,10 @@ const careerHelpRouter = require("./Routers/careerHelpRouter")
 // Round 32 (owner): "Try the demo" before any login, and carrying its answers forward after buying
 const demoRouter = require("./Routers/demoRouter")
 const demoResumeRouter = require("./Routers/demoResumeRouter")
+// Round 36 (owner): the demo's account step — register with an emailed code (or log in) before the result
+const demoAccountRouter = require("./Routers/demoAccountRouter")
+// Round 36 (owner): read a résumé into activity names (demo and Virtual Career Counselling)
+const resumeReaderRouter = require("./Routers/resumeReaderRouter")
 const mentorReviewsRouter = require("./Routers/mentorReviewsRouter")
 const mentorSessionsRouter = require("./Routers/mentorSessionsRouter")
 const mentorTestRouter = require("./Routers/mentorTestRouter")
@@ -83,6 +87,8 @@ app.use("/payments", paymentsRouter)
 // limit is not global on purpose: every other endpoint takes answers, and a 6 MB body anywhere else
 // is a mistake or an attack, not a student.
 app.use("/external", express.json({ limit: "8mb" }), externalTestsRouter)
+// Round 36 (owner): a résumé arrives as base64 too — same reason, its own parser, the file never stored
+app.use("/resumeReader", express.json({ limit: "8mb" }), resumeReaderRouter)
 
 app.use(express.json())
 app.use("/user", userRouter)
@@ -103,6 +109,7 @@ app.use("/dataUpdates", dataUpdatesRouter)
 app.use("/studyAbroad", studyAbroadRouter)
 app.use("/careerHelp", careerHelpRouter)
 app.use("/demo", demoRouter)                 // the page is /try-demo
+app.use("/demoAccount", demoAccountRouter)
 app.use("/demoResume", demoResumeRouter)
 app.use("/mentorReviews", mentorReviewsRouter)
 app.use("/mentorSessions", mentorSessionsRouter)

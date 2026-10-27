@@ -96,23 +96,25 @@ same template.
 
 ---
 
-## 2b. The demo — trying before signing up (Rounds 32–33)
+## 2b. The demo — trying before signing up (Rounds 32–33, 36)
 
 **The front door (Round 33).** The first time a visitor opens the home page in a visit, an invitation covers it:
-the logo, "Freshmxn's Lab", the one-line promise and a big **Try a Free Demo** button, with the landing page blurred
-behind. **✕** (top right) or "explore the home page first" closes it; it doesn't come back in that visit, and a
+the logo, "Freshmxn's Lab", the one-line promise, a big **Try a Free Demo** button and "It takes just 5 minutes.",
+with the landing page blurred behind. **✕** (top right) or "explore the home page first" closes it; it doesn't come back in that visit, and a
 logged-in student never sees it.
 
-The demo (`/try-demo`, no account) takes about 6 minutes, in three stages shown at the top —
+The demo (`/try-demo`, no account to start) takes about 5 minutes, in three stages shown at the top —
 **Virtual career counselling › Assessments › Report**:
 
 1. **A first name and where you are now** — school (Class 9–10 or 11–12), college, or working (and for how many
-   years). Where you are now stays in the browser and reaches us only with the email at the end. (The spam check,
+   years). Where you are now stays in the browser and reaches us only at the sign-up at the end. (The spam check,
    "3 starts an hour from one place" and a daily cap, `DEMO_DAILY_CAP`, keep the AI cost in check.)
 2. **Your story** — one question: what have you enjoyed, been curious about or felt good at, grown through, been
    noticed for, solved a problem with, or that simply felt good? Asked across three timelines: school or college,
-   now, and what you aspire to (in their own words). The "Stuck?" list stays pinned at the top. Then
-   **what stuck, and why** — the four reasons the real form uses, plus "it helps me deal with a problem in my life"
+   now, and what you aspire to (in their own words). The "Stuck?" list stays pinned at the top. (Round 36) They can
+   **attach a résumé** — a PDF, Word file or photo; the AI lists the activities in it into the first two boxes, they
+   remove or add, and the file is never kept. Then
+   **what they've stuck with — or wanted — for a long time, and why** — the four reasons the real form uses, plus "it helps me deal with a problem in my life"
    (inside me / with people / around me), which matching counts just like the real form's problems.
 3. **Three quick tasks** — "A taste of 10 of our 31 factors":
    - **7 statements**, one real "what you're drawn to" statement per intelligence;
@@ -120,24 +122,30 @@ The demo (`/try-demo`, no account) takes about 6 minutes, in three stages shown 
    - **4 puzzles** (1 easy, 2 medium, 1 hard) drawn from the demo's own bank of 12 — never the real test's.
    Everything is worked out on the server and only a small result is kept — never the answers, the puzzle choices
    or the focus game's timings.
-4. **An email** (and, under 18, a box that a parent or guardian agrees). The email is checked as it is typed
-   (Round 33c): a badly formed one can't go on, and a common slip like `gmail.con` gets a one-tap **Use it** fix. "Reading your answers — this takes about 30
+4. **An account (Round 36, owner).** The result needs one: a proper sign-up (the same details as the sign-up page;
+   under 18, a parent or guardian's details) and a 6-digit code emailed to them — the account is made only when they
+   type it. An email that already has an account logs in instead. Either way they see the result already logged in.
+   Someone who stops here gets no result and no account. The email is checked as it is typed (Round 33c): a badly
+   formed one can't go on, and a common slip like `gmail.con` gets a one-tap **Use it** fix. "Reading your answers — this takes about 30
    seconds": the **real engines** read the story first (the activity step and the same matching the full report
    uses), and the tasks only check the careers it points to against the fundamentals they need.
 
 **The report** keeps it clean (on a darker page, no footer until here; headings centred in the display font):
 the **two careers** straight away, each the real career card with everything inside — the road from where you
-stand, exams, money, the future; a line that these are **just two careers** and the whole process gives a much
-wider spectrum; a one-line "the full journey takes 3+ hours"; a **psychometric fold** — first the factors we did
-touch (reasoning, the areas you feel drawn to, speed and focus) as a word level with how much of each was measured
-(about 20–35%), then the other factors listed but blurred, "the full assessment measures all 31"; a fold on what we
-did differently (story first, not screening by intelligence); **what the full program adds** as three cards to tap
-open (the factors, Virtual Career Counselling, just two careers); then **where to go from here** as a small
-flowchart — you, then three legs: a mentor in one of these two careers, the whole journey, or both — with one
-button to the programs page, and a note on financial aid and refunds.
+stand, exams, money, the future. Then, in this order (Round 36, owner): "Tap a career to open everything about it",
+**The demo result is limited to two careers.**, "Not happy with the 2 recommendations?", a one-line "That took about
+5 minutes — the full journey takes 3+ hours", and the **psychometric fold** with "Just N of 31 factors, and even
+those only partly measured" under it — inside, first the factors we did touch as a word level with how much of each
+was measured (about 20–35%), then the other factors listed but blurred. A fold on what we did differently; **what you
+missed — and what the full program gives you** as four cards to tap open (detailed counselling, all 31 factors, the
+whole list of careers, a mentor in one of these two or more careers first); then "How can we help you in our
+program?" and **Check out our programs →**, which opens the **program finder** (`/find-your-program`): "I'm
+completely lost" or "I know the field I want to enter" shows Career Discovery and Discovery + Mentor; "a very specific
+need" shows Mentor Only — each in a line or two, with prices from the server, and "For more details" to /programs.
 
 **The demo is kept apart from everything else.** It has its own door (`/demo`) and drawer (`demo_sessions`), never
-touches a student's record, a payment or a score, and deletes itself after 30 days. What visitors type helps our
+touches a student's record, a payment or a score, and deletes itself after 30 days. The one exception is the account
+step (`/demoAccount`, Round 36), which makes the account once the code is right and links the demo to it. What visitors type helps our
 data without their name or email: their activities build the shared activity cache, and careers they name that we
 don't have go to the monthly careers scout (`demo_signals`).
 

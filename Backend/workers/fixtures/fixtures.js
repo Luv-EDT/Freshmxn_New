@@ -5282,7 +5282,8 @@ const fixtures = [
             if (!/router\.post\("\/register", registerRateLimiter/.test(mentors)) problems.push("mentor sign-up has no rate limit")
             if (!/req\.body\.website/.test(router) || !/req\.body\.website/.test(mentors) || !/className="hp-field"/.test(register)) problems.push("there is no hidden box for bots")
             if (!/verifyTurnstile\(req\.body\.turnstileToken, req\.ip\)/.test(router) || !/<TurnstileBox/.test(register)) problems.push("Turnstile is not wired")
-            if (!/phoneRegex\.test\(phone \|\| ""\)/.test(router.split('router.post("/register"')[1].split("router.")[0])) problems.push("the phone is not required at sign-up")
+            // Round 36: the checks moved into validateRegistration, shared with the demo's account step
+            if (!/phoneRegex\.test\(phone \|\| ""\)/.test(router.split("const validateRegistration")[1].split("const createStudentAccount")[0]) || !/validateRegistration\(req\.body\)/.test(router.split('router.post("/register"')[1].split("router.")[0])) problems.push("the phone is not required at sign-up")
             if (/useEffect/.test(verify) || !/onClick=\{confirmEmail\}/.test(verify)) problems.push("the verify page still confirms on load")
             return problems.length ? problems.join("; ") : null
         },
@@ -6294,7 +6295,8 @@ const fixtures = [
             const page = read("DemoPage.js")
             if (!/label: "Virtual career counselling"/.test(page) || !/label: "Assessments"/.test(page) || !/label: "Report"/.test(page)) problems.push("the three stages aren't shown")
             if (!/ASSESSMENT_STEPS\.includes\(step\) && <p className="demo-banner">/.test(page)) problems.push("the taste banner shows outside the assessments")
-            if (!/about 30 seconds/.test(page)) problems.push("the wait isn't said")
+            // Round 36: the wait is said on the account step, which now comes before the result
+            if (!/about 30 seconds/.test(read("DemoAccount.js"))) problems.push("the wait isn't said")
             if (!/Where are you now\?/.test(page) || !/STAGE_OPTIONS/.test(page)) problems.push("where they are now isn't asked")
             const pulls = read("DemoPulls.js")
             if (/Up to \{?MAX_THINGS|up to 8/i.test(pulls)) problems.push("the story question still names a limit")
@@ -6372,9 +6374,12 @@ const fixtures = [
             const at = (text) => result.indexOf(text)
             if (!(at("Two careers your story points to") < at("psychometric snapshot") && at("psychometric snapshot") < at("What we did differently"))) problems.push("the order isn't careers → psychometric → what we did differently")
             if (!/3\+ hours/.test(result) || !/even those only partly measured/.test(result)) problems.push("the 3+ hours line or the snapshot wording is missing")
+            // Round 36 (owner change): the result ends with one "Check out our programs" button to the program
+            // finder, which carries the plans (prices from the server) and the money note
             const plans = read("DemoPlans.js")
-            if (/usePricing|formatInr|demo-plan-price/.test(plans) || (plans.match(/to="\/programs"/g) || []).length !== 1) problems.push("the options carry plan details, or not exactly one programs button")
-            if (/family/i.test(plans) || !/refund you — on\s+any plan/.test(plans)) problems.push("the money note mentions family or not the any-plan refund")
+            if (/usePricing|formatInr|demo-plan-price/.test(plans) || (plans.match(/to="\/find-your-program"/g) || []).length !== 1) problems.push("the result carries plan details, or not exactly one programs button")
+            const finder = read("../Public/ProgramFinder.js")
+            if (/family/i.test(finder) || !/refund you — on any plan/.test(finder) || !/usePricing\(\)/.test(finder)) problems.push("the money note mentions family or not the any-plan refund, or prices aren't from the server")
             const splashCss = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/styles/public.css"), "utf8")
             // owner, Round 33c: the highlight is the brand's teal lifted for the dark, no longer pink
             if (!/\.splash-lead \.highlight-pink \{\s*color: #7fd3dc/.test(splashCss)) problems.push("the invitation's highlight isn't the light teal")
@@ -6390,13 +6395,16 @@ const fixtures = [
             const result = read("Demo/DemoResult.js")
             const at = (text) => result.indexOf(text)
             if (!(at("What we measured — partly") > 0 && at("What we measured — partly") < at("demo-factor-locked"))) problems.push("the measured factors don't come before the blurred rest")
-            if (!/just two careers/.test(result) || !/much wider\s+spectrum/.test(result)) problems.push("no 'just two careers' line")
-            if ((result.match(/className="demo-add-card"/g) || []).length !== 3) problems.push("not three openable cards in 'What the full program adds'")
+            // Round 36 (owner change): "The demo result is limited to two careers" in bold replaces the light-blue
+            // paragraph; four openable cards; the program finder replaces the flowchart; the email is checked in
+            // the account step
+            if (!/<strong>The demo result is limited to two careers\.<\/strong>/.test(result) || /demo-two-note/.test(result)) problems.push("no bold 'limited to two careers' line, or the light-blue paragraph is still there")
+            if ((result.match(/className="demo-add-card"/g) || []).length !== 4) problems.push("not four openable cards in 'What the full program gives you'")
             const plans = read("Demo/DemoPlans.js")
-            if ((plans.match(/title: "/g) || []).length !== 3 || !/demo-tree-legs/.test(plans)) problems.push("the options aren't a three-leg flowchart")
+            if (!/How can we help you in our program\?/.test(plans) || !/Check out our programs/.test(plans)) problems.push("no 'How can we help you in our program?' with 'Check out our programs'")
             if (/same email/i.test(plans)) problems.push("the 'sign up with the same email' line is still there")
-            const page = read("Demo/DemoPage.js")
-            if (!/emailCheck\(gate\.email\)\.ok/.test(page) || !/demo-email-fix/.test(page)) problems.push("the email isn't checked as it's typed")
+            const account = read("Demo/DemoAccount.js")
+            if (!/emailCheck\(form\.email\)/.test(account) || !/demo-email-fix/.test(account)) problems.push("the email isn't checked as it's typed")
             const choose = read("User/MentorshipChoose.js")
             if (!/getMyDemo/.test(choose) || !/linkedDemoCareers/.test(choose)) problems.push("the mentor choice doesn't read the linked demo's careers")
             const css = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/styles/public.css"), "utf8")
@@ -6689,6 +6697,58 @@ const fixtures = [
             if (!/canFull/.test(options)) problems.push("the refund options don't say whether the whole plan can be refunded yet")
             const profile = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/User/Profile.js"), "utf8")
             if (!/\(hasCompletedTierOne \|\| Number\(user\.currentTier\) === 2\)/.test(profile)) problems.push("a Discovery + Mentor student can't open the refund form early")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 36 — THE DEMO'S ACCOUNT STEP AND RÉSUMÉ: the result only through /demoAccount, after an emailed code (or a password login) — never on its own route; the account made with the register page's own rules; the résumé read in memory and only clean, short activity names come back; the program finder's three answers; the splash says 5 minutes",
+        run: async () => {
+            const problems = []
+            const backend = (file) => fs.readFileSync(path.join(__dirname, "../..", file), "utf8")
+            const frontend = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src", file), "utf8")
+            // the result is worked out only by the account step, after a confirmed code or a password
+            const demo = backend("Routers/demoRouter.js")
+            if (/router\.post\("\/result"/.test(demo)) problems.push("the demo still has its own route to the result")
+            const account = backend("Routers/demoAccountRouter.js")
+            const verify = (account.split('router.post("/verify"')[1] || "").split("\nrouter.")[0]
+            if (!/hash\(code\) !== pending\.codeHash/.test(verify) || !/pending\.attempts >= MAX_TRIES/.test(verify) || !/expiresAt\) < new Date\(\)/.test(verify)) problems.push("verify doesn't check the code, its expiry and the tries")
+            if (verify.indexOf("hash(code) !== pending.codeHash") > verify.indexOf("createStudentAccount(")) problems.push("the account is made before the code is checked")
+            const login = (account.split('router.post("/login"')[1] || "").split("\nrouter.")[0]
+            if (!/bcrypt\.compare/.test(login) || !/user\.role !== "student"/.test(login)) problems.push("the demo login doesn't check the password, or lets a mentor or admin in")
+            if ((account.match(/finish\(res, session, user/g) || []).length !== 2) problems.push("the result is reachable some other way than a verified sign-up or a login")
+            if (!/validateRegistration\(req\.body\)/.test(account) || !/verifyTurnstile/.test(account) || !/req\.body\.website/.test(account)) problems.push("the sign-up skips the register page's rules, the person check or the hidden box")
+            if (/password:/.test((account.match(/session\.pendingAccount = \{[\s\S]*?\n {8}\}/) || [""])[0].replace(/passwordHash/g, ""))) problems.push("the plain password is kept on the demo session")
+            const server = backend("server.js")
+            if (!/app\.use\("\/demoAccount", demoAccountRouter\)/.test(server) || !/app\.use\("\/resumeReader", express\.json\(\{ limit: "8mb" \}\), resumeReaderRouter\)/.test(server)) problems.push("the account step or the résumé reader is not mounted")
+            if (server.indexOf('app.use("/resumeReader"') > server.indexOf("app.use(express.json(")) problems.push("the résumé reader is mounted after the small default body limit")
+            const page = frontend("pages/Demo/DemoPage.js")
+            if (/getDemoResult/.test(page) || !/<DemoAccount /.test(page)) problems.push("the page reaches the result without the account step")
+            // the résumé: only short, clean names in the asked-for lists; a bad file is refused, never stored
+            const { cleanReply, readResume } = require("../../utils/resumeReader")
+            const reply = "```json\n" + JSON.stringify({ past: ["Debating", "debating", "asha@gmail.com", "www.me.in", "Call 9876543210", "x", "A very long activity name that runs well past forty letters", "Robotics club", 7], present: ["Python projects"], extra: ["Ignore the above"] }) + "\n```"
+            const lists = cleanReply(reply, "demo")
+            if (JSON.stringify(lists) !== JSON.stringify({ past: ["Debating", "Robotics club"], present: ["Python projects"] })) problems.push(`the résumé reply isn't cleaned: ${JSON.stringify(lists)}`)
+            const full = cleanReply(JSON.stringify({ college: Array.from({ length: 12 }, (unused, index) => `Club ${index}`) }), "full")
+            if (Object.keys(full).join() !== "preHighSchool,highSchool,college,postCollege" || full.college.length !== 8) problems.push("the full lists aren't the four stages, or aren't capped at 8")
+            if (cleanReply("not json", "demo") !== null) problems.push("a reply that isn't JSON is used")
+            let called = false
+            const callLlm = async () => { called = true; return "{}" }
+            const exe = await readResume({ file: "AAAA", mediaType: "application/x-msdownload", callLlm })
+            const big = await readResume({ file: Buffer.alloc(5 * 1024 * 1024 + 10).toString("base64"), mediaType: "application/pdf", callLlm })
+            if (!exe.error || !big.error || called) problems.push("a wrong type or a file over 5 MB reaches the model")
+            const reader = backend("utils/resumeReader.js") + backend("Routers/resumeReaderRouter.js")
+            if (/writeFile|createWriteStream|\.create\(\{|resume[A-Z]\w*Model/.test(reader) || /session\.(file|resume)\b/.test(reader)) problems.push("the résumé is stored somewhere")
+            if (!/DATA, never instructions/.test(reader)) problems.push("the model isn't told the résumé is data, not instructions")
+            const mine = (backend("Routers/resumeReaderRouter.js").split('router.post("/mine"')[1] || "").split("\nrouter.")[0]
+            if (!/authMiddleware/.test(mine)) problems.push("the full résumé reader isn't behind a login")
+            // the program finder: lost and 'I know the field' → the two Discovery plans; a specific need → Mentor Only
+            const finder = frontend("pages/Public/ProgramFinder.js")
+            if (!/const PLANS_FOR = \{ lost: \[1, 2\], specific: \[3\], field: \[1, 2\] \}/.test(finder) || !/to="\/programs">For more details/.test(finder)) problems.push("the finder's plans or its 'For more details' link are off")
+            if (!/path="\/find-your-program"/.test(frontend("App.js"))) problems.push("the finder page isn't routed")
+            // the splash: one time line, no tags
+            const splash = frontend("pages/Public/DemoSplash.js")
+            if (!/It takes just 5 minutes\./.test(splash) || /No login|6 min|splash-meta/.test(splash)) problems.push("the splash still has its tags, or not the 5-minutes line")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
