@@ -13,7 +13,7 @@ const asBase64 = (file) => new Promise((resolve, reject) => {
     reader.readAsDataURL(file)
 })
 
-function ResumeAttach({ read, onRead, lead }) {
+function ResumeAttach({ read, onRead, lead, addedNote }) {
     const [state, setState] = useState({ busy: false, note: "" })
 
     const pick = async (file) => {
@@ -24,13 +24,19 @@ function ResumeAttach({ read, onRead, lead }) {
             return
         }
         setState({ busy: true, note: "" })
-        const response = await read({ file: await asBase64(file), mediaType })
+        let response
+        try {
+            response = await read({ file: await asBase64(file), mediaType })
+        } catch (error) {
+            response = null
+        }
         if (!response || response.data.success === false) {
             setState({ busy: false, note: response?.data?.message || "Couldn't read that résumé — add your activities yourself." })
             return
         }
         const added = onRead(response.data.data)
-        setState({ busy: false, note: added > 0 ? `Added ${added} from your résumé — remove any that don't fit, or add more.` : "We didn't find activities to add — add them yourself below." })
+        if (added > 0) setState({ busy: false, note: addedNote ? addedNote(added) : `Added ${added} from your résumé — remove any that don't fit, or add more.` })
+        else setState({ busy: false, note: "We didn't find activities to add — add them yourself below." })
     }
 
     return (

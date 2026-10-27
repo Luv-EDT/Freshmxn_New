@@ -27,7 +27,7 @@ const PROBLEM_GROUPS = [
     { key: "externalProblems", title: "Problems you saw around you" },
 ]
 
-function LifeStageSection({ stage, formData, updateFormData, handleNext, handlePrevious, isFirstStep, steps, currentStepIndex, goToStep, isSaving, requestSave, reportDraft }) {
+function LifeStageSection({ stage, formData, updateFormData, handleNext, handlePrevious, isFirstStep, steps, currentStepIndex, goToStep, isSaving, requestSave, reportDraft, resumeList }) {
     // Local state for the form
     const [localFormData, setLocalFormData] = useState(formData)
 
@@ -259,7 +259,7 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                         </section>
 
                         {/* last in the section but sticky to the bottom of the screen, so it is in reach the whole way down */}
-                        <ActivityReferenceList activities={stage.referenceList} />
+                        <ActivityReferenceList activities={stage.referenceList} fromResume={resumeList || []} />
                     </>
                 )}
 

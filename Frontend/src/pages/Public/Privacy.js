@@ -273,9 +273,10 @@ const SECTIONS = [
                 <p>
                     <strong>Your résumé.</strong> On the demo's first step, and at the start of Virtual Career
                     Counselling, you can attach a résumé (PDF, Word or a photo). Our AI processor (Anthropic) reads it
-                    once to list the activities in it — short names like "Debating" — which you can then remove or add
-                    to. The file itself is never stored, by us or in our database; we keep only the activities you
-                    leave in, like anything else you type. We ask the AI to leave out names, schools, companies and
+                    once to list the activities in it — short names like "Debating". In the demo they go into your
+                    answers, where you remove or add to them; in Virtual Career Counselling they are shown first in each
+                    stage's activity list, kept only in your browser, until you write them in yourself. The file itself
+                    is never stored, by us or in our database. We ask the AI to leave out names, schools, companies and
                     contact details, and we check its answer for them again.
                 </p>
                 <p>

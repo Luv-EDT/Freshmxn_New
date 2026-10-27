@@ -38,6 +38,8 @@ function MatchesPage() {
     // studying abroad helps.
     const [excludeBlueCollar, setExcludeBlueCollar] = useState(false)
     const [only, setOnly] = useState([])
+    // Round 36 (owner): the professional sectors picked — none picked shows every sector
+    const [sectors, setSectors] = useState([])
     // TOP THREE FIRST (owner, Rounds 13 and 18): the first three of whatever order is chosen, the rest
     // one tap away. Opening the rest belongs to that order — a new sort or filter starts again at three.
     const [showAllFor, setShowAllFor] = useState(null)
@@ -46,8 +48,8 @@ function MatchesPage() {
     // turned on ever hide a career. `ordered` is the same entries, flat, so rank numbers run on
     // across the groups.
     const groups = useMemo(
-        () => groupList(ranked, primary, secondary, details, { only, excludeBlueCollar }),
-        [ranked, primary, secondary, details, only, excludeBlueCollar]
+        () => groupList(ranked, primary, secondary, details, { only, excludeBlueCollar, sectors }),
+        [ranked, primary, secondary, details, only, excludeBlueCollar, sectors]
     )
     const ordered = useMemo(() => groups.flatMap((group) => group.entries), [groups])
     const split = useMemo(() => splitShown(groups, MAIN_SHOWN), [groups])
@@ -58,16 +60,22 @@ function MatchesPage() {
         return first ? first.tier : null
     }, [groups])
 
-    const sortKey = [primary, secondary, only.join("+"), excludeBlueCollar].join("|")
+    const sortKey = [primary, secondary, only.join("+"), excludeBlueCollar, sectors.join("+")].join("|")
     // a "then order by" turns the list into one group, headed by what it is ordered by (Round 29)
     const secondaryLabel = secondary ? (SECONDARY_SORTS.find((option) => option.value === secondary) || {}).label || "" : ""
 
     // How many the filters hid, so the page can say so — a filter that hides silently is the thing
     // this report was rebuilt to avoid.
     const hiddenCount = useMemo(() => {
-        if (!excludeBlueCollar && only.length === 0) return 0
+        if (!excludeBlueCollar && only.length === 0 && sectors.length === 0) return 0
         return (ranked || []).length - ordered.length
-    }, [excludeBlueCollar, only, ranked, ordered])
+    }, [excludeBlueCollar, only, sectors, ranked, ordered])
+    // how many of this student's careers sit in each sector, beside its name in the menu
+    const sectorCounts = useMemo(() => (ranked || []).reduce((counts, entry) => {
+        const sector = (details[entry.professionId] || {}).professionalSector
+        if (sector) counts[sector] = (counts[sector] || 0) + 1
+        return counts
+    }, {}), [ranked, details])
     const toggleOnly = (key) => setOnly((current) => (current.includes(key) ? current.filter((value) => value !== key) : [...current, key]))
 
     // The engine's top three keep their colours under every order, so "my best matches" never
@@ -165,6 +173,9 @@ function MatchesPage() {
                     onExcludeBlueCollar={setExcludeBlueCollar}
                     only={only}
                     onToggleOnly={toggleOnly}
+                    sectors={sectors}
+                    onSectors={setSectors}
+                    sectorCounts={sectorCounts}
                 />
             </div>
 
@@ -179,7 +190,7 @@ function MatchesPage() {
                 {hiddenCount > 0 && (
                     <p className="report-hidden-note">
                         {hiddenCount} {hiddenCount === 1 ? "career is" : "careers are"} hidden by your filters.{" "}
-                        <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]) }}>Show them again</button>
+                        <button type="button" className="link-button" onClick={() => { setExcludeBlueCollar(false); setOnly([]); setSectors([]) }}>Show them again</button>
                     </p>
                 )}
 
