@@ -13,7 +13,8 @@ const asBase64 = (file) => new Promise((resolve, reject) => {
     reader.readAsDataURL(file)
 })
 
-function ResumeAttach({ read, onRead, lead, addedNote }) {
+// `title` and `lead` head the box; a page that is all about the résumé (Round 37) passes `title={null}` and no lead
+function ResumeAttach({ read, onRead, lead, addedNote, title = "Got a résumé?" }) {
     const [state, setState] = useState({ busy: false, note: "" })
 
     const pick = async (file) => {
@@ -41,7 +42,7 @@ function ResumeAttach({ read, onRead, lead, addedNote }) {
 
     return (
         <div className="resume-attach">
-            <p className="resume-attach-lead"><strong>📄 Got a résumé?</strong> {lead || "Attach it and we'll fill in the activities we find."}</p>
+            {title && <p className="resume-attach-lead"><strong>📄 {title}</strong> {lead || "Attach it and we'll fill in the activities we find."}</p>}
             <label className={`btn btn-ghost btn-sm tap resume-attach-btn${state.busy ? " is-busy" : ""}`}>
                 {state.busy ? "Reading your résumé…" : "Attach résumé"}
                 <input type="file" accept={ACCEPT} disabled={state.busy} onChange={(event) => { pick(event.target.files[0]); event.target.value = "" }} hidden />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import VoiceInput from "../VoiceInput"
-import ActivityReferenceList from "./ActivityReferenceList"
+import ActivityReferenceList, { DRAG_TYPE } from "./ActivityReferenceList"
 import InterestProgressBar from "./InterestProgressBar"
 import ProblemPromptList from "./ProblemPromptList"
 import QuestionCard from "./QuestionCard"
@@ -97,6 +97,36 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
         }))
     }
 
+    // ── from the "Stuck?" list (Round 37, owner): a tapped or dragged activity goes straight into a question ──
+    const ADD_TARGETS = [...ACTIVITY_GROUPS, { key: "additionalInterests", title: "Anything else you enjoyed?" }]
+    const addActivity = (key, text) => {
+        setLocalFormData((prev) => {
+            if (key === "additionalInterests") {
+                const rows = prev.additionalInterests
+                if (rows.some((row) => row.activity.trim().toLowerCase() === text.toLowerCase())) return prev
+                const empty = rows.findIndex((row) => !row.activity.trim() && !row.reason.trim())
+                return {
+                    ...prev,
+                    additionalInterests: empty >= 0
+                        ? rows.map((row, i) => (i === empty ? { ...row, activity: text } : row))
+                        : [...rows, { activity: text, reason: "" }],
+                }
+            }
+            const list = (prev[key] || []).filter((value) => typeof value === "string" && value.trim() !== "")
+            if (list.some((value) => value.toLowerCase() === text.toLowerCase())) return prev
+            return { ...prev, [key]: [...list, text] }
+        })
+    }
+    // a question's card takes an activity dropped on it
+    const dropOn = (key) => ({
+        onDragOver: (event) => event.preventDefault(),
+        onDrop: (event) => {
+            event.preventDefault()
+            const text = event.dataTransfer.getData(DRAG_TYPE).trim()
+            if (text) addActivity(key, text)
+        },
+    })
+
     // ── skip (Pre-High School only) ──────────────────────────────────────────
     const handleSkipChange = (isSkipped) => {
         setLocalFormData((prev) => ({ ...prev, skipped: isSkipped }))
@@ -133,13 +163,15 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
 
     const renderActivityGroup = ({ key, title }) => (
         <QuestionCard key={key} title={title} prompt={promptOf(key)} examples={examplesOf(key)} htmlFor={`${key}-input`}>
-            <ChipListInput
-                id={`${key}-input`}
-                label={title}
-                values={localFormData[key]}
-                onChange={(list) => setLocalFormData((prev) => ({ ...prev, [key]: list }))}
-                placeholder={stage.placeholders[key]}
-            />
+            <div className="if-drop" {...dropOn(key)}>
+                <ChipListInput
+                    id={`${key}-input`}
+                    label={title}
+                    values={localFormData[key]}
+                    onChange={(list) => setLocalFormData((prev) => ({ ...prev, [key]: list }))}
+                    placeholder={stage.placeholders[key]}
+                />
+            </div>
         </QuestionCard>
     )
 
@@ -235,31 +267,33 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                         <section className="if-card">
                             <h3 className="if-card-title">Anything else</h3>
                             <QuestionCard title="Anything else you enjoyed?" prompt={promptOf("additionalInterests")} examples={examplesOf("additionalInterests")}>
-                                {localFormData.additionalInterests.map((row, idx) => (
-                                    <div key={`additionalInterests${idx}`} className="if-pair">
-                                        <input
-                                            placeholder="Activity"
-                                            aria-label="Activity"
-                                            id={`additionalInterests${idx + 1}-activity`}
-                                            value={row.activity}
-                                            onChange={(e) => handleAdditionalChange(idx, "activity", e.target.value)}
-                                        />
-                                        <input
-                                            placeholder="Why you liked it"
-                                            aria-label="Why you liked it"
-                                            id={`additionalInterests${idx + 1}-reason`}
-                                            value={row.reason}
-                                            onChange={(e) => handleAdditionalChange(idx, "reason", e.target.value)}
-                                        />
-                                        <VoiceInput compact value={row.reason} onChange={(text) => handleAdditionalChange(idx, "reason", text)} />
-                                    </div>
-                                ))}
-                                <button type="button" className="if-add" onClick={handleAddMoreAdditional}>+ Add another</button>
+                                <div className="if-drop" {...dropOn("additionalInterests")}>
+                                    {localFormData.additionalInterests.map((row, idx) => (
+                                        <div key={`additionalInterests${idx}`} className="if-pair">
+                                            <input
+                                                placeholder="Activity"
+                                                aria-label="Activity"
+                                                id={`additionalInterests${idx + 1}-activity`}
+                                                value={row.activity}
+                                                onChange={(e) => handleAdditionalChange(idx, "activity", e.target.value)}
+                                            />
+                                            <input
+                                                placeholder="Why you liked it"
+                                                aria-label="Why you liked it"
+                                                id={`additionalInterests${idx + 1}-reason`}
+                                                value={row.reason}
+                                                onChange={(e) => handleAdditionalChange(idx, "reason", e.target.value)}
+                                            />
+                                            <VoiceInput compact value={row.reason} onChange={(text) => handleAdditionalChange(idx, "reason", text)} />
+                                        </div>
+                                    ))}
+                                    <button type="button" className="if-add" onClick={handleAddMoreAdditional}>+ Add another</button>
+                                </div>
                             </QuestionCard>
                         </section>
 
                         {/* last in the section but sticky to the bottom of the screen, so it is in reach the whole way down */}
-                        <ActivityReferenceList activities={stage.referenceList} fromResume={resumeList || []} />
+                        <ActivityReferenceList activities={stage.referenceList} fromResume={resumeList || []} targets={ADD_TARGETS} onAdd={addActivity} />
                     </>
                 )}
 

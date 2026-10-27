@@ -301,7 +301,8 @@ export const AUDIENCE_QUESTIONS = {
     ],
 }
 
-// what all three ask — after their own questions
+// what all three ask — shown inside each audience's own list, after its questions (owner, Round 37: not a
+// separate block). None repeats a question an audience already asks in its own words.
 export const COMMON_QUESTIONS = [
     {
         q: "I don't know what I want, what I'm capable of, or what fits my values.",
@@ -320,16 +321,6 @@ export const COMMON_QUESTIONS = [
                 With your story, not a quiz. Small things count — what you did at school, at home, with friends. We find the
                 thread and show you careers from <strong>1,000+ careers and job roles</strong>, many you've never heard of.
                 Try the free 5-minute <Link to="/try-demo">demo</Link> to see how it works.
-            </>
-        ),
-    },
-    {
-        q: "I don't have a great network.",
-        a: (
-            <>
-                Most of us decide on advice from parents and friends alone, with no real counselling. We give you both
-                halves: a report built on your own story and strengths, and with a mentor plan,{" "}
-                <strong>a professional in the job role you choose</strong> to talk to one to one.
             </>
         ),
     },
@@ -432,4 +423,74 @@ export const COMMON_QUESTIONS = [
             </>
         ),
     },
+    // the practical ones (owner, Round 37) — how long, the price, privacy, and a difficulty never counting against you
+    {
+        q: "How long does it take?",
+        a: (
+            <>
+                About 60–75 minutes of counselling and about 81 minutes of assessment, at your own pace — your answers save
+                as you go, so you can stop and come back on any device. Want a taste first? The{" "}
+                <Link to="/try-demo">free demo</Link> takes 5 minutes.
+            </>
+        ),
+    },
+    {
+        q: "What if I can't afford it — or don't like my results?",
+        a: (
+            <>
+                After signing up you can <strong>ask for financial aid</strong> — we look at every request. And if you don't
+                like your results, give us quick feedback and <strong>we'll refund you</strong>, on any plan.
+            </>
+        ),
+    },
+    {
+        q: "Who sees my answers?",
+        a: (
+            <>
+                Your answers are used to build your analysis and, without your name, to improve our career data — never
+                sold, never used for advertising. A résumé you
+                attach is read once to list its activities and then deleted. With a mentor plan, your mentor sees a short
+                brief to prepare — your education and a few highlights — never your scores.
+            </>
+        ),
+    },
+    {
+        q: "I have a learning difficulty or a disability. Will it count against me?",
+        a: (
+            <>
+                Never. Tell us about it and the timed tests it affects are set aside — marked "not measured", never a low
+                score. It never ranks, hides or scores a career.
+            </>
+        ),
+    },
+]
+
+// a parent often decides with a school student (owner, Round 37: the parents' questions are for school only)
+const PARENT_QUESTIONS = [
+    {
+        q: "I'm a parent. How does this help my child?",
+        a: (
+            <>
+                Your child tells their own story and takes the assessment online, at their own pace. The report shows the
+                careers that fit them — with the subjects, exams, cost, pay, demand and AI exposure of each — so the
+                conversation at home starts from facts. If your child is under 18, we email you to confirm your permission.
+            </>
+        ),
+    },
+    {
+        q: "My child wants a career I know little about. What should we do?",
+        a: (
+            <>
+                Read its card together: what the work is, how people get there, what it costs and pays, and how in demand
+                it is. With a mentor plan, your child can talk one to one with someone who does that job.
+            </>
+        ),
+    },
+]
+
+// one audience's whole list: its own questions (school: then the parents'), then what everyone asks
+export const questionsFor = (audience) => [
+    ...AUDIENCE_QUESTIONS[audience],
+    ...(audience === "school" ? PARENT_QUESTIONS : []),
+    ...COMMON_QUESTIONS.filter((item) => !AUDIENCE_QUESTIONS[audience].some((own) => own.q === item.q)),
 ]

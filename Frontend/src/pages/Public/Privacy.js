@@ -271,7 +271,7 @@ const SECTIONS = [
                     If you stop before this step, no account is made and the demo is deleted with the rest after 30 days.
                 </p>
                 <p>
-                    <strong>Your résumé.</strong> On the demo's first step, and at the start of Virtual Career
+                    <strong>Your résumé.</strong> Right after your first name in the demo, and at the start of Virtual Career
                     Counselling, you can attach a résumé (PDF, Word or a photo). Our AI processor (Anthropic) reads it
                     once to list the activities in it — short names like "Debating". In the demo they go into your
                     answers, where you remove or add to them; in Virtual Career Counselling they are shown first in each

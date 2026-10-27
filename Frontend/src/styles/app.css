@@ -3320,3 +3320,65 @@ details.mentor-student[open] > :last-child { margin-bottom: var(--space-4); }
     font-size: 0.92rem;
     color: var(--navy-soft);
 }
+
+/* ── round 37: the "Stuck?" list adds by a tap or a drag ─────────────────────────────────────────── */
+
+.if-reference-how {
+    margin: var(--space-2) 0;
+    font-size: 0.9rem;
+    color: var(--navy-soft);
+}
+
+.if-reference li {
+    break-inside: avoid;
+}
+
+button.if-ref-item {
+    display: inline;
+    min-height: 0;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--navy);
+    font-weight: 400;
+    text-align: left;
+    cursor: grab;
+}
+
+button.if-ref-item:hover:not(:disabled),
+button.if-ref-item.is-on {
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+}
+
+.if-ref-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: var(--space-2) 0;
+    padding: var(--space-2);
+    border: 1px solid var(--teal);
+    border-radius: var(--radius);
+    background: var(--teal-tint);
+}
+
+.if-ref-picker p {
+    flex-basis: 100%;
+    margin: 0 0 4px;
+}
+
+button.if-ref-target {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    background: var(--surface);
+}
+
+.if-ref-added {
+    margin: var(--space-2) 0;
+    font-size: 0.9rem;
+    color: var(--teal-dark);
+}
