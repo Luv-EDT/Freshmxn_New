@@ -9,83 +9,43 @@ and prices are never written into copy (they come from the server).
 - College students — https://claude.ai/artifact/DPYJyPxZDSeMABfCicTp9x
 - Early professionals — https://claude.ai/artifact/HGTJ8bvVw4pcaKi3VvksNQ
 
-**Posters** (1080 × 1350, one canvas: school, college, early professionals, and — Round 37 — core engineering students and early professionals; each with a "Sounds like you? Tick it." list and a QR code to the demo) — https://claude.ai/artifact/2BimnLr2x2DrbLJNAyAHgd
+**Posters** (1080 × 1350, one canvas: school, college, early professionals, and — Round 37 — core engineering students and early professionals; each with a "Sounds like you? Tick it." list and a QR code to www.freshmxn.com; the core ones add "Every platform talks software. We show you core." and "Looking beyond core? We help with that too.") — https://claude.ai/artifact/2BimnLr2x2DrbLJNAyAHgd
 
 The artifacts are private until shared from their Share menu; each exports to PDF/PPTX (decks) or images (posters).
 
 ---
 
-## Messages with a CTA (WhatsApp / Instagram / LinkedIn) — Round 37
+## Messages with a CTA (WhatsApp / Instagram / LinkedIn) — crisp (owner, Round 37)
 
-General, not one narrow worry (owner, Round 37). One message for everyone, one per audience, a parents' one for
-school, and two for core engineering. Use the general one where the audience is mixed (Instagram bio, a LinkedIn post,
-a big group), and the audience ones in their own groups.
+One for everyone (mixed groups, bios, LinkedIn posts); one per audience for their own groups.
 
-### Everyone
+**Everyone**
+> Don't pick a career from the few you've heard of. 🎯 Freshmxn's Lab starts with your story and finds careers that
+> fit you — in demand, well paid, AI-resilient — plus a mentor who's done it. Free 5-min demo 👉 www.freshmxn.com
 
-> Most of us pick a career from the handful we've heard of — and hope it works out. 🎯
->
-> Freshmxn's Lab flips that. We start with your story — what you've done, loved and stuck with — and match you to
-> careers that are in demand, pay well and are built to last in the age of AI. With the road to get there, and a
-> mentor who has walked it.
->
-> School, college or your first job — choose on purpose. See two careers your story points to, free, in 5 minutes 👉
-> www.freshmxn.com/try-demo
+**School students**
+> Stream, college, career — don't guess. 🤔 Discover the careers that truly fit you before you choose.
+> Free 5-min demo 👉 www.freshmxn.com
 
-### School students (Class 9 to 12)
+**Parents**
+> Help your child choose a career that fits who they are — with the facts on each path, not pressure.
+> Free 5-min demo 👉 www.freshmxn.com
 
-> Stream, college, career — the biggest choices of your life, and most of us make them by guesswork. 🤔
->
-> What if you could first see the careers that actually fit *you* — in demand, well paid, AI-resilient — and the
-> subjects and exams that lead there? Freshmxn's Lab starts from your story, not your marks.
->
-> Try it free — 5 minutes 👉 www.freshmxn.com/try-demo
+**College students**
+> Got a degree in progress, but no direction? 🎓 See where your degree and experience can really take you — and the
+> road there. Free 5-min demo 👉 www.freshmxn.com
 
-### Parents of school students
+**Early professionals**
+> Working hard — but in the right career? 💼 See where you fit best, what carries over, and what a move would take.
+> Free 5-min demo 👉 www.freshmxn.com
 
-> Your child's stream and college will shape the next ten years. Freshmxn's Lab helps them discover the careers that
-> fit who they are — with the subjects, exams, costs and pay for each — so the conversation at home starts from facts,
-> not pressure.
->
-> Let them try the free 5-minute demo 👉 www.freshmxn.com/try-demo
+**Core engineering students**
+> Every platform talks software. We show you core. 🔧 Find the core careers that fit you — and if you're looking beyond
+> core, we help with that too. Free 5-min demo 👉 www.freshmxn.com
 
-### College students (any year, any course)
-
-> A degree in progress — but not a direction? 🎓
->
-> Freshmxn's Lab reads your story (résumé welcome), measures how you think, and shows where your degree and everything
-> you've done can really take you — what you already have, what's left, and the road there. Then talk one to one with
-> someone who does the job.
->
-> See where you fit — free, in 5 minutes 👉 www.freshmxn.com/try-demo
-
-### Early professionals (the first few years of work)
-
-> Working hard — but in the right career? 💼
->
-> Your first few years at work are the best time to find out. Freshmxn's Lab starts from your story and experience to
-> show where you fit best, what carries over, and what any move would really take — plus a one-to-one with someone who
-> has made it.
->
-> Try it free — 5 minutes 👉 www.freshmxn.com/try-demo
-
-### Core engineering students
-
-> Mechanical, civil, electrical, chemical… 🔧 Core engineering opens far more doors than placement season shows.
->
-> Freshmxn's Lab matches your story and strengths to the core careers that fit you — and the ones built on them — with
-> the road into each, the pay, the demand and how AI-resilient each one is. Then talk to someone working in core.
->
-> Find your core career — free, in 5 minutes 👉 www.freshmxn.com/try-demo
-
-### Core engineering early professionals
-
-> Engineer by degree — but is your career where your engineering is? ⚙️
->
-> Whether you want back into core or the next step up, Freshmxn's Lab shows the core roles your degree and experience
-> fit best, what carries over, and how to make the move — with a mentor who has done it.
->
-> Free, in 5 minutes 👉 www.freshmxn.com/try-demo
+**Core engineering early professionals**
+> Every platform talks software. We show you core. ⚙️ Find the core roles your experience fits — or the right move
+> beyond core. Free 5-min demo 👉 www.freshmxn.com
 
 ---
 
