@@ -79,6 +79,22 @@ const demoSessionSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        // Round 36 (owner): the account step before the result — the sign-up waiting on the emailed code
+        // ({ fields without the password, passwordHash, codeHash, expiresAt, attempts, sentAt }); cleared once
+        // the account is made. `user` is the account the result belongs to.
+        pendingAccount: {
+            type: Object,
+            default: null,
+        },
+        resumeReads: {
+            type: Number,
+            default: 0,    // Round 36: résumés read in this demo (at most 3); the files themselves are never kept
+        },
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
         expiresAt: {
             type: Date,
             default: () => new Date(Date.now() + DEMO_TTL_DAYS * 24 * 3600 * 1000),

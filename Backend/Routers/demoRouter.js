@@ -42,7 +42,7 @@ const demoRateLimiter = rateLimit({
     message: { success: false, message: "Too many requests. Try again in an hour" },
 })
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 const MAX_DRAWS = 12
 const hashOf = (token) => crypto.createHash("sha256").update(String(token || "")).digest("hex")
 const dailyCap = () => Number(process.env.DEMO_DAILY_CAP) || 200
@@ -222,7 +222,7 @@ router.post("/saveTests", demoRateLimiter, async (req, res) => {
 })
 
 // ========================
-// The result — asked for an email first
+// The result — after the account step (Round 36)
 // ========================
 
 const resultPayload = (session, details) => ({
@@ -242,78 +242,59 @@ const detailsFor = (careers) => {
     return Object.fromEntries(careers.map(({ entry }) => [entry.professionId, demoDetail(byId.get(entry.professionId))]))
 }
 
-router.post("/result", demoRateLimiter, async (req, res) => {
-    try {
-        const session = await sessionFor(req)
-        if (!session) return noSession(res)
+// WORKING OUT THE RESULT (Round 36): called by the account step (demoAccountRouter) once the visitor has
+// registered with a confirmed email, or logged in — the result is never shown without an account (owner).
+// Worked out once; a second call returns the same result without another AI call.
+const finishDemo = async (session, { email, adult, parentConsent, stage }) => {
+    if (session.result) return resultPayload(session, detailsFor(session.result.careers))
 
-        // worked out once — a second call shows the same result without another AI call
-        if (session.result) {
-            return res.status(200).json({ success: true, message: "Your result", data: resultPayload(session, detailsFor(session.result.careers)) })
-        }
-
-        const interests = session.interests || {}
-        if (!(interests.draws || []).length || !session.tastes) {
-            return res.status(400).json({ success: false, message: "Finish the questions and the three tasks first" })
-        }
-
-        const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : ""
-        if (!emailRegex.test(email) || email.length > 120) {
-            return res.status(400).json({ success: false, message: "Please enter a valid email" })
-        }
-        if (typeof req.body.adult !== "boolean") {
-            return res.status(400).json({ success: false, message: "Please tell us whether you are 18 or older" })
-        }
-        // an under-18 needs a parent or guardian's agreement (DPDP) — self-declared here, as the demo
-        // keeps only a first name, the answers and this email, and deletes them after 30 days
-        if (req.body.adult === false && req.body.parentConsent !== true) {
-            return res.status(400).json({ success: false, message: "Please confirm that your parent or guardian knows and agrees" })
-        }
-
-        // where they are now — asked at the start, kept only now that there is an email (owner, Round 33)
-        const rawStage = req.body.stage || {}
-        const years = Number(rawStage.years)
-        session.stage = STAGES.includes(rawStage.journey)
-            ? { journey: rawStage.journey, ...(rawStage.journey === "early_professional" && Number.isFinite(years) && years >= 0 && years <= 45 ? { years: Math.round(years) } : {}) }
-            : null
-
-        const data = loadData()
-        const resolver = createActivityResolver({
-            ActivityFactors,
-            professionEmbeddings: data.professionEmbeddings,
-            anchors: data.anchors,
-            // a visitor waits on this page, so Voyage's busy-retries are brief, not minutes long
-            embedWait: () => new Promise((resolve) => setTimeout(resolve, 2000)),
-        })
-        const outcome = await runDemo({ session: session.toObject(), resolver, data })
-
-        const { POLICY_VERSION } = require("./userRouter")
-        session.email = email
-        session.adult = req.body.adult
-        session.parentConsent = req.body.adult === false ? { at: new Date(), policyVersion: POLICY_VERSION } : null
-        session.emailAt = new Date()
-        session.result = {
-            careers: outcome.careers,
-            pointedTo: outcome.pointedTo,
-            factors: outcome.factors,
-            sart: outcome.sart,
-            reasoningRight: outcome.reasoningRight,
-            you: outcome.you,
-            at: new Date(),
-        }
-        session.status = "done"
-        session.markModified("result")
-        await session.save()
-
-        // identity-free rows for the monthly careers scout (model/demoSignalsModel.js)
-        if (outcome.signals.length) await DemoSignal.insertMany(outcome.signals)
-
-        return res.status(200).json({ success: true, message: "Your result", data: resultPayload(session, outcome.details) })
-
-    } catch (error) {
-        return res.status(500).json({ success: false, message: "Could not work out your result", error: error.message })
+    const interests = session.interests || {}
+    if (!(interests.draws || []).length || !session.tastes) {
+        const error = new Error("Finish the questions and the three tasks first")
+        error.status = 400
+        throw error
     }
-})
+
+    // where they are now — from the account now (owner, Round 36), else what they said at the start
+    const rawStage = stage || {}
+    const years = Number(rawStage.years)
+    session.stage = STAGES.includes(rawStage.journey)
+        ? { journey: rawStage.journey, ...(rawStage.journey === "early_professional" && Number.isFinite(years) && years >= 0 && years <= 45 ? { years: Math.round(years) } : {}) }
+        : null
+
+    const data = loadData()
+    const resolver = createActivityResolver({
+        ActivityFactors,
+        professionEmbeddings: data.professionEmbeddings,
+        anchors: data.anchors,
+        // a visitor waits on this page, so Voyage's busy-retries are brief, not minutes long
+        embedWait: () => new Promise((resolve) => setTimeout(resolve, 2000)),
+    })
+    const outcome = await runDemo({ session: session.toObject(), resolver, data })
+
+    const { POLICY_VERSION } = require("./userRouter")
+    session.email = email
+    session.adult = adult
+    session.parentConsent = adult === false && parentConsent ? { at: new Date(), policyVersion: POLICY_VERSION } : null
+    session.emailAt = new Date()
+    session.result = {
+        careers: outcome.careers,
+        pointedTo: outcome.pointedTo,
+        factors: outcome.factors,
+        sart: outcome.sart,
+        reasoningRight: outcome.reasoningRight,
+        you: outcome.you,
+        at: new Date(),
+    }
+    session.status = "done"
+    session.markModified("result")
+    await session.save()
+
+    // identity-free rows for the monthly careers scout (model/demoSignalsModel.js)
+    if (outcome.signals.length) await DemoSignal.insertMany(outcome.signals)
+
+    return resultPayload(session, outcome.details)
+}
 
 router.get("/result", demoRateLimiter, async (req, res) => {
     try {
@@ -348,3 +329,6 @@ router.get("/state", demoRateLimiter, async (req, res) => {
 })
 
 module.exports = router
+module.exports.finishDemo = finishDemo
+module.exports.sessionFor = sessionFor
+module.exports.demoRateLimiter = demoRateLimiter
