@@ -146,7 +146,7 @@ function SectionBody({ id, value }) {
 
 const EMPTY_STEP = { skill: "", resource: "", link: "", cost: "", time: "" }
 
-function MentorReviewSheet() {
+function MentorReviewSheet({ tier = 1, standing = {} }) {
     const [sheet, setSheet] = useState(null)
     const [reason, setReason] = useState("")
     const [answers, setAnswers] = useState({})         // section → { verdict, note, sourceUrl }
@@ -225,14 +225,35 @@ function MentorReviewSheet() {
 
     const sendLabel = saving ? "Sending…" : submittedAt ? "Send again" : "Send"
 
-    // Round 35 (owner): two folded cards, each with its own Send — the data check, and the roadmap
+    // Round 35 (owner): what this tab is for, first — these two help you move up a tier: the data check
+    // counts towards Tier 2, the roadmap towards Tier 3. Then the two folded cards, each with its own Send.
+    const tier2Left = standing.tier2Missing || []
+    const tier3Left = standing.tier3Missing || []
     return (
         <section className="mentor-profession">
+            <div className="tier-up-intro">
+                <p>
+                    <strong>Two things here help you move up a tier — and pay more per session.</strong> Checking our data on your
+                    profession counts towards <strong>Tier 2</strong>; a starter skills roadmap counts towards <strong>Tier 3</strong>.
+                    They also make what students read about your field better.
+                </p>
+                <ul className="tier-up-list">
+                    <li className={Number(tier) >= 2 ? "done" : ""}>
+                        <strong>Tier 2</strong> (by itself) — 7 sessions with feedback averaging 8/10 or more, and the data check.
+                        {Number(tier) >= 2 ? " ✓ You're there." : tier2Left.length ? ` Still to do: ${tier2Left.join(", ")}.` : ""}
+                    </li>
+                    <li className={Number(tier) >= 3 ? "done" : ""}>
+                        <strong>Tier 3</strong> (our team decides) — 10+ sessions averaging 8/10 or more, the data check and a skills roadmap.
+                        {Number(tier) >= 3 ? " ✓ You're there." : tier3Left.length ? ` Still to do: ${tier3Left.join(", ")}.` : " You meet it — we'll be in touch."}
+                    </li>
+                </ul>
+            </div>
+
             <details className="profession-fold">
                 <summary>
                     <span className="training-head">
                         <strong>Check our data for {sheet.profession}</strong>
-                        <span>What students read about your work — say what's right and what isn't</span>
+                        <span>For Tier 2 — what students read about your work: say what's right and what isn't</span>
                     </span>
                     <span className="training-time">{submittedAt ? "Sent ✓" : "~15 min"}</span>
                 </summary>
@@ -287,9 +308,9 @@ function MentorReviewSheet() {
                 <summary>
                     <span className="training-head">
                         <strong>Suggest a starter skills roadmap</strong>
-                        <span>A good roadmap is one of the requirements for Tier 3 — it can get you there in 10 sessions</span>
+                        <span>For Tier 3 — a good roadmap is one of the requirements; it can get you there in 10 sessions</span>
                     </span>
-                    <span className="training-time">{roadmap.some((step) => step.skill) && submittedAt ? "Sent ✓" : "~20 min"}</span>
+                    {roadmap.some((step) => step.skill) && submittedAt && <span className="training-time">Sent ✓</span>}
                 </summary>
                 <p className="report-small">
                     Free or cheap resources (YouTube, Coursera, Udemy…) for the first 20% of skills in your field, in order.
