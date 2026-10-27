@@ -53,7 +53,7 @@ const Introduction = () => (
                 <thead><tr><th>Tier</th><th>How you get there</th><th>In India</th><th>Abroad</th></tr></thead>
                 <tbody>
                     <tr><td>1</td><td>Approved</td><td>₹1,000</td><td>₹1,500 ($15)</td></tr>
-                    <tr><td>2</td><td>Automatic: 7 sessions averaging 8/10+</td><td>₹1,300</td><td>₹1,900 ($19)</td></tr>
+                    <tr><td>2</td><td>Automatic: 7 sessions averaging 8/10+, and the check of your profession's data</td><td>₹1,300</td><td>₹1,900 ($19)</td></tr>
                     <tr><td>3</td><td>10+ sessions averaging 8/10+, a skills roadmap and a data review</td><td>₹1,500+</td><td>₹2,200+ ($22+)</td></tr>
                 </tbody>
             </table>

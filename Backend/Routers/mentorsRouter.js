@@ -6,7 +6,7 @@ const Mentor = require("../model/mentorsModel")
 const MentorTest = require("../model/mentorTestsModel")
 const MentorPayout = require("../model/mentorPayoutsModel")
 const { standingOf } = require("../utils/mentorPayouts")
-const { tier3Missing, mainRate, payoutAmount } = require("../utils/mentorTiers")
+const { tier2Missing, tier3Missing, mainRate, payoutAmount } = require("../utils/mentorTiers")
 const { notifyStudent } = require("../utils/statusEmails")
 const authMiddleware = require("../middlewares/authMiddleware")
 const adminAuthMiddleware = require("../middlewares/adminAuthMiddleware")
@@ -282,6 +282,7 @@ router.get("/getMyMentorProfile", authMiddleware, mentorAuthMiddleware, async (r
                 average: numbers.average,
                 roadmapSteps: numbers.roadmapSteps,
                 dataReviewed: numbers.dataReviewed,
+                tier2Missing: tier2Missing(profile, numbers, numbers),
                 tier3Missing: tier3Missing(profile, numbers, numbers),
                 mainRate: mainRate(profile),
                 followUpRate: payoutAmount(profile, "followup"),

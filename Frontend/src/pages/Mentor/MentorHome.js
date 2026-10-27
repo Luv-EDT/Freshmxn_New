@@ -15,7 +15,7 @@ import logo from "../../assets/brand/logo.png"
 // as a second bar that did nothing):
 //   onboarding (until the test is sent)   1. Training · 2. Tell us about yourself · 3. Test (locked until the profile is in)
 //   after it                               Home (the status, or once approved the current student and history)
-//                                          · My profession data · Payouts (once approved)
+//                                          · Tier up: data check & roadmap · Payouts (once approved)
 // The profile — and, once onboarded, the training documents and the Calendly links — open from the round
 // profile icon in the header, the only place with Log out (owner, Round 35).
 const STATUS_TEXT = {
@@ -111,34 +111,62 @@ function MentorHome() {
                             </ul>
                             <p className="report-small">Your full profile appears here once you've sent it (step 2 on your dashboard).</p>
                         </>
-                    ) : editing ? (
-                        <MentorOnboarding initial={profile} submitLabel="Save changes" onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
                     ) : (
-                        <>
-                            {!profile.calendlyMain && <p className="form-missing">Your Calendly links go in on the Test tab — students book from them.</p>}
-                            <ul className="mentor-profile-list">
-                                <li><strong>Name:</strong> {profile.name}</li>
-                                <li><strong>Email:</strong> {profile.email}</li>
-                                <li><strong>Contact:</strong> {profile.phone}</li>
-                                <li><strong>Role:</strong> {profile.currentRole}</li>
-                                <li><strong>Profession:</strong> {profile.discipline}</li>
-                                <li><strong>Industries:</strong> {(profile.sectors || []).join(", ")}</li>
-                                <li><strong>Experience:</strong> {profile.yearsExperience} years</li>
-                                <li><strong>Languages:</strong> {(profile.languages || []).join(", ")}</li>
-                                <li><strong>Why you mentor:</strong> {profile.motivation}</li>
-                                <li><strong>High school → college:</strong> {profile.transitionCategory}</li>
-                                <li><strong>Where you live:</strong> {profile.region === "international" ? "Abroad" : profile.region === "indian" ? "India" : "—"}{profile.residenceCitizenship ? ` (${profile.residenceCitizenship})` : ""}</li>
-                                <li><strong>Paid to (only our team sees this):</strong> {profile.payout && (profile.payout.upiId || profile.payout.accountNumber || profile.payout.intlMethod) ? (profile.payout.upiId || profile.payout.intlMethod || `account ending ${String(profile.payout.accountNumber).slice(-4)}`) : "—"}</li>
-                            </ul>
-                            <p><button type="button" className="tap" onClick={() => setEditing(true)}>Edit my profile</button></p>
-                            {testSent && <BookingLinks initial={{ calendlyMain: profile.calendlyMain, calendlyFollowUp: profile.calendlyFollowUp }} onSaved={load} />}
+                        // Round 35 (owner): the three parts folded — the profile, the Calendly links, the training
+                        <section className="mentor-profile-folds">
+                            <details className="profession-fold" open={editing}>
+                                <summary>
+                                    <span className="training-head">
+                                        <strong>Your profile</strong>
+                                        <span>About you, and how we pay you — see or edit it</span>
+                                    </span>
+                                </summary>
+                                {editing ? (
+                                    <MentorOnboarding initial={profile} submitLabel="Save changes" onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
+                                ) : (
+                                    <>
+                                        <ul className="mentor-profile-list">
+                                            <li><strong>Name:</strong> {profile.name}</li>
+                                            <li><strong>Email:</strong> {profile.email}</li>
+                                            <li><strong>Contact:</strong> {profile.phone}</li>
+                                            <li><strong>Role:</strong> {profile.currentRole}</li>
+                                            <li><strong>Profession:</strong> {profile.discipline}</li>
+                                            <li><strong>Industries:</strong> {(profile.sectors || []).join(", ")}</li>
+                                            <li><strong>Experience:</strong> {profile.yearsExperience} years</li>
+                                            <li><strong>Languages:</strong> {(profile.languages || []).join(", ")}</li>
+                                            <li><strong>Why you mentor:</strong> {profile.motivation}</li>
+                                            <li><strong>High school → college:</strong> {profile.transitionCategory}</li>
+                                            <li><strong>Where you live:</strong> {profile.region === "international" ? "Abroad" : profile.region === "indian" ? "India" : "—"}{profile.residenceCitizenship ? ` (${profile.residenceCitizenship})` : ""}</li>
+                                            <li><strong>Paid to (only our team sees this):</strong> {profile.payout && (profile.payout.upiId || profile.payout.accountNumber || profile.payout.intlMethod) ? (profile.payout.upiId || profile.payout.intlMethod || `account ending ${String(profile.payout.accountNumber).slice(-4)}`) : "—"}</li>
+                                        </ul>
+                                        <p><button type="button" className="tap" onClick={() => setEditing(true)}>Edit my profile</button></p>
+                                    </>
+                                )}
+                            </details>
                             {testSent && (
-                                <section className="profile-training">
-                                    <h3>Training documents</h3>
-                                    <MentorTraining />
-                                </section>
+                                <details className="profession-fold">
+                                    <summary>
+                                        <span className="training-head">
+                                            <strong>Your Calendly links</strong>
+                                            <span>Students book from these — change them here</span>
+                                        </span>
+                                        {!profile.calendlyMain && <span className="training-time">Missing</span>}
+                                    </summary>
+                                    <BookingLinks initial={{ calendlyMain: profile.calendlyMain, calendlyFollowUp: profile.calendlyFollowUp }} onSaved={load} />
+                                </details>
                             )}
-                        </>
+                            {testSent && (
+                                <details className="profession-fold">
+                                    <summary>
+                                        <span className="training-head">
+                                            <strong>Training documents</strong>
+                                            <span>The three guides, to refer back to any time</span>
+                                        </span>
+                                    </summary>
+                                    <MentorTraining />
+                                </details>
+                            )}
+                        </section>
                     )}
                     <div className="mentor-logout"><LogoutButton /></div>
                     {helpLine}
@@ -155,9 +183,7 @@ function MentorHome() {
                     <strong>Tier {profile ? profile.tier || 1 : 1}</strong> · {REGION_WORDS[profile && profile.region] || "Indian"} mentor · {standing.sessions || 0} session{standing.sessions === 1 ? "" : "s"} with feedback
                     {standing.average ? ` · average ${standing.average}/10` : ""}
                 </p>
-                {profile && Number(profile.tier || 1) < 3 && (standing.tier3Missing || []).length > 0 && (
-                    <p className="report-small">For Tier 3: {standing.tier3Missing.join(", ")}. Tier 2 comes by itself after 7 sessions averaging 8/10 or more.</p>
-                )}
+                {Number(profile ? profile.tier || 1 : 1) < 3 && <p className="report-small">How to move up a tier: see the <button type="button" className="link-button" onClick={() => setTab("profession")}>Tier up</button> tab.</p>}
             </section>
             <MentorStudents />
         </>
@@ -201,8 +227,9 @@ function MentorHome() {
         { key: "home", label: "Home", children: approved ? home : <MentorTest onSubmitted={load} /> },
         {
             key: "profession",
-            label: "My profession data",
-            children: approved ? <MentorReviewSheet /> : <p>This opens once you're approved: our data on your profession to check, and your starter skills roadmap.</p>,
+            // Round 35 (owner): named for why a mentor is here — the data check (Tier 2) and the roadmap (Tier 3)
+            label: "Tier up: data check & roadmap",
+            children: approved ? <MentorReviewSheet tier={profile.tier || 1} standing={standing} /> : <p>This opens once you're approved: our data on your profession to check, and your starter skills roadmap.</p>,
         },
         approved && { key: "payouts", label: "Payouts", children: <MentorPayouts standing={standing} /> },
     ].filter(Boolean)

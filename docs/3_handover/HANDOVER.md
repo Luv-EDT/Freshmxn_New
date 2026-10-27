@@ -2637,3 +2637,13 @@ known warning files.
 **Owner gate:** after this deploy, press **Check video storage** on `/admin/mentors` from the same address mentors use. If it says the CORS
 rule blocks uploads, paste the policy it shows into R2 → the bucket → Settings → CORS policy, save, and run it again.
 **Fixtures:** 248/248 (the Round 35 mentor fixture extended). Build: the 7 known warning files.
+
+### Round 35e — "Tier up", and the profile as folded cards (2026-10-27)
+| Item | What shipped |
+|---|---|
+| **Tier rule (owner)** | Tier 2 now also needs the **check of their profession's data** (`tier2Due` reads `dataReviewed`); Tier 3 keeps 10+ sessions, 8/10, the data check and a skills roadmap. A mentor already at 7 sessions without the check moves up the moment they send it (the next feedback re-checks) |
+| **Tab renamed** | "My profession data" → **Tier up: data check & roadmap**. It opens with what the two parts are for (data check → Tier 2, roadmap → Tier 3) and what this mentor still needs for each (`standing.tier2Missing` / `tier3Missing`). The roadmap shows no time estimate |
+| **Home** | The Tier 3 line is gone; one line points to the Tier up tab |
+| **Profile section** | Three folded cards: Your profile (Edit inside), Your Calendly links, Training documents; Log out below |
+
+**Fixtures:** 248/248 (the Round 34 pay fixture and the Round 35 mentor fixture updated for the owner's changes). Build: the 7 known warning files.

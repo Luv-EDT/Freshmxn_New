@@ -319,6 +319,10 @@ router.put("/saveMyReview", authMiddleware, mentorAuthMiddleware, async (req, re
             { upsert: true, new: true, setDefaultsOnInsert: true }
         ).lean()
 
+        // Round 35 (owner): the data check counts towards Tier 2 — a mentor already at 7 good sessions moves
+        // up now, not at their next feedback
+        await require("../utils/mentorPayouts").refreshTier(req.user._id).catch((error) => console.error(`refreshTier after a data check: ${error.message}`))
+
         return res.status(200).json({
             success: true,
             message: `Thank you, ${mentor.name.split(" ")[0]} — we weigh what mentors say on the 1st of each month`,
