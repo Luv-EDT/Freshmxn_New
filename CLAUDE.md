@@ -38,7 +38,10 @@ Redis since Round 22). One free Render web service runs the API, the built site 
   never `grantAccess`, never a score. Only the story (Career Discovery plans, only what is empty) and the two careers
   (`User.demoCareers`) reach the real flow, through `/demoResume/import` (login + a paid plan) — never anything the
   demo's tasks measured (owner, Round 33). The demo report's "N% measured" beside a factor is an owner-approved
-  exception for the demo only. The DEMO ISOLATION fixture holds this.
+  exception for the demo only. The DEMO ISOLATION fixture holds this. **One exception (owner, Round 36):** the account
+  step, `/demoAccount` (`Routers/demoAccountRouter.js`) — before the result the visitor signs up with an emailed
+  6-digit code (or logs in), so they leave the demo logged in. No code, no account and no result. It is the only demo
+  code that touches a User; the résumé file (`/resumeReader`) is read once and never stored.
 - Never commit `.env` or keys. Never publish the company PAN/TAN.
 
 ## Data patches (owner, Round 17)
@@ -53,7 +56,7 @@ Then run the fixtures and commit. If `profession_embeddings.json` lists `pending
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 72/72
-node Backend/workers/fixtures/runFixtures.js     # 248/248
+node Backend/workers/fixtures/runFixtures.js     # 249/249
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 
