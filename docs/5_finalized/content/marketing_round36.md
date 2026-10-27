@@ -9,54 +9,87 @@ and prices are never written into copy (they come from the server).
 - College students — https://claude.ai/artifact/DPYJyPxZDSeMABfCicTp9x
 - Early professionals — https://claude.ai/artifact/HGTJ8bvVw4pcaKi3VvksNQ
 
-**Posters** (1080 × 1350, one canvas, three artboards) — https://claude.ai/artifact/2BimnLr2x2DrbLJNAyAHgd
+**Posters** (1080 × 1350, one canvas: school, college, early professionals, and — Round 37 — core engineering students and early professionals; each with a "Sounds like you? Tick it." list and a QR code to the demo) — https://claude.ai/artifact/2BimnLr2x2DrbLJNAyAHgd
 
 The artifacts are private until shared from their Share menu; each exports to PDF/PPTX (decks) or images (posters).
 
 ---
 
-## Messages with a CTA (WhatsApp / Instagram / LinkedIn)
+## Messages with a CTA (WhatsApp / Instagram / LinkedIn) — Round 37
+
+General, not one narrow worry (owner, Round 37). One message for everyone, one per audience, a parents' one for
+school, and two for core engineering. Use the general one where the audience is mixed (Instagram bio, a LinkedIn post,
+a big group), and the audience ones in their own groups.
+
+### Everyone
+
+> Most of us pick a career from the handful we've heard of — and hope it works out. 🎯
+>
+> Freshmxn's Lab flips that. We start with your story — what you've done, loved and stuck with — and match you to
+> careers that are in demand, pay well and are built to last in the age of AI. With the road to get there, and a
+> mentor who has walked it.
+>
+> School, college or your first job — choose on purpose. See two careers your story points to, free, in 5 minutes 👉
+> www.freshmxn.com/try-demo
 
 ### School students (Class 9 to 12)
 
-> Picking a stream because everyone else is? 🤔
+> Stream, college, career — the biggest choices of your life, and most of us make them by guesswork. 🤔
 >
-> 93% of Indian students know of only seven career options (India Today survey). Before you choose a stream, a
-> college or an entrance exam, see the rest — and which ones actually fit *you*.
+> What if you could first see the careers that actually fit *you* — in demand, well paid, AI-resilient — and the
+> subjects and exams that lead there? Freshmxn's Lab starts from your story, not your marks.
 >
-> Freshmxn Lab starts with your story, not a quiz: what you've done, enjoyed and stuck with. Then it ranks careers
-> from 1,000+ careers and job roles, with the subjects, exams and pay for each — and how exposed each is to AI.
+> Try it free — 5 minutes 👉 www.freshmxn.com/try-demo
+
+### Parents of school students
+
+> Your child's stream and college will shape the next ten years. Freshmxn's Lab helps them discover the careers that
+> fit who they are — with the subjects, exams, costs and pay for each — so the conversation at home starts from facts,
+> not pressure.
 >
-> Try the free demo — it takes just 5 minutes 👉 https://www.freshmxn.com/try-demo
+> Let them try the free 5-minute demo 👉 www.freshmxn.com/try-demo
 
 ### College students (any year, any course)
 
-> Buying courses out of FOMO?
+> A degree in progress — but not a direction? 🎓
 >
-> Only 8.25% of Indian graduates work in jobs that match their qualifications (NITI Aayog, citing the Economic
-> Survey 2024–25). The degree isn't the plan — the direction is.
+> Freshmxn's Lab reads your story (résumé welcome), measures how you think, and shows where your degree and everything
+> you've done can really take you — what you already have, what's left, and the road there. Then talk one to one with
+> someone who does the job.
 >
-> Freshmxn Lab reads your story (attach your résumé), measures 31 factors about how you think, and ranks careers
-> from 1,000+ — each with what your degree already covers, whether a master's is worth it, and your next 12 months.
-> Then talk to a professional in the role you choose.
->
-> See two careers your story points to, free, in 5 minutes 👉 https://www.freshmxn.com/try-demo
+> See where you fit — free, in 5 minutes 👉 www.freshmxn.com/try-demo
 
 ### Early professionals (the first few years of work)
 
-> Job not what you expected?
+> Working hard — but in the right career? 💼
 >
-> One to four years in, you've only just started — it's early to switch. But a switch should be a plan, not a leap.
+> Your first few years at work are the best time to find out. Freshmxn's Lab starts from your story and experience to
+> show where you fit best, what carries over, and what any move would really take — plus a one-to-one with someone who
+> has made it.
 >
-> Freshmxn Lab starts from your story and strengths, shows what your experience carries over, how many years a
-> switch would really leave behind, and the pay, demand and AI exposure of each career. Then you can talk one to one
-> with someone who has made the move.
+> Try it free — 5 minutes 👉 www.freshmxn.com/try-demo
+
+### Core engineering students
+
+> Mechanical, civil, electrical, chemical… 🔧 Core engineering opens far more doors than placement season shows.
 >
-> Try the free 5-minute demo 👉 https://www.freshmxn.com/try-demo
+> Freshmxn's Lab matches your story and strengths to the core careers that fit you — and the ones built on them — with
+> the road into each, the pay, the demand and how AI-resilient each one is. Then talk to someone working in core.
+>
+> Find your core career — free, in 5 minutes 👉 www.freshmxn.com/try-demo
+
+### Core engineering early professionals
+
+> Engineer by degree — but is your career where your engineering is? ⚙️
+>
+> Whether you want back into core or the next step up, Freshmxn's Lab shows the core roles your degree and experience
+> fit best, what carries over, and how to make the move — with a mentor who has done it.
+>
+> Free, in 5 minutes 👉 www.freshmxn.com/try-demo
 
 ---
 
-## Review against the jobs-to-be-done and the landing page — what to add
+## Review against the jobs-to-be-done and the landing page — what to add (Round 37: 1–7 shipped; 8 waits for real stories; 9 dropped — numbers without a source are left out)
 
 The owner's jobs-to-be-done (Round 32): **Save time · Feel good about it · Make money**. The Round 36 landing covers
 "feel good" well (clarity, misfit, parents, past choices, mentors) and "make money" well (pay, demand, AI, master's,
