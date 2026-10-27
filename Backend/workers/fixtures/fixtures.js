@@ -6787,13 +6787,14 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 36c — THE LANDING, BY AUDIENCE: the hero says 'Freshmxn Lab' and stops at 'then help you get there'; who it's for is names and sub-names only, before 'What each of them ask us' (one set per audience, then what everyone asks); a logged-in student sees only their own; every number keeps its source",
+        name: "ROUND 36c — THE LANDING, BY AUDIENCE: the hero says 'Freshmxn's Lab' and stops at 'then help you get there'; who it's for is names and sub-names only, before 'What each of them ask us' (one set per audience, then what everyone asks); a logged-in student sees only their own; every number keeps its source",
         run: () => {
             const problems = []
             // the code only — comments may name what was replaced
             const landing = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/Landing.js"), "utf8").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
             const bank = fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages/Public/audienceQuestions.js"), "utf8").replace(/^\s*\/\/.*$/gm, "")
-            if (!/hero-brand">Freshmxn Lab</.test(landing) || /mentors who've done it/.test(landing) || !/then help you\s+get there\./.test(landing)) problems.push("the hero isn't the owner's")
+            // Round 37 (owner): "Freshmxn's Lab" after all
+            if (!/hero-brand">Freshmxn's Lab</.test(landing) || /mentors who've done it/.test(landing) || !/then help you\s+get there\./.test(landing)) problems.push("the hero isn't the owner's")
             if (/What students ask us/.test(landing) || landing.indexOf("Who is it for") > landing.indexOf("What each of them ask us")) problems.push("the questions aren't after 'Who is it for', or the old section is still there")
             if (/item\.body|audience-card[^\n]*\n[^\n]*<p>\{/.test(landing)) problems.push("the audience cards still carry descriptions")
             if (!/school: \{ title: "School students", tag: "Class 9 to 12"/.test(bank) || !/college: \{ title: "College students", tag: "Any year, any course"/.test(bank) || !/professional: \{ title: "Early professionals", tag: "The first few years of work"/.test(bank)) problems.push("the audience names aren't the owner's")
@@ -6809,7 +6810,40 @@ const fixtures = [
             if (/\b(90|50|70)%/.test(bank)) problems.push("an unsourced number from the question bank is shown")
             const counts = ["school", "college", "professional"].map((key) => ((bank.split(`    ${key}: [`)[1] || "").split("\n    ],")[0].match(/\bq: "/g) || []).length)
             if (counts.join() !== "9,13,5") problems.push(`each audience doesn't have its questions from the bank: ${counts}`)
-            if (((bank.split("export const COMMON_QUESTIONS")[1] || "").match(/\bq: "/g) || []).length !== 13) problems.push("the common questions aren't the bank's 11 plus the two extras")
+            // Round 37 (owner): what everyone asks sits inside each audience's list, not in a block of its own
+            if (/What everyone asks|asks-common/.test(landing) || !/questionsFor\(audience\)/.test(landing)) problems.push("'What everyone asks' is still a separate block")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 37 — THE OWNER'S ROUND 36 FEEDBACK: the demo asks what stuck only of what they did or do; a résumé has its own page (demo and counselling) and is deleted once read; the 'Stuck?' list adds by a tap or a drop; the landing's lists hold the common, practical and (school only) parents' questions; the bonus is 'coming soon'",
+        run: () => {
+            const problems = []
+            const front = (file) => fs.readFileSync(path.join(__dirname, "../../../Frontend/src/pages", file), "utf8")
+            const stuck = front("Demo/DemoStuck.js")
+            if (/or wanted/.test(stuck) || !/draws\.filter\(\(draw\) => draw\.when !== "future"\)/.test(stuck)) problems.push("the stuck step still asks about aspirations")
+            const page = front("Demo/DemoPage.js")
+            if (!/setStep\("resume"\)/.test(page) || !/<DemoResume /.test(page) || !/steps: \["resume", "pulls", "stuck"\]/.test(page)) problems.push("the demo's résumé page doesn't come right after the name")
+            if (/ResumeAttach/.test(front("Demo/DemoPulls.js"))) problems.push("the résumé box is still on the story page")
+            if (!/We delete your résumé as soon as it's read/.test(front("Demo/DemoResume.js")) || !/We delete your résumé as soon as it's read/.test(front("Interest/InterestIntro.js"))) problems.push("the résumé page doesn't say it is deleted once read")
+            if (!/hasSubmitted \? handleNext : \(\) => setPage\("resume"\)/.test(front("Interest/InterestIntro.js"))) problems.push("counselling's résumé isn't a page of its own after Start")
+            const list = front("Interest/ActivityReferenceList.js")
+            if (!/draggable="true"/.test(list) || !/onAdd\(key, picking\)/.test(list)) problems.push("the 'Stuck?' list can't add by a tap or a drag")
+            const stage = front("Interest/LifeStageSection.js")
+            if (!/targets=\{ADD_TARGETS\} onAdd=\{addActivity\}/.test(stage) || (stage.match(/\{\.\.\.dropOn\(/g) || []).length !== 2) problems.push("the stage questions don't take an activity from the list")
+            if (!/targets=\{BOXES/.test(front("Demo/DemoPulls.js"))) problems.push("the demo's list doesn't add to its boxes")
+            const landing = front("Public/Landing.js")
+            const bank = front("Public/audienceQuestions.js")
+            if (!/to="\/find-your-program" className="btn btn-primary tap">Let's figure out your career/.test(landing)) problems.push("the hero doesn't open the program finder")
+            ;["How long does it take?", "What if I can't afford it — or don't like my results?", "Who sees my answers?", "I have a learning difficulty or a disability. Will it count against me?"].forEach((q) => {
+                if (!bank.includes(`q: "${q}"`)) problems.push(`missing: ${q}`)
+            })
+            if (!/\.\.\.\(audience === "school" \? PARENT_QUESTIONS : \[\]\)/.test(bank)) problems.push("the parents' questions aren't for school students only")
+            if (/q: "I don't have a great network\."/.test(bank)) problems.push("a common question repeats each audience's own")
+            if (/Personalized tracking/.test(landing)) problems.push("'Personalized tracking' is still there")
+            const how = front("Public/HowItWorks.js")
+            if (/By invitation only/.test(how) || !/\(Coming soon\)/.test(how)) problems.push("the bonus isn't 'coming soon'")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,
