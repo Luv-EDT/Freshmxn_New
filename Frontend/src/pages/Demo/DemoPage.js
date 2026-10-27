@@ -5,7 +5,8 @@ import { setUser } from "../../store/userSlice"
 import PublicNav from "../Public/PublicNav"
 import PublicFooter from "../Public/PublicFooter"
 import TurnstileBox, { turnstileOn } from "../TurnstileBox"
-import DemoPulls from "./DemoPulls"
+import DemoResume from "./DemoResume"
+import DemoPulls, { MAX_THINGS } from "./DemoPulls"
 import DemoStuck from "./DemoStuck"
 import DemoMi from "./DemoMi"
 import DemoSart from "./DemoSart"
@@ -14,8 +15,8 @@ import DemoResult from "./DemoResult"
 import DemoAccount from "./DemoAccount"
 import { startDemo, getDemoState, saveDemoInterests, saveDemoTests, loadDemoResult } from "../../apiCall/demoApi"
 
-// "TRY A FREE DEMO" (owner, Rounds 32-33, 36) — /try-demo, about 5 minutes. A first name and where they are
-// now; their story across three timelines and what stuck; seven statements, a 90-second focus game and four
+// "TRY A FREE DEMO" (owner, Rounds 32-33, 36-37) — /try-demo, about 5 minutes. A first name and where they are
+// now; a résumé if they have one (its own page, Round 37); their story across three timelines and what stuck; seven statements, a 90-second focus game and four
 // puzzles; then (Round 36, owner) an account — sign up with an emailed code, or log in — and the result: two
 // careers from the real engines, what the full program adds and the programs.
 //
@@ -34,7 +35,7 @@ const keep = (key, value) => {
 
 // the three stages the visitor moves through (owner, Round 33)
 const PHASES = [
-    { key: "counselling", label: "Virtual career counselling", steps: ["pulls", "stuck"] },
+    { key: "counselling", label: "Virtual career counselling", steps: ["resume", "pulls", "stuck"] },
     { key: "assessments", label: "Assessments", steps: ["mi", "sart", "puzzles"] },
     { key: "report", label: "Report", steps: ["gate", "result"] },
 ]
@@ -120,12 +121,27 @@ function DemoPage() {
             keep(STAGE_KEY, JSON.stringify(stage))
             setToken(response.data.data.token)
             setName(response.data.data.name)
-            setStep("pulls")
+            setStep("resume")
         } catch (error) {
             setCaptcha({ token: "", reset: captcha.reset + 1 })
             throw error
         }
     })
+
+    // what the résumé found goes into the past and present boxes of the next page (no repeats, 12 at most)
+    const addFromResume = (found) => {
+        const draws = [...interests.draws]
+        let added = 0
+        ;["past", "present"].forEach((when) => {
+            ;((found || {})[when] || []).forEach((text) => {
+                if (draws.length >= MAX_THINGS || draws.some((draw) => draw.text.toLowerCase() === text.toLowerCase())) return
+                draws.push({ text, when })
+                added += 1
+            })
+        })
+        setInterests({ ...interests, draws })
+        return added
+    }
 
     const savePulls = ({ draws, aspiration }) => {
         setInterests({ ...interests, draws, aspiration: aspiration && aspiration.text.trim() ? { text: aspiration.text.trim(), professionId: aspiration.professionId } : null })
@@ -216,7 +232,8 @@ function DemoPage() {
                     </section>
                 )}
 
-                {step === "pulls" && <DemoPulls initial={interests} onNext={savePulls} busy={busy} token={token} />}
+                {step === "resume" && <DemoResume name={name} token={token} onFound={addFromResume} onNext={() => setStep("pulls")} />}
+                {step === "pulls" && <DemoPulls initial={interests} onNext={savePulls} busy={busy} />}
                 {step === "stuck" && <DemoStuck draws={interests.draws} initial={interests.stuck} onNext={saveStuck} onBack={() => setStep("pulls")} busy={busy} />}
                 {step === "mi" && <DemoMi answers={mi} onChange={setMi} onNext={() => setStep("sart")} />}
                 {step === "sart" && <DemoSart onDone={(rows) => { setSart(rows); setStep("puzzles") }} />}

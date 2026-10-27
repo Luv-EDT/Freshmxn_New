@@ -96,17 +96,19 @@ same template.
 
 ---
 
-## 2a. The home page (Round 36)
+## 2a. The home page (Rounds 36–37)
 
-**Freshmxn Lab — Explore. Get clarity. Take action.** "We match your story and strengths to careers that are in
-demand and AI-resilient, then help you get there." Then **Who is it for** — three cards, names only: School students
+**Freshmxn's Lab — Explore. Get clarity. Take action.** "We match your story and strengths to careers that are in
+demand and AI-resilient, then help you get there." Its main button, "Let's figure out your career", opens the **program finder** (Round 37).
+Then **Who is it for** — three cards, names only: School students
 (Class 9 to 12), College students (any year, any course), Early professionals (the first few years of work). Then
 **What each of them ask us**: a visitor picks an audience (a tab, or tapping its card) and sees that audience's
-questions first, then **What everyone asks** — each a question that opens to a short answer with a sourced fact and
-what Freshmxn does about it (`Public/audienceQuestions.js`, from the owner's question bank). A **logged-in student**
+questions first — school students also two for their parents — then the ones every audience asks, in the same
+list (Round 37: no separate block, and no question twice), including how long it takes, financial aid and refunds,
+who sees your answers, and that a learning difficulty never counts against you. The first ten show, then "See all".
+Each opens to a short answer with a sourced fact and what Freshmxn does about it (`Public/audienceQuestions.js`). A **logged-in student**
 sees only their own set ("What college students ask us"), their card marked **You** — the category comes from their
-journey. A number is shown only with its source; three numbers in the owner's bank (90%, 50% by 25, 70%) had none we
-could find, so those answers make the point without them.
+journey. A number is shown only with its source (owner, Round 37: numbers without one are left out).
 
 ## 2b. The demo — trying before signing up (Rounds 32–33, 36)
 
@@ -123,10 +125,11 @@ The demo (`/try-demo`, no account to start) takes about 5 minutes, in three stag
    "3 starts an hour from one place" and a daily cap, `DEMO_DAILY_CAP`, keep the AI cost in check.)
 2. **Your story** — one question: what have you enjoyed, been curious about or felt good at, grown through, been
    noticed for, solved a problem with, or that simply felt good? Asked across three timelines: school or college,
-   now, and what you aspire to (in their own words). The "Stuck?" list stays pinned at the top. (Round 36) They can
-   **attach a résumé** — a PDF, Word file or photo; the AI lists the activities in it into the first two boxes, they
-   remove or add, and the file is never kept. Then
-   **what they've stuck with — or wanted — for a long time, and why** — the four reasons the real form uses, plus "it helps me deal with a problem in my life"
+   now, and what you aspire to (in their own words). The "Stuck?" list stays pinned at the top; tap an activity to add
+   it to a box, or drag it there (Round 37). Just before this, on a page of its own right after the first name
+   (Round 37), they can **attach a résumé** — a PDF, Word file or photo; the AI lists its activities into the first two
+   boxes, they change or remove any, and the file is deleted once read. Then
+   **what they've stuck with for a long time, and why** (Round 37: only what they did or do — not what they aspire to) — the four reasons the real form uses, plus "it helps me deal with a problem in my life"
    (inside me / with people / around me), which matching counts just like the real form's problems.
 3. **Three quick tasks** — "A taste of 10 of our 31 factors":
    - **7 statements**, one real "what you're drawn to" statement per intelligence;
@@ -242,11 +245,12 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
 - **Virtual Career Counselling** (the interest form's name for students since Round 28, owner) is where you
   tell us what you love, what you've actually done, problems you care about and what you want to be.
   Each life stage asks you to write down **everything** — even things done once or stopped — and
-  "What still feels like you" then asks which still resonate. **A résumé (Round 36, owner):** on the welcome
-  page a student can attach one (PDF, Word or a photo); the AI lists its activities by stage of life, and each
-  stage's "Stuck?" list then shows them first — "The activity list includes all activities from your résumé,
-  plus others you can choose." They are reminders only, kept in this browser for this student: nothing goes
-  into the answers until the student writes it in, and the file itself is never kept. **Editing it after you've finished** saves
+  "What still feels like you" then asks which still resonate. **A résumé (Rounds 36–37, owner):** "Start" on
+  the welcome page opens a page of its own to attach one (PDF, Word or a photo); the AI lists its activities by stage
+  of life, and each stage's "Stuck?" list then shows them first — "The activity list includes all activities from
+  your résumé, plus others you can choose." **Any activity in that list — the résumé's or ours — goes into a question
+  with a tap (pick the question) or by dragging it onto one**, so nothing is typed twice. The list is kept in this
+  browser for this student; nothing reaches the answers until the student adds it; the file is deleted once read. **Editing it after you've finished** saves
   only when you press **Save changes**: moving between sections saves nothing, no copy is kept in the
   browser, and a refresh, going offline or any link away (the menu bar included) warns first and offers
   Save and go / Leave without saving / Stay. The top button is "← Previous section". Saved changes after a

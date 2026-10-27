@@ -2248,3 +2248,9 @@ button.asks-tab.is-on:hover:not(:disabled) {
     text-align: center;
     font-size: 1.15rem;
 }
+
+.asks-more {
+    max-width: 760px;
+    margin: var(--space-4) auto 0;
+    text-align: center;
+}

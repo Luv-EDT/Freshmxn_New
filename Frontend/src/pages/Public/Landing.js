@@ -8,16 +8,17 @@ import PublicNav from "./PublicNav"
 import PublicFooter from "./PublicFooter"
 import HappyStudent from "./HappyStudent"
 import { StepIcon, ArrowDoodle } from "./illustrations"
-import { AUDIENCE_NAMES, AUDIENCE_OF_JOURNEY, AUDIENCE_QUESTIONS, COMMON_QUESTIONS } from "./audienceQuestions"
+import { AUDIENCE_NAMES, AUDIENCE_OF_JOURNEY, questionsFor } from "./audienceQuestions"
 
 // The public landing page. Copy comes from landing_page_content_v3.md — every statistic there
 // carries its source, so nothing here is invented or rounded.
 //
 // ROUND 5 (owner, 2026-09-24): the landing page is SHORT. Hero → who it's for → what each of them ask us
-// (Round 36: one set of questions per audience, then what everyone asks) → why we're different → the closing
-// band. A logged-in student sees only their own audience's questions (owner, Round 36). The promise, the four steps,
-// the invitation and pricing moved to /how-it-works; the founder's story is on /about.
+// (Round 36: one set of questions per audience; Round 37: what everyone asks is inside each set, the first ten
+// shown) → why we're different → the closing band. A logged-in student sees only their own audience's questions.
+// The promise, the four steps, the invitation and pricing moved to /how-it-works; the founder's story is on /about.
 // Teal is the star colour, and the pastel pink is ONE highlighter swipe per section at most.
+const FIRST_SHOWN = 10
 
 // WHO IT'S FOR (owner, Round 36): names and sub-names only. Each card opens that audience's questions below.
 const AUDIENCES = [
@@ -45,10 +46,12 @@ function Landing() {
     }, [hasToken, user, dispatch])
     const mine = user && user.role === "student" ? AUDIENCE_OF_JOURNEY[user.journey] || null : null
     const [picked, setPicked] = useState("school")
+    const [showAll, setShowAll] = useState(false)
     const audience = mine || picked
     const asksRef = useRef(null)
     const openAudience = (key) => {
         setPicked(key)
+        setShowAll(false)
         if (asksRef.current) asksRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
     }
 
@@ -63,7 +66,7 @@ function Landing() {
                     <section className="hero">
                         <div className="page hero-grid">
                             <div>
-                                <p className="hero-brand">Freshmxn Lab</p>
+                                <p className="hero-brand">Freshmxn's Lab</p>
                                 {/* the company tagline leads; "Careers that fit you" closes the page (owner, 2026-09-24) */}
                                 <h1 className="tagline"><span>Explore.</span> <span>Get clarity.</span> <span className="accent">Take action.</span></h1>
                                 <p className="lead">
@@ -72,7 +75,8 @@ function Landing() {
                                     get there.
                                 </p>
                                 <div className="btn-row">
-                                    <Link to="/programs" className="btn btn-primary tap">Let's figure out your career →</Link>
+                                    {/* Round 37 (owner): one question, then only the plans that fit */}
+                                    <Link to="/find-your-program" className="btn btn-primary tap">Let's figure out your career →</Link>
                                     {/* Round 32/33 (owner): a free taste before any login; "How it works" is in the nav */}
                                     <Link to="/try-demo" className="btn btn-ghost tap btn-demo">Try a Free Demo</Link>
                                 </div>
@@ -114,8 +118,8 @@ function Landing() {
                         </div>
                     </section>
 
-                    {/* 3. WHAT EACH OF THEM ASK US (owner, Round 36) — replaces "What students ask us": their own
-                        questions first, then what everyone asks, collapsed. A logged-in student sees only theirs. */}
+                    {/* 3. WHAT EACH OF THEM ASK US (owner, Rounds 36-37) — one list per audience, what everyone asks
+                        inside it, collapsed; the first ten, then "See all". A logged-in student sees only theirs. */}
                     <section className="section problem" ref={asksRef}>
                         <div className="page">
                             <div className="section-head">
@@ -132,7 +136,7 @@ function Landing() {
                                             aria-selected={audience === item.key}
                                             aria-controls="asks-panel"
                                             className={`asks-tab${audience === item.key ? " is-on" : ""}`}
-                                            onClick={() => setPicked(item.key)}
+                                            onClick={() => { setPicked(item.key); setShowAll(false) }}
                                         >
                                             {AUDIENCE_NAMES[item.key].short}
                                         </button>
@@ -141,22 +145,20 @@ function Landing() {
                             )}
                             <div id="asks-panel" role={mine ? undefined : "tabpanel"} aria-labelledby={mine ? undefined : `asks-tab-${audience}`}>
                                 <div className="faq">
-                                    {AUDIENCE_QUESTIONS[audience].map((item) => (
+                                    {questionsFor(audience).slice(0, showAll ? undefined : FIRST_SHOWN).map((item) => (
                                         <details key={item.q} className="faq-item">
                                             <summary>{item.q}</summary>
                                             <p>{item.a}</p>
                                         </details>
                                     ))}
                                 </div>
-                                <h3 className="asks-common">What everyone asks</h3>
-                                <div className="faq">
-                                    {COMMON_QUESTIONS.map((item) => (
-                                        <details key={item.q} className="faq-item">
-                                            <summary>{item.q}</summary>
-                                            <p>{item.a}</p>
-                                        </details>
-                                    ))}
-                                </div>
+                                {!showAll && questionsFor(audience).length > FIRST_SHOWN && (
+                                    <p className="asks-more">
+                                        <button type="button" className="btn btn-ghost tap" onClick={() => setShowAll(true)}>
+                                            See all {questionsFor(audience).length} questions
+                                        </button>
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </section>
@@ -191,7 +193,7 @@ function Landing() {
                                             <strong>Human connection — via our mentor plans.</strong> Real people in the
                                             field, not generic chat. → <Link to="/mentor-waitlist">Join the mentor waitlist</Link>
                                         </li>
-                                        <li><strong>Personalized tracking</strong> — guidance built on your profile.</li>
+                                        <li><strong>Your report keeps up with you</strong> — change your answers and update it any time.</li>
                                     </ul>
                                 </div>
                             </div>

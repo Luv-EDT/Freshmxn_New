@@ -5,7 +5,7 @@ import PricingCards from "./PricingCards"
 import { StepIcon } from "./illustrations"
 
 // How it works — its own page since Round 5 (owner, 2026-09-24). It opens on the demand-side
-// promise, then the four steps and how we rank, the invitation-only bonus, and pricing. The copy
+// promise, then the four steps and how we rank, the bonus (coming soon), and pricing. The copy
 // moved here VERBATIM from the landing page (landing_page_content_v3.md §3–5, §7); prices still
 // come from the server.
 function HowItWorks() {
@@ -92,14 +92,15 @@ function HowItWorks() {
                     </div>
                 </section>
 
-                {/* 3. THE INVITATION-ONLY BONUS — the whole block opens our programs (owner, Round 25) */}
+                {/* 3. THE BONUS, COMING SOON — the whole block opens our programs (owner, Round 25; Round 37: "coming
+                    soon", the same words as our marketing, instead of "by invitation only") */}
                 <section className="section section-alt">
                     <div className="page">
                         <Link to="/programs" className="invite invite-link">
-                            <h2><span aria-hidden="true">🔒</span> We help you get there. (By invitation only)</h2>
+                            <h2><span aria-hidden="true">🔒</span> We help you get there. (Coming soon)</h2>
                             <p>
-                                The report is the beginning, not the end. For select students, we go further — turning a
-                                recommendation into real momentum.
+                                The report is the beginning, not the end. Soon we'll go further — turning a recommendation
+                                into real momentum.
                             </p>
                             <ul className="invite-points">
                                 <li><strong>A getting-started skill kit</strong> — the 20% of skills that get you 80% of the way in (the 80-20 rule).</li>

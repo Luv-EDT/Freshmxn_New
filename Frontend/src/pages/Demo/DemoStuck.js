@@ -20,9 +20,10 @@ const PROBLEM_KEYS = PROBLEMS.map((problem) => problem.key)
 
 function DemoStuck({ draws, initial, onNext, onBack, busy }) {
     const startOf = (text) => (initial || []).find((row) => row.text === text)
-    const [rows, setRows] = useState(draws.map((draw) => {
+    // Round 37 (owner): only what they did or do — an aspiration hasn't had time to "stay", so it isn't asked here
+    const [rows, setRows] = useState(draws.filter((draw) => draw.when !== "future").map((draw) => {
         const saved = startOf(draw.text)
-        return { text: draw.text, dream: draw.when === "future", stuck: saved ? true : null, reasons: saved ? saved.reasons || [] : [], why: saved ? saved.why || "" : "" }
+        return { text: draw.text, stuck: saved ? true : null, reasons: saved ? saved.reasons || [] : [], why: saved ? saved.why || "" : "" }
     }))
 
     const update = (index, change) => setRows(rows.map((row, i) => (i === index ? { ...row, ...change } : row)))
@@ -44,19 +45,20 @@ function DemoStuck({ draws, initial, onNext, onBack, busy }) {
 
     return (
         <section className="demo-step">
-            {/* Round 36 (owner): clearer — what they've kept at for a long time, and for a dream, whether they've wanted it for long */}
-            <h2>What have you stuck with — or wanted — for a long time?</h2>
+            {/* Round 36 (owner): clearer — what they've kept at for a long time */}
+            <h2>What have you stuck with for a long time?</h2>
             <p className="demo-lead">
                 Some interests fade; others you keep coming back to for months or years. For each one, tell us if it has
-                lasted — and for a dream, whether you've wanted it for a long time. Then why you think it stays.
+                lasted — then why you think it stays.
             </p>
+            {rows.length === 0 && <p className="demo-hint">Nothing to ask here — what you aspire to still counts in your result.</p>}
 
             {rows.map((row, index) => (
                 <div key={row.text} className="demo-box demo-stuck">
                     <p className="demo-thing"><strong>{row.text}</strong></p>
                     <div className="demo-yesno" role="radiogroup" aria-label={`Has ${row.text} lasted for you?`}>
-                        <button type="button" role="radio" aria-checked={row.stuck === true} className={`demo-chip${row.stuck === true ? " is-on" : ""}`} onClick={() => update(index, { stuck: true })}>{row.dream ? "Yes, I've wanted it for a long time" : "Yes, I've stuck with it"}</button>
-                        <button type="button" role="radio" aria-checked={row.stuck === false} className={`demo-chip${row.stuck === false ? " is-on" : ""}`} onClick={() => update(index, { stuck: false, reasons: [], why: "" })}>{row.dream ? "It's a new idea" : "Not really"}</button>
+                        <button type="button" role="radio" aria-checked={row.stuck === true} className={`demo-chip${row.stuck === true ? " is-on" : ""}`} onClick={() => update(index, { stuck: true })}>Yes, I've stuck with it</button>
+                        <button type="button" role="radio" aria-checked={row.stuck === false} className={`demo-chip${row.stuck === false ? " is-on" : ""}`} onClick={() => update(index, { stuck: false, reasons: [], why: "" })}>Not really</button>
                     </div>
                     {row.stuck && (
                         <>
