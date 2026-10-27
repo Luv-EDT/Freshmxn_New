@@ -2,7 +2,8 @@
 // screens, so a rate change never touches a payout already written (each row keeps its own amount).
 //
 //     Tier 1   a new, approved mentor
-//     Tier 2   AUTOMATIC at 7 sessions with feedback, an average of at least 8/10 and no upheld report
+//     Tier 2   AUTOMATIC at 7 sessions with feedback, an average of at least 8/10, no upheld report and
+//              (owner, Round 35) the review of their profession's data sent
 //     Tier 3   BY THE ADMIN, once a mentor has 10+ sessions, an average of at least 8/10, a skills
 //              roadmap and a review of their profession's data
 //
@@ -63,11 +64,22 @@ const statsOf = (reviews = []) => {
     return { sessions: ratings.length, average }
 }
 
-// Tier 2 needs no one: 7 sessions, average ≥ 8, nothing upheld against them
+// Tier 2 needs no one: 7 sessions, average ≥ 8, nothing upheld against them, and (owner, Round 35) the
+// check of their profession's data sent
 const tier2Due = (mentor, stats, upheldReports = 0) => tierOf(mentor) === 1
     && stats.sessions >= RULES.tier2Sessions
     && stats.average !== null && stats.average >= RULES.minAverage
     && upheldReports === 0
+    && stats.dataReviewed === true
+
+// what a Tier 1 mentor still needs for Tier 2, in words (the mentor's "Tier up" tab)
+const tier2Missing = (mentor, stats, { dataReviewed = false, upheldReports = 0 } = {}) => [
+    tierOf(mentor) >= 2 && "already Tier 2 or above",
+    stats.sessions < RULES.tier2Sessions && `${RULES.tier2Sessions - stats.sessions} more session${RULES.tier2Sessions - stats.sessions === 1 ? "" : "s"} with feedback`,
+    (stats.average === null || stats.average < RULES.minAverage) && `an average rating of ${RULES.minAverage}/10 or more`,
+    !dataReviewed && "the check of your profession's data",
+    upheldReports > 0 && "no upheld report",
+].filter(Boolean)
 
 // Tier 3 is the admin's call; this says when the button may appear, and what is still missing
 const tier3Missing = (mentor, stats, { roadmapSteps = 0, dataReviewed = false, upheldReports = 0 } = {}) => [
@@ -79,4 +91,4 @@ const tier3Missing = (mentor, stats, { roadmapSteps = 0, dataReviewed = false, u
     upheldReports > 0 && "no upheld report",
 ].filter(Boolean)
 
-module.exports = { REGIONS, RATES, FOLLOW_UP_SHARE, RULES, regionOf, tierOf, mainRate, payoutAmount, statsOf, tier2Due, tier3Missing }
+module.exports = { REGIONS, RATES, FOLLOW_UP_SHARE, RULES, regionOf, tierOf, mainRate, payoutAmount, statsOf, tier2Due, tier2Missing, tier3Missing }
