@@ -56,7 +56,7 @@ Then run the fixtures and commit. If `profession_embeddings.json` lists `pending
 ```
 node Backend/scoring/fixtures/runFixtures.js     # 25/25
 node Backend/matching/fixtures/runFixtures.js    # 72/72
-node Backend/workers/fixtures/runFixtures.js     # 250/250
+node Backend/workers/fixtures/runFixtures.js     # 251/251
 cd Frontend && CI=false npm run build            # 8 known warnings, no new ones
 ```
 

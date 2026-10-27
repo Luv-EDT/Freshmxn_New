@@ -96,6 +96,18 @@ same template.
 
 ---
 
+## 2a. The home page (Round 36)
+
+**Freshmxn Lab — Explore. Get clarity. Take action.** "We match your story and strengths to careers that are in
+demand and AI-resilient, then help you get there." Then **Who is it for** — three cards, names only: School students
+(Class 9 to 12), College students (any year, any course), Early professionals (the first few years of work). Then
+**What each of them ask us**: a visitor picks an audience (a tab, or tapping its card) and sees that audience's
+questions first, then **What everyone asks** — each a question that opens to a short answer with a sourced fact and
+what Freshmxn does about it (`Public/audienceQuestions.js`, from the owner's question bank). A **logged-in student**
+sees only their own set ("What college students ask us"), their card marked **You** — the category comes from their
+journey. A number is shown only with its source; three numbers in the owner's bank (90%, 50% by 25, 70%) had none we
+could find, so those answers make the point without them.
+
 ## 2b. The demo — trying before signing up (Rounds 32–33, 36)
 
 **The front door (Round 33).** The first time a visitor opens the home page in a visit, an invitation covers it:
