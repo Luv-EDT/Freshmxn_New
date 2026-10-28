@@ -5,6 +5,8 @@ const User = require("../model/userModel")
 const Mentor = require("../model/mentorsModel")
 const MentorTest = require("../model/mentorTestsModel")
 const MentorPayout = require("../model/mentorPayoutsModel")
+const MentorAgreement = require("../model/mentorAgreementsModel")
+const { agreementMeta } = require("./mentorAgreementsRouter")
 const { standingOf } = require("../utils/mentorPayouts")
 const { tier2Missing, tier3Missing, mainRate, payoutAmount } = require("../utils/mentorTiers")
 const { notifyStudent } = require("../utils/statusEmails")
@@ -242,6 +244,14 @@ router.post("/onboard", authMiddleware, mentorAuthMiddleware, async (req, res) =
             })
         }
 
+        // Round 38 (owner): the signed Mentor Agreement comes first
+        if (!(await MentorAgreement.exists({ mentor: req.user._id }))) {
+            return res.status(400).json({
+                success: false,
+                message: "Please upload your signed Mentor Agreement first"
+            })
+        }
+
         const profile = await Mentor.create({
             ...fields,
             user: req.user._id,
@@ -290,10 +300,12 @@ router.get("/getMyMentorProfile", authMiddleware, mentorAuthMiddleware, async (r
             }
         }
 
+        const agreement = profile ? agreementMeta(await MentorAgreement.findOne({ mentor: req.user._id }).lean()) : null
+
         return res.status(200).json({
             success: true,
             message: profile ? "Profile fetched successfully" : "No profile yet",
-            data: profile ? { ...profile, strikes: undefined, standing } : null,
+            data: profile ? { ...profile, strikes: undefined, standing, agreement } : null,
         })
 
     } catch (error) {
@@ -371,6 +383,9 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
             { $group: { _id: "$mentor", paidInr: { $sum: { $cond: [{ $eq: ["$status", "paid"] }, "$amountInr", 0] } }, dueInr: { $sum: { $cond: [{ $eq: ["$status", "due"] }, "$amountInr", 0] } }, noShows: { $sum: { $cond: [{ $eq: ["$studentStatus", "no_show"] }, 1, 0] } } } },
         ])).map((row) => [String(row._id), row]))
 
+        // Round 38: whose signed agreement is in
+        const agreements = new Map((await MentorAgreement.find({ mentor: { $in: mentors.map((mentor) => mentor.user) } }).lean()).map((agreement) => [String(agreement.mentor), agreementMeta(agreement)]))
+
         // Round 34: how each stands against the tier rules — sessions with feedback, average, strikes
         const data = await Promise.all(mentors.map(async (mentor) => {
             const standing = await standingOf(mentor.user)
@@ -381,6 +396,7 @@ router.get("/getAllForAdmin", authMiddleware, adminAuthMiddleware, async (req, r
                 mainRate: mainRate(mentor),
                 test: tests.get(String(mentor.user)) || null,
                 earnings: earnings.get(String(mentor.user)) || { paidInr: 0, dueInr: 0, noShows: 0 },
+                agreement: agreements.get(String(mentor.user)) || null,
             }
         }))
 

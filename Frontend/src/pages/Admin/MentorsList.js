@@ -3,6 +3,7 @@ import { Table, Button, Popconfirm, Segmented, Input, Modal, Select, InputNumber
 import dayjs from "dayjs"
 import { getAllMentorsForAdmin, approveMentorForAdmin, setTier3ForAdmin, updateMentorTermsForAdmin } from "../../apiCall/mentorsApi"
 import MentorTestReview from "./MentorTestReview"
+import { openMentorAgreementForAdmin } from "../../apiCall/mentorAgreementsApi"
 
 // EVERY MENTOR (owner, Rounds 12 and 34): searchable, with where each stands — signed up, profile in,
 // test sent, approved — their tier, region, sessions, average rating and strikes. A new mentor is
@@ -15,6 +16,20 @@ const STATUS_WORDS = {
     rejected: "Rejected",
     paused: "Paused",
     removed: "Removed after first session",
+}
+
+// Round 38 (owner): the mentor's signed agreement, opened in a new tab from the admin's own login
+const openAgreement = async (record) => {
+    const view = window.open("", "_blank")
+    const response = await openMentorAgreementForAdmin(record.user)
+    if (!response || response.status !== 200) {
+        if (view) view.close()
+        message.error("Couldn't open the agreement")
+        return
+    }
+    const url = URL.createObjectURL(response.data)
+    if (view) view.location.href = url
+    else window.location.href = url
 }
 
 const inr = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`
@@ -86,6 +101,7 @@ function MentorsList({ dataVersion, onDataChanged }) {
         { title: "Strikes", render: (_, record) => (record.strikes || []).length || "—" },
         // Round 35 (owner): what we've paid them, what's due, and no-shows (paid, not counted towards a tier)
         { title: "Earned · due", render: (_, record) => `${inr(record.earnings && record.earnings.paidInr)} paid · ${inr(record.earnings && record.earnings.dueInr)} due${record.earnings && record.earnings.noShows ? ` · ${record.earnings.noShows} no-show${record.earnings.noShows === 1 ? "" : "s"}` : ""}` },
+        { title: "Agreement", render: (_, record) => (record.agreement ? <Button size="small" onClick={() => openAgreement(record)} title={`${record.agreement.fileName} · ${dayjs(record.agreement.uploadedAt).format("DD MMM YYYY")}`}>Signed · open</Button> : "Missing") },
         { title: "Test", render: (_, record) => (record.test ? (record.test.decision ? record.test.decision : record.test.submittedAt ? `sent · ${record.test.autoScore ? `${record.test.autoScore.correct}/${record.test.autoScore.of}` : ""}` : "started") : "—") },
         { title: "Profession", render: (_, record) => record.professionName || record.discipline },
         { title: "Job role", render: (_, record) => `${record.jobRole || record.currentRole}${record.jobRoleOther ? " (their words)" : ""}` },

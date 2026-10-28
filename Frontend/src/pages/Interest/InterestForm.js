@@ -530,12 +530,19 @@ function InterestForm() {
     return (
         <div>
             <Navbar />
-            {/* Round 28 (owner): the menu already has Dashboard, so the page's own button goes back a section */}
+            {/* Round 28 (owner): the menu already has Dashboard, so the page's own button goes back a section.
+                Round 38 (owner): a small ← and → at the top of each section; → works exactly like the section's own
+                Next at the bottom (its form is submitted, so the same checks and saving run). */}
             {currentStepIndex > 0 && (
-                <div className="back-to-dashboard">
-                    <button type="button" className="btn btn-ghost btn-sm tap" onClick={() => handlePreviousSection({ sectionOk: false })}>
-                        ← Previous section
+                <div className="back-to-dashboard if-top-arrows">
+                    <button type="button" className="if-arrow tap" onClick={() => handlePreviousSection({ sectionOk: false })} aria-label="Previous section" title="Previous section">
+                        <span aria-hidden="true">←</span>
                     </button>
+                    {steps[currentStepIndex].key !== "done" && (
+                        <button type="button" className="if-arrow tap" onClick={() => sectionForm()?.requestSubmit()} disabled={isSaving} aria-label="Next section" title="Next section">
+                            <span aria-hidden="true">→</span>
+                        </button>
+                    )}
                 </div>
             )}
             {editMode && (

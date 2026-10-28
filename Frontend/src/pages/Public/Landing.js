@@ -16,6 +16,9 @@ import useMyAudience from "./useMyAudience"
 // five here — "See all questions" opens the FAQ page) → why we're different → the closing band. A logged-in student sees only their own audience's questions.
 // The promise, the four steps, the invitation and pricing moved to /how-it-works; the founder's story is on /about.
 // Teal is the star colour, and the pastel pink is ONE highlighter swipe per section at most.
+// Round 38 (owner): a logged-in student skips "Who is it for" and lands straight on their own questions; a small
+// line under "Try a Free Demo" says no payment details are asked at any step; on a phone the hero is two columns
+// at the top — the tagline on the left, "Freshmxn's Lab" and the picture on the right — and the nav folds into a menu.
 const FIRST_SHOWN = 5
 
 // WHO IT'S FOR (owner, Round 36): names and sub-names only. Each card opens that audience's questions below.
@@ -50,7 +53,7 @@ function Landing() {
                     {/* 1. HERO */}
                     <section className="hero">
                         <div className="page hero-grid">
-                            <div>
+                            <div className="hero-copy">
                                 <p className="hero-brand">Freshmxn's Lab</p>
                                 {/* the company tagline leads; "Careers that fit you" closes the page (owner, 2026-09-24) */}
                                 <h1 className="tagline"><span>Explore.</span> <span>Get clarity.</span> <span className="accent">Take action.</span></h1>
@@ -65,6 +68,7 @@ function Landing() {
                                     {/* Round 32/33 (owner): a free taste before any login; "How it works" is in the nav */}
                                     <Link to="/try-demo" className="btn btn-ghost tap btn-demo">Try a Free Demo</Link>
                                 </div>
+                                <p className="hero-free">Free demo — no payment details at any step.</p>
                             </div>
 
                             {/* a picture, not a mock result list (owner, Round 10: the ranked-matches card was text-heavy) */}
@@ -77,35 +81,36 @@ function Landing() {
                         </div>
                     </section>
 
-                    {/* 2. WHO IT'S FOR — names and sub-names only (owner, Round 36); a card opens its questions */}
-                    <section className="section section-alt">
-                        <div className="page">
-                            <div className="section-head">
-                                <h2>Who is it for</h2>
-                                <p>Wherever you are on the road, we start from where you're standing.</p>
+                    {/* 2. WHO IT'S FOR — names and sub-names only (owner, Round 36); a card opens its questions.
+                        A logged-in student already knows (owner, Round 38) — they go straight to their questions. */}
+                    {!mine && (
+                        <section className="section section-alt">
+                            <div className="page">
+                                <div className="section-head">
+                                    <h2>Who is it for</h2>
+                                    <p>Wherever you are on the road, we start from where you're standing.</p>
+                                </div>
+                                <div className="audience">
+                                    {AUDIENCES.map((item) => (
+                                        <button
+                                            type="button"
+                                            key={item.key}
+                                            className={`card audience-card${audience === item.key ? " is-on" : ""}`}
+                                            onClick={() => openAudience(item.key)}
+                                        >
+                                            <StepIcon name={item.icon} />
+                                            <h3>{AUDIENCE_NAMES[item.key].title}</h3>
+                                            <p className="audience-tag">{AUDIENCE_NAMES[item.key].tag}</p>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="audience">
-                                {AUDIENCES.map((item) => (
-                                    <button
-                                        type="button"
-                                        key={item.key}
-                                        className={`card audience-card${audience === item.key ? " is-on" : ""}`}
-                                        onClick={() => openAudience(item.key)}
-                                        disabled={Boolean(mine) && mine !== item.key}
-                                    >
-                                        <StepIcon name={item.icon} />
-                                        <h3>{AUDIENCE_NAMES[item.key].title}</h3>
-                                        <p className="audience-tag">{AUDIENCE_NAMES[item.key].tag}</p>
-                                        {mine === item.key && <span className="audience-you">You</span>}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
+                        </section>
+                    )}
 
                     {/* 3. WHAT EACH OF THEM ASK US (owner, Rounds 36-37) — one list per audience, what everyone asks
                         inside it, collapsed; the first five, then "See all questions" on the FAQ page. A logged-in student sees only theirs. */}
-                    <section className="section problem" ref={asksRef}>
+                    <section className="section problem section-asks" ref={asksRef}>
                         <div className="page">
                             <div className="section-head">
                                 <h2>{mine ? `What ${AUDIENCE_NAMES[mine].short.toLowerCase()} ask us` : "What each of them ask us"}</h2>
@@ -145,8 +150,8 @@ function Landing() {
                         </div>
                     </section>
 
-                    {/* 4. WHY WE'RE DIFFERENT */}
-                    <section className="section">
+                    {/* 4. WHY WE'RE DIFFERENT — tight under the questions (owner, Round 38: the gap was too big) */}
+                    <section className="section section-why">
                         <div className="page">
                             <div className="section-head">
                                 <h2>Why we're different</h2>

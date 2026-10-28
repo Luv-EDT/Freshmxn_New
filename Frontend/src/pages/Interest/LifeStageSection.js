@@ -293,7 +293,7 @@ function LifeStageSection({ stage, formData, updateFormData, handleNext, handleP
                         </section>
 
                         {/* last in the section but sticky to the bottom of the screen, so it is in reach the whole way down */}
-                        <ActivityReferenceList activities={stage.referenceList} fromResume={resumeList || []} targets={ADD_TARGETS} onAdd={addActivity} />
+                        <ActivityReferenceList activities={stage.referenceList} fromResume={resumeList || []} targets={ADD_TARGETS} onAdd={addActivity} resumeOnly />
                     </>
                 )}
 

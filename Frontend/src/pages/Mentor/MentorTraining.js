@@ -23,6 +23,24 @@ function Shot({ n, caption }) {
     )
 }
 
+// Round 38 (owner): how mentors are paid — in the first training document, and on its own under the profile
+export const PayRules = () => (
+    <>
+        <p>Per session, once the student's feedback comes in. Your tier and where you live set the amount:</p>
+        <div className="table-scroll">
+            <table className="training-table">
+                <thead><tr><th>Tier</th><th>How you get there</th><th>In India</th><th>Abroad</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td>Approved</td><td>₹1,000</td><td>₹1,500 ($15)</td></tr>
+                    <tr><td>2</td><td>Automatic: 7 sessions averaging 8/10+, and the check of your profession's data</td><td>₹1,300</td><td>₹1,900 ($19)</td></tr>
+                    <tr><td>3</td><td>10+ sessions averaging 8/10+, a skills roadmap and a data review</td><td>₹1,500+</td><td>₹2,200+ ($22+)</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p className="report-small">After your first session we confirm you stay on the platform. The first follow-up is included; a later one pays 30% of your rate.</p>
+    </>
+)
+
 const Introduction = () => (
     <article className="training-doc">
         <p className="training-lead">
@@ -54,18 +72,7 @@ const Introduction = () => (
         </ul>
 
         <h4>How you're paid</h4>
-        <p>Per session, once the student's feedback comes in. Your tier and where you live set the amount:</p>
-        <div className="table-scroll">
-            <table className="training-table">
-                <thead><tr><th>Tier</th><th>How you get there</th><th>In India</th><th>Abroad</th></tr></thead>
-                <tbody>
-                    <tr><td>1</td><td>Approved</td><td>₹1,000</td><td>₹1,500 ($15)</td></tr>
-                    <tr><td>2</td><td>Automatic: 7 sessions averaging 8/10+, and the check of your profession's data</td><td>₹1,300</td><td>₹1,900 ($19)</td></tr>
-                    <tr><td>3</td><td>10+ sessions averaging 8/10+, a skills roadmap and a data review</td><td>₹1,500+</td><td>₹2,200+ ($22+)</td></tr>
-                </tbody>
-            </table>
-        </div>
-        <p className="report-small">After your first session we confirm you stay on the platform. The first follow-up is included; a later one pays 30% of your rate.</p>
+        <PayRules />
     </article>
 )
 

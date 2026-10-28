@@ -112,6 +112,11 @@ student's own.
 Each opens to a short answer with a sourced fact and what Freshmxn does about it (`Public/audienceQuestions.js`). A **logged-in student**
 sees only their own set ("What college students ask us"), their card marked **You** — the category comes from their
 journey. A number is shown only with its source (owner, Round 37: numbers without one are left out).
+**Round 38 (owner):** a logged-in student doesn't see "Who is it for" at all — the page goes from the top straight to
+their own questions. A small line under "Try a Free Demo", and one in the demo's front-door popup, says **no payment
+details are needed at any step**. On a phone the links fold behind a **menu button (☰)** beside "Get started", the
+top of the page is two columns (the tagline on the left; "Freshmxn's Lab" and the picture on the right) with the
+promise and both buttons full width beneath, and the three "Who is it for" cards sit small and centred in one row.
 
 ## 2b. The demo — trying before signing up (Rounds 32–33, 36)
 
@@ -251,12 +256,14 @@ checks this on every one of those pages (`middlewares/requireDiscovery.js`).
   "What still feels like you" then asks which still resonate. **A résumé (Rounds 36–37, owner):** "Start" on
   the welcome page opens a page of its own to attach one (PDF, Word or a photo); the AI lists its activities by stage
   of life, and each stage's "Stuck?" list then shows them first — "The activity list includes all activities from
-  your résumé, plus others you can choose." **Any activity in that list — the résumé's or ours — goes into a question
-  with a tap (pick the question) or by dragging it onto one**, so nothing is typed twice. The list is kept in this
+  your résumé, plus others you can choose." **The résumé's activities go into a question with a tap (pick the
+  question) or by dragging them onto one** — since Round 38 (owner) they are light-blue chips at the top of the list,
+  and our other examples are plain words to read (in the demo, every item can still be added). The list is kept in this
   browser for this student; nothing reaches the answers until the student adds it; the file is deleted once read. **Editing it after you've finished** saves
   only when you press **Save changes**: moving between sections saves nothing, no copy is kept in the
   browser, and a refresh, going offline or any link away (the menu bar included) warns first and offers
-  Save and go / Leave without saving / Stay. The top button is "← Previous section". Saved changes after a
+  Save and go / Leave without saving / Stay. At the top of each section are two small round arrows, ← and →
+  (Round 38): ← goes back a section; → does exactly what the section's own Next does, checks included. Saved changes after a
   report exists offer "Update my report". Each stage of your life is a set of cards with a plain question,
   a "See examples" fold, and your answers as little chips. Every step is saved as you go
   (`POST /submissions/saveInterest`), so closing the tab loses nothing. College students also tell us
@@ -685,7 +692,12 @@ the roadmap towards Tier 3, with what each mentor still needs) and Payouts. The 
 to refer back to — each a folded card — and **Log out**.
 
 **Mentors, step by step (Round 34; Round 35: the training comes first).** Sign up → three short **training
-documents**, folded, with their reading times (about 10, 20 and 15 minutes) → the profile (including where they live — India or abroad,
+documents**, folded, with their reading times (about 10, 20 and 15 minutes) → **the Mentor Agreement** (Round 38, owner):
+at the top of step 2 they download it (`/mentor-training/Freshmxn_Mentor_Agreement.pdf`, the owner's agreement with
+the company's PAN taken out of its footer), print it, sign it, scan it (a phone photo is fine) and upload it — a
+PDF, JPG or PNG up to 5 MB, kept in the database (`mentoragreements`), opened only by the mentor and the admin
+(Admin → Mentors → "Agreement"). The profile can't be sent without it; the server checks too. A mentor from before
+Round 38 sees a reminder on their dashboard and uploads it from their profile → the profile (including where they live — India or abroad,
 which sets their pay — and how we pay them: UPI or bank and PAN in India, bank or
 another method abroad; only our team sees these) → a **test**, every part compulsory (the questions, the five
 steps put in order, both Calendly links and the video) — it can be saved and finished later, and **Send**
@@ -696,7 +708,9 @@ Mentors section → Mentors → **Review test**), approves or rejects with a rea
 then (and after 30 days at most, by a nightly job). Only then can they be matched.
 
 **Mentor pay (Round 34).** Paid per main session, when the student's feedback arrives; the first follow-up
-is included, a later one pays 30% of the main rate.
+is included, a later one pays 30% of the main rate. Since Round 38 the rates and these rules also have their own
+card in the mentor's profile, **How you're paid**, right below the training documents; the logo on the mentor pages
+goes to the home page.
 
 | Tier | Indian | International |
 |---|---|---|
