@@ -2742,3 +2742,13 @@ No code changed in this part.
 | **Privacy** (policy `v2.0`, last updated 28 October 2026) | A mentor's signed Mentor Agreement is kept for as long as they mentor with us, seen only by them and our team |
 | **The revised Mentor Agreement** | The owner's new version (clause 8.2 now points to freshmxn.com for payout timing, cancellations and rates) replaces the PDF — the company PAN again taken out of its footer. "How you're paid" adds: a student no-show still counts and is paid; a session the mentor misses without telling us isn't |
 | **Decks** | All three: the coming-soon line at 28 px (the owner's change on the college deck); About me now tells the story in two lines before "Admitted to Duke, Cornell, Tufts and Johns Hopkins — I chose to build in India, in education." (bold); the Build3 line without "Mechanical engineer" (the owner's college edit) |
+
+### Round 39 — the mentor dashboard redesigned, About us and the FAQ reworked (2026-10-28)
+| Item | What shipped |
+|---|---|
+| **Mentor dashboard** (three passes, checked at 390 and 1280 each time) | One centred column (960 px); the header's "Mentor" as a badge; "Hello, Asha" / "Welcome, Asha" with the status card under it; Home opens on four tiles (tier, sessions with feedback, average rating, what a main session pays); the tabs are pills on a soft bar over a white panel (on a phone the panel's frame goes, so cards aren't boxed twice, and the three onboarding steps fit); the profile opens on a card with the name, role and tier tags; the folded cards have proper inner padding and a +/− marker. **The agreement card**: no second heading inside the profile's card (`title={false}`) and real padding. Payout totals sit in one row on a phone |
+| **About us** | "Proof behind every step" now comes first; the story is a fold titled **My (founder's) story** (a small round photo, + to open); "going abroad **could** have sorted out my own path" |
+| **Home and FAQ** | Questions a size smaller on phone and laptop. The FAQ page has three tabs — one audience's questions at a time, the home page's choice pre-selected (`/faq#college`), a logged-in student only their own without tabs |
+| **Phone home** | The first section fills the whole screen under the header (`100svh`), its rows spread top to bottom |
+
+**Fixtures:** 254/254 (ROUND 37b updated for the FAQ tabs — an owner change). Build: the 7 known warning files.

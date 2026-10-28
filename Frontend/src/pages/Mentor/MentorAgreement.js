@@ -16,7 +16,8 @@ const asBase64 = (file) => new Promise((resolve, reject) => {
     reader.readAsDataURL(file)
 })
 
-function MentorAgreement({ onChange }) {
+// `title={false}` inside the profile card, which already names it (Round 39)
+function MentorAgreement({ onChange, title = true }) {
     const [agreement, setAgreement] = useState(undefined)   // undefined = loading, null = none yet
     const [state, setState] = useState({ busy: false, note: "" })
 
@@ -54,7 +55,7 @@ function MentorAgreement({ onChange }) {
 
     return (
         <section className={`mentor-agreement${agreement ? " is-in" : ""}`}>
-            <h3>Your Mentor Agreement</h3>
+            {title && <h3>Your Mentor Agreement</h3>}
             {agreement ? (
                 <p className="mentor-agreement-done">
                     ✓ Signed agreement received — {agreement.fileName || "your file"}, {dayjs(agreement.uploadedAt).format("D MMM YYYY")}.
