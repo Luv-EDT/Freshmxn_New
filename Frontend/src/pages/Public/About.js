@@ -8,6 +8,8 @@ import { StoriesSection } from "./SuccessStories"
 // for spelling and flow and kept in the first person — nothing here is invented in their voice.
 // The founder's photo is served from Frontend/public/founder.jpg. Until that file is added the
 // portrait simply is not drawn — no broken-image icon on a public page.
+// Round 38 (owner): the choice to stay is bold, with one line on why; "Proof behind every step" (the decks'
+// Why us slide) follows the story.
 const FOUNDER_PHOTO = "/founder.jpg"
 
 function About() {
@@ -54,8 +56,9 @@ function About() {
                         <p>
                             I entered a tier-2/3 engineering college with a single goal: to explore as much as I could,
                             gather varied experiences and move abroad. The plan worked — I got admission calls from some of
-                            my dream graduate schools in the US. That's when I chose to stay and improve the system here
-                            instead.
+                            my dream graduate schools in the US. <strong>That's when I chose to stay and improve the system
+                            here instead</strong> — going abroad would have sorted out my own path, but not the one millions of
+                            students still walk here.
                         </p>
                         <p>
                             Since then I've been building ways to help students figure out what they can do — not just in
@@ -71,6 +74,42 @@ function About() {
                                 Built by <strong>Luv Goel</strong> and the Freshmxn Labs team.
                                 Freshmxn's Lab is a product of <strong>Freshmxn Education India Private Limited</strong>.
                             </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* WHY US — the same proof as the decks (owner, Round 38) */}
+                <section className="section section-alt">
+                    <div className="page">
+                        <div className="section-head">
+                            <span className="eyebrow">Why us</span>
+                            <h2>Proof behind every step.</h2>
+                        </div>
+                        <div className="about-proof">
+                            <ul className="about-proof-steps">
+                                <li className="card">
+                                    <span className="about-proof-step">Step 1 · Counselling</span>
+                                    <strong>Built by a certified career navigator</strong>
+                                </li>
+                                <li className="card">
+                                    <span className="about-proof-step">Step 2 · Assessment</span>
+                                    <strong>Research-backed, psychologist-validated methodology</strong>
+                                </li>
+                                <li className="card">
+                                    <span className="about-proof-step">Steps 3 &amp; 4 · Report and mentor</span>
+                                    <strong>Human + AI recommendations — so no single bias decides</strong>
+                                </li>
+                            </ul>
+                            <div className="about-proof-only">
+                                <span className="about-proof-step">Only here</span>
+                                <ul>
+                                    <li>Careers that combine two fields</li>
+                                    <li>What carries over — and what a switch really costs</li>
+                                    <li>AI exposure on every career</li>
+                                    <li>Career data refreshed every month, checked by us</li>
+                                    <li>Don't like your results? We refund you</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </section>

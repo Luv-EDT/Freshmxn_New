@@ -83,8 +83,9 @@ const SECTIONS = [
                     your PAN) — these are used only to pay you and are seen only by our team. Before we approve you,
                     you take a short test: your answers and the short video you record are stored privately, seen
                     only by our team, and the video is deleted once we approve or decline you, and within 30 days at
-                    most. Students see only your name, current role and discipline, and your Calendly links once
-                    they're matched with you.
+                    most. Your signed Mentor Agreement — the scan or photo you upload — is kept for as long as you
+                    mentor with us and seen only by you and our team. Students see only your name, current role and
+                    discipline, and your Calendly links once they're matched with you.
                 </p>
             </>
         ),

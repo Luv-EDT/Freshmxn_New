@@ -710,7 +710,10 @@ then (and after 30 days at most, by a nightly job). Only then can they be matche
 **Mentor pay (Round 34).** Paid per main session, when the student's feedback arrives; the first follow-up
 is included, a later one pays 30% of the main rate. Since Round 38 the rates and these rules also have their own
 card in the mentor's profile, **How you're paid**, right below the training documents; the logo on the mentor pages
-goes to the home page.
+goes to the home page. The revised agreement (Round 38b) leaves payout timing, cancellations and rates to the website,
+so that card also says a student no-show still counts and is paid, and a session the mentor misses without telling us
+isn't. **About us** (Round 38b) follows the founder's story with "Proof behind every step" — how each of the four
+steps is built, and what only Freshmxn gives. Privacy (`v2.0`) says a mentor's signed agreement is kept.
 
 | Tier | Indian | International |
 |---|---|---|
