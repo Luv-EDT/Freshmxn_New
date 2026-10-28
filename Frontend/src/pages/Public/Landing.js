@@ -51,7 +51,7 @@ function Landing() {
 
                 <main>
                     {/* 1. HERO */}
-                    <section className="hero">
+                    <section className="hero hero-home">
                         <div className="page hero-grid">
                             <div className="hero-copy">
                                 <p className="hero-brand">Freshmxn's Lab</p>

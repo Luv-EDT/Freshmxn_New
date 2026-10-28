@@ -2289,7 +2289,8 @@ button.asks-tab.is-on:hover:not(:disabled) {
     margin: 4px 0 0;
 }
 
-/* ── round 38 (owner): the home page — a tighter join, the free line, and the phone ─────────────────── */
+/* ── round 38 (owner): the home page — a tighter join, the free line, and the phone (all `.hero-home`: Round 39b,
+   the mentorship page's hero was caught by them) ─────────────────── */
 
 /* "What … ask us" and "Why we're different" sit on the same background, so their paddings added up */
 .section-asks { padding-bottom: var(--space-5); }
@@ -2399,11 +2400,11 @@ button.asks-tab.is-on:hover:not(:disabled) {
 
     /* THE FIRST LOOK ON A PHONE: the tagline on the left; "Freshmxn's Lab" and the picture on the right;
        then the promise, the two buttons and the free line across the full width */
-    .hero {
+    .hero-home {
         padding: var(--space-4) 0 var(--space-6);
     }
 
-    .hero-grid {
+    .hero-home .hero-grid {
         grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
         grid-template-areas:
             "tag brand"
@@ -2416,16 +2417,16 @@ button.asks-tab.is-on:hover:not(:disabled) {
         align-items: start;
     }
 
-    .hero-copy { display: contents; }
+    .hero-home .hero-copy { display: contents; }
 
-    .hero-brand {
+    .hero-home .hero-brand {
         grid-area: brand;
         text-align: right;
         font-size: 1.3rem;
         margin: 4px 0 0;
     }
 
-    .hero h1.tagline {
+    .hero-home h1.tagline {
         grid-area: tag;
         align-self: center;
         margin: 0;
@@ -2433,7 +2434,7 @@ button.asks-tab.is-on:hover:not(:disabled) {
         line-height: 1.12;
     }
 
-    .hero-visual {
+    .hero-home .hero-visual {
         grid-area: visual;
         width: 100%;
         max-width: 170px;
@@ -2441,26 +2442,26 @@ button.asks-tab.is-on:hover:not(:disabled) {
         padding: 0 8px 16px 0;
     }
 
-    .hero-visual .doodle { display: none; }
+    .hero-home .hero-visual .doodle { display: none; }
 
-    .hero-visual .dot-pink {
+    .hero-home .hero-visual .dot-pink {
         width: 40px;
         height: 40px;
         left: -6px;
     }
 
-    .hero .lead {
+    .hero-home .lead {
         grid-area: lead;
         margin: var(--space-4) 0 0;
         font-size: 1.05rem;
     }
 
-    .hero .btn-row {
+    .hero-home .btn-row {
         grid-area: cta;
         margin-top: var(--space-4);
     }
 
-    .hero-free {
+    .hero-home .hero-free {
         grid-area: free;
         text-align: center;
     }
@@ -2478,7 +2479,7 @@ button.asks-tab.is-on:hover:not(:disabled) {
         width: auto;
     }
 
-    .hero-brand {
+    .hero-home .hero-brand {
         white-space: nowrap;
         font-size: clamp(1.05rem, 5.2vw, 1.3rem);
     }
@@ -2624,30 +2625,30 @@ button.asks-tab.is-on:hover:not(:disabled) {
     }
 
     /* the first look fills the phone's screen, under the header */
-    .hero {
+    .hero-home {
         min-height: calc(100svh - 57px);
         display: flex;
         align-items: center;
         padding: var(--space-5) 0;
     }
 
-    .hero > .page {
+    .hero-home > .page {
         width: 100%;
     }
 
-    .hero h1.tagline {
+    .hero-home h1.tagline {
         font-size: clamp(1.9rem, 9.4vw, 2.6rem);
     }
 
-    .hero-visual {
+    .hero-home .hero-visual {
         max-width: 190px;
     }
 
-    .hero .lead {
+    .hero-home .lead {
         margin-top: var(--space-5);
     }
 
-    .hero .btn-row {
+    .hero-home .btn-row {
         margin-top: var(--space-5);
     }
 }
@@ -2655,7 +2656,7 @@ button.asks-tab.is-on:hover:not(:disabled) {
 /* Round 39: on a phone the hero's parts spread over the screen instead of sitting in the middle */
 @media (max-width: 719px) {
     /* the grid is the hero's one child (`.page.hero-grid`): stretch it to the full height, spread its rows */
-    .hero { align-items: stretch; }
-    .hero > .hero-grid { padding-bottom: 0; align-content: space-evenly; }
-    .hero-visual { max-width: 210px; }
+    .hero-home { align-items: stretch; }
+    .hero-home > .hero-grid { padding-bottom: 0; align-content: space-evenly; }
+    .hero-home .hero-visual { max-width: 210px; }
 }
