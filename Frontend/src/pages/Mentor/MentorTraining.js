@@ -38,6 +38,8 @@ export const PayRules = () => (
             </table>
         </div>
         <p className="report-small">After your first session we confirm you stay on the platform. The first follow-up is included; a later one pays 30% of your rate.</p>
+        {/* Round 38 (owner): the agreement's clause 8.2 points here for cancellations */}
+        <p className="report-small">If the student doesn't turn up (10 minutes in), the session still counts and is paid. A session you miss without telling us isn't paid.</p>
     </>
 )
 

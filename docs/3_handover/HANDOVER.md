@@ -122,7 +122,7 @@ so they are in git. Mentor review notes in the patch are listed for a person to 
 | Item | Notes |
 |---|---|
 | DPDP lawyer review of Terms + Privacy | Pages are a code-accurate draft, not legal advice (Privacy now has the sensitive-answers section, email-verified parental consent, the study-abroad partner on opt-in, the "how else can we help" waitlist and Cloudflare's spam check; since Round 36 also the demo's account step and the résumé reader — policy `v1.9`). Confirm the Grievance Officer (Luv Goel, luvgoel@freshmxn.com — an assumption) |
-| **Mentor Agreement** (Round 38) | Clause 8.2 still has two bracketed blanks — paid "within **[15]** days" of month end, late cancellation "less than **[24]** hours" — confirm them, re-export the PDF without the PAN in the footer, and replace `Frontend/public/mentor-training/Freshmxn_Mentor_Agreement.pdf`. Privacy doesn't yet say we keep a mentor's signed copy — add it at the lawyer review |
+| **Mentor Agreement** (Round 38b) | The revised agreement (clause 8.2) says when fees are paid out, how cancellations are treated and the rates are "as set out on freshmxn.com". The site now states the rates, the follow-up rule and both no-show rules ("How you're paid"), but **not when fees are paid out** — tell us the timing (e.g. by the 15th of the next month) and it goes on that card |
 | **Real student stories on the landing** (Round 37) | Add only when real ones exist — the rest of the Round 36 marketing review shipped in Round 37 |
 | Human review of the 223 baseline ratings (`baseline_rating.json`) | All still `unreviewed`. They drive matching |
 | **Disability support facts** (`Backend/data/disability_support.json`) | `verified_by_owner: false` — the report's support section stays hidden until the owner checks each row against its official source and sets it to true (Round 10) |
@@ -2734,3 +2734,11 @@ No code changed in this part.
 | **Expert brief** | Names the reviewer, Ms. Kavita Savio Lobo |
 
 **Fixtures:** 254/254 (new ROUND 38; ROUND 19 updated — "← Previous section" became the ← arrow, an owner change). **Checked locally** at 360 and 1280 with a mocked API: the menu, the phone hero (tagline left of the brand, nothing cut), the cards in one row, the logged-in page without "Who is it for", the free lines, the agreement link and upload, the logo going home, the profile cards' order, the back-button gap, résumé chips added and examples not buttons, both arrows. Build: the 7 known warning files.
+
+### Round 38b — About us, Privacy, the revised agreement, the decks (2026-10-28)
+| Item | What shipped |
+|---|---|
+| **About us** | "That's when I chose to stay and improve the system here instead" is bold, followed by one line of why (written by Claude for the owner to adjust: "going abroad would have sorted out my own path, but not the one millions of students still walk here"). New section after the story, **Proof behind every step** — the decks' Why us slide: step 1 built by a certified career navigator; step 2 research-backed, psychologist-validated; steps 3–4 human + AI so no single bias decides; and the five "Only here" points |
+| **Privacy** (policy `v2.0`, last updated 28 October 2026) | A mentor's signed Mentor Agreement is kept for as long as they mentor with us, seen only by them and our team |
+| **The revised Mentor Agreement** | The owner's new version (clause 8.2 now points to freshmxn.com for payout timing, cancellations and rates) replaces the PDF — the company PAN again taken out of its footer. "How you're paid" adds: a student no-show still counts and is paid; a session the mentor misses without telling us isn't |
+| **Decks** | All three: the coming-soon line at 28 px (the owner's change on the college deck); About me now tells the story in two lines before "Admitted to Duke, Cornell, Tufts and Johns Hopkins — I chose to build in India, in education." (bold); the Build3 line without "Mechanical engineer" (the owner's college edit) |
