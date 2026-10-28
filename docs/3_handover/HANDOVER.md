@@ -2752,3 +2752,5 @@ No code changed in this part.
 | **Phone home** | The first section fills the whole screen under the header (`100svh`), its rows spread top to bottom |
 
 **Fixtures:** 254/254 (ROUND 37b updated for the FAQ tabs — an owner change). Build: the 7 known warning files.
+
+**Round 39b fix (owner's phone screenshot):** the phone layout for the home page's first section (Round 38–39) was written for every `.hero`, so the mentorship page's picture card was pushed into a narrow right column. Those rules are now scoped to `.hero-home` (the home page only); checked /, /mentor-waitlist, /how-it-works, /about and /programs at 390 and 1280.
