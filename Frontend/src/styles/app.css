@@ -3382,3 +3382,89 @@ button.if-ref-target {
     font-size: 0.9rem;
     color: var(--teal-dark);
 }
+
+/* Round 38 (owner): the Mentor Agreement in step 2 and the profile; room under the top bar for "Back" */
+.mentor-back { margin-top: var(--space-5); }
+.mentor-agreement { margin: var(--space-3) 0 var(--space-5); padding: var(--space-4); border: 1px dashed var(--teal); border-radius: var(--radius-lg); background: var(--teal-tint); display: grid; gap: 8px; max-width: 720px; }
+.mentor-agreement.is-in { border-style: solid; border-color: var(--teal-tint); background: var(--surface); }
+.mentor-agreement h3 { margin: 0; }
+.mentor-agreement-steps { margin: 0; display: grid; gap: 6px; }
+.mentor-agreement-done { margin: 0; color: var(--teal-dark); }
+.mentor-agreement-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.mentor-agreement-btn { cursor: pointer; }
+.mentor-agreement-btn.is-busy { opacity: 0.7; cursor: progress; }
+.mentor-profile-folds .mentor-agreement { margin: 0; border: 0; padding: 0; background: none; }
+
+/* ── round 38: in Virtual Career Counselling only the résumé's activities are added — light-blue chips ── */
+.if-reference ul.if-resume-chips {
+    columns: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    padding: 0 0 var(--space-3);
+    margin: 0 0 var(--space-2);
+    border-bottom: 1px dashed var(--line);
+    max-height: 30vh;
+}
+
+button.if-resume-chip {
+    min-height: 36px;
+    padding: 6px 14px;
+    border: 1px solid #b9dde1;
+    border-radius: 999px;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: grab;
+}
+
+button.if-resume-chip:hover:not(:disabled),
+button.if-resume-chip.is-on {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+}
+
+/* Round 38 (owner): a small ← and → at the top of each Virtual Career Counselling section, side by side */
+.if-top-arrows {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+button.if-arrow {
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0;
+    border: 1px solid var(--teal);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--teal-dark);
+    font-size: 1.1rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button.if-arrow:hover:not(:disabled) {
+    background: var(--teal);
+    color: #fff;
+}
+
+/* the "Stuck?" lists: a grid, so a list taller than the box scrolls down instead of spilling into a
+   clipped extra column (Round 38) */
+.if-reference ul:not(.if-resume-chips) {
+    columns: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    column-gap: var(--space-5);
+    row-gap: 2px;
+}
+
+.if-reference ul.if-resume-chips li { margin: 0; }
+.if-reference ul:not(.if-resume-chips) li { margin: 0; }

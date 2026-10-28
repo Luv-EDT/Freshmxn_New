@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Link, useLocation } from "react-router-dom"
 import { useSelector } from "react-redux"
 import logo from "../../assets/brand/logo.png"
 
@@ -9,16 +10,22 @@ import logo from "../../assets/brand/logo.png"
 // A logged-in visitor gets a profile icon rather than the word "Profile" (owner, Round 10), the same
 // round avatar the app header uses. Their initial when the app already knows who they are (they came
 // from inside it); a plain person icon on a fresh load, since this header makes no network call.
+//
+// Round 38 (owner): on a phone the links fold behind a menu button (☰) beside the main button — the row of
+// links under the logo was too messy. On a laptop nothing changes.
 function PublicNav() {
     const isLoggedIn = Boolean(localStorage.getItem("token"))
     const { user } = useSelector((state) => state.user)
     const initial = user && user.name ? user.name.trim().charAt(0).toUpperCase() : null
+    const [menuOpen, setMenuOpen] = useState(false)
+    const location = useLocation()
+    useEffect(() => { setMenuOpen(false) }, [location.pathname])
 
     return (
         <header className="public-header">
             <nav className="nav-row">
                 <Link to="/"><img src={logo} alt="Freshmxn" height="34" className="brand-logo" /></Link>
-                <div className="nav-links">
+                <div className={`nav-links${menuOpen ? " is-open" : ""}`} id="public-menu">
                     <Link to="/about" className="nav-link">About us</Link>
                     <Link to="/how-it-works" className="nav-link">How it works</Link>
                     {/* success stories live inside About us since Round 26 (owner) */}
@@ -48,6 +55,20 @@ function PublicNav() {
                                 <span className="label-short">Get started</span>
                             </Link>
                         )}
+                    <button
+                        type="button"
+                        className={`nav-menu-button${menuOpen ? " is-open" : ""}`}
+                        aria-label={menuOpen ? "Close the menu" : "Open the menu"}
+                        aria-expanded={menuOpen}
+                        aria-controls="public-menu"
+                        onClick={() => setMenuOpen(!menuOpen)}
+                    >
+                        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                            {menuOpen
+                                ? <path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                                : <path d="M4 7 H20 M4 12 H20 M4 17 H20" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />}
+                        </svg>
+                    </button>
                 </div>
             </nav>
         </header>

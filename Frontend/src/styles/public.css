@@ -2288,3 +2288,198 @@ button.asks-tab.is-on:hover:not(:disabled) {
 .faq-group .audience-tag {
     margin: 4px 0 0;
 }
+
+/* ── round 38 (owner): the home page — a tighter join, the free line, and the phone ─────────────────── */
+
+/* "What … ask us" and "Why we're different" sit on the same background, so their paddings added up */
+.section-asks { padding-bottom: var(--space-5); }
+.section-why { padding-top: var(--space-4); }
+
+@media (min-width: 900px) {
+    .section-asks { padding-bottom: var(--space-6); }
+    .section-why { padding-top: var(--space-5); }
+}
+
+.hero-free {
+    margin: var(--space-2) 0 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+
+.splash-free {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* the menu button only exists on a phone */
+.nav-menu-button { display: none; }
+
+@media (max-width: 719px) {
+    .nav-menu-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        min-height: 40px;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--navy);
+    }
+
+    .nav-menu-button.is-open,
+    .nav-menu-button:hover {
+        border-color: var(--teal);
+        color: var(--teal-dark);
+        background: var(--surface);
+    }
+
+    .public-header .nav-row {
+        padding: 8px 16px;
+    }
+
+    /* folded until the menu button opens it: a column under the header row */
+    .public-header .nav-links {
+        display: none;
+    }
+
+    .public-header .nav-links.is-open {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        padding: 6px 0 10px;
+        border-top: 1px solid var(--line);
+        margin-top: 6px;
+    }
+
+    .public-header .nav-links.is-open .nav-link {
+        padding: 10px 4px;
+        font-size: 1rem;
+    }
+
+    .public-header .nav-links.is-open .nav-mentor,
+    .public-header .nav-links.is-open .nav-login {
+        margin-top: 6px;
+        text-align: center;
+        padding: 10px 14px;
+    }
+
+    /* who it's for: three small cards in a row, centred */
+    .audience {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-2);
+    }
+
+    button.audience-card {
+        padding: var(--space-3) 6px;
+        text-align: center;
+    }
+
+    .audience-card svg {
+        width: 34px;
+        height: 34px;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .audience-card h3 {
+        margin: 6px 0 2px;
+        font-size: 0.95rem;
+        line-height: 1.2;
+    }
+
+    .audience-card .audience-tag {
+        font-size: 0.72rem;
+        line-height: 1.25;
+    }
+
+    /* THE FIRST LOOK ON A PHONE: the tagline on the left; "Freshmxn's Lab" and the picture on the right;
+       then the promise, the two buttons and the free line across the full width */
+    .hero {
+        padding: var(--space-4) 0 var(--space-6);
+    }
+
+    .hero-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+        grid-template-areas:
+            "tag brand"
+            "tag visual"
+            "lead lead"
+            "cta cta"
+            "free free";
+        column-gap: var(--space-3);
+        row-gap: 0;
+        align-items: start;
+    }
+
+    .hero-copy { display: contents; }
+
+    .hero-brand {
+        grid-area: brand;
+        text-align: right;
+        font-size: 1.3rem;
+        margin: 4px 0 0;
+    }
+
+    .hero h1.tagline {
+        grid-area: tag;
+        align-self: center;
+        margin: 0;
+        font-size: clamp(1.75rem, 8.6vw, 2.4rem);
+        line-height: 1.12;
+    }
+
+    .hero-visual {
+        grid-area: visual;
+        width: 100%;
+        max-width: 170px;
+        margin: var(--space-2) 0 0 auto;
+        padding: 0 8px 16px 0;
+    }
+
+    .hero-visual .doodle { display: none; }
+
+    .hero-visual .dot-pink {
+        width: 40px;
+        height: 40px;
+        left: -6px;
+    }
+
+    .hero .lead {
+        grid-area: lead;
+        margin: var(--space-4) 0 0;
+        font-size: 1.05rem;
+    }
+
+    .hero .btn-row {
+        grid-area: cta;
+        margin-top: var(--space-4);
+    }
+
+    .hero-free {
+        grid-area: free;
+        text-align: center;
+    }
+}
+
+/* Round 38: on a phone the logo, the main button and the menu button share one row; the brand stays one line */
+@media (max-width: 719px) {
+    .public-header .nav-row {
+        flex-wrap: wrap;
+        column-gap: 8px;
+    }
+
+    .public-header .brand-logo {
+        height: 30px;
+        width: auto;
+    }
+
+    .hero-brand {
+        white-space: nowrap;
+        font-size: clamp(1.05rem, 5.2vw, 1.3rem);
+    }
+}

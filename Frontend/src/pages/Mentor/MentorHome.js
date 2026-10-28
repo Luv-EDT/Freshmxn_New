@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
+import { Link } from "react-router-dom"
 import { Tabs, message } from "antd"
 import { getMyMentorProfile, onboardMentor, updateMyMentorProfile } from "../../apiCall/mentorsApi"
 import MentorOnboarding from "./MentorOnboarding"
 import MentorReviewSheet from "./MentorReviewSheet"
 import MentorStudents from "./MentorStudents"
-import MentorTraining from "./MentorTraining"
+import MentorTraining, { PayRules } from "./MentorTraining"
+import MentorAgreement from "./MentorAgreement"
 import MentorTest, { BookingLinks } from "./MentorTest"
 import MentorPayouts from "./MentorPayouts"
 import LogoutButton from "../LogoutButton"
@@ -18,6 +20,8 @@ import logo from "../../assets/brand/logo.png"
 //                                          · Tier up: data check & roadmap · Payouts (once approved)
 // The profile — and, once onboarded, the training documents and the Calendly links — open from the round
 // profile icon in the header, the only place with Log out (owner, Round 35).
+// Round 38 (owner): step 2 opens with the Mentor Agreement — download, sign, scan, upload — and the profile
+// can't be sent without it; the profile adds "How you're paid" below the training, and the logo goes home.
 const STATUS_TEXT = {
     pending_review: "Next: take your test (step 3). Our team approves mentors after the test.",
     test_submitted: "Your test is with our team. It usually takes a couple of days — we'll let you know by email.",
@@ -37,6 +41,7 @@ function MentorHome() {
     const [editing, setEditing] = useState(false)
     const [view, setView] = useState("dashboard")   // dashboard | profile (from the profile icon)
     const [tab, setTab] = useState(null)
+    const [agreement, setAgreement] = useState(undefined)
 
     const load = async () => {
         const response = await getMyMentorProfile()
@@ -46,6 +51,11 @@ function MentorHome() {
     useEffect(() => { load() }, [])
 
     const handleOnboard = async (form) => {
+        if (!agreement) {
+            message.error("Please upload your signed Mentor Agreement first — it's at the top of this step")
+            window.scrollTo({ top: 0, behavior: "smooth" })
+            return
+        }
         const response = await onboardMentor(form)
         if (!response || response.data.success === false) {
             message.error(response?.data?.message || "Could not save your profile")
@@ -77,7 +87,7 @@ function MentorHome() {
     const header = (
         <>
             <nav className="nav-row mentor-nav">
-                <img src={logo} alt="Freshmxn" height="32" />
+                <Link to="/" className="brand-link" aria-label="Freshmxn home"><img src={logo} alt="Freshmxn" height="32" /></Link>
                 <span>Mentor</span>
                 <button
                     type="button"
@@ -101,7 +111,7 @@ function MentorHome() {
             <div>
                 {header}
                 <main className="page mentor-dashboard">
-                    <p><button type="button" className="btn btn-ghost btn-sm" onClick={() => { setEditing(false); setView("dashboard") }}>← Back to dashboard</button></p>
+                    <p className="mentor-back"><button type="button" className="btn btn-ghost btn-sm" onClick={() => { setEditing(false); setView("dashboard") }}>← Back to dashboard</button></p>
                     <h2 className="page-title-center">My profile</h2>
                     {!profile ? (
                         <>
@@ -166,6 +176,28 @@ function MentorHome() {
                                     <MentorTraining />
                                 </details>
                             )}
+                            <details className="profession-fold">
+                                <summary>
+                                    <span className="training-head">
+                                        <strong>How you're paid</strong>
+                                        <span>Your rate by tier, and when a session is paid</span>
+                                    </span>
+                                </summary>
+                                <article className="training-doc">
+                                    <PayRules />
+                                    {approved && <p className="report-small">Each session, and whether we've paid it, is in the Payouts tab on your dashboard.</p>}
+                                </article>
+                            </details>
+                            <details className="profession-fold">
+                                <summary>
+                                    <span className="training-head">
+                                        <strong>Your Mentor Agreement</strong>
+                                        <span>The signed copy you sent us</span>
+                                    </span>
+                                    {!profile.agreement && <span className="training-time">Missing</span>}
+                                </summary>
+                                <MentorAgreement onChange={(found) => { if (found && !profile.agreement) load() }} />
+                            </details>
                         </section>
                     )}
                     <div className="mentor-logout"><LogoutButton /></div>
@@ -210,7 +242,8 @@ function MentorHome() {
                 </p>
             ) : (
                 <>
-                    <p>A few questions, then your test. Our team approves every mentor before matching them with a student.</p>
+                    <p>First your signed agreement, then a few questions, then your test. Our team approves every mentor before matching them with a student.</p>
+                    <MentorAgreement onChange={setAgreement} />
                     <MentorOnboarding defaultName={user.name} defaultEmail={user.email} submitLabel="Submit my profile" onSubmit={handleOnboard} />
                 </>
             ),
@@ -244,6 +277,12 @@ function MentorHome() {
             <main className="page mentor-dashboard">
                 <h2 className="page-title-center">{approved ? "Your mentor dashboard" : "Welcome, mentor"}</h2>
                 {status && <p className={`mentor-status-line status-${status}`}>{STATUS_TEXT[status]}</p>}
+                {profile && !profile.agreement && (
+                    <p className="mentor-status-line status-pending_review">
+                        Please send us your signed Mentor Agreement —{" "}
+                        <button type="button" className="link-button" onClick={() => setView("profile")}>open your profile to upload it</button>.
+                    </p>
+                )}
                 <Tabs className="mentor-tabs" activeKey={activeTab} onChange={setTab} items={items} />
                 {helpLine}
             </main>

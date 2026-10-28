@@ -5096,7 +5096,8 @@ const fixtures = [
             const read = (...parts) => fs.readFileSync(path.join(pages, ...parts), "utf8")
             const problems = []
             // Round 28 (owner): the interest form's own button goes back a section — the menu has Dashboard
-            if (!/← Previous section/.test(read("Interest", "InterestForm.js"))) problems.push("the interest form has no Previous section button")
+            // Round 38 (owner): the text button became a small ← (with → beside it) at the top of each section
+            if (!/aria-label="Previous section"/.test(read("Interest", "InterestForm.js"))) problems.push("the interest form has no Previous section button")
             ;[["Assessment", "AssessmentShell.js"], ["Report", "ReportPage.js"], ["Report", "MatchesPage.js"], ["Report", "ComparePage.js"], ["Report", "ReportStatus.js"], ["User", "Mentorship.js"]].forEach((parts) => {
                 if (!/<BackToDashboard/.test(read(...parts))) problems.push(`${parts[1]} has no Dashboard button`)
             })
@@ -6885,6 +6886,40 @@ const fixtures = [
             if (!/const shown = mine \? \[mine\] : AUDIENCE_KEYS/.test(faq) || !/questionsFor\(key\)\.map/.test(faq) || !/useMyAudience\(\)/.test(faq)) problems.push("the FAQ page doesn't show all three, or only a logged-in student's own")
             if (!/path="\/faq" element=\{<FaqPage \/>\}/.test(front("App.js"))) problems.push("/faq isn't routed")
             if (/app\.use\("\/faq"/.test(fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8"))) problems.push("an API prefix equals the /faq page")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
+    {
+        name: "ROUND 38 — THE MENTOR AGREEMENT AND THE HOME PAGE: step 2 opens with the agreement (download, sign, upload) and the server refuses a profile without it; the scan is kept, opened only by the mentor and the admin; the public PDF carries no PAN; the profile has 'How you're paid' below the training; the mentor logo goes home; a logged-in student skips 'Who is it for'; the free line under the demo; a phone menu; in Virtual Career Counselling only the résumé's activities are added, with ← → at the top",
+        run: () => {
+            const problems = []
+            const root = path.join(__dirname, "../../..")
+            const read = (file) => fs.readFileSync(path.join(root, file), "utf8")
+            const mentors = read("Backend/Routers/mentorsRouter.js")
+            const onboard = (mentors.split('router.post("/onboard"')[1] || "").split("Mentor.create(")[0]
+            if (!/MentorAgreement\.exists\(\{ mentor: req\.user\._id \}\)/.test(onboard)) problems.push("a profile can be sent without the signed agreement")
+            const agreements = read("Backend/Routers/mentorAgreementsRouter.js")
+            if (!/router\.post\("\/upload", authMiddleware, mentorAuthMiddleware/.test(agreements) || !/router\.get\("\/fileForAdmin\/:mentorUserId", authMiddleware, adminAuthMiddleware/.test(agreements)) problems.push("the agreement routes aren't guarded")
+            if (!/data: \{ type: Buffer, required: true, select: false \}/.test(read("Backend/model/mentorAgreementsModel.js"))) problems.push("the scan is selected by default")
+            const server = read("Backend/server.js")
+            if (!/app\.use\("\/mentorAgreements", express\.json\(\{ limit: "8mb" \}\), mentorAgreementsRouter\)/.test(server)) problems.push("the agreement router isn't mounted with its own parser")
+            const pdf = fs.readFileSync(path.join(root, "Frontend/public/mentor-training/Freshmxn_Mentor_Agreement.pdf"))
+            if (pdf.slice(0, 4).toString() !== "%PDF" || /PAN: ?[A-Z]{5}\d{4}[A-Z]/.test(pdf.toString("latin1"))) problems.push("the agreement PDF is missing or shows a PAN")
+            const home = read("Frontend/src/pages/Mentor/MentorHome.js")
+            if (!/<MentorAgreement onChange=\{setAgreement\} \/>/.test(home)) problems.push("step 2 has no agreement")
+            if (!/<Link to="\/" className="brand-link"/.test(home)) problems.push("the mentor logo doesn't go home")
+            const folds = [...home.matchAll(/<strong>([^<]+)<\/strong>\n\s*<span>/g)].map((m) => m[1])
+            if (folds.indexOf("How you're paid") !== folds.indexOf("Training documents") + 1) problems.push("'How you're paid' isn't right below the training")
+            if (!/export const PayRules/.test(read("Frontend/src/pages/Mentor/MentorTraining.js"))) problems.push("the pay rules aren't shared")
+            const landing = read("Frontend/src/pages/Public/Landing.js")
+            if (!/\{!mine && \(\n\s*<section className="section section-alt">/.test(landing)) problems.push("a logged-in student still sees 'Who is it for'")
+            if (!/no payment details at any step/.test(landing) || !/No payment details needed at any step/.test(read("Frontend/src/pages/Public/DemoSplash.js"))) problems.push("the free line is missing")
+            if (!/className=\{`nav-menu-button/.test(read("Frontend/src/pages/Public/PublicNav.js"))) problems.push("no phone menu")
+            if (!/resumeOnly \/>/.test(read("Frontend/src/pages/Interest/LifeStageSection.js"))) problems.push("Virtual Career Counselling still adds every example")
+            const list = read("Frontend/src/pages/Interest/ActivityReferenceList.js")
+            if (!/if \(resumeOnly && !fromCv\) return <li key=\{`\$\{fromCv\}-\$\{index\}`\}>\{activity\}<\/li>/.test(list)) problems.push("other examples can still be added")
+            if (!/aria-label="Next section"/.test(read("Frontend/src/pages/Interest/InterestForm.js"))) problems.push("no → at the top of a section")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

@@ -47,6 +47,8 @@ function DemoSplash({ onClose }) {
                 <Link to="/try-demo" className="btn splash-cta tap">Try a Free Demo →</Link>
                 {/* Round 36 (owner): one small line instead of the three tags */}
                 <p className="splash-time">It takes just 5 minutes.</p>
+                {/* Round 38 (owner): nothing to pay, at any step */}
+                <p className="splash-free">No payment details needed at any step — feel free to try it.</p>
                 <button type="button" className="splash-skip" onClick={onClose}>or explore the home page first</button>
             </div>
         </div>
