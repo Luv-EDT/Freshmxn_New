@@ -6883,7 +6883,8 @@ const fixtures = [
             if (!/const FIRST_SHOWN = 5/.test(landing) || !/questionsFor\(audience\)\.slice\(0, FIRST_SHOWN\)/.test(landing)) problems.push("the home page doesn't show five")
             if (!/<Link to=\{`\/faq#\$\{audience\}`\} className="btn btn-ghost tap">See all questions<\/Link>/.test(landing) || /See all \{/.test(landing)) problems.push("'See all questions' doesn't open the FAQ page, or names a number")
             const faq = front("pages/Public/FaqPage.js")
-            if (!/const shown = mine \? \[mine\] : AUDIENCE_KEYS/.test(faq) || !/questionsFor\(key\)\.map/.test(faq) || !/useMyAudience\(\)/.test(faq)) problems.push("the FAQ page doesn't show all three, or only a logged-in student's own")
+            // Round 39 (owner): three tabs, one audience at a time, the tab chosen on the home page pre-selected; logged in, only their own and no tabs
+            if (!/const audience = mine \|\| picked/.test(faq) || !/questionsFor\(audience\)\.map/.test(faq) || !/useMyAudience\(\)/.test(faq) || !/useState\(\(\) => fromHash\(hash\)\)/.test(faq) || !/\{!mine && \(\n\s*<div className="asks-tabs" role="tablist"/.test(faq)) problems.push("the FAQ page doesn't show one audience per tab, pre-selected — or only a logged-in student's own")
             if (!/path="\/faq" element=\{<FaqPage \/>\}/.test(front("App.js"))) problems.push("/faq isn't routed")
             if (/app\.use\("\/faq"/.test(fs.readFileSync(path.join(__dirname, "../../server.js"), "utf8"))) problems.push("an API prefix equals the /faq page")
             return problems.length ? problems.join("; ") : null

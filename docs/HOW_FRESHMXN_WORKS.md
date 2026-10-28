@@ -107,8 +107,10 @@ questions first — school students also two for their parents — then the ones
 list (Round 37: no separate block, and no question twice), including how long it takes, financial aid and refunds,
 who sees your answers, and that a learning difficulty never counts against you. Each audience sees only questions
 that fit it, none twice. The home page shows each list's first five; **See all questions** opens the **FAQ page**
-(`/faq`, also in the footer) at that audience — all three audiences with every question, or only a logged-in
-student's own.
+(`/faq`, also in the footer) at that audience. Since Round 39 the FAQ page has three tabs, one per audience: only
+the chosen audience's questions show, another tab switches them, and the tab the visitor was on at home comes
+pre-selected. A logged-in student sees only their own, with no tabs. The questions are set a size smaller there and
+on the home page (owner, Round 39).
 Each opens to a short answer with a sourced fact and what Freshmxn does about it (`Public/audienceQuestions.js`). A **logged-in student**
 sees only their own set ("What college students ask us"), their card marked **You** — the category comes from their
 journey. A number is shown only with its source (owner, Round 37: numbers without one are left out).
@@ -117,6 +119,8 @@ their own questions. A small line under "Try a Free Demo", and one in the demo's
 details are needed at any step**. On a phone the links fold behind a **menu button (☰)** beside "Get started", the
 top of the page is two columns (the tagline on the left; "Freshmxn's Lab" and the picture on the right) with the
 promise and both buttons full width beneath, and the three "Who is it for" cards sit small and centred in one row.
+Since Round 39 that first section fills the phone's whole screen under the header, its parts spread from top to
+bottom.
 
 ## 2b. The demo — trying before signing up (Rounds 32–33, 36)
 
@@ -712,8 +716,11 @@ is included, a later one pays 30% of the main rate. Since Round 38 the rates and
 card in the mentor's profile, **How you're paid**, right below the training documents; the logo on the mentor pages
 goes to the home page. The revised agreement (Round 38b) leaves payout timing, cancellations and rates to the website,
 so that card also says a student no-show still counts and is paid, and a session the mentor misses without telling us
-isn't. **About us** (Round 38b) follows the founder's story with "Proof behind every step" — how each of the four
-steps is built, and what only Freshmxn gives. Privacy (`v2.0`) says a mentor's signed agreement is kept.
+isn't. **About us** (Round 38b; Round 39 order) opens with "Proof behind every step" — how each of the four
+steps is built, and what only Freshmxn gives — then the founder's story as a fold, "My (founder's) story".
+**The mentor dashboard** (Round 39 redesign): a greeting with the status under it; on Home, four tiles (tier,
+sessions with feedback, average rating, what a main session pays); the tabs as pills over a white panel; the
+profile opens on a card with the mentor's name, role and tier, then the folded cards. Privacy (`v2.0`) says a mentor's signed agreement is kept.
 
 | Tier | Indian | International |
 |---|---|---|

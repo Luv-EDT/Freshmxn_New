@@ -22,6 +22,8 @@ import logo from "../../assets/brand/logo.png"
 // profile icon in the header, the only place with Log out (owner, Round 35).
 // Round 38 (owner): step 2 opens with the Mentor Agreement — download, sign, scan, upload — and the profile
 // can't be sent without it; the profile adds "How you're paid" below the training, and the logo goes home.
+// Round 39 (owner: "the design isn't good"): one centred column; a greeting with the status under it; the tier,
+// sessions, rating and rate as tiles; the tabs as pills over a white panel; the profile opens on who you are.
 const STATUS_TEXT = {
     pending_review: "Next: take your test (step 3). Our team approves mentors after the test.",
     test_submitted: "Your test is with our team. It usually takes a couple of days — we'll let you know by email.",
@@ -83,12 +85,13 @@ function MentorHome() {
     const approved = status === "onboarded"
     const testSent = TEST_SENT.includes(status)
     const standing = (profile && profile.standing) || {}
+    const firstName = String((profile && profile.name) || user.name || "mentor").trim().split(/\s+/)[0]
 
     const header = (
         <>
             <nav className="nav-row mentor-nav">
                 <Link to="/" className="brand-link" aria-label="Freshmxn home"><img src={logo} alt="Freshmxn" height="32" /></Link>
-                <span>Mentor</span>
+                <span><span className="mentor-badge">Mentor</span></span>
                 <button
                     type="button"
                     className={`nav-profile mentor-profile-icon${view === "profile" ? " is-open" : ""}`}
@@ -112,7 +115,14 @@ function MentorHome() {
                 {header}
                 <main className="page mentor-dashboard">
                     <p className="mentor-back"><button type="button" className="btn btn-ghost btn-sm" onClick={() => { setEditing(false); setView("dashboard") }}>← Back to dashboard</button></p>
-                    <h2 className="page-title-center">My profile</h2>
+                    <section className="mentor-id">
+                        <span className="mentor-id-avatar" aria-hidden="true">{(user.name || "?").trim().charAt(0).toUpperCase()}</span>
+                        <div>
+                            <h2>{(profile && profile.name) || user.name}</h2>
+                            <p>{profile ? [profile.currentRole, profile.discipline].filter(Boolean).join(" · ") : user.email}</p>
+                            {profile && <p className="mentor-id-tags"><span>Tier {profile.tier || 1}</span><span>{REGION_WORDS[profile.region] || "Indian"} mentor</span>{profile.status === "onboarded" && <span>Approved</span>}</p>}
+                        </div>
+                    </section>
                     {!profile ? (
                         <>
                             <ul className="mentor-profile-list">
@@ -196,7 +206,7 @@ function MentorHome() {
                                     </span>
                                     {!profile.agreement && <span className="training-time">Missing</span>}
                                 </summary>
-                                <MentorAgreement onChange={(found) => { if (found && !profile.agreement) load() }} />
+                                <MentorAgreement title={false} onChange={(found) => { if (found && !profile.agreement) load() }} />
                             </details>
                         </section>
                     )}
@@ -210,13 +220,13 @@ function MentorHome() {
     // ─── the dashboard ───────────────────────────────────────────────────────
     const home = (
         <>
-            <section className="mentor-tier">
-                <p>
-                    <strong>Tier {profile ? profile.tier || 1 : 1}</strong> · {REGION_WORDS[profile && profile.region] || "Indian"} mentor · {standing.sessions || 0} session{standing.sessions === 1 ? "" : "s"} with feedback
-                    {standing.average ? ` · average ${standing.average}/10` : ""}
-                </p>
-                {Number(profile ? profile.tier || 1 : 1) < 3 && <p className="report-small">How to move up a tier: see the <button type="button" className="link-button" onClick={() => setTab("profession")}>Tier up</button> tab.</p>}
+            <section className="mentor-stats" aria-label="Where you stand">
+                <p><span>Tier</span><strong>{profile ? profile.tier || 1 : 1}</strong><em>{REGION_WORDS[profile && profile.region] || "Indian"} mentor</em></p>
+                <p><span>Sessions with feedback</span><strong>{standing.sessions || 0}</strong></p>
+                <p><span>Average rating</span><strong>{standing.average ? `${standing.average}/10` : "—"}</strong></p>
+                <p><span>A main session pays</span><strong>{standing.mainRate ? `₹${Number(standing.mainRate.inr).toLocaleString("en-IN")}` : "—"}</strong></p>
             </section>
+            {Number(profile ? profile.tier || 1 : 1) < 3 && <p className="report-small mentor-stats-note">How to move up a tier: see the <button type="button" className="link-button" onClick={() => setTab("profession")}>Tier up</button> tab.</p>}
             <MentorStudents />
         </>
     )
@@ -275,7 +285,10 @@ function MentorHome() {
         <div>
             {header}
             <main className="page mentor-dashboard">
-                <h2 className="page-title-center">{approved ? "Your mentor dashboard" : "Welcome, mentor"}</h2>
+                <header className="mentor-hello">
+                    <h2>{approved ? `Hello, ${firstName}` : `Welcome, ${firstName}`}</h2>
+                    <p>{approved ? "Your mentor dashboard" : "Three steps to become a Freshmxn mentor"}</p>
+                </header>
                 {status && <p className={`mentor-status-line status-${status}`}>{STATUS_TEXT[status]}</p>}
                 {profile && !profile.agreement && (
                     <p className="mentor-status-line status-pending_review">

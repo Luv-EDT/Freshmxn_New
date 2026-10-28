@@ -2540,3 +2540,122 @@ button.asks-tab.is-on:hover:not(:disabled) {
     gap: var(--space-2);
     font-weight: 700;
 }
+
+/* ── round 39 (owner) ────────────────────────────────────────────────────────────────────────────── */
+
+/* About us: the founder's story is a fold — a card with the photo and the title, opened by a tap */
+.founder-fold {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.founder-fold[open],
+.founder-fold:hover {
+    border-color: var(--teal);
+}
+
+.founder-fold > summary.founder-head {
+    list-style: none;
+    cursor: pointer;
+    flex-wrap: nowrap;
+    gap: var(--space-4);
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+}
+
+.founder-fold > summary::-webkit-details-marker { display: none; }
+
+.founder-fold > summary h2 {
+    flex: 1;
+    font-size: clamp(1.25rem, 3.4vw, 1.6rem);
+}
+
+.founder-fold > summary::after {
+    content: "+";
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--teal-tint);
+    color: var(--teal-dark);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.founder-fold[open] > summary::after { content: "−"; }
+
+.founder-fold .founder-photo {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border-width: 3px;
+}
+
+.founder-fold > :not(summary) {
+    margin-left: var(--space-5);
+    margin-right: var(--space-5);
+}
+
+.founder-fold > :last-child { margin-bottom: var(--space-5); }
+
+/* "What each of them ask us" and the FAQ page: smaller questions (owner) */
+.section-asks .faq-item summary,
+.faq-page .faq-item summary {
+    font-size: 0.95rem;
+    font-weight: 700;
+    min-height: 50px;
+    padding: 10px 14px;
+}
+
+.faq-page .faq-tag {
+    text-align: center;
+    margin: 0 0 var(--space-4);
+}
+
+@media (max-width: 719px) {
+    .section-asks .faq-item summary,
+    .faq-page .faq-item summary {
+        font-size: 0.9rem;
+        min-height: 46px;
+    }
+
+    /* the first look fills the phone's screen, under the header */
+    .hero {
+        min-height: calc(100svh - 57px);
+        display: flex;
+        align-items: center;
+        padding: var(--space-5) 0;
+    }
+
+    .hero > .page {
+        width: 100%;
+    }
+
+    .hero h1.tagline {
+        font-size: clamp(1.9rem, 9.4vw, 2.6rem);
+    }
+
+    .hero-visual {
+        max-width: 190px;
+    }
+
+    .hero .lead {
+        margin-top: var(--space-5);
+    }
+
+    .hero .btn-row {
+        margin-top: var(--space-5);
+    }
+}
+
+/* Round 39: on a phone the hero's parts spread over the screen instead of sitting in the middle */
+@media (max-width: 719px) {
+    /* the grid is the hero's one child (`.page.hero-grid`): stretch it to the full height, spread its rows */
+    .hero { align-items: stretch; }
+    .hero > .hero-grid { padding-bottom: 0; align-content: space-evenly; }
+    .hero-visual { max-width: 210px; }
+}
