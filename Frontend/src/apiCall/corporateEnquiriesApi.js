@@ -1,0 +1,11 @@
+import axiosInstance from "./axiosInstance"
+
+// Round 40b (owner): the contact form on /corporates. Returns error.response so a 400 or 429 still resolves.
+export async function sendCorporateEnquiry(payload) {
+    try {
+        const response = await axiosInstance.post("/corporateEnquiries/send", payload)
+        return response
+    } catch (error) {
+        return error.response
+    }
+}

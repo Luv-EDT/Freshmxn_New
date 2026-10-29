@@ -1,4 +1,5 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { sendCorporateEnquiry } from "../../apiCall/corporateEnquiriesApi"
 import logo from "../../assets/brand/logo.png"
 
 // FRESHMXN FOR COMPANIES (owner, Round 40) — /corporates, one page for HR and L&D teams. It stands on its own:
@@ -10,6 +11,8 @@ import logo from "../../assets/brand/logo.png"
 // assessment), training for the gaps it finds, Assessment and Development Centres through our partners, an AI
 // attrition predictor, training cut to the gaps only, HR analytics, custom content and leadership development.
 // The competency model is Spencer & Spencer's iceberg (Competence at Work, 1993), drawn the owner's way.
+// Round 40b (owner): four steps — virtual counselling, psychometric analysis, skill assessment, then development;
+// the offers are features, not numbered; and a short request form that emails the founder (/corporateEnquiries).
 
 const WHATSAPP = "918882756287"
 const EMAIL = "luvgoel@freshmxn.com"
@@ -18,10 +21,51 @@ const whatsappLink = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(WHATSA
 const emailLink = `mailto:${EMAIL}?subject=${encodeURIComponent("Freshmxn for our team")}&body=${encodeURIComponent("Hi Luv,\n\nWe'd like to know more about Freshmxn's programs for our employees.\n\nCompany:\nTeam size:\nWhat we'd like to work on:\n")}`
 
 const GAP_STEPS = [
-    { n: "1", title: "Virtual Career Counselling", text: "Each employee's story — their role, department, the work they've done and what drives them." },
+    { n: "1", title: "Virtual counselling", text: "Each employee's story — their role, department, the work they've done and what drives them." },
     { n: "2", title: "Psychometric analysis", text: "31 factors: personality, intelligence, cognitive abilities and thinking style. Research-backed." },
     { n: "3", title: "Skill assessment", text: "What the role needs against what the person can do today." },
+    { n: "4", title: "Development", text: "Training for the psychometric and skill gaps found — person by person, only what each one needs." },
 ]
+const TEAM_SIZES = ["1–50", "51–200", "201–1,000", "1,000+"]
+
+// the short request form — straight to the founder's email
+function RequestForm() {
+    const [form, setForm] = useState({ name: "", email: "", company: "", phone: "", teamSize: "", message: "", website: "" })
+    const [state, setState] = useState({ busy: false, sent: false, note: "" })
+    const set = (key) => (event) => setForm({ ...form, [key]: event.target.value })
+
+    const submit = async (event) => {
+        event.preventDefault()
+        setState({ busy: true, sent: false, note: "" })
+        const response = await sendCorporateEnquiry(form)
+        if (!response || response.data.success === false) {
+            setState({ busy: false, sent: false, note: (response && response.data && response.data.message) || "That didn't go through — please email luvgoel@freshmxn.com" })
+            return
+        }
+        setState({ busy: false, sent: true, note: "" })
+    }
+
+    if (state.sent) return <p className="corp-form-done" role="status">Thanks, {form.name.split(" ")[0]} — your request is with us. We'll be in touch at {form.email}.</p>
+
+    return (
+        <form className="corp-form" onSubmit={submit}>
+            <label>Your name<input required value={form.name} onChange={set("name")} autoComplete="name" /></label>
+            <label>Work email<input required type="email" value={form.email} onChange={set("email")} autoComplete="email" /></label>
+            <label>Company<input value={form.company} onChange={set("company")} autoComplete="organization" /></label>
+            <label>Phone<input type="tel" value={form.phone} onChange={set("phone")} autoComplete="tel" /></label>
+            <label>Team size
+                <select value={form.teamSize} onChange={set("teamSize")}>
+                    <option value="">Choose</option>
+                    {TEAM_SIZES.map((size) => <option key={size} value={size}>{size} employees</option>)}
+                </select>
+            </label>
+            <label className="corp-form-wide">What would you like to work on?<textarea rows="3" value={form.message} onChange={set("message")} /></label>
+            <input className="corp-form-trap" tabIndex="-1" autoComplete="off" aria-hidden="true" value={form.website} onChange={set("website")} />
+            {state.note && <p className="corp-form-note corp-form-wide" role="alert">{state.note}</p>}
+            <button type="submit" className="btn btn-primary tap corp-form-wide" disabled={state.busy}>{state.busy ? "Sending…" : "Send request"}</button>
+        </form>
+    )
+}
 
 const OFFERINGS = [
     { title: "Gap analysis", text: "By department and by person: the psychometric gaps and the skill gaps, side by side.", lead: true },
@@ -94,7 +138,7 @@ function Corporates() {
                 <section className="corp-section">
                     <div className="corp-wrap">
                         <p className="corp-eyebrow">Where we start</p>
-                        <h2>A gap analysis for every person and department</h2>
+                        <h2>From the gap analysis to development</h2>
                         <div className="corp-steps">
                             {GAP_STEPS.map((step) => (
                                 <div key={step.n} className="corp-step">
@@ -104,7 +148,7 @@ function Corporates() {
                                 </div>
                             ))}
                         </div>
-                        <p className="corp-note">The result: by department and by person, the psychometric gaps and the skill gaps — side by side.</p>
+                        <p className="corp-note">By department and by person: the psychometric gaps and the skill gaps, side by side — then closed.</p>
                     </div>
                 </section>
 
@@ -133,9 +177,8 @@ function Corporates() {
                         <p className="corp-eyebrow">What we offer</p>
                         <h2>From the gap analysis to the people you keep</h2>
                         <div className="corp-offers">
-                            {OFFERINGS.map((offer, index) => (
+                            {OFFERINGS.map((offer) => (
                                 <div key={offer.title} className={`corp-offer${offer.lead ? " is-lead" : ""}`}>
-                                    <span className="corp-offer-n">{String(index + 1).padStart(2, "0")}</span>
                                     <h3>{offer.title}</h3>
                                     <p>{offer.text}</p>
                                 </div>
@@ -144,10 +187,11 @@ function Corporates() {
                     </div>
                 </section>
 
-                <section className="corp-band">
+                <section className="corp-band" id="contact">
                     <div className="corp-wrap">
                         <h2>Let’s find your team’s gaps.</h2>
-                        <p>Tell us about your team on WhatsApp or by email.</p>
+                        <p>Send us a quick request, or reach us on WhatsApp or by email.</p>
+                        <RequestForm />
                         {ctas}
                     </div>
                 </section>
