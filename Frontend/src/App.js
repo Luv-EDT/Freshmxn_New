@@ -33,6 +33,7 @@ import HowItWorks from "./pages/Public/HowItWorks.js"
 import Programs from "./pages/Public/Programs.js"
 import ProgramFinder from "./pages/Public/ProgramFinder.js"
 import FaqPage from "./pages/Public/FaqPage.js"
+import Corporates from "./pages/Corporates/Corporates.js"
 import DemoPage from "./pages/Demo/DemoPage"
 import About from "./pages/Public/About.js"
 import Terms from "./pages/Public/Terms.js"
@@ -62,6 +63,8 @@ function App() {
                 {/* Round 36 (owner): after the demo — what kind of help, then the plans that fit */}
                 <Route path="/find-your-program" element={<ProgramFinder />} />
                 <Route path="/faq" element={<FaqPage />} />
+                {/* Round 40 (owner): for companies — stands alone, nothing on the student site links to it */}
+                <Route path="/corporates" element={<Corporates />} />
                 {/* Round 32 (owner): a taste before any login — the API is /demo, so the page is not */}
                 <Route path="/try-demo" element={<DemoPage />} />
                 <Route path="/about" element={<About />} />

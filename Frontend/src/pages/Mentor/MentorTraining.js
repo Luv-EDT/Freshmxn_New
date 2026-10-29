@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Image } from "antd"
 
 // THE MENTOR TRAINING DOCUMENTS (owner, Rounds 34–35) — rewritten from the owner's three documents into
 // short pages: 1) Freshmxn and the mentorship programme (~10 min), 2) how to get onboarded, with the
@@ -8,6 +9,8 @@ import { useState } from "react"
 // The screenshots live in public/mentor-training/ (calendly-01.png … calendly-16.png), cut from the owner's
 // document in its order with the owner's red marks kept (Round 35; the owner's email blurred on 05). A
 // missing one is simply not shown.
+// Round 40 (owner: "not clear, and a click doesn't open it"): each shot fills the column and opens full size on a
+// click or tap, with zoom (antd's Image preview).
 
 const WHATSAPP = "+91 8882756287"
 
@@ -17,8 +20,8 @@ function Shot({ n, caption }) {
     const file = `/mentor-training/calendly-${String(n).padStart(2, "0")}.png`
     return (
         <figure className="training-shot">
-            <img src={file} alt={caption} loading="lazy" onError={() => setMissing(true)} />
-            <figcaption>{caption}</figcaption>
+            <Image src={file} alt={caption} width="100%" loading="lazy" onError={() => setMissing(true)} preview={{ mask: "Tap to enlarge" }} />
+            <figcaption>{caption} <span className="training-shot-hint">· tap to enlarge</span></figcaption>
         </figure>
     )
 }

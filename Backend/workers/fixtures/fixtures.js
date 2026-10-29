@@ -6925,6 +6925,26 @@ const fixtures = [
         },
         expect: null,
     },
+    {
+        name: "ROUND 40 — /corporates STANDS ALONE: routed, its only actions WhatsApp (a message already typed) and email, no link into the student site and nothing on the student site linking to it; no API prefix equals it; the mentor training screenshots open full size",
+        run: () => {
+            const problems = []
+            const root = path.join(__dirname, "../../..")
+            const read = (file) => fs.readFileSync(path.join(root, file), "utf8")
+            const page = read("Frontend/src/pages/Corporates/Corporates.js")
+            if (!/path="\/corporates" element=\{<Corporates \/>\}/.test(read("Frontend/src/App.js"))) problems.push("/corporates isn't routed")
+            if (!/https:\/\/wa\.me\/\$\{WHATSAPP\}\?text=/.test(page) || !/mailto:\$\{EMAIL\}/.test(page)) problems.push("the WhatsApp or email action is missing")
+            if (/<Link|href="\//.test(page) || /PublicNav|PublicFooter/.test(page)) problems.push("the corporates page links into the student site")
+            const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)])
+            walk(path.join(root, "Frontend/src/pages")).filter((file) => file.endsWith(".js") && !file.includes("Corporates")).forEach((file) => {
+                if (/["'`]\/corporates/.test(fs.readFileSync(file, "utf8"))) problems.push(`${path.basename(file)} links to /corporates`)
+            })
+            if (/app\.use\("\/corporates/.test(read("Backend/server.js"))) problems.push("an API prefix equals the /corporates page")
+            if (!/<Image src=\{file\}[^\n]*preview=\{\{/.test(read("Frontend/src/pages/Mentor/MentorTraining.js"))) problems.push("the training screenshots don't open full size")
+            return problems.length ? problems.join("; ") : null
+        },
+        expect: null,
+    },
 ]
 
 module.exports = fixtures

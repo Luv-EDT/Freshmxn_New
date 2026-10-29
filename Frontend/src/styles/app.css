@@ -3086,6 +3086,11 @@ button.link-button.report-mentor-toggle { font-size: 0.85rem; font-weight: 400; 
 .training-doc h4 { margin: var(--space-4) 0 var(--space-2); }
 .training-shot { margin: var(--space-3) 0; }
 .training-shot img { max-width: 100%; border: 1px solid var(--line); border-radius: var(--radius); }
+/* Round 40: the whole column wide, and a click opens it full size */
+.training-shot { max-width: 760px; }
+.training-shot .ant-image { display: block; width: 100%; cursor: zoom-in; }
+.training-shot .ant-image-img { width: 100%; height: auto; image-rendering: auto; }
+.training-shot-hint { color: var(--teal-dark); font-weight: 700; }
 .training-shot figcaption { font-size: 0.85rem; color: var(--navy-soft); margin-top: 4px; }
 .training-table { width: 100%; border-collapse: collapse; }
 .training-table th, .training-table td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--line); }

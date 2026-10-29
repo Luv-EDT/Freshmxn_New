@@ -122,6 +122,14 @@ promise and both buttons full width beneath, and the three "Who is it for" cards
 Since Round 39 that first section fills the phone's whole screen under the header, its parts spread from top to
 bottom.
 
+## 2c. The page for companies (Round 40)
+
+**/corporates** is a separate page for HR and L&D teams. It isn't linked from the student site, and it doesn't link back
+(anyone with the address can open it). It explains the gap analysis (our Virtual Career Counselling, the psychometric
+assessment and a skill assessment), the competency iceberg, and the offerings — training for the gaps, training only where
+needed, Assessment & Development Centres, an AI attrition predictor, HR analytics, custom content and leadership
+development. The only actions are a WhatsApp message (already typed) and an email to the founder.
+
 ## 2b. The demo — trying before signing up (Rounds 32–33, 36)
 
 **The front door (Round 33).** The first time a visitor opens the home page in a visit, an invitation covers it:
