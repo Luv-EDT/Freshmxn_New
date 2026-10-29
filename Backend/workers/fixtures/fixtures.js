@@ -6926,7 +6926,7 @@ const fixtures = [
         expect: null,
     },
     {
-        name: "ROUND 40 — /corporates STANDS ALONE: routed, its only actions WhatsApp (a message already typed) and email, no link into the student site and nothing on the student site linking to it; no API prefix equals it; the mentor training screenshots open full size",
+        name: "ROUND 40 — /corporates STANDS ALONE: routed, its actions WhatsApp (a message already typed), email and a short request form (stored, then emailed), no link into the student site and nothing on the student site linking to it; no API prefix equals it; the mentor training screenshots open full size",
         run: () => {
             const problems = []
             const root = path.join(__dirname, "../../..")
@@ -6941,6 +6941,10 @@ const fixtures = [
             })
             if (/app\.use\("\/corporates/.test(read("Backend/server.js"))) problems.push("an API prefix equals the /corporates page")
             if (!/<Image src=\{file\}[^\n]*preview=\{\{/.test(read("Frontend/src/pages/Mentor/MentorTraining.js"))) problems.push("the training screenshots don't open full size")
+            // Round 40b (owner): the request form — kept, then emailed to the founder; a bot trap and a rate limit
+            const enquiries = read("Backend/Routers/corporateEnquiriesRouter.js")
+            if (!/router\.post\("\/send", enquiryRateLimiter/.test(enquiries) || !/CorporateEnquiry\.create\([\s\S]*sendEmail\(/.test(enquiries) || !/clean\(req\.body\.website/.test(enquiries)) problems.push("the request form isn't stored-then-emailed behind a trap and a limit")
+            if (!/app\.use\("\/corporateEnquiries", corporateEnquiriesRouter\)/.test(read("Backend/server.js")) || !/<RequestForm \/>/.test(page)) problems.push("the request form isn't wired up")
             return problems.length ? problems.join("; ") : null
         },
         expect: null,

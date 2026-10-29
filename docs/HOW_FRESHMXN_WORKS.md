@@ -128,7 +128,9 @@ bottom.
 (anyone with the address can open it). It explains the gap analysis (our Virtual Career Counselling, the psychometric
 assessment and a skill assessment), the competency iceberg, and the offerings — training for the gaps, training only where
 needed, Assessment & Development Centres, an AI attrition predictor, HR analytics, custom content and leadership
-development. The only actions are a WhatsApp message (already typed) and an email to the founder.
+development. Since Round 40b the steps are virtual counselling, psychometric analysis, skill assessment and development. A
+company reaches us by WhatsApp (message already typed), by email, or with a short request form that is saved and emailed to
+the founder (`POST /corporateEnquiries/send`).
 
 ## 2b. The demo — trying before signing up (Rounds 32–33, 36)
 

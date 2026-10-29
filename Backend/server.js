@@ -26,6 +26,7 @@ const storyRouter = require("./Routers/storyRouter")
 const externalTestsRouter = require("./Routers/externalTestsRouter")
 const mentorsRouter = require("./Routers/mentorsRouter")
 const mentorAgreementsRouter = require("./Routers/mentorAgreementsRouter")
+const corporateEnquiriesRouter = require("./Routers/corporateEnquiriesRouter")
 const mentorWaitlistRouter = require("./Routers/mentorWaitlistRouter")
 const assessmentIssuesRouter = require("./Routers/assessmentIssuesRouter")
 const consentRouter = require("./Routers/consentRouter")
@@ -119,6 +120,7 @@ app.use("/mentorSessions", mentorSessionsRouter)
 app.use("/mentorTest", mentorTestRouter)         // Round 34: the mentor competence test (page: /mentor)
 app.use("/mentorPayouts", mentorPayoutsRouter)   // Round 34: what we owe mentors (pages: /mentor, /admin/mentors)
 app.use("/notifications", notificationsRouter)   // Round 29: shown on /profile   // Round 28: invite steps, reviews, reports (pages are /mentor and /mentorship)
+app.use("/corporateEnquiries", corporateEnquiriesRouter)   // Round 40b: the contact form on /corporates
 
 // serve the built React app — Frontend/build only exists after `npm run build`
 const buildPath = path.join(__dirname, "../Frontend/build")

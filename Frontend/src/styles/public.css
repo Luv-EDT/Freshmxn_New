@@ -2714,3 +2714,17 @@ button.asks-tab.is-on:hover:not(:disabled) {
     .corp-header img { height: 26px; width: auto; }
     .corp-badge { font-size: 0.72rem; padding: 2px 8px; }
 }
+
+/* Round 40b: four steps, unnumbered offers, and the request form on the dark band */
+.corp-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.corp-offer h3 { margin-top: 0; }
+.corp-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); max-width: 720px; margin: var(--space-5) auto 0; text-align: left; }
+.corp-form label { display: grid; gap: 6px; font-size: 0.9rem; font-weight: 700; color: #fff; }
+.corp-form input, .corp-form select, .corp-form textarea { width: 100%; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: var(--radius); background: #fff; color: var(--navy); font: inherit; font-weight: 400; }
+.corp-form-wide { grid-column: 1 / -1; }
+.corp-form .btn { justify-self: center; min-width: 220px; }
+.corp-form-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.corp-form-note { margin: 0; color: var(--pink); }
+.corp-form-done { max-width: 640px; margin: var(--space-5) auto 0; padding: var(--space-4); border-radius: var(--radius-lg); background: rgba(255, 255, 255, 0.1); color: #fff; font-weight: 700; }
+@media (max-width: 899px) { .corp-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 559px) { .corp-steps, .corp-form { grid-template-columns: 1fr; } }

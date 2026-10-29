@@ -2763,3 +2763,5 @@ No code changed in this part.
 | **Mentor training screenshots** | Each fills the column and opens full size on a click or tap, with zoom (antd `Image` preview); captions say "tap to enlarge" |
 
 **Fixtures:** 255/255 (new ROUND 40: routed, WhatsApp and email only, no links either way, no API prefix clash, screenshots open).
+
+**Round 40b (owner):** the steps are now four — **Virtual counselling**, psychometric analysis, skill assessment and **Development** (training for the psychometric and skill gaps found); the eight offers are features without numbers; and a short **request form** on the dark band (name, work email, company, phone, team size, what they'd like). `POST /corporateEnquiries/send` stores each request (`corporateenquiries`) and emails it to luvgoel@freshmxn.com — a hidden box catches bots, 5 tries an hour per address. The request is kept even if the email fails (no admin tab for them yet).
